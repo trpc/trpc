@@ -415,7 +415,7 @@ export default function transform(
           }
           fn.comments = [
             j.commentBlock(
-              '*\n * Was `config` in `createTRPCNext`. It runs in the browser, so `ctx` is\n * always undefined.\n ',
+              '*\n * Was `config` in `createTRPCNext`. `withTRPC` calls it once per mount,\n * on the server and in the browser, without `ctx`.\n ',
               true,
               false,
             ),
@@ -544,7 +544,8 @@ export function withTRPC<TInitialProps extends object>(
       }),
     });
   };
-  WithTRPC.getInitialProps = App.getInitialProps;
+  // Bound, as Next.js calls it on its own
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
   return WithTRPC;
 }`,
         ),
@@ -567,6 +568,29 @@ export function withTRPC<TInitialProps extends object>(
               ),
             ]
           : []),
+        // `overrides`, `abortOnUnmount`… must not vanish without a word
+        ...opts.properties
+          // No spreads here: a setup with one is left for hand migration
+          .map((p) => staticKeyName(j, p as { key: unknown }))
+          .filter(
+            (key) =>
+              ![
+                'config',
+                'transformer',
+                'ssr',
+                'responseMeta',
+                'ssrPrepass',
+              ].includes(key ?? ''),
+          )
+          .map((key) =>
+            todoComment(
+              key === 'overrides'
+                ? 'move `overrides` to your QueryClient, e.g. a `MutationCache` `onSuccess`, see https://trpc.io/docs/client/tanstack-react-query/migrating#migrating-overrides'
+                : key === 'abortOnUnmount'
+                  ? 'pass `trpc: { abortOnUnmount: true }` to each query instead, see https://trpc.io/docs/client/tanstack-react-query/migrating#migrating-abortonunmount'
+                  : `createTRPCNext's \`${key ?? 'computed'}\` option has no direct replacement, see https://trpc.io/docs/client/tanstack-react-query/migrating`,
+            ),
+          ),
       ];
       j(statement).replaceWith(() => statements);
 

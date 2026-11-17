@@ -18,8 +18,8 @@ export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 
 /**
- * Was `config` in `createTRPCNext`. It runs in the browser, so `ctx` is
- * always undefined.
+ * Was `config` in `createTRPCNext`. `withTRPC` calls it once per mount,
+ * on the server and in the browser, without `ctx`.
  */
 function getConfig() {
   return {
@@ -76,6 +76,8 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
+  // Bound, as Next.js calls it on its own
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
+
   return WithTRPC;
 }

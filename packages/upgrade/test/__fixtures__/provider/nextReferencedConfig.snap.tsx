@@ -83,6 +83,8 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
+  // Bound, as Next.js calls it on its own
+  WithTRPC.getInitialProps = App.getInitialProps?.bind(App);
+
   return WithTRPC;
 }
