@@ -10,7 +10,6 @@ export function Component() {
   const channelId = '1';
 
   const query = useSuspenseQuery(trpc.post.list.queryOptions());
-
   const data = query.data;
 
   const [a, b] = [1, 2];

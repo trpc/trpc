@@ -9,7 +9,7 @@ export function Component() {
 
   React.useEffect(() => {
     void trpcClient.num.query(5).then(setValue);
-  }, [queryClient]);
+  }, [trpcClient, queryClient]);
 
   return value === 5 ? 'loaded' : 'loading';
 }

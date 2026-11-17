@@ -100,8 +100,15 @@ export default function transform(
   }
 
   function moveImport(from: string, oldName: string) {
+    // Another `createTRPCNext(…)` in the file still needs it
+    const stillUsed =
+      root
+        .find(j.Identifier, { name: oldName })
+        .filter((p) => isValueReference(j, p))
+        .size() > 0;
     root
       .find(j.ImportDeclaration, { source: { value: from } })
+      .filter(() => !stillUsed)
       .forEach((path) => {
         path.node.specifiers = (path.node.specifiers ?? []).filter(
           (s) => !(j.ImportSpecifier.check(s) && s.imported.name === oldName),
@@ -155,7 +162,11 @@ export default function transform(
       const statement = j.ExportNamedDeclaration.check(declaration.parent?.node)
         ? (declaration.parent as ASTPath)
         : (declaration as ASTPath);
-      if (!opts || declaration.node.declarations.length !== 1) {
+      const hasSpread = (opts?.properties ?? []).some(
+        (p) => j.SpreadElement.check(p) || j.SpreadProperty.check(p),
+      );
+      // A spread could hold the transformer or config, which we'd miss
+      if (!opts || hasSpread || declaration.node.declarations.length !== 1) {
         addTodo(j, path, `move from createTRPCNext by hand, see ${nextDocs}`);
         changed = true;
         continue;
@@ -215,7 +226,7 @@ export default function transform(
         ),
       );
 
-      let hasQueryClientConfig = false;
+      let queryClientConfig: 'yes' | 'no' | 'unknown' = 'no';
       // `getConfig`, unless the file has one, e.g. from `next/config`
       const configName =
         root.find(j.Identifier, { name: 'getConfig' }).size() > 0
@@ -229,11 +240,30 @@ export default function transform(
             ? config
             : null;
         if (configFunction) {
-          j(configFunction)
-            .find(j.ObjectProperty, { key: { name: 'queryClientConfig' } })
-            .forEach(() => {
-              hasQueryClientConfig = true;
-            });
+          // Whether every return is an object literal we can read, so we know
+          // if `queryClientConfig` is there; otherwise check at runtime.
+          const returns = j.BlockStatement.check(configFunction.body)
+            ? j(configFunction.body)
+                .find(j.ReturnStatement)
+                // Not the returns of functions nested in it
+                .filter((p) => !insideFunction(p))
+                .nodes()
+                .map((node) => node.argument)
+            : [configFunction.body];
+          queryClientConfig = returns.every((r) => j.ObjectExpression.check(r))
+            ? returns.some(
+                (r) =>
+                  j.ObjectExpression.check(r) &&
+                  r.properties.some(
+                    (p) =>
+                      (j.ObjectProperty.check(p) || j.Property.check(p)) &&
+                      j.Identifier.check(p.key) &&
+                      p.key.name === 'queryClientConfig',
+                  ),
+              )
+              ? 'yes'
+              : 'no'
+            : 'unknown';
           const [param] = configFunction.params;
           const body = j.BlockStatement.check(configFunction.body)
             ? configFunction.body
@@ -288,14 +318,35 @@ export default function transform(
               ),
             );
         } else {
+          // `config: clientConfig`, a function defined elsewhere. Pass it
+          // `{}` unless this file shows it takes nothing.
+          const name = j.Identifier.check(config) ? config.name : null;
+          const declared = name
+            ? [
+                ...root.find(j.FunctionDeclaration, { id: { name } }).nodes(),
+                ...root
+                  .find(j.VariableDeclarator, { id: { name } })
+                  .nodes()
+                  .map((d) => d.init)
+                  .filter(
+                    (init) =>
+                      j.FunctionExpression.check(init) ||
+                      j.ArrowFunctionExpression.check(init),
+                  ),
+              ]
+            : [];
+          const takesNothing =
+            declared.length > 0 &&
+            declared.every(
+              (fn) => (fn as { params: unknown[] }).params.length === 0,
+            );
+          configCall = `${j(config).toSource()}(${takesNothing ? '' : '{}'})`;
+          queryClientConfig = 'unknown';
           statements.push(
             ...exported(
-              `export function makeTRPCClient() {\n  return createTRPCClient${routerGeneric}({ links: CONFIG.links });\n}`,
+              `export function makeTRPCClient() {\n  return createTRPCClient${routerGeneric}({ links: ${configCall}.links });\n}`,
             ),
           );
-          j(statements.at(-1) as never)
-            .find(j.Identifier, { name: 'CONFIG' })
-            .replaceWith(() => config);
         }
       } else {
         statements.push(
@@ -307,12 +358,36 @@ export default function transform(
 
       statements.push(
         ...exported(
-          `export function makeQueryClient() {\n  return new QueryClient(${hasQueryClientConfig ? `${configCall}.queryClientConfig` : ''});\n}`,
+          queryClientConfig === 'yes'
+            ? `export function makeQueryClient() {\n  return new QueryClient(${configCall}.queryClientConfig);\n}`
+            : queryClientConfig === 'unknown'
+              ? `export function makeQueryClient() {\n  const config = ${configCall};\n  return new QueryClient(\n    'queryClientConfig' in config\n      ? (config.queryClientConfig as QueryClientConfig)\n      : undefined,\n  );\n}`
+              : `export function makeQueryClient() {\n  return new QueryClient();\n}`,
         ),
       );
+      if (queryClientConfig === 'unknown') {
+        ensureNamedImport(
+          { j, root },
+          {
+            source: '@tanstack/react-query',
+            name: 'QueryClientConfig',
+            typeOnly: true,
+          },
+        );
+      }
 
       // Classic `withTRPC` ran `trpcState` through the transformer.
-      const transformerSource = transformer ? j(transformer).toSource() : null;
+      let transformerSource = transformer ? j(transformer).toSource() : null;
+      // `typeof x.deserialize` needs a name, not e.g. `getTransformer()`
+      if (
+        transformerSource &&
+        !/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(transformerSource)
+      ) {
+        statements.push(
+          ...exported(`const hydrationTransformer = ${transformerSource};`),
+        );
+        transformerSource = 'hydrationTransformer';
+      }
       const hydrationState = transformerSource
         ? `(pageProps?.trpcState === undefined ? undefined : ${transformerSource}.deserialize(pageProps.trpcState as Parameters<typeof ${transformerSource}.deserialize>[0])) as DehydratedState | undefined`
         : 'pageProps?.trpcState as DehydratedState | undefined';
@@ -514,6 +589,22 @@ export function withTRPC<TInitialProps extends object>(
  * which break printing them into another file. Drops them, so they print
  * fresh.
  */
+/** Whether a function lies between `path` and the root of its tree. */
+function insideFunction(path: ASTPath): boolean {
+  for (let current = path.parent; current; current = current.parent) {
+    const type = (current.node as { type: string }).type;
+    if (
+      type === 'FunctionExpression' ||
+      type === 'ArrowFunctionExpression' ||
+      type === 'FunctionDeclaration' ||
+      type === 'ObjectMethod'
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function withoutLocations<T>(value: T): T {
   const seen = new Set<unknown>();
   const visit = (node: unknown) => {

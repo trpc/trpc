@@ -9,15 +9,18 @@ import type {
 } from 'jscodeshift';
 import {
   addTodo,
-  declaresName,
+  declaresAtTop,
   ensureDeclaredAtTop,
   ensureNamedImport,
   findHookScope,
+  insertAfterDeclarator,
   isInside,
+  isShadowed,
   isValueReference,
   quoteOf,
   replaceImportedName,
   rootIdentifierName,
+  uniqueName,
   type ExpressionKind,
   type FunctionNode,
 } from '../lib/ast/codemod';
@@ -126,9 +129,22 @@ export default function transform(
     scopes.add(scope);
   }
 
+  /** Imports `name` from `lib` and returns the local name to call it by. */
   function importFrom(lib: string, name: string) {
-    ensureNamedImport({ j, root }, { source: lib, name, typeOnly: false });
+    return ensureNamedImport(
+      { j, root },
+      { source: lib, name, typeOnly: false },
+    );
   }
+
+  /** A `TODO(@trpc/upgrade)` comment, which also counts as a change to save. */
+  function todo(path: ASTPath, message: string) {
+    addTodo(j, path, message);
+    changed = true;
+  }
+
+  /** `useSuspenseQuery(…)` calls this transform made, to fix their `[data, query]` */
+  const migratedSuspenseCalls = new Set<unknown>();
 
   /** `a.b` → `trpc.a.b`, from property names. */
   function trpcMember(path: readonly string[]): ExpressionKind {
@@ -166,8 +182,7 @@ export default function transform(
           ![...scopes].some((scope) => isInside(path, scope)),
       );
     leftovers.forEach((path) =>
-      addTodo(
-        j,
+      todo(
         path,
         `\`${trpcName}\` is now \`const ${trpcName} = useTRPC()\` inside components and hooks, see ${docs}`,
       ),
@@ -195,7 +210,7 @@ export default function transform(
         }
         const scope = findHookScope(j, path);
         if (!scope) {
-          addTodo(j, path, `move this into a component or hook, see ${docs}`);
+          todo(path, `move this into a component or hook, see ${docs}`);
           return;
         }
         const typeName =
@@ -203,10 +218,18 @@ export default function transform(
             ? String((type as { value: unknown }).value)
             : 'any';
         const hasInput = input && !isUndefined(input);
+        if (typeName === 'any' && hasInput) {
+          // The classic key matched queries and infinite queries alike
+          todo(
+            path,
+            `use \`trpc.x.queryKey(input)\` or \`trpc.x.infiniteQueryKey(input)\`, see ${docs}`,
+          );
+          return;
+        }
         const fn =
           typeName === 'infinite'
             ? 'infiniteQueryKey'
-            : typeName === 'query' || hasInput
+            : typeName === 'query'
               ? 'queryKey'
               : 'pathKey';
         path.replace(
@@ -255,8 +278,7 @@ export default function transform(
         const hook = (callee.property as Identifier).name as HookName;
         const scope = findHookScope(j, path);
         if (!scope) {
-          addTodo(
-            j,
+          todo(
             path,
             `\`${hook}\` must be called in a component or hook, see ${docs}`,
           );
@@ -264,8 +286,16 @@ export default function transform(
         }
         const { fn, lib } = hookToOptions[hook];
         callee.property = j.identifier(fn);
-        path.replace(j.callExpression(j.identifier(hook), [path.node]));
-        importFrom(lib, hook);
+        const call = j.callExpression(j.identifier(importFrom(lib, hook)), [
+          path.node,
+        ]);
+        if (
+          hook === 'useSuspenseQuery' ||
+          hook === 'useSuspenseInfiniteQuery'
+        ) {
+          migratedSuspenseCalls.add(call);
+        }
+        path.replace(call);
         useTRPCIn(scope);
         changed = true;
       });
@@ -308,34 +338,48 @@ export default function transform(
               ? callback.body.body[0].argument
               : null;
         if (!scope || !param || !body || rest.length > 0) {
-          addTodo(
-            j,
+          todo(
             path,
             `rewrite \`trpc.${hook}\` as \`${hook}({ queries: [trpc.x.queryOptions(input)] })\`, see ${docs}`,
           );
           return;
         }
 
-        // `t.a.b(input, opts)` → `trpc.a.b.queryOptions(input, opts)`
-        j(body)
+        // `t.a.b(input, opts)` → `trpc.a.b.queryOptions(input, opts)`, only
+        // if that's all `t` is used for, not e.g. `buildQueries(t)`
+        const procedureCalls = j(body)
           .find(j.CallExpression, { callee: { type: 'MemberExpression' } })
-          .filter((p) => rootIdentifierName(j, p.node.callee) === param)
-          .forEach((p) => {
-            const callee = p.node.callee as MemberExpression;
-            let innermost: MemberExpression = callee;
-            while (j.MemberExpression.check(innermost.object)) {
-              innermost = innermost.object;
-            }
-            innermost.object = j.identifier(trpcName);
-            p.node.callee = j.memberExpression(
-              callee,
-              j.identifier('queryOptions'),
-            );
-          });
-        const replacement = j.callExpression(j.identifier(hook), [
-          j.objectExpression([j.objectProperty(j.identifier('queries'), body)]),
-        ]);
-        importFrom('@tanstack/react-query', hook);
+          .filter((p) => rootIdentifierName(j, p.node.callee) === param);
+        const paramReferences = j(body)
+          .find(j.Identifier, { name: param })
+          .filter((p) => isValueReference(j, p));
+        if (paramReferences.size() !== procedureCalls.size()) {
+          todo(
+            path,
+            `rewrite \`trpc.${hook}\` as \`${hook}({ queries: [trpc.x.queryOptions(input)] })\`, see ${docs}`,
+          );
+          return;
+        }
+        procedureCalls.forEach((p) => {
+          const callee = p.node.callee as MemberExpression;
+          let innermost: MemberExpression = callee;
+          while (j.MemberExpression.check(innermost.object)) {
+            innermost = innermost.object;
+          }
+          innermost.object = j.identifier(trpcName);
+          p.node.callee = j.memberExpression(
+            callee,
+            j.identifier('queryOptions'),
+          );
+        });
+        const replacement = j.callExpression(
+          j.identifier(importFrom('@tanstack/react-query', hook)),
+          [
+            j.objectExpression([
+              j.objectProperty(j.identifier('queries'), body),
+            ]),
+          ],
+        );
         useTRPCIn(scope);
         changed = true;
 
@@ -354,11 +398,14 @@ export default function transform(
           )
         ) {
           const [dataId, queriesId] = declarator.id.elements;
-          const queriesName = queriesId?.name ?? 'queries';
+          const queriesName =
+            queriesId?.name ?? uniqueName(j, scope, 'queries');
           declarator.id = j.identifier(queriesName);
           path.replace(replacement);
           if (dataId) {
-            j(path.parent.parent).insertAfter(
+            insertAfterDeclarator(
+              j,
+              path.parent,
               j.variableDeclaration('const', [
                 j.variableDeclarator(
                   j.identifier(dataId.name),
@@ -384,8 +431,7 @@ export default function transform(
           return;
         }
         path.replace(replacement);
-        addTodo(
-          j,
+        todo(
           path,
           '`useSuspenseQueries` returns the queries now, not `[data, queries]`',
         );
@@ -413,8 +459,7 @@ export default function transform(
           !j.VariableDeclarator.check(declarator) ||
           !j.Identifier.check(declarator.id)
         ) {
-          addTodo(
-            j,
+          todo(
             path,
             `replace \`trpc.useUtils()\` with \`useQueryClient()\` and \`trpc.x.queryFilter()\`, see ${docs}`,
           );
@@ -422,12 +467,17 @@ export default function transform(
         }
         const utilsName = declarator.id.name;
         const reuseQueryClient =
-          utilsName !== 'queryClient' && declaresName(j, scope, 'queryClient');
+          utilsName !== 'queryClient' && declaresAtTop(j, scope, 'queryClient');
         const queryClientName = 'queryClient';
 
         const references = j(scope)
           .find(j.Identifier, { name: utilsName })
-          .filter((p) => p.node !== declarator.id && isValueReference(j, p))
+          .filter(
+            (p) =>
+              p.node !== declarator.id &&
+              isValueReference(j, p) &&
+              !isShadowed(j, p, { scope, name: utilsName }),
+          )
           .paths()
           // Innermost and last first, so a call inside another's arguments
           // is rewritten before the call around it moves it.
@@ -438,14 +488,45 @@ export default function transform(
           );
 
         let usesTRPC = false;
+        let usesClient = false;
+        const dependencyLists: Array<{ elements: unknown[] }> = [];
         for (const reference of references) {
-          usesTRPC =
-            migrateUtilsReference(reference, scope, queryClientName) ||
-            usesTRPC;
+          const parent = reference.parent?.node;
+          const result = migrateUtilsReference(
+            reference,
+            scope,
+            queryClientName,
+          );
+          usesTRPC = result.usesTRPC || usesTRPC;
+          usesClient = result.usesClient || usesClient;
+          if (result.bare && j.ArrayExpression.check(parent)) {
+            dependencyLists.push(parent);
+          }
+        }
+        // `[utils]` also changed when the tRPC client did
+        if (usesClient) {
+          for (const list of dependencyLists) {
+            if (
+              !list.elements.some(
+                (e) => j.Identifier.check(e) && e.name === 'trpcClient',
+              )
+            ) {
+              list.elements.unshift(j.identifier('trpcClient'));
+            }
+          }
         }
 
         if (reuseQueryClient) {
-          j(path.parent.parent).remove();
+          // Only this declarator: `const utils = …, other = …` keeps `other`
+          const declaration = path.parent.parent.node as {
+            declarations: unknown[];
+          };
+          declaration.declarations = declaration.declarations.filter(
+            (d) => d !== declarator,
+          );
+          if (declaration.declarations.length === 0) {
+            j(path.parent.parent).remove();
+          }
         } else {
           declarator.id = j.identifier(queryClientName);
           path.replace(j.callExpression(j.identifier('useQueryClient'), []));
@@ -464,7 +545,8 @@ export default function transform(
     reference: ASTPath<Identifier>,
     scope: ASTPath<FunctionNode>,
     queryClientName: string,
-  ): boolean {
+  ): { usesTRPC: boolean; usesClient: boolean; bare: boolean } {
+    const none = { usesTRPC: false, usesClient: false, bare: false };
     // Walk up `utils.a.b.method` and note the property names.
     const names: string[] = [];
     let top: ASTPath = reference;
@@ -491,7 +573,7 @@ export default function transform(
     if (names.length === 0) {
       // `[utils]` in a dependency list, `doSomething(utils)`
       reference.replace(j.identifier(queryClientName));
-      return false;
+      return { ...none, bare: true };
     }
 
     if (names[0] === 'client') {
@@ -503,22 +585,21 @@ export default function transform(
         init: 'useTRPCClient',
       });
       fromTRPCModule.add('useTRPCClient');
-      return false;
+      return { ...none, usesClient: true };
     }
 
     const method = names.at(-1);
     if (method === undefined) {
-      return false;
+      return none;
     }
     const call = top.parent?.node;
     const isCall = j.CallExpression.check(call) && call.callee === top.node;
     if (!(method in utilMap) || !isCall) {
-      addTodo(
-        j,
+      todo(
         reference,
         `\`${['utils', ...names].join('.')}\` has no automatic replacement, see ${docs}`,
       );
-      return false;
+      return none;
     }
 
     const util = utilMap[method as UtilName];
@@ -543,12 +624,8 @@ export default function transform(
     let replacement: ExpressionKind;
     if (util.kind === 'options') {
       if (procedurePath.length === 0) {
-        addTodo(
-          j,
-          reference,
-          `\`utils.${method}\` needs a procedure, see ${docs}`,
-        );
-        return false;
+        todo(reference, `\`utils.${method}\` needs a procedure, see ${docs}`);
+        return none;
       }
       replacement = queryClientCall(
         j.callExpression(
@@ -587,12 +664,8 @@ export default function transform(
       replacement = queryClientCall(filter, definedArgs([queryOptions]));
     } else {
       if (procedurePath.length === 0) {
-        addTodo(
-          j,
-          reference,
-          `\`utils.${method}\` needs a procedure, see ${docs}`,
-        );
-        return false;
+        todo(reference, `\`utils.${method}\` needs a procedure, see ${docs}`);
+        return none;
       }
       const [input, ...rest] = args;
       const key = j.callExpression(
@@ -602,7 +675,7 @@ export default function transform(
       replacement = queryClientCall(key, rest);
     }
     top.parent.replace(replacement);
-    return true;
+    return { ...none, usesTRPC: true };
   }
 
   // `const [data, query] = useSuspenseQuery(…)` → `const query = …; const data = query.data`
@@ -610,11 +683,7 @@ export default function transform(
     collection.find(j.VariableDeclarator).forEach((path) => {
       const declarator = path.node;
       if (
-        !j.CallExpression.check(declarator.init) ||
-        !j.Identifier.check(declarator.init.callee) ||
-        !['useSuspenseQuery', 'useSuspenseInfiniteQuery'].includes(
-          declarator.init.callee.name,
-        ) ||
+        !migratedSuspenseCalls.has(declarator.init) ||
         !j.ArrayPattern.check(declarator.id)
       ) {
         return;
@@ -623,7 +692,9 @@ export default function transform(
       if (j.Identifier.check(queryElement)) {
         declarator.id = j.identifier(queryElement.name);
         if (dataElement) {
-          j(path.parent).insertAfter(
+          insertAfterDeclarator(
+            j,
+            path,
             j.variableDeclaration('const', [
               j.variableDeclarator(
                 dataElement as Identifier,

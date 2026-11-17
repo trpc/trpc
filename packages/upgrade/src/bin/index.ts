@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { basename, extname, relative } from 'node:path';
+import { basename, extname, relative, resolve } from 'node:path';
 import { parse } from '@bomb.sh/args';
 import { intro, isCancel, log, multiselect, note, outro } from '@clack/prompts';
 import { version } from '../../package.json';
 import { scanProject } from '../lib/ast/scanners';
+import { execa } from '../lib/execa';
 import { assertCleanGitTree, filterIgnored } from '../lib/git';
 import { installPackage, uninstallPackage } from '../lib/pkgmgr';
 
@@ -121,19 +122,31 @@ for (const name of ordered) {
   log.success(`Transform completed`);
 }
 
-/** Files that still import `pkg`, or any of its subpaths */
-const importersOf = (pkg: string) =>
-  committedFiles.filter((file) => {
-    let source: string;
+/**
+ * Every tracked source file, not just the ones in the TypeScript program:
+ * a test or script outside it can still need a package.
+ */
+const trackedSourceFiles = (await execa('git ls-files')).stdout
+  .split('\n')
+  .filter((file) => /\.(?:[cm]?[jt]sx?)$/.test(file))
+  .map((file) => resolve(file));
+
+/**
+ * Tracked files that still refer to `pkg` or a subpath of it, in an import,
+ * `import()`, `require()` or `export … from`
+ */
+const importersOf = (pkg: string) => {
+  const specifier = new RegExp(
+    `['"\`]${pkg.replace('/', '\\/')}(?:\\/[^'"\`]*)?['"\`]`,
+  );
+  return trackedSourceFiles.filter((file) => {
     try {
-      source = readFileSync(file, 'utf8');
+      return specifier.test(readFileSync(file, 'utf8'));
     } catch {
       return false;
     }
-    return new RegExp(
-      `from\\s+['"]${pkg.replace('/', '\\/')}(?:\\/[^'"]*)?['"]`,
-    ).test(source);
   });
+};
 
 if (!args.skipTanstackQuery) {
   log.info('Installing @trpc/tanstack-react-query');
