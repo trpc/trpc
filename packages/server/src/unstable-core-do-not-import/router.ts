@@ -651,6 +651,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     isServer: routerList.every((r) => r._def._config.isServer),
     $types: routerList[0]?._def._config.$types,
     sse: routerList[0]?._def._config.sse,
+    jsonl: routerList[0]?._def._config.jsonl,
   })(record);
 
   return router as MergeRouters<TRouters>;
