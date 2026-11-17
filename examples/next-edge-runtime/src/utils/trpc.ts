@@ -86,6 +86,5 @@ export function withTRPC<TInitialProps extends object>(
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
   return WithTRPC;
 }
