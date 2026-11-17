@@ -119,8 +119,10 @@ jobs:
       - run: pnpm turbo --filter 'www^...' build
       - run: pnpm --filter www test
 
+  # One job per group of examples, not per example: a job spends most of its
+  # time setting up and waiting for a runner.
   e2e:
-    name: 'E2E-tests'
+    name: 'E2E-tests (${{ matrix.group }})'
     needs: [build]
     services:
       postgres:
@@ -139,29 +141,18 @@ jobs:
     timeout-minutes: 20
     continue-on-error: true
     strategy:
+      fail-fast: false
       matrix:
-        dir: [
-            .experimental/next-app-dir,
-            .test/internal-types-export,
-            .test/ssg,
-            cloudflare-workers,
-            express-minimal,
-            express-server,
-            fastify-server,
-            minimal-react,
-            minimal-per-procedure-errors,
-            next-formdata,
-            next-minimal-starter,
-            next-prisma-starter,
-            next-prisma-todomvc,
-            next-prisma-websockets-starter,
-            # tanstack-start-sse-chat,
-            openapi-codegen,
-            soa,
-            standalone-server,
-            vercel-edge-runtime,
-            nuxt,
-          ]
+        include:
+          - group: next
+            dirs: .experimental/next-app-dir .test/ssg next-formdata next-minimal-starter
+          - group: next-prisma
+            dirs: next-prisma-starter next-prisma-todomvc next-prisma-websockets-starter
+          - group: servers
+            dirs: .test/internal-types-export express-minimal express-server fastify-server minimal-per-procedure-errors openapi-codegen soa standalone-server
+          # tanstack-start-sse-chat is left out
+          - group: runtimes
+            dirs: bun cloudflare-workers deno-deploy minimal-react nuxt vercel-edge-runtime
     steps:
       - uses: actions/checkout@v7
         with:
@@ -170,122 +161,40 @@ jobs:
 
       - run: pnpm build
 
-      - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
-
-  e2e-deno:
-    name: 'E2E-tests (Deno)'
-    needs: [build]
-    env:
-      NEXTAUTH_SECRET: supersecret
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      # TURBO_REMOTE_ONLY: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
-
-    strategy:
-      matrix:
-        dir: [deno-deploy]
-    steps:
-      - uses: actions/checkout@v7
+      - if: matrix.group == 'runtimes'
+        uses: oven-sh/setup-bun@v2
         with:
-          fetch-depth: 0
-      - uses: ./.github/setup
-
-      - run: pnpm build
-
-      - uses: denoland/setup-deno@v2.0.5
+          bun-version: 1.4.4
+      - if: matrix.group == 'runtimes'
+        uses: denoland/setup-deno@v2.0.5
         with:
           deno-version: 2.x
 
-      - run: deno --version
+      # Runs every example, then fails if any did
+      - env:
+          DIRS: ${{ matrix.dirs }}
+        run: |
+          e2e() {
+            if [ "$1" = deno-deploy ]; then
+              cd "examples/$1" &&
+                pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
+              return
+            fi
+            cp "examples/$1/.env.example" "examples/$1/.env" 2>/dev/null
+            pnpm turbo --filter "./examples/$1" test-dev &&
+              pnpm turbo --filter "./examples/$1" build &&
+              pnpm turbo --filter "./examples/$1" typecheck &&
+              pnpm turbo --filter "./examples/$1" test-start
+          }
+          failed=()
+          for dir in $DIRS; do
+            echo "::group::$dir"
+            (e2e "$dir") || failed+=("$dir")
+            echo "::endgroup::"
+          done
+          for dir in "${failed[@]}"; do echo "::error title=E2E failed::$dir"; done
+          [ ${#failed[@]} -eq 0 ]
 
-      - run: |
-          cd ./examples/${{ matrix.dir }}
-          pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
-
-  e2e-bun:
-    name: 'E2E-tests (Bun)'
-    needs: [build]
-    env:
-      NEXTAUTH_SECRET: supersecret
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-      # TURBO_REMOTE_ONLY: true
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
-    continue-on-error: true
-    strategy:
-      matrix:
-        dir: [bun]
-        os: [ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: ./.github/setup
-
-      - run: pnpm build
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.4
-
-      - run: bun --version
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
-
-  e2e-legacy-node:
-    needs: [build]
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_DATABASE: trpcdb
-          POSTGRES_USER: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-    env:
-      NEXTAUTH_SECRET: supersecret
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
-    strategy:
-      matrix:
-        dir:
-          [
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-          ]
-        node-start: ['20.x', '22.x']
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: ./.github/setup
-
-      - run: pnpm build
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
-      - run: node -v
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
