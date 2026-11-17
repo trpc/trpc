@@ -73,6 +73,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # A sync pushes main's tip, not the commit that started it: a
+          # release's sync can start after a newer push's, and force-pushing
+          # the older commit would undo that push's examples.
+          ref: ${{ github.event_name != 'pull_request' && 'main' || '' }}
           # Pull requests run the examples' install and build scripts
           persist-credentials: ${{ github.event_name != 'pull_request' }}
 
