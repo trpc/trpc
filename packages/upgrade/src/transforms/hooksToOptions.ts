@@ -337,12 +337,15 @@ export default function transform(
     }
     // `const { trpc } = useMutation(…)`
     if (j.ObjectPattern.check(declarator.id)) {
+      // `{ trpc }`, `{ 'trpc': x }` or `{ ['trpc']: x }`
       const destructuresTRPC = declarator.id.properties.some(
         (p) =>
           (j.ObjectProperty.check(p) || j.Property.check(p)) &&
-          !p.computed &&
-          j.Identifier.check(p.key) &&
-          p.key.name === 'trpc',
+          ((!p.computed &&
+            j.Identifier.check(p.key) &&
+            p.key.name === 'trpc') ||
+            ((j.StringLiteral.check(p.key) || j.Literal.check(p.key)) &&
+              (p.key as { value: unknown }).value === 'trpc')),
       );
       if (destructuresTRPC) {
         todo(
