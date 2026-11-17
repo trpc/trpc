@@ -1,4 +1,9 @@
-import { useIsMutating } from '@tanstack/react-query';
+import {
+  useIsMutating,
+  useQueryClient,
+  useMutation,
+  useQuery,
+} from '@tanstack/react-query';
 import type { inferProcedureOutput } from '@trpc/server';
 import clsx from 'clsx';
 import type {
@@ -14,58 +19,77 @@ import 'todomvc-common/base.css';
 import { InfoFooter } from '../components/footer';
 import type { AppRouter } from '../server/routers/_app';
 import { ssgInit } from '../server/ssg-init';
-import { trpc } from '../utils/trpc';
+import { useTRPC } from '../utils/trpc';
 import { useClickOutside } from '../utils/use-click-outside';
 
 type Task = inferProcedureOutput<AppRouter['todo']['all']>[number];
 
+/**
+ * A stand-in task, shown until the server sends the real one.
+ * Kept outside the component: `react/purity` flags `Math.random()` and
+ * `new Date()` inside the `mutationOptions()` callbacks.
+ */
+function makeOptimisticTask(text: string): Task {
+  return {
+    id: `${Math.random()}`,
+    completed: false,
+    text,
+    createdAt: new Date(),
+  };
+}
+
 function ListItem(props: { task: Task }) {
+  const trpc = useTRPC();
   const { task } = props;
 
   const [editing, setEditing] = useState(false);
   const wrapperRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
   const [text, setText] = useState(task.text);
 
   useEffect(() => {
     setText(task.text);
   }, [task.text]);
 
-  const editTask = trpc.todo.edit.useMutation({
-    async onMutate({ id, data }) {
-      await utils.todo.all.cancel();
-      const allTasks = utils.todo.all.getData();
-      if (!allTasks) {
-        return;
-      }
-      utils.todo.all.setData(
-        undefined,
-        allTasks.map((t) =>
-          t.id === id
-            ? {
-                ...t,
-                ...data,
-              }
-            : t,
-        ),
-      );
-    },
-  });
-  const deleteTask = trpc.todo.delete.useMutation({
-    async onMutate() {
-      await utils.todo.all.cancel();
-      const allTasks = utils.todo.all.getData();
-      if (!allTasks) {
-        return;
-      }
-      utils.todo.all.setData(
-        undefined,
-        allTasks.filter((t) => t.id != task.id),
-      );
-    },
-  });
+  const editTask = useMutation(
+    trpc.todo.edit.mutationOptions({
+      async onMutate({ id, data }) {
+        await queryClient.cancelQueries(trpc.todo.all.pathFilter());
+        const allTasks = queryClient.getQueryData(trpc.todo.all.queryKey());
+        if (!allTasks) {
+          return;
+        }
+        queryClient.setQueryData(
+          trpc.todo.all.queryKey(),
+          allTasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  ...data,
+                }
+              : t,
+          ),
+        );
+      },
+    }),
+  );
+  const deleteTask = useMutation(
+    trpc.todo.delete.mutationOptions({
+      async onMutate() {
+        await queryClient.cancelQueries(trpc.todo.all.pathFilter());
+        const allTasks = queryClient.getQueryData(trpc.todo.all.queryKey());
+        if (!allTasks) {
+          return;
+        }
+        queryClient.setQueryData(
+          trpc.todo.all.queryKey(),
+          allTasks.filter((t) => t.id != task.id),
+        );
+      },
+    }),
+  );
 
   useClickOutside({
     ref: wrapperRef,
@@ -138,59 +162,63 @@ function ListItem(props: { task: Task }) {
 
 type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
 export default function TodosPage(props: PageProps) {
+  const trpc = useTRPC();
   /*
    * This data will be hydrated from the `prefetch` in `getStaticProps`. This means that the page
    * will be rendered with the data from the server and there'll be no client loading state 👍
    */
-  const allTasks = trpc.todo.all.useQuery(undefined, {
-    staleTime: 3000,
-  });
+  const allTasks = useQuery(
+    trpc.todo.all.queryOptions(undefined, {
+      staleTime: 3000,
+    }),
+  );
 
-  const utils = trpc.useUtils();
-  const addTask = trpc.todo.add.useMutation({
-    async onMutate({ text }) {
-      /**
-       * Optimistically update the data
-       * with the newly added task
-       */
-      await utils.todo.all.cancel();
-      const tasks = allTasks.data ?? [];
-      utils.todo.all.setData(undefined, [
-        ...tasks,
-        {
-          id: `${Math.random()}`,
-          completed: false,
-          text,
-          createdAt: new Date(),
-        },
-      ]);
-    },
-  });
+  const queryClient = useQueryClient();
+  const addTask = useMutation(
+    trpc.todo.add.mutationOptions({
+      async onMutate({ text }) {
+        /**
+         * Optimistically update the data
+         * with the newly added task
+         */
+        await queryClient.cancelQueries(trpc.todo.all.pathFilter());
+        const tasks = allTasks.data ?? [];
+        queryClient.setQueryData(trpc.todo.all.queryKey(), [
+          ...tasks,
+          makeOptimisticTask(text),
+        ]);
+      },
+    }),
+  );
 
-  const clearCompleted = trpc.todo.clearCompleted.useMutation({
-    async onMutate() {
-      await utils.todo.all.cancel();
-      const tasks = allTasks.data ?? [];
-      utils.todo.all.setData(
-        undefined,
-        tasks.filter((t) => !t.completed),
-      );
-    },
-  });
+  const clearCompleted = useMutation(
+    trpc.todo.clearCompleted.mutationOptions({
+      async onMutate() {
+        await queryClient.cancelQueries(trpc.todo.all.pathFilter());
+        const tasks = allTasks.data ?? [];
+        queryClient.setQueryData(
+          trpc.todo.all.queryKey(),
+          tasks.filter((t) => !t.completed),
+        );
+      },
+    }),
+  );
 
-  const toggleAll = trpc.todo.toggleAll.useMutation({
-    async onMutate({ completed }) {
-      await utils.todo.all.cancel();
-      const tasks = allTasks.data ?? [];
-      utils.todo.all.setData(
-        undefined,
-        tasks.map((t) => ({
-          ...t,
-          completed,
-        })),
-      );
-    },
-  });
+  const toggleAll = useMutation(
+    trpc.todo.toggleAll.mutationOptions({
+      async onMutate({ completed }) {
+        await queryClient.cancelQueries(trpc.todo.all.pathFilter());
+        const tasks = allTasks.data ?? [];
+        queryClient.setQueryData(
+          trpc.todo.all.queryKey(),
+          tasks.map((t) => ({
+            ...t,
+            completed,
+          })),
+        );
+      },
+    }),
+  );
 
   const number = useIsMutating();
   useEffect(() => {
@@ -198,9 +226,9 @@ export default function TodosPage(props: PageProps) {
     // doing this here rather than in `onSettled()`
     // to avoid race conditions if you're clicking fast
     if (number === 0) {
-      void utils.todo.all.invalidate();
+      void queryClient.invalidateQueries(trpc.todo.all.pathFilter());
     }
-  }, [number, utils]);
+  }, [trpc, number, queryClient]);
 
   const tasksLeft = allTasks.data?.filter((t) => !t.completed).length ?? 0;
   const tasksCompleted = allTasks.data?.filter((t) => t.completed).length ?? 0;
