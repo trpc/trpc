@@ -611,8 +611,8 @@ export interface CanaryPackOptions extends PackOptions {
   readonly preid: string;
   /**
    * Pack only if what the packages publish changed since this commit, the
-   * one before the push. Unknown commits, such as a new branch's all-zero
-   * sha, pack. `undefined` always packs.
+   * latest canary's in the release workflow. Unknown commits, or an empty
+   * string when there's no canary, pack. `undefined` always packs.
    */
   readonly since: string | undefined;
 }
