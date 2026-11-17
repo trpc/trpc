@@ -221,16 +221,26 @@ describe('printing', () => {
 
 // The CLI runs provider, then hooks, on every file
 describe('both transforms on a consumer', () => {
-  const run = (source: string) =>
+  const run = (source: string, path = 'consumer.tsx') =>
     [providerTransform, hooksTransform].reduce(
       (code, transform) =>
         applyTransform(
           transform,
           { trpcImportName: 'api' },
-          { source: code, path: 'consumer.tsx' },
+          { source: code, path },
           {},
         ) || code,
       source,
+    );
+  // The setup the consumers import as `api`
+  const setup = () =>
+    run(
+      [
+        "import { createTRPCReact } from '@trpc/react-query';",
+        "import type { AppRouter } from './router';",
+        'export const api = createTRPCReact<AppRouter>();',
+      ].join('\n'),
+      'utils/api.tsx',
     );
 
   it('follows `import { api as trpc }`', () => {
@@ -242,6 +252,9 @@ describe('both transforms on a consumer', () => {
         '}',
       ].join('\n'),
     );
+    // What the consumer now imports, the setup now exports
+    expect(setup()).toMatch(/export const \{[^}]*\buseTRPC\b/);
+    expect(setup()).not.toMatch(/export const api\b/);
     expect(output).toContain("import { useTRPC } from './utils/api';");
     expect(output).toContain('useQuery(trpc.post.list.queryOptions())');
     expect(output).not.toContain('api as trpc');
@@ -261,6 +274,8 @@ describe('both transforms on a consumer', () => {
     expect(output).toContain(
       'TODO(@trpc/upgrade): more than one import looks like your tRPC setup `api`',
     );
+    // The setup no longer exports `api`, so the TODO is what's left to do
+    expect(setup()).not.toMatch(/export const api\b/);
     // Once per import, though both transforms add it
     expect(output.match(/more than one import/g)).toHaveLength(2);
     expect(output).toContain('api as trpc');
