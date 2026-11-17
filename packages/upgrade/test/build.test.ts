@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import j from 'jscodeshift';
 import { build } from 'tsdown';
+import { expect, test } from 'vitest';
 
 // Regression: `npx @trpc/upgrade` crashed on Node 22, which can't parse `using`
 test('the build runs on Node 20 and 22', { timeout: 60_000 }, async () => {

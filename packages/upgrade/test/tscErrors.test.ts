@@ -1,3 +1,4 @@
+import { expect, test } from 'vitest';
 import { tscErrors } from '../scripts/tscErrors';
 
 const run = (status: number | null, stdout: string, error?: Error) => ({

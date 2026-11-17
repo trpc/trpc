@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'path';
-import { cancel, log } from '@clack/prompts';
+import { cancel } from '@clack/prompts';
 import { execa } from './execa';
 
 export async function assertCleanGitTree() {
@@ -11,42 +11,6 @@ export async function assertCleanGitTree() {
     );
     process.exit(1);
   }
-}
-
-export async function filterIgnored(files: readonly string[]) {
-  let stdout = '';
-  let stderr = '';
-  try {
-    const result = await execa('git check-ignore **/*');
-    stdout = result.stdout;
-    stderr = result.stderr;
-  } catch (error) {
-    log.error('Error executing git check-ignore:' + String(error));
-    stdout = '';
-  }
-
-  const ignores = stdout.split('\n');
-
-  if (process.env['VERBOSE']) {
-    log.info(`cwd: ${process.cwd()}`);
-    log.info(`All files in program: ${files.join(', ')}`);
-    log.info(`Ignored files: ${ignores.join(', ')}`);
-  }
-
-  // Ignore "common files"
-  const filteredSourcePaths = files.filter(
-    (fileName) =>
-      fileName.startsWith(resolve()) && // only look ahead of current directory
-      !fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
-      !fileName.includes('/node_modules/') && // always ignore node_modules
-      !ignores.includes(fileName), // ignored files
-  );
-
-  if (process.env['VERBOSE']) {
-    log.info(`Filtered files: ${filteredSourcePaths.join(', ')}`);
-  }
-
-  return filteredSourcePaths;
 }
 
 /**
@@ -71,12 +35,21 @@ export function isolatedGitEnv(): NodeJS.ProcessEnv {
 }
 
 /**
- * Every file git tracks under `cwd`, as absolute paths. Reads git's output
- * as a stream, so no buffer limit stops a big repository.
+ * Every file under `cwd` that git tracks, or would track because no ignore
+ * rule matches it, as absolute paths. Leaves out `node_modules`, build output
+ * and generated code. Reads git's output as a stream, so no buffer limit
+ * stops a big repository.
  */
-export function trackedFiles(cwd: string): Promise<string[]> {
+export function projectFiles(cwd: string): Promise<string[]> {
   return new Promise((done, fail) => {
-    const child = spawn('git', ['ls-files', '-z'], {
+    const args = [
+      'ls-files',
+      '-z',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+    ];
+    const child = spawn('git', args, {
       cwd,
       env: isolatedGitEnv(),
     });

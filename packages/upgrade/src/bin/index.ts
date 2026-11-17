@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
-import { basename, extname, relative } from 'node:path';
+import { basename, extname, relative, resolve } from 'node:path';
 import { parse } from '@bomb.sh/args';
 import { intro, isCancel, log, multiselect, note, outro } from '@clack/prompts';
 import { version } from '../../package.json';
 import { scanProject } from '../lib/ast/scanners';
-import { assertCleanGitTree, filterIgnored, trackedFiles } from '../lib/git';
+import { assertCleanGitTree, projectFiles } from '../lib/git';
 import { installPackage, uninstallPackage } from '../lib/pkgmgr';
 
 const args = parse(process.argv.slice(2), {
@@ -107,7 +107,14 @@ if (process.env['VERBOSE']) {
   log.info(`Using \`${trpcImportName}\` as the name of the tRPC hooks`);
 }
 
-const committedFiles = await filterIgnored(fileNames);
+/**
+ * The program's files that belong to the project: not ignored, not under
+ * `node_modules` or outside `cwd`, and not declaration files.
+ */
+const ownFiles = new Set(await projectFiles(process.cwd()));
+const committedFiles = fileNames
+  .map((fileName) => resolve(fileName))
+  .filter((file) => ownFiles.has(file) && !/\.d\.[cm]?ts$/.test(file));
 
 for (const name of ordered) {
   const transform = available[name].file;
@@ -123,10 +130,10 @@ for (const name of ordered) {
 }
 
 /**
- * Every tracked source file, not just the ones in the TypeScript program:
- * a test or script outside it can still need a package.
+ * Every source file, not just the ones in the TypeScript program: a test or
+ * script outside it can still need a package.
  */
-const trackedSourceFiles = (await trackedFiles(process.cwd())).filter((file) =>
+const sourceFiles = [...ownFiles].filter((file) =>
   /\.(?:[cm]?[jt]sx?)$/.test(file),
 );
 
@@ -138,7 +145,7 @@ const importersOf = (pkg: string) => {
   const specifier = new RegExp(
     `['"\`]${pkg.replace('/', '\\/')}(?:\\/[^'"\`]*)?['"\`]`,
   );
-  return trackedSourceFiles.filter((file) => {
+  return sourceFiles.filter((file) => {
     try {
       return specifier.test(readFileSync(file, 'utf8'));
     } catch {
