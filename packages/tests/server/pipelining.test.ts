@@ -5,6 +5,7 @@ import {
   getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
+  loggerLink,
 } from '@trpc/client';
 import {
   createOperationPipeline,
@@ -1517,5 +1518,114 @@ describe('the `pipe` search param', () => {
     expect((await res.json()).error.message).toBe(
       'Only a batch of queries can be pipelined',
     );
+  });
+});
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+] as const)('`loggerLink` before $name', (scenario) => {
+  function setup(opts: { pipelining: boolean; maxItems: number }) {
+    const { appRouter } = createRouter('none');
+    /** The first line of every log */
+    const lines: string[] = [];
+    const log = (line: string) => {
+      lines.push(line);
+    };
+    const ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          loggerLink({
+            console: { log, error: log },
+            colorMode: 'none',
+            withContext: false,
+          }),
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: opts.pipelining
+              ? experimental_pipelining()
+              : undefined,
+            maxItems: opts.maxItems,
+          }),
+        ],
+      }),
+    });
+    return Object.assign(ctx, { lines, untyped: getUntypedClient(ctx.client) });
+  }
+
+  /** A post, with its author and the author's team in its request */
+  function postWithCalls(ctx: ReturnType<typeof setup>) {
+    const post = createOperationPipeline();
+    const result = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    assert(
+      pipeCall({
+        path: 'team',
+        input: undefined,
+        reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+      }),
+    );
+    return result;
+  }
+
+  test("names the calls that went in an operation's request, on both of its lines", async () => {
+    await using ctx = setup({ pipelining: true, maxItems: Infinity });
+
+    const result = postWithCalls(ctx);
+    // They are known when the request goes, so the line waits for it
+    expect(ctx.lines).toEqual([]);
+    await result;
+
+    expect(ctx.lines).toEqual([
+      expect.stringMatching(/^>> query #\d+ post \(\+ author, team\)$/),
+      expect.stringMatching(/^<< query #\d+ post \(\+ author, team\)$/),
+    ]);
+  });
+
+  test('names no call that did not fit in the request', async () => {
+    // The post and its author
+    await using ctx = setup({ pipelining: true, maxItems: 2 });
+
+    await postWithCalls(ctx);
+
+    expect(ctx.lines).toEqual([
+      expect.stringMatching(/^>> query #\d+ post \(\+ author\)$/),
+      expect.stringMatching(/^<< query #\d+ post \(\+ author\)$/),
+    ]);
+  });
+
+  test('logs an operation with a pipeline as it starts, if no link takes calls in its request', async () => {
+    await using ctx = setup({ pipelining: false, maxItems: Infinity });
+
+    const post = createOperationPipeline();
+    const result = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    expect(ctx.lines).toEqual([expect.stringMatching(/^>> query #\d+ post$/)]);
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      }),
+    ).toBeNull();
+    await result;
+
+    expect(ctx.lines).toEqual([
+      expect.stringMatching(/^>> query #\d+ post$/),
+      expect.stringMatching(/^<< query #\d+ post$/),
+    ]);
   });
 });

@@ -6,20 +6,22 @@ import type {
 import {
   createDeferred,
   groupPipelineReads,
-  isObject,
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelinedCallsRan,
   pipelineReadsLimit,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { Operation, OperationContext } from '../types';
+import type { Operation } from '../types';
 import type {
   ContentOptions,
   HTTPResult,
   ResolvedHTTPLinkOptions,
 } from './httpUtils';
 import { getBody, getUrl } from './httpUtils';
+import { pipelineOf } from './pipelineContext';
+
+export { pipelineContext } from './pipelineContext';
 
 /**
  * What a batch link does with the protocol in
@@ -48,6 +50,14 @@ export interface OperationPipeline {
    * here once the request has gone, for a link that logs the context.
    */
   calls: PipelinedCall[];
+  /**
+   * The paths of the calls that went in the operation's request. It settles
+   * once no more calls can be added: as the request goes, or as the operation
+   * ends without one. For a link that logs the operation.
+   */
+  sent: Promise<readonly string[]>;
+  /** Only for the link that takes the operation */
+  settleSent: (paths: readonly string[]) => void;
   /** What a link that serializes an operation's context gets: it has no cycles */
   toJSON: () => unknown;
 }
@@ -88,12 +98,13 @@ export interface PipelinedCallResult {
 /** A part of a call's input that the server fills in */
 export type PipelinedCallRead = PipelineRead<PipelineSource>;
 
-const contextKey = '~pipeline';
-
 export function createOperationPipeline(): OperationPipeline {
+  const sent = createDeferred<readonly string[]>();
   const pipeline: OperationPipeline = {
     open: false,
     calls: [],
+    sent: sent.promise,
+    settleSent: sent.resolve,
     toJSON: () => ({
       calls: pipeline.calls.map((call) => ({
         path: call.path,
@@ -102,25 +113,6 @@ export function createOperationPipeline(): OperationPipeline {
     }),
   };
   return pipeline;
-}
-
-/** The context to send an operation with, for it to take part in pipelining */
-export function pipelineContext(pipeline: OperationPipeline): OperationContext {
-  return { [contextKey]: pipeline };
-}
-
-/** Anything can be in a context: this is one only if it has what a link uses */
-function isOperationPipeline(value: unknown): value is OperationPipeline {
-  return (
-    isObject(value) &&
-    typeof value['open'] === 'boolean' &&
-    Array.isArray(value['calls'])
-  );
-}
-
-function pipelineOf(op: Pick<Operation, 'context'>): OperationPipeline | null {
-  const pipeline = op.context[contextKey];
-  return isOperationPipeline(pipeline) ? pipeline : null;
 }
 
 function isCall(source: PipelineSource): source is PipelinedCall {
@@ -219,6 +211,8 @@ function closePipeline(op: Pick<Operation, 'context'>) {
       });
     }
   }
+  // Nothing went, if its request didn't take the calls already
+  pipeline.settleSent([]);
 }
 
 type BatchOp = Pick<Operation, 'context' | 'path' | 'input'>;
@@ -417,6 +411,14 @@ export function experimental_pipelining(): experimental_Pipelining {
               'The call did not fit in the request of what it reads',
             ),
           });
+        }
+        for (const op of ops) {
+          const pipeline = pipelineOf(op);
+          pipeline?.settleSent(
+            planned.calls
+              .filter((call) => call.owner === pipeline)
+              .map((call) => call.path),
+          );
         }
         if (planned.calls.length === 0) {
           return null;

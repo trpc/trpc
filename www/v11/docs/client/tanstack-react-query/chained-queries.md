@@ -388,8 +388,9 @@ GET /post.bySlug,author.byId,post.list?batch=pipeline
 Your links see the post's query, and nothing else. The author's query isn't an operation of its own: the server runs it in the post's request, and its result goes to the cache when the post has arrived.
 
 - **No link gets a query with a blank in its input.** A link that shares the requests of identical queries, or one that reads `op.input`, works as before.
-- **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each. [`loggerLink`](/docs/client/links/loggerLink) shows it when it logs the context.
-- **The author's first load isn't logged, and a failure of it doesn't pass through your links.** The query still gets the error. A retry or a later refetch is an ordinary request, which they see.
+- **[`loggerLink`](/docs/client/links/loggerLink) names what went with the post**, on both of its lines: `>> query #1 post.bySlug (+ author.byId, post.list)`. It logs the post when its request goes, which is when those are known.
+- **The post's context says what went with it too**: `op.context['~pipeline'].calls` has the path of each.
+- **The author's first load has no log line of its own, and a failure of it doesn't pass through your links.** The query still gets the error. A retry or a later refetch is an ordinary request, which they see.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
 - **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't build one entry from the other's data.
 

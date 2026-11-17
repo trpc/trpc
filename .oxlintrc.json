@@ -282,9 +282,11 @@
     {
       // A batch link has none of the pipelining code: an app that wants it
       // passes `experimental_pipelining()`, and only then is it in its bundle.
+      // `loggerLink` only reads an operation's pipeline, from its context.
       "files": [
         "packages/client/src/links/httpBatchLink.ts",
-        "packages/client/src/links/httpBatchStreamLink.ts"
+        "packages/client/src/links/httpBatchStreamLink.ts",
+        "packages/client/src/links/loggerLink.ts"
       ],
       "rules": {
         // Repeats the options above: an override replaces a rule's options.
