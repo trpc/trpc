@@ -82,9 +82,7 @@ async function tryExample(dir: string) {
     .filter((file) => file && !file.endsWith('.d.ts'))
     .map((file) => join(dir, file));
   // What the CLI finds: the hooks' name and the router type
-  process.chdir(dir);
-  const { references, routerType } = scanProject();
-  process.chdir(repo);
+  const { references, routerType } = scanProject(dir);
   const trpcImportName = references.importName;
 
   const before = typeErrors(dir).length;

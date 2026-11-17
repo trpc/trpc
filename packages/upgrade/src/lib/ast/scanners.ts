@@ -36,11 +36,11 @@ function findConfigFile(startDir: string): string | null {
 const DECLARATION_FILE = /\.d\.[cm]?ts$/;
 
 /**
- * Reads the project around the current directory, then stops the TypeScript
- * compiler process it started.
+ * Reads the project around `cwd`, then stops the TypeScript compiler process
+ * it started.
  */
-export function scanProject() {
-  const configFile = findConfigFile(process.cwd());
+export function scanProject(cwd: string) {
+  const configFile = findConfigFile(cwd);
   if (!configFile) {
     p.log.error('No tsconfig found');
     process.exit(1);
@@ -50,7 +50,7 @@ export function scanProject() {
     p.log.info(`Using tsconfig: ${configFile}`);
   }
 
-  using api = new API({ cwd: process.cwd() });
+  using api = new API({ cwd });
   const parsedConfig = api.parseConfigFile(configFile);
   const program = api.createProgram(
     parsedConfig.fileNames,
@@ -99,6 +99,8 @@ function findRouterType(
 ): RouterTypeSource | null {
   // With more than one setup, files can't tell which one they belong to
   const found: RouterTypeSource[] = [];
+  // A setup whose router type we can't follow could be the one a file uses
+  let unresolved = false;
   for (const sourceFile of sourceFiles) {
     for (const node of sourceFile.statements) {
       if (!isVariableStatement(node)) {
@@ -110,17 +112,16 @@ function findRouterType(
           continue;
         }
         const [typeArgument] = init.typeArguments ?? [];
-        if (
-          !typeArgument ||
-          !isTypeReferenceNode(typeArgument) ||
-          !isIdentifier(typeArgument.typeName)
-        ) {
-          continue;
-        }
-        const local = typeArgument.typeName.text;
-        const source = findTypeSource(program, sourceFile, local);
+        const source =
+          typeArgument &&
+          isTypeReferenceNode(typeArgument) &&
+          isIdentifier(typeArgument.typeName)
+            ? findTypeSource(program, sourceFile, typeArgument.typeName.text)
+            : null;
         if (source) {
           found.push(source);
+        } else {
+          unresolved = true;
         }
       }
     }
@@ -130,7 +131,7 @@ function findRouterType(
       ? `${source.name} ${source.specifier}`
       : `${source.name} ${source.file}`;
   const distinct = new Set(found.map(key));
-  return distinct.size === 1 ? (found[0] ?? null) : null;
+  return !unresolved && distinct.size === 1 ? (found[0] ?? null) : null;
 }
 
 function isTRPCFactoryCall(

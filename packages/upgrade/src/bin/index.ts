@@ -101,7 +101,7 @@ const ordered = (['provider', 'hooks'] as const).filter((name) =>
   selected.includes(name),
 );
 
-const { fileNames, references, routerType } = scanProject();
+const { fileNames, references, routerType } = scanProject(process.cwd());
 const trpcImportName = references.importName;
 if (process.env['VERBOSE']) {
   log.info(`Using \`${trpcImportName}\` as the name of the tRPC hooks`);
