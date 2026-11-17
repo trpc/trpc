@@ -610,9 +610,8 @@ export interface CanaryOptions extends PublishOptions {
 export interface CanaryPackOptions extends PackOptions {
   readonly preid: string;
   /**
-   * Pack only if what the packages publish changed since this commit, the
-   * one before the push. Unknown commits, such as a new branch's all-zero
-   * sha, pack. `undefined` always packs.
+   * Pack only if what the packages publish changed since this commit.
+   * Unknown commits pack. `undefined` always packs.
    */
   readonly since: string | undefined;
 }
