@@ -1,15 +1,18 @@
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+import type { IncomingMessage } from 'node:http';
 import { ServerResponse } from 'node:http';
+import type { WebSocket } from 'ws';
 import { getServerAuthSession } from './auth';
 
 /**
- * Creates context for an incoming request
+ * Creates context for an incoming request: from the API handler, a WebSocket
+ * connection, or a page's `getServerSideProps`
  * @see https://trpc.io/docs/v11/context
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr#build-the-context-from-the-request
  */
-export const createContext = async (
-  opts: CreateNextContextOptions | CreateWSSContextFnOptions,
-) => {
+export const createContext = async (opts: {
+  req: IncomingMessage;
+  res: ServerResponse | WebSocket;
+}) => {
   /**
    * `getServerSession` writes refreshed session cookies to the response, but a
    * WebSocket connection has no HTTP response to write to, so they go to a
