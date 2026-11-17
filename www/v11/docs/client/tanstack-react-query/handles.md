@@ -967,7 +967,7 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 
 - `generateMetadata` gets the page's query client. Fetch there, and the page's ensure entry reuses the data.
 - A page whose tRPC context reads `headers()` renders on every request. `loadHandles` lets Next.js see that, so the build marks the page dynamic.
-- To prerender the page and revalidate it, load it with a proxy whose context reads no request data, `trpcStatic` from [Static and ISR pages](/docs/client/nextjs/app-router-setup#static-pages):
+- To prerender the page and revalidate it, load it with a proxy whose context reads no request data, `trpcStatic` from [Static and ISR pages](/docs/client/nextjs/static-pages#static-pages):
 
 ```tsx twoslash title='app/posts/[id]/page.tsx'
 // @include: handles-router

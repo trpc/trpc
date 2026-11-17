@@ -27,6 +27,7 @@ skill:
     Actions.
   references:
     - client/nextjs/server-actions
+    - client/nextjs/static-pages
 ---
 
 :::note
@@ -472,11 +473,6 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
-export const trpcStatic = createTRPCOptionsProxy({
-  ctx: {},
-  router: appRouter,
-  queryClient: getQueryClient,
-});
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
   void getQueryClient().prefetchQuery(queryOptions);
@@ -638,115 +634,6 @@ export default async function Home() {
 }
 ```
 
-## Data for `generateMetadata` {#generate-metadata}
-
-`generateMetadata` and the page render in the same request, so `getQueryClient()` returns the same query client in both. Fetch in `generateMetadata`, and the page's prefetch of the same query reuses the data instead of calling the procedure again:
-
-```tsx twoslash title='app/page.tsx'
-// @include: app-router
-// @filename: app/client-greeting.tsx
-export function ClientGreeting() {
-  return <div>Hello</div>;
-}
-
-// @filename: app/page.tsx
-// ---cut---
-import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
-import { ClientGreeting } from './client-greeting';
-
-export async function generateMetadata() {
-  const greeting = await getQueryClient().fetchQuery(
-    trpc.hello.queryOptions({ text: 'world' }),
-  );
-  return { title: greeting.greeting };
-}
-
-export default async function Home() {
-  // Fresh within `staleTime`, so this reuses what `generateMetadata` fetched
-  await getQueryClient().prefetchQuery(trpc.hello.queryOptions({ text: 'world' }));
-
-  return (
-    <HydrateClient>
-      <ClientGreeting />
-    </HydrateClient>
-  );
-}
-```
-
-## Static and ISR pages {#static-pages}
-
-The context in `trpc/server.tsx` reads `headers()`, so a page that loads data through `trpc` renders on every request, whatever its `revalidate` or `generateStaticParams`. Next.js finds out during the build: `headers()` throws an error with a `digest` that tells Next.js to render the page on demand.
-
-To prerender a page and revalidate it (ISR), load its data with a second proxy whose context reads no request data:
-
-```ts twoslash title='trpc/server.tsx'
-// @filename: init.ts
-export const createTRPCContext = async (opts: { headers: Headers }) => {
-  return { userId: 'user_123' };
-};
-
-// @filename: query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export function makeQueryClient() { return new QueryClient(); }
-
-// @filename: routers/_app.ts
-import { initTRPC } from '@trpc/server';
-const t = initTRPC.create();
-export const appRouter = t.router({});
-
-// @filename: server.tsx
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { cache } from 'react';
-import { createTRPCContext } from './init';
-import { makeQueryClient } from './query-client';
-import { appRouter } from './routers/_app';
-export const getQueryClient = cache(makeQueryClient);
-// ---cut---
-// For static and ISR pages: a context without the request's headers
-export const trpcStatic = createTRPCOptionsProxy({
-  ctx: () => createTRPCContext({ headers: new Headers() }),
-  router: appRouter,
-  queryClient: getQueryClient,
-});
-```
-
-```tsx twoslash title='app/greeting/[text]/page.tsx'
-// @include: app-router
-// @filename: app/greeting/[text]/client-greeting.tsx
-export function ClientGreeting(props: { text: string }) {
-  return <div>Hello</div>;
-}
-
-// @filename: app/greeting/[text]/page.tsx
-// ---cut---
-import { getQueryClient, HydrateClient, trpcStatic } from '~/trpc/server';
-import { ClientGreeting } from './client-greeting';
-
-// Render the page again at most once a minute
-export const revalidate = 60;
-
-// Prerender these at build time; others render on their first visit
-export function generateStaticParams() {
-  return [{ text: 'world' }];
-}
-
-export default async function Page(props: { params: Promise<{ text: string }> }) {
-  const { text } = await props.params;
-  await getQueryClient().prefetchQuery(trpcStatic.hello.queryOptions({ text }));
-
-  return (
-    <HydrateClient>
-      <ClientGreeting text={text} />
-    </HydrateClient>
-  );
-}
-```
-
-- Procedures get a context without headers, as for a signed-out user, so only public data belongs on these pages.
-- Don't use `trpc` and `trpcStatic` on the same page: they share the query client and the query keys.
-- The route's layouts must not read request data either.
-- `generateStaticParams` runs at build time, outside any request. If it reads its params from a procedure, use `trpcStatic` there too.
-
 ## Common mistakes
 
 - **Exporting only `POST` from the route handler.** Queries are sent as `GET` (unless the link sets `methodOverride: 'POST'`) and mutations as `POST`, so a missing export answers `405 Method Not Allowed`.
@@ -759,5 +646,6 @@ export default async function Page(props: { params: Promise<{ text: string }> })
 ## Next steps
 
 - Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
+- Share data with `generateMetadata`, and keep pages static or ISR, in [Static pages and metadata](/docs/client/nextjs/static-pages)
 - Learn about [queries, mutations and invalidation](/docs/client/tanstack-react-query/usage) in client components
 - Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns
