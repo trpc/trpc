@@ -149,20 +149,20 @@ export function withTRPC<TInitialProps extends object>(
         queryClient,
 
         children: createElement(HydrationBoundary, {
-          state: (pageProps?.trpcState === undefined
-            ? undefined
-            : transformer.deserialize(
-                pageProps.trpcState as Parameters<
-                  typeof transformer.deserialize
-                >[0],
-              )) as DehydratedState | undefined,
+          state:
+            pageProps?.trpcState === undefined
+              ? undefined
+              : transformer.deserialize<DehydratedState>(
+                  pageProps.trpcState as Parameters<
+                    typeof transformer.deserialize
+                  >[0],
+                ),
           children: createElement(App, props),
         }),
       }),
     });
   };
 
-  WithTRPC.getInitialProps = App.getInitialProps;
   return WithTRPC;
 }
 
