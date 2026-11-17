@@ -6,12 +6,10 @@ import {
 import Head from 'next/head';
 import { useState } from 'react';
 import { appRouter } from '~/server/routers/_app';
-import { makeQueryClient, useTRPC } from '~/utils/trpc';
+import { makeQueryClient } from '~/utils/query-client';
+import { useTRPC } from '~/utils/trpc';
 
-/**
- * Was `ssr: true` in `createTRPCNext`: prefetch the page's queries so they
- * are in the first HTML.
- */
+// prefetch the page's queries, so they're in the first HTML
 export async function getServerSideProps() {
   const queryClient = makeQueryClient();
   const trpc = createTRPCOptionsProxy({
