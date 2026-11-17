@@ -389,6 +389,11 @@ test('calls onError when the client disconnects mid-body', async () => {
     onError,
   });
 
+  let receivedRequest = false;
+  server.once('request', () => {
+    receivedRequest = true;
+  });
+
   server.listen(0);
   const port = (server.address() as AddressInfo).port;
 
@@ -411,8 +416,8 @@ test('calls onError when the client disconnects mid-body', async () => {
       ].join('\r\n'),
     );
 
-    // let the server receive the request head and the partial body
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // wait for the server to start handling the request
+    await vi.waitFor(() => expect(receivedRequest).toBe(true));
 
     socket.destroy();
 

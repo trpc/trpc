@@ -91,7 +91,7 @@ function createBody(
       // the client disconnected, or the stream failed, before the body was
       // fully sent — end the stream with an error instead of waiting for an
       // `end` that will never come
-      const onStreamError = (cause?: Error | null) => {
+      const onStreamError = (cause: Error | undefined) => {
         if (hasClosed) {
           return;
         }
@@ -101,7 +101,7 @@ function createBody(
           new TRPCError({
             code: 'CLIENT_CLOSED_REQUEST',
             message: 'The client disconnected while sending the request body',
-            cause: cause ?? undefined,
+            cause,
           }),
         );
       };
@@ -112,7 +112,7 @@ function createBody(
         if (source.readableEnded) {
           return;
         }
-        onStreamError();
+        onStreamError(undefined);
       };
 
       source.on('data', onData);

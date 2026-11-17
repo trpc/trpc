@@ -374,28 +374,15 @@ test('does not abort request after a response that finished normally', async () 
 });
 
 test('rejects the body when the client disconnects mid-body', async () => {
-  const result: {
-    outcome?:
-      | { status: 'fulfilled'; value: string }
-      | { status: 'rejected'; reason: unknown };
-  } = {};
+  let text: Promise<string> | null = null;
   const server = http.createServer((req, res) => {
     const request = incomingMessageToRequest(req, res, {
       maxBodySize: null,
     });
+    text = request.text();
     // hold the response open while the body is being read, like the
     // adapters do
-    request
-      .text()
-      .then(
-        (value) => {
-          result.outcome = { status: 'fulfilled', value };
-        },
-        (reason) => {
-          result.outcome = { status: 'rejected', reason };
-        },
-      )
-      .finally(() => res.end());
+    text.catch(() => null).finally(() => res.end());
   });
   server.listen(0);
   try {
@@ -418,25 +405,16 @@ test('rejects the body when the client disconnects mid-body', async () => {
       ].join('\r\n'),
     );
 
-    // let the server receive the request head and the partial body
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // wait for the server to start reading the body
+    await vi.waitFor(() => expect(text).not.toBeNull());
 
     socket.destroy();
 
-    await vi.waitFor(() => expect(result.outcome).toBeDefined());
-    const outcome = result.outcome;
-    if (outcome?.status !== 'rejected') {
-      throw new Error(
-        `expected the body read to reject, got ${outcome?.status}`,
-      );
-    }
-
-    const error = outcome.reason as TRPCError;
-    expect(error).toBeInstanceOf(TRPCError);
-    expect(error.code).toBe('CLIENT_CLOSED_REQUEST');
-    expect(error.message).toBe(
-      'The client disconnected while sending the request body',
-    );
+    await expect(text).rejects.toBeInstanceOf(TRPCError);
+    await expect(text).rejects.toMatchObject({
+      code: 'CLIENT_CLOSED_REQUEST',
+      message: 'The client disconnected while sending the request body',
+    });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
