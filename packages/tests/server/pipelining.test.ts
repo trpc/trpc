@@ -596,6 +596,10 @@ describe.each([
     { name: 'no object', value: 'pipeline' },
     { name: 'an object that is no pipeline', value: { open: 'yes' } },
     { name: 'a pipeline without a list of calls', value: { open: true } },
+    {
+      name: 'a pipeline that can not be told what was sent',
+      value: { open: false, calls: [], sent: Promise.resolve([]) },
+    },
   ])(
     'a context whose `~pipeline` is $name is not a pipeline: its operation is an ordinary one',
     async (scenario) => {
