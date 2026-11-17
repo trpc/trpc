@@ -29,6 +29,7 @@ type Transformer = Parameters<typeof applyTransform>[0];
 /** What the CLI would find in a project, for the fixtures that need it */
 const fixtureOptions: Record<string, Record<string, unknown>> = {
   'importAlias.tsx': { trpcImportName: 'api' },
+  'importAliasTwoModules.tsx': { trpcImportName: 'api' },
   'providerRouterType.tsx': {
     routerType: {
       name: 'AppRouter',

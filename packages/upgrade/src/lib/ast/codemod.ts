@@ -670,17 +670,66 @@ export function staticKeyName(
   return null;
 }
 
+/** What a tRPC setup exposes, as the last name in `setup.….name`. */
+const SETUP_MEMBERS = new Set([
+  'Provider',
+  'createClient',
+  'withTRPC',
+  'useUtils',
+  'useContext',
+  'useQueries',
+  'useSuspenseQueries',
+  'useQuery',
+  'useSuspenseQuery',
+  'useInfiniteQuery',
+  'useSuspenseInfiniteQuery',
+  'usePrefetchQuery',
+  'usePrefetchInfiniteQuery',
+  'useMutation',
+  'useSubscription',
+]);
+
 /**
  * The name this file calls the setup by: `trpc` for `import { api as trpc }`
- * when the setup is `api`, else the setup's own name.
+ * when the setup is `api`, else the setup's own name. Two modules can both
+ * export `api`, so an alias counts only when the file uses it like a setup:
+ * `trpc.post.byId.useQuery()`, `<trpc.Provider>`.
  */
 export function localSetupName(
   { j, root }: Codemod,
   setupName: string,
 ): string {
-  const aliased = root
-    .find(j.ImportSpecifier, { imported: { name: setupName } })
-    .filter((p) => !!p.node.local && p.node.local.name !== setupName)
-    .paths()[0];
-  return aliased?.node.local?.name ?? setupName;
+  const usedLikeSetup = (local: string) =>
+    [
+      ...root.find(j.Identifier, { name: local }).paths(),
+      // `<trpc.Provider>`
+      ...root.find(j.JSXIdentifier, { name: local }).paths(),
+    ].some((p: ASTPath) => {
+      let top: ASTPath = p;
+      while (
+        (j.MemberExpression.check(top.parent?.node) ||
+          j.JSXMemberExpression.check(top.parent?.node)) &&
+        (top.parent.node as { object: unknown }).object === top.node
+      ) {
+        top = top.parent as ASTPath;
+      }
+      const property = (top.node as { property?: unknown }).property;
+      return (
+        top !== p &&
+        (j.Identifier.check(property) || j.JSXIdentifier.check(property)) &&
+        SETUP_MEMBERS.has(property.name)
+      );
+    });
+  const aliases = new Set(
+    root
+      .find(j.ImportSpecifier, { imported: { name: setupName } })
+      .nodes()
+      .map((s): string =>
+        j.Identifier.check(s.local) ? s.local.name : setupName,
+      )
+      .filter((local) => local !== setupName && usedLikeSetup(local)),
+  );
+  // None, or more than one that looks like a setup: don't guess
+  const [alias] = aliases;
+  return aliases.size === 1 && alias ? alias : setupName;
 }
