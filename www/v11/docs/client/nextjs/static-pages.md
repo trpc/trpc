@@ -33,6 +33,11 @@ export function makeQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { staleTime: 30 * 1000 } } });
 }
 
+// @filename: trpc/client.tsx
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from './routers/_app';
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
 // @filename: trpc/server.tsx
 import {
   createTRPCOptionsProxy,
@@ -149,7 +154,9 @@ export function generateStaticParams() {
 
 export default async function Page(props: { params: Promise<{ text: string }> }) {
   const { text } = await props.params;
-  await getQueryClient().prefetchQuery(trpcStatic.hello.queryOptions({ text }));
+  // `fetchQuery` throws if the procedure fails, unlike `prefetchQuery`: the build
+  // fails, and a failed revalidation keeps serving the last good page
+  await getQueryClient().fetchQuery(trpcStatic.hello.queryOptions({ text }));
 
   return (
     <HydrateClient>
@@ -159,7 +166,23 @@ export default async function Page(props: { params: Promise<{ text: string }> })
 }
 ```
 
-- Procedures get a context without headers, as for a signed-out user, so only public data belongs on these pages.
+```tsx twoslash title='app/greeting/[text]/client-greeting.tsx'
+// @include: static-pages
+// @filename: app/greeting/[text]/client-greeting.tsx
+// ---cut---
+'use client';
+
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { useTRPC } from '~/trpc/client';
+
+export function ClientGreeting(props: { text: string }) {
+  const trpc = useTRPC();
+  const greetingQuery = useSuspenseQuery(trpc.hello.queryOptions({ text: props.text }));
+  return <div>{greetingQuery.data.greeting}</div>;
+}
+```
+
+- Procedures get a context built without the request's headers, so anything your context reads from them, such as the signed-in user, is missing. Only public data belongs on these pages.
 - Don't use `trpc` and `trpcStatic` on the same page: they share the query client and the query keys.
 - The route's layouts must not read request data either.
 - `generateStaticParams` runs at build time, outside any request. If it reads its params from a procedure, use `trpcStatic` there too.
