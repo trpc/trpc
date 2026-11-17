@@ -243,7 +243,7 @@ for await (const event of client.onPostAdd.subscribe({ lastEventId: null })) {
 }
 ```
 
-For React, see [`subscriptionOptions`](../client/tanstack-react-query/usage.md#subscriptionOptions) with TanStack React Query, or the classic [`useSubscription()`](../client/react/useSubscription.md).
+For React, see [`subscriptionOptions`](../client/tanstack-react-query/usage.md#subscriptionOptions) with TanStack React Query, or the deprecated classic [`useSubscription()`](../client/react/useSubscription.md).
 
 ## Pull data in a loop
 

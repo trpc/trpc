@@ -113,14 +113,16 @@ export type AppRouter = typeof appRouter;
 
 // @filename: helpers.ts
 // ---cut---
-// 3. Server-side helpers (Next.js-specific, see /docs/client/nextjs/pages-router/server-side-helpers)
-import { createServerSideHelpers } from '@trpc/react-query/server';
+// 3. Prefetching on the server, see /docs/client/tanstack-react-query/server-components
+import { QueryClient } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-const helpers = createServerSideHelpers({
+const trpc = createTRPCOptionsProxy({
   router: appRouter,
   ctx: await createContext(),
+  queryClient: new QueryClient(),
 });
 ```
 

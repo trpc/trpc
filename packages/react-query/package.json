@@ -3,6 +3,7 @@
   "type": "module",
   "version": "11.28.4",
   "description": "The tRPC React library",
+  "deprecated": "@trpc/react-query only gets bug fixes and will be removed in the next major version of tRPC. Use @trpc/tanstack-react-query instead: https://trpc.io/docs/client/tanstack-react-query/migrating",
   "author": "KATT",
   "license": "MIT",
   "main": "./dist/index.cjs",

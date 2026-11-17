@@ -108,22 +108,26 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
-import { createTRPCReact } from '@trpc/react-query';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const trpc = createTRPCReact<AppRouter>();
+export const { useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: MyComponent.tsx
 // ---cut---
-import { trpc } from './trpc';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
 
 export function MyComponent() {
-  const postsQuery = trpc.posts.useQuery(undefined, {
-    trpc: {
-      context: {
-        skipBatch: true,
+  const trpc = useTRPC();
+  const postsQuery = useQuery(
+    trpc.posts.queryOptions(undefined, {
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
       },
-    }
-  });
+    }),
+  );
   return (
     <pre>{JSON.stringify(postsQuery.data ?? null, null, 4)}</pre>
   )
