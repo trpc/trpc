@@ -11,25 +11,29 @@ name: Release Packages
 # than through pnpm, and publishes the build job's tarballs once their names
 # and versions are the ones it works out from the same commit.
 #
-# A push to main publishes a canary only if it changes what the packages
-# publish (tooling/release/src/changes.ts), and never for a release commit.
 # Every push to main releases what changed since the latest tag, if any of it
-# changes what the packages publish, like KATT/raf-query. The merge queue
-# already batches pull requests, so there's no wait on top. A run whose push
-# main has moved past skips before it builds, since the run for the newer
-# push releases everything. No run cancels another, so neither GitHub
-# starting runs out of order nor re-running an old run can stop the run for
-# main's tip. The workflow has no `paths:` filter, so a push after a run that
-# skipped, failed or was cancelled still releases what that run didn't; so
-# does re-running the run for main's tip. Set the repo variable AUTO_RELEASE
-# to `false` to stop stable releases; canaries keep going out.
+# changes what the packages publish (tooling/release/src/changes.ts), like
+# KATT/raf-query. A release commit releases nothing. There are no canaries:
+# every change that would publish one releases instead. The merge queue
+# already batches pull requests, so there's no wait on top.
 #
-# There's no manual run: stable releases are only automatic, and the commits
-# decide the version (tooling/release/src/config.ts). No release publishes a
-# major other than `releaseMajor` there. A new major takes a pull request that
-# sets it to the next major; once that's merged, the automatic release
-# publishes the new major's .0.0. A commit marked breaking (`feat!:`) fails
-# the automatic release until then, unless its sha is in `notBreaking`.
+# A newer push cancels a build still in progress, since its run releases
+# everything that one would, so commits that land close together release
+# once. Publishing is never cancelled; a release whose push main has moved
+# past publishes nothing (`publishStable` in tooling/release/src/release.ts).
+# If GitHub starts an older run's build after a newer one's, or an old run is
+# re-run, it cancels the build for main's tip. The workflow has no `paths:`
+# filter, so the next push releases what that run didn't, and so does
+# re-running the run for main's tip. To stop releases, disable this workflow.
+#
+# There's no manual run: releases are only automatic, and the commits decide
+# the version (tooling/release/src/config.ts). No release publishes a major
+# other than `releaseMajor` there. A new major takes a pull request that sets
+# it to the next major; once that's merged, the automatic release publishes
+# the new major's .0.0. A commit marked breaking (`feat!:`) fails the
+# automatic release until then, unless its sha is in `notBreaking`.
+#
+# After a release, it syncs the standalone examples (subtree.yml).
 
 permissions:
   contents: read
@@ -40,12 +44,15 @@ on:
       - 'main'
 
 jobs:
-  # Not on the release commits the stable releases push: there's nothing new
-  # to release. If a release stopped after pushing its commit, the next push
+  # Not on the release commits the releases push: there's nothing new to
+  # release. If a release stopped after pushing its commit, the next push
   # resumes it, or tags it and releases after it (`latestRelease` in
   # tooling/release/src/release.ts).
-  build-auto:
-    if: "vars.AUTO_RELEASE != 'false' && !(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+  build:
+    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
+    concurrency:
+      group: release-build
+      cancel-in-progress: true
     timeout-minutes: 30
     runs-on: ubuntu-latest
     env:
@@ -81,8 +88,8 @@ jobs:
           retention-days: 7
 
   publish-auto:
-    needs: build-auto
-    if: needs.build-auto.outputs.packed == 'true'
+    needs: build
+    if: needs.build.outputs.packed == 'true'
     # Never cancelled by a newer push: if main moves before the release commit
     # is pushed, the push is rejected and nothing is published.
     concurrency:
@@ -125,76 +132,10 @@ jobs:
           git remote set-url --push origin "https://x-access-token:${ACCESS_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           node tooling/release/src/bin/release.ts auto --provenance --from "$RUNNER_TEMP/release"
 
-  build-canary:
-    # Not on the release commits the stable releases push, which carry the
-    # stable versions.
-    if: "!(startsWith(github.event.head_commit.message, 'chore: release v') && github.event.head_commit.author.email == 'github-actions[bot]@users.noreply.github.com')"
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-    outputs:
-      packed: ${{ steps.pack.outputs.packed }}
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: ./.github/setup
-
-      # Only if the push changed what the packages publish.
-      - name: Pack a canary
-        id: pack
-        env:
-          SINCE: ${{ github.event.before }}
-        run: |
-          pnpm release canary --pack "$RUNNER_TEMP/release" --since "$SINCE"
-          if [ -f "$RUNNER_TEMP/release/commit" ]; then
-            echo "packed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - if: steps.pack.outputs.packed == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: canary
-          path: ${{ runner.temp }}/release
-          if-no-files-found: error
-          overwrite: true # Re-running the job uploads again
-          retention-days: 7
-
-  publish-canary:
-    needs: build-canary
-    if: needs.build-canary.outputs.packed == 'true'
-    # Two runs for one commit publish the same canary.
-    concurrency:
-      group: release-canary-${{ github.sha }}
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    environment: npm-publish # npm trusted publishing is bound to this environment
-    permissions:
-      contents: read
-      id-token: write # For OIDC publishing and provenance
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: '.nvmrc'
-      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/release
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: canary
-          path: ${{ runner.temp }}/release
-
-      - run: node tooling/release/src/bin/release.ts canary --provenance --from "$RUNNER_TEMP/release"
+  # The standalone examples install `@trpc/*@latest`, so they sync once a
+  # release is out, not on every push.
+  sync-examples:
+    needs: publish-auto
+    uses: ./.github/workflows/subtree.yml
+    secrets:
+      TRPC_DEPLOY_TOKEN: ${{ secrets.TRPC_DEPLOY_TOKEN }}

@@ -1,9 +1,23 @@
 name: subtree-matrix
+# Syncs the standalone examples to `trpc/examples-<name>`. They install
+# `@trpc/*@latest`, so the release workflow calls this once a release is out,
+# and a push to main that changes the examples, which releases nothing, runs
+# it too.
 on:
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      TRPC_DEPLOY_TOKEN:
+        required: true
   push:
     branches:
       - 'main'
+    paths:
+      - '.github/workflows/subtree.yml'
+      - 'examples/**'
+      - 'pnpm-workspace.yaml'
+      - 'tooling/subtree/**'
+      - 'tooling/ui/**'
   pull_request:
     paths:
       - '.github/workflows/subtree.yml'
@@ -12,8 +26,12 @@ on:
       - 'tooling/subtree/**'
       - 'tooling/ui/**'
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)
+  # Not `github.workflow`, which is the caller's when the release workflow
+  # calls this. Every sync pushes main, so they share one group.
+  group: subtree-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  # A newer pending run would otherwise cancel a release's waiting sync
+  queue: max
+  cancel-in-progress: false # A sync stopped halfway leaves some examples behind
 # Downstream pushes use the deploy key, not `GITHUB_TOKEN`
 permissions:
   contents: read
@@ -58,6 +76,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # A sync pushes main's tip, not the commit that started it: a
+          # release's sync can start after a newer push's, and force-pushing
+          # the older commit would undo that push's examples.
+          ref: ${{ github.event_name != 'pull_request' && 'main' || '' }}
           # Pull requests run the examples' install and build scripts
           persist-credentials: ${{ github.event_name != 'pull_request' }}
 
@@ -78,7 +100,7 @@ jobs:
           cache: 'pnpm'
 
       # Copies the `@shared/ui` files the example uses into it, and replaces
-      # `catalog:` versions and `@trpc/*` (with `canary`), which only resolve
+      # `catalog:` versions and `@trpc/*` (with `latest`), which only resolve
       # in the monorepo. See tooling/subtree.
       - name: Make the example standalone
         run: |
@@ -112,7 +134,7 @@ jobs:
               pnpm install --ignore-workspace --config.dangerously-allow-all-builds=true && pnpm build
             fi
           }
-          # The canary @trpc/server's next-app-dir adapter imports
+          # The published @trpc/server's next-app-dir adapter imports
           # `next/navigation` without `.js`, which Node can't resolve. Only that
           # failure is a warning.
           if [ "${{ matrix.path }}" = ".experimental/next-app-dir" ]; then

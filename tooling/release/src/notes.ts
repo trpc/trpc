@@ -15,7 +15,9 @@
  * that names no public package, like `deps`, it goes under each package it
  * changes, unless it's maintenance, like `chore(deps): a`: that's listed
  * once, after the packages, since it says nothing about any one of them.
- * GitHub works out who contributed for the first time.
+ * An entry credits its pull request's author and everyone who pushed a
+ * commit to it, but not bots or AI agents. GitHub works out who contributed
+ * for the first time.
  */
 import { Effect } from 'effect';
 import { packagesAt, releasableCommits } from './changes.ts';
@@ -45,6 +47,11 @@ export interface PullRequest {
   readonly url: string;
   /** `undefined` when the author's account is gone. */
   readonly author: string | undefined;
+  /**
+   * Logins of the authors of its commits, oldest first, with repeats. GitHub
+   * links no login to a bot's commits, or to a deleted account's.
+   */
+  readonly contributors: ReadonlyArray<string>;
 }
 
 /** What GitHub knows about the commits of a release. */
@@ -58,7 +65,8 @@ export interface NotesEntry {
   readonly title: string;
   /** The pull request, or the commit when there's none. */
   readonly url: string;
-  readonly author: string | undefined;
+  /** Who it credits, without bots or AI agents. */
+  readonly authors: ReadonlyArray<string>;
   /**
    * The packages it's listed under, or `null` for maintenance whose scope
    * names no package, listed once under `## Maintenance`.
@@ -169,6 +177,30 @@ export function noteSection(title: string): Section {
 }
 
 /**
+ * AI agents whose commits GitHub links to a user account rather than a bot:
+ * Claude (`noreply@anthropic.com`), Cursor (`cursoragent@cursor.com`) and
+ * Codex (`noreply@openai.com`). Other agents, like Copilot, are bots.
+ */
+const aiAgents: ReadonlySet<string> = new Set([
+  'claude',
+  'codex',
+  'cursoragent',
+]);
+
+/** `logins` once each, in order, without bots or AI agents. */
+function credited(
+  logins: ReadonlyArray<string | undefined>,
+): ReadonlyArray<string> {
+  const people = logins.filter(
+    (login): login is string =>
+      login !== undefined &&
+      !login.endsWith('[bot]') &&
+      !aiAgents.has(login.toLowerCase()),
+  );
+  return [...new Set(people)];
+}
+
+/**
  * The entries of the notes, oldest first: the changes that change a public
  * package, one per pull request, titled and credited the way GitHub has
  * them, under the packages their title's scope names, or else the packages
@@ -204,10 +236,15 @@ export function notesEntries(opts: {
         ? {
             title,
             url: `https://github.com/${opts.repo}/commit/${change.sha}`,
-            author: opts.github.commitAuthors.get(change.sha),
+            authors: credited([opts.github.commitAuthors.get(change.sha)]),
             packages,
           }
-        : { title, url: pr.url, author: pr.author, packages };
+        : {
+            title,
+            url: pr.url,
+            authors: credited([pr.author, ...pr.contributors]),
+            packages,
+          };
     // Commits of one pull request share its title, so they're all
     // maintenance or none are.
     const earlier = entries.get(entry.url);
@@ -240,8 +277,15 @@ export function parseNewContributors(
   ].map(([, login = '', url = '']) => ({ login, url }));
 }
 
-const bullet = ({ title, url, author }: NotesEntry) =>
-  `* ${title}${author === undefined ? '' : ` by @${author}`} in ${url}`;
+/** `@a`, `@a and @b`, `@a, @b and @c`. */
+function mentions(logins: ReadonlyArray<string>) {
+  const all = logins.map((login) => `@${login}`);
+  const last = all.pop();
+  return all.length === 0 ? (last ?? '') : `${all.join(', ')} and ${last}`;
+}
+
+const bullet = ({ title, url, authors }: NotesEntry) =>
+  `* ${title}${authors.length === 0 ? '' : ` by ${mentions(authors)}`} in ${url}`;
 
 /**
  * The notes' Markdown: a `## <package>` for each package `entries` list, in
@@ -352,10 +396,13 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
     return { pullRequests: new Map(), commitAuthors: new Map() };
   }
   const author = 'author { __typename login }';
+  // A pull request with more than 100 commits credits its first 100's authors.
+  const commits =
+    'commits(first: 100) { nodes { commit { author { user { login } } } } }';
   const fields = [
     ...[...numbers].map(
       (number) =>
-        `pr${number}: issueOrPullRequest(number: ${number}) { ... on PullRequest { number title url ${author} } }`,
+        `pr${number}: issueOrPullRequest(number: ${number}) { ... on PullRequest { number title url ${author} ${commits} } }`,
     ),
     ...shas.map(
       (sha) =>
@@ -387,6 +434,11 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
           title: string;
           url: string;
           author: GraphQLAuthor | null;
+          commits: {
+            nodes: ReadonlyArray<{
+              commit: { author: { user: { login: string } | null } | null };
+            } | null>;
+          };
         }
       | null
       | undefined;
@@ -396,6 +448,10 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
         title: pr.title,
         url: pr.url,
         author: login(pr.author),
+        contributors: pr.commits.nodes.flatMap((node) => {
+          const user = node?.commit.author?.user?.login;
+          return user === undefined ? [] : [user];
+        }),
       });
     }
   }
