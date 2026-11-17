@@ -785,7 +785,7 @@ data.comments.pages;
 A query whose input comes from another query's result is a waterfall. Each step costs a round trip. There are three ways to deal with it.
 
 - **[Reshape the procedure](#reshape-procedures)**, so that it takes what the URL has, or returns the joined data. No extra round trip.
-- **Load both in [one request](/docs/client/tanstack-react-query/chained-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. It needs [pipelining turned on](/docs/client/tanstack-react-query/chained-queries#turn-on) in the batch link and on the server; [without it](/docs/client/tanstack-react-query/chained-queries#fallback), the second query is a request of its own. Experimental.
+- **Load both in [one request](/docs/client/tanstack-react-query/chained-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. It needs [pipelining turned on](/docs/client/tanstack-react-query/chained-queries#turn-on) in the batch link and on the server. [Without the link's option](/docs/client/tanstack-react-query/chained-queries#fallback), the second query is a request of its own. A server without its option [refuses the request](/docs/client/tanstack-react-query/chained-queries#not-allowed). Experimental.
 - **Pay the round trip**, in a loader or in a component, as below.
 
 #### In a loader {#waterfall-in-a-loader}
