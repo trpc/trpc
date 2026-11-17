@@ -110,6 +110,7 @@ A collection of resources on tRPC.
 | Build a Public tRPC API: trpc-openapi vs ts-rest                                                    | https://catalins.tech/public-api-trpc/                                                      |
 | Next.js + Expo + tRPC Monorepo Boilerplate                                                          | https://github.com/monsieursam/boilerplate-next-expo-trpc                                   |
 | Next.js + Express + BetterAuth + Prisma + bun + shadcn + tRPC Monorepo Boilerplate                  | https://github.com/KitsuneKode/template-nextjs-express-trpc-better-auth-monorepo            |
+| Electron AppStack - Electron starter with type-safe tRPC IPC, React, SQLite, auto update, signing   | https://electron-appstack.com                                                               |
 
 ## 🏁 Open-source projects using tRPC
 

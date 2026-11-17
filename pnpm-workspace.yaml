@@ -23,6 +23,13 @@ preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
+# Resolve only versions published at least 7 days ago (in minutes). Renovate's
+# minimumReleaseAge in .github/renovate.json matches it.
+minimumReleaseAge: 10080
+# Non-strict: in-range resolution still prefers mature versions, but a version
+# you pin explicitly (e.g. an urgent security fix) installs even if it is newer,
+# and Renovate's `pnpm update --no-save` works (pnpm/pnpm#14835).
+minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
@@ -48,7 +55,7 @@ allowBuilds:
 catalog:
   '@types/node': ^24.19.2
   tsdown: 0.23.7
-  typescript: ^7.0.2
+  typescript: 7.1.0-beta
   oxlint: ^1.92.0
   oxlint-tsgolint: ^7.0.2006
   '@oxlint/plugins': ^1.92.0
@@ -64,7 +71,7 @@ catalog:
   devalue: ^6.0.3
   valibot: ^1.5.0
   fastify: ^5.12.6
-  '@hey-api/openapi-ts': ^0.99.0
+  '@hey-api/openapi-ts': 0.0.0-next-20260930190945
   '@fastify/websocket': ^11.3.7
   fastify-plugin: ^6.0.1
   next: ^16.4.5
@@ -94,12 +101,11 @@ catalog:
   tslib: ^2.9.1
   dataloader: ^2.2.3
   node-fetch: ^3.3.2
+  npm-run-all2: ^9.0.4
   sury: 11.1.0
   yaml: 2.9.1
 
 catalogs:
-  ts-api:
-    typescript: ^6.0.3
   www:
     '@fastify/websocket': 11.3.7
     lucide-react: 1.70.0
@@ -134,6 +140,6 @@ catalogs:
     superstruct: 2.0.2
     tailwindcss: 4.3.5
     typescript: 5.9.3
-    ws: 8.22.1
+    ws: 8.22.2
     yup: 1.7.1
     zod: 4.6.7

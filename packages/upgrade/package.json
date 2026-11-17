@@ -1,6 +1,6 @@
 {
   "name": "@trpc/upgrade",
-  "version": "11.28.0",
+  "version": "11.28.6",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -35,7 +35,7 @@
     "@bomb.sh/args": "0.3.1",
     "@clack/prompts": "1.8.1",
     "jscodeshift": "17.4.0",
-    "typescript": "catalog:ts-api"
+    "typescript": "catalog:"
   },
   "devDependencies": {
     "@tanstack/react-query": "catalog:",

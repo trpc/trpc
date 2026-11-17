@@ -58,7 +58,7 @@
     "fast-glob": "^3.2.12",
     "hash-sum": "catalog:",
     "konn": "catalog:",
-    "npm-run-all2": "^9.0.4",
+    "npm-run-all2": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
@@ -69,7 +69,7 @@
     "ts-prune": "^0.10.3",
     "tsx": "catalog:",
     "turbo": "catalog:",
-    "typescript": "catalog:ts-api",
+    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

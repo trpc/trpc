@@ -94,6 +94,52 @@ test('with path extractor', async () => {
   }
 });
 
+test('onError receives the submitted form data when useActionState passes the previous state first', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => {
+      throw new Error('boom');
+    });
+
+  const formData = new FormData();
+  formData.set('name', 'Ada');
+
+  await expect((proc as any)({ name: 'stale' }, formData)).rejects.toThrow(
+    'boom',
+  );
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0].input).toEqual({ name: 'Ada' });
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    path: '',
+    type: 'mutation',
+    error: { message: 'boom' },
+  });
+});
+
+test('onError receives the normalized form data for a single argument call', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => {
+      throw new Error('boom');
+    });
+
+  const formData = new FormData();
+  formData.set('name', 'Ada');
+
+  await expect((proc as any)(formData)).rejects.toThrow('boom');
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  // `formDataToObject` returns a null-prototype object, so this compares values only
+  expect(onError.mock.calls[0]![0].input).toEqual({ name: 'Ada' });
+});
+
 test('redirect accepts the redirect types of the installed Next.js', () => {
   // Next 15 types these as an enum, Next 16 as 'push' | 'replace'; tRPC takes
   // whichever the installed `next/navigation` uses. The tests run on Next 16,

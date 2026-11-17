@@ -20,7 +20,6 @@ import {
 } from '@trpc/client';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -30,11 +29,7 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import {
-  buildQueryFromAsyncIterable,
-  trackQueryFetch,
-  useHookResult,
-} from '../../internals/trpcResult';
+import { fetchQueryData, useHookResult } from '../../internals/trpcResult';
 import type {
   QueriesResults,
   TRPCUseQueries,
@@ -223,19 +218,12 @@ export function createRootHooks<
                     : { signal: null }),
                 },
               };
-              const queryFetch = trackQueryFetch({
+              return fetchQueryData({
                 context: queryFunctionContext,
                 fallback: { client: queryClient, queryKey },
+                request: () =>
+                  client.query(...getClientArgs(queryKey, actualOpts)),
               });
-
-              const result = await client.query(
-                ...getClientArgs(queryKey, actualOpts),
-              );
-
-              if (isAsyncIterable(result)) {
-                return buildQueryFromAsyncIterable(result, queryFetch);
-              }
-              return result;
             },
       },
       queryClient,
@@ -279,7 +267,12 @@ export function createRootHooks<
               },
             };
 
-            return context.client.query(...getClientArgs(queryKey, actualOpts));
+            return fetchQueryData({
+              context: queryFunctionContext,
+              fallback: { client: context.queryClient, queryKey },
+              request: () =>
+                context.client.query(...getClientArgs(queryKey, actualOpts)),
+            });
           },
     });
   }
@@ -312,7 +305,12 @@ export function createRootHooks<
             },
           };
 
-          return context.client.query(...getClientArgs(queryKey, actualOpts));
+          return fetchQueryData({
+            context: queryFunctionContext,
+            fallback: { client: context.queryClient, queryKey },
+            request: () =>
+              context.client.query(...getClientArgs(queryKey, actualOpts)),
+          });
         },
       },
       context.queryClient,
@@ -565,7 +563,8 @@ export function createRootHooks<
     });
 
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery(
       {
@@ -623,7 +622,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     __usePrefetchInfiniteQuery({
       ...opts,
@@ -669,7 +670,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     const hook = __useSuspenseInfiniteQuery(
       {
@@ -721,9 +724,14 @@ export function createRootHooks<
       ) => unknown;
     },
   ) => {
-    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+    const { ssrState, queryClient, prefetchQuery, client, abortOnUnmount } =
+      useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
+    );
 
     const queries = queriesCallback(proxy);
 
@@ -759,9 +767,13 @@ export function createRootHooks<
       >,
     ) => readonly UseQueryOptionsForUseSuspenseQueries<any, any, any, any>[],
   ) => {
-    const { queryClient, client } = useContext();
+    const { queryClient, client, abortOnUnmount } = useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
+    );
 
     const queries = queriesCallback(proxy);
 

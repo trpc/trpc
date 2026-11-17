@@ -1,7 +1,7 @@
 /**
  * Releases the packages in `packages/*`, the way KATT/raf-query does: the
- * latest `vX.Y.Z` tag is the version, packages are published before anything
- * is pushed, and a stable release ends with a GitHub release whose notes
+ * latest `vX.Y.Z` tag is the version, the release commit is pushed before
+ * the packages are published and tagged, and a stable release ends with a GitHub release whose notes
  * group the pull requests since the last one by package (`notes.ts`).
  *
  * Each release has two halves (`tarballs.ts`): one builds and packs the
@@ -9,7 +9,13 @@
  * The publishing half publishes each package once, after the packages it
  * depends on, skipping versions the registry has already.
  */
-import { Console, Data, Duration, Effect, FileSystem } from 'effect';
+import { Console, Data, Effect, FileSystem } from 'effect';
+import {
+  commitBump,
+  publishedChanged,
+  releasableCommits,
+  releaseBump,
+} from './changes.ts';
 import { git, output, run } from './command.ts';
 import { releaseNotes } from './notes.ts';
 import {
@@ -21,8 +27,9 @@ import {
 import {
   bumpVersion,
   canaryVersion,
+  isAfter,
+  majorOf,
   type Bump,
-  type PackageJson,
 } from './version.ts';
 import { publishedVersions, readPackages, writeVersions } from './workspace.ts';
 
@@ -50,6 +57,44 @@ export const latestTag = Effect.fn('latestTag')(function* (
     'v*-*',
     ref ?? 'HEAD',
   );
+});
+
+/**
+ * The latest release: the latest tag, or a release commit after it that
+ * never got its tag because its run stopped after pushing it. That release
+ * may be published in part, so the next one bumps from it rather than
+ * publishing its version again from another commit, whose tarballs can
+ * differ even when nothing in `packages/` did (packed READMEs, skills
+ * generated from the docs); `publishStable` tags it first. HEAD doesn't
+ * count: running the release on it resumes it from the same tree.
+ */
+export const latestRelease = Effect.fn('latestRelease')(function* (
+  root: string,
+) {
+  const tag = yield* latestTag(root);
+  const head = yield* git(root, 'rev-parse', 'HEAD');
+  const log = yield* git(
+    root,
+    'log',
+    '--first-parent',
+    '--format=%H %s',
+    `${tag}..HEAD`,
+  );
+  for (const line of log === '' ? [] : log.split('\n')) {
+    const space = line.indexOf(' ');
+    const sha = line.slice(0, space);
+    const version = /^chore: release v(\d+\.\d+\.\d+)$/.exec(
+      line.slice(space + 1),
+    )?.[1];
+    if (
+      sha !== head &&
+      version !== undefined &&
+      isAfter(version, tag.slice(1))
+    ) {
+      return { tag: `v${version}`, ref: sha, tagged: false };
+    }
+  }
+  return { tag, ref: tag, tagged: true };
 });
 
 const ensureClean = Effect.fn('ensureClean')(function* (root: string) {
@@ -198,61 +243,9 @@ const publishTarballs = Effect.fn('publishTarballs')(function* (
   }
 });
 
-export interface WaitOptions {
-  readonly timeout: Duration.Duration;
-  readonly interval: Duration.Duration;
-}
-
-export const defaultWait: WaitOptions = {
-  timeout: Duration.minutes(30),
-  interval: Duration.seconds(15),
-};
-
-/** `@trpc/server`, `11.23.0` → its tarball's URL on `registry`. */
-export function tarballUrl(registry: string, name: string, version: string) {
-  const basename = name.slice(name.lastIndexOf('/') + 1);
-  return `${registry.replace(/\/$/, '')}/${name}/-/${basename}-${version}.tgz`;
-}
-
 /** The registry pnpm publishes to. */
 const publishRegistry = (root: string) =>
   output(root, 'pnpm', ['config', 'get', 'registry']);
-
-/**
- * Waits until `registry` serves every version in `versions`. A successful
- * publish only means npm accepted it: npm scans each version before anyone
- * can install it, which takes minutes and sometimes hours, and it can hold or
- * block a version instead.
- */
-export const waitForVersions = Effect.fn('waitForVersions')(function* (
-  versions: ReadonlyMap<string, string>,
-  registry: string,
-  opts: WaitOptions,
-) {
-  const pending = new Map(versions);
-  const deadline = Date.now() + Duration.toMillis(opts.timeout);
-  while (pending.size > 0) {
-    for (const [name, version] of pending) {
-      const response = yield* Effect.tryPromise(() =>
-        fetch(tarballUrl(registry, name, version), { method: 'HEAD' }),
-      ).pipe(Effect.orElseSucceed(() => undefined));
-      if (response?.ok) {
-        pending.delete(name);
-        yield* Console.log(`${name}@${version} is on npm`);
-      }
-    }
-    if (pending.size === 0) {
-      break;
-    }
-    if (Date.now() >= deadline) {
-      const list = [...pending].map(([name, version]) => `${name}@${version}`);
-      return yield* new ReleaseError({
-        message: `npm accepted these but doesn't serve them yet: ${list.join(', ')}`,
-      });
-    }
-    yield* Effect.sleep(opts.interval);
-  }
-});
 
 /**
  * Creates the GitHub release for `tag`, with the notes `releaseNotes` makes
@@ -284,16 +277,48 @@ export interface StableOptions extends PublishOptions {
   readonly bump: Bump;
   readonly remote: string;
   readonly branch: string;
-  readonly wait: WaitOptions;
+  /** The only major it publishes, `releaseMajor` in `config.ts`. */
+  readonly major: number;
 }
 
-const stableVersion = Effect.fn('stableVersion')(function* (
+const majorSetting = 'releaseMajor in tooling/release/src/config.ts';
+
+/**
+ * The version a stable release publishes: `bump` after the latest tag, or
+ * `major`.0.0 when `major` is the next major. Any other major fails.
+ */
+export const stableVersion = Effect.fn('stableVersion')(function* (
   root: string,
-  bump: Bump,
+  opts: { readonly bump: Bump; readonly major: number },
 ) {
-  const previousTag = yield* latestTag(root);
-  const version = bumpVersion(previousTag.slice(1), bump);
-  return { previousTag, version, tag: `v${version}` };
+  const previous = yield* latestRelease(root);
+  const previousTag = previous.tag;
+  const latest = previousTag.slice(1);
+  if (opts.major === majorOf(latest) + 1) {
+    const version = `${opts.major}.0.0`;
+    return {
+      previous,
+      previousTag,
+      version,
+      tag: `v${version}`,
+      reason: `${majorSetting} is ${opts.major}, after ${previousTag}`,
+    };
+  }
+  const version = bumpVersion(latest, opts.bump);
+  const tag = `v${version}`;
+  const major = majorOf(version);
+  if (major !== opts.major) {
+    return yield* new ReleaseError({
+      message: `${opts.bump} after ${previousTag} is ${tag}, but ${majorSetting} is ${opts.major}, so releases publish only v${opts.major}. To release v${major}, merge a pull request that sets it to ${major}.`,
+    });
+  }
+  return {
+    previous,
+    previousTag,
+    version,
+    tag,
+    reason: `${opts.bump} after ${previousTag}`,
+  };
 });
 
 /**
@@ -304,11 +329,11 @@ const stableVersion = Effect.fn('stableVersion')(function* (
  */
 export const packStable = Effect.fn('packStable')(function* (
   root: string,
-  opts: PackOptions & { readonly bump: Bump },
+  opts: PackOptions & { readonly bump: Bump; readonly major: number },
 ) {
   yield* ensureClean(root);
-  const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
-  yield* Console.log(`Packing ${tag} (${opts.bump} after ${previousTag})`);
+  const { version, tag, reason } = yield* stableVersion(root, opts);
+  yield* Console.log(`Packing ${tag} (${reason})`);
   const { files, published } = yield* writeVersions(root, version);
   yield* Effect.gen(function* () {
     yield* checkRelease(root, files);
@@ -325,22 +350,50 @@ export const packStable = Effect.fn('packStable')(function* (
  * release. It runs nothing from the packages.
  *
  * HEAD must be on `branch`. The commit goes out before the packages and the
- * tag after them. If `branch` moved, the push is rejected and nothing is
- * published. If publishing fails, running the release again finds the
+ * tag after them. If `branch` moved, the push is rejected, nothing is
+ * published and it skips: the run for the newer commit releases everything.
+ * Any other rejected push fails. If publishing fails, running the release again finds the
  * versions already on `branch`, publishes what npm doesn't have yet and tags
  * it; it fails instead if npm has a version with other files than it packed.
+ * Returns the tag, or `undefined` if it skipped.
  */
 export const publishStable = Effect.fn('publishStable')(function* (
   root: string,
   opts: StableOptions & PackOptions,
 ) {
   yield* ensureClean(root);
-  const { previousTag, version, tag } = yield* stableVersion(root, opts.bump);
-  yield* Console.log(`Releasing ${tag} (${opts.bump} after ${previousTag})`);
+  const { previous, previousTag, version, tag, reason } = yield* stableVersion(
+    root,
+    opts,
+  );
+  yield* Console.log(`Releasing ${tag} (${reason})`);
   if (!opts.dryRun && !(yield* onBranch(root, opts.remote, opts.branch))) {
     return yield* new ReleaseError({
       message: `HEAD isn't on ${opts.remote} ${opts.branch}; release from ${opts.branch}. Nothing was published.`,
     });
+  }
+  if (!previous.tagged) {
+    yield* Console.log(
+      `${previousTag}'s run stopped after pushing its release commit, ${previous.ref.slice(0, 9)}, and a commit landed on top before it resumed. It may be published in part. ${opts.dryRun ? 'Would tag' : 'Tagging'} it, without a GitHub release, and releasing ${tag} after it.`,
+    );
+    if (!opts.dryRun) {
+      yield* git(
+        root,
+        'tag',
+        '--annotate',
+        previousTag,
+        '--message',
+        previousTag,
+        previous.ref,
+      );
+      yield* git(
+        root,
+        'push',
+        '--quiet',
+        opts.remote,
+        `refs/tags/${previousTag}`,
+      );
+    }
   }
 
   const { files, published } = yield* writeVersions(root, version);
@@ -351,7 +404,9 @@ export const publishStable = Effect.fn('publishStable')(function* (
 
   if (opts.dryRun) {
     yield* publishTarballs(root, tarballs, { ...opts, registry });
-    const notes = yield* releaseNotes(root, { previousTag, tag });
+    const notes = previous.tagged
+      ? yield* releaseNotes(root, { previousTag, tag })
+      : `(No notes: ${previousTag} isn't tagged yet.)`;
     yield* Console.log(
       `Dry run: would push "${releaseCommitMessage(tag)}" to ${opts.remote} ${opts.branch}, publish, then tag ${tag}, push the tag and create the GitHub release with these notes. The version bump is left in the working tree.\n\n${notes}`,
     );
@@ -378,11 +433,14 @@ export const publishStable = Effect.fn('publishStable')(function* (
       Effect.orElseSucceed(() => false),
     );
     if (!pushed) {
-      const reason = (yield* branchMoved(root, opts.remote, opts.branch))
-        ? `${opts.branch} moved since this run checked it out; release again from the new ${opts.branch}`
-        : `Pushing the release commit to ${opts.remote} ${opts.branch} failed`;
+      if (yield* branchMoved(root, opts.remote, opts.branch)) {
+        yield* Console.log(
+          `${opts.branch} moved since this run checked it out. Nothing was published. Skipping: the run for the newer commit releases it.`,
+        );
+        return undefined;
+      }
       return yield* new ReleaseError({
-        message: `${reason}. Nothing was published.`,
+        message: `Pushing the release commit to ${opts.remote} ${opts.branch} failed. Nothing was published.`,
       });
     }
   } else {
@@ -395,14 +453,6 @@ export const publishStable = Effect.fn('publishStable')(function* (
   yield* git(root, 'tag', '--annotate', tag, '--message', tag);
   yield* git(root, 'push', '--quiet', opts.remote, `refs/tags/${tag}`);
 
-  yield* waitForVersions(published, registry, opts.wait).pipe(
-    Effect.mapError(
-      (error) =>
-        new ReleaseError({
-          message: `${error.message}. ${tag} is pushed. Once npm serves them, create the GitHub release: pnpm release github-release ${tag}`,
-        }),
-    ),
-  );
   yield* githubRelease(root, { tag, previousTag }).pipe(
     Effect.mapError(
       (error) =>
@@ -425,13 +475,145 @@ export const stable = Effect.fn('stable')(function* (
 ) {
   const fs = yield* FileSystem.FileSystem;
   const dir = yield* fs.makeTempDirectoryScoped();
-  const { files } = yield* packStable(root, { bump: opts.bump, dir });
+  const { files } = yield* packStable(root, { ...opts, dir });
   yield* git(root, 'checkout', '--quiet', '--', ...files);
   return yield* publishStable(root, { ...opts, dir });
 }, Effect.scoped);
 
+export interface AutoOptions extends Omit<StableOptions, 'bump' | 'distTag'> {
+  /** `notBreaking` in `config.ts`. */
+  readonly notBreaking: ReadonlyArray<string>;
+}
+
+/**
+ * What the automatic release publishes, or `undefined` if there's nothing to
+ * release. Once `releaseMajor` in `config.ts` is the next major, it's that
+ * major's .0.0. Otherwise it's the largest bump the commits since the latest
+ * tag that change what the packages publish ask for (see `changes.ts`), or a
+ * patch after a release that stopped before it was tagged (`latestRelease`);
+ * a breaking commit (`feat!:`) fails it, unless it's in `notBreaking`. If
+ * `branch` moved, it skips, because the run for the newer commit releases
+ * everything.
+ */
+export const autoBump = Effect.fn('autoBump')(function* (
+  root: string,
+  opts: AutoOptions,
+) {
+  if (!opts.dryRun && (yield* branchMoved(root, opts.remote, opts.branch))) {
+    yield* Console.log(
+      `${opts.branch} moved since this run checked it out. Skipping: the run for the newer commit releases it.`,
+    );
+    return undefined;
+  }
+  const {
+    tag: previousTag,
+    ref: previousRef,
+    tagged,
+  } = yield* latestRelease(root);
+  const next = majorOf(previousTag.slice(1)) + 1;
+  if (opts.major === next) {
+    yield* Console.log(
+      `${majorSetting} is ${opts.major} and the latest tag is ${previousTag}: releasing v${next}.0.0.`,
+    );
+    return 'major';
+  }
+  const commits = yield* releasableCommits(root, previousRef, 'HEAD');
+  if (
+    commits.length === 0 ||
+    !(yield* publishedChanged(root, previousRef, 'HEAD'))
+  ) {
+    if (!tagged) {
+      // Its packages may be published in part; the next version publishes all.
+      yield* Console.log(
+        `${previousTag} stopped before it was tagged and may be published in part: releasing the patch after it.`,
+      );
+      return 'patch';
+    }
+    yield* Console.log(
+      commits.length === 0
+        ? `Nothing the packages publish changed since ${previousTag}; not releasing.`
+        : `The commits since ${previousTag} that change what the packages publish cancel out, like a change and its revert; not releasing.`,
+    );
+    return undefined;
+  }
+  yield* Console.log(
+    `Changed what the packages publish since ${previousTag}:\n${commits
+      .map(({ sha, subject }) => `  ${sha.slice(0, 9)} ${subject}`)
+      .join('\n')}`,
+  );
+  const bump = releaseBump(commits, opts.notBreaking);
+  if (bump === 'major') {
+    const breaking = commits
+      .filter(
+        ({ sha, subject }) =>
+          commitBump(subject) === 'major' && !opts.notBreaking.includes(sha),
+      )
+      .map(({ sha, subject }) => `${sha} ${subject}`);
+    return yield* new ReleaseError({
+      message: `These commits are marked breaking, so they need v${next}: ${breaking.join('; ')}. To release v${next}, merge a pull request that sets ${majorSetting} to ${next}. If they aren't breaking, add their shas to notBreaking there.`,
+    });
+  }
+  return bump;
+});
+
+/** `packStable` for what the automatic release publishes, if anything. */
+export const packAuto = Effect.fn('packAuto')(function* (
+  root: string,
+  opts: AutoOptions & PackOptions,
+) {
+  const bump = yield* autoBump(root, opts);
+  if (bump === undefined) {
+    return undefined;
+  }
+  return (yield* packStable(root, { ...opts, bump })).tag;
+});
+
+/**
+ * `publishStable` for what the automatic release publishes, which it works
+ * out again, as `latest`.
+ */
+export const publishAuto = Effect.fn('publishAuto')(function* (
+  root: string,
+  opts: AutoOptions & PackOptions,
+) {
+  const bump = yield* autoBump(root, opts);
+  if (bump === undefined) {
+    return undefined;
+  }
+  return yield* publishStable(root, {
+    ...opts,
+    bump,
+    distTag: 'latest',
+  });
+});
+
+/** Both halves of the automatic release in one run, like `stable`. */
+export const auto = Effect.fn('auto')(function* (
+  root: string,
+  opts: AutoOptions,
+) {
+  const bump = yield* autoBump(root, opts);
+  if (bump === undefined) {
+    return undefined;
+  }
+  return yield* stable(root, {
+    ...opts,
+    bump,
+    distTag: 'latest',
+  });
+});
+
 export interface CanaryOptions extends PublishOptions {
   readonly preid: string;
+}
+
+export interface CanaryPackOptions extends PackOptions {
+  readonly preid: string;
+  /**
+   * Pack only if what the packages publish changed since this commit.
+   * Unknown commits pack. `undefined` always packs.
+   */
+  readonly since: string | undefined;
 }
 
 /**
@@ -442,20 +624,36 @@ const canaryVersionOfHead = Effect.fn('canaryVersionOfHead')(function* (
   root: string,
   preid: string,
 ) {
-  const tag = yield* latestTag(root);
+  const { tag, ref } = yield* latestRelease(root);
   const commits = Number(
-    yield* git(root, 'rev-list', '--count', `${tag}..HEAD`),
+    yield* git(root, 'rev-list', '--count', `${ref}..HEAD`),
   );
   const sha = yield* git(root, 'rev-parse', '--short=9', 'HEAD');
   return canaryVersion({ version: tag.slice(1), commits, sha, preid });
 });
 
-/** Versions every package as HEAD's canary, builds, and packs into `dir`. */
+/**
+ * Versions every package as HEAD's canary, builds, and packs into `dir`.
+ * Returns `undefined` if it skipped.
+ */
 export const packCanary = Effect.fn('packCanary')(function* (
   root: string,
-  opts: PackOptions & { readonly preid: string },
+  opts: CanaryPackOptions,
 ) {
   yield* ensureClean(root);
+  if (opts.since !== undefined) {
+    const since = opts.since;
+    const known = yield* git(root, 'cat-file', '-e', `${since}^{commit}`).pipe(
+      Effect.as(true),
+      Effect.orElseSucceed(() => false),
+    );
+    if (known && !(yield* publishedChanged(root, since, 'HEAD'))) {
+      yield* Console.log(
+        `Nothing the packages publish changed since ${since}; no canary.`,
+      );
+      return undefined;
+    }
+  }
   const version = yield* canaryVersionOfHead(root, opts.preid);
   yield* Console.log(`Packing ${version}`);
   const { files, published } = yield* writeVersions(root, version);
@@ -488,15 +686,21 @@ export const publishCanary = Effect.fn('publishCanary')(function* (
   return version;
 });
 
-/** Both halves of a canary in one run, like `stable`. */
+/**
+ * Both halves of a canary in one run, like `stable`. Returns the version, or
+ * `undefined` if it skipped.
+ */
 export const canary = Effect.fn('canary')(function* (
   root: string,
-  opts: CanaryOptions,
+  opts: CanaryOptions & Pick<CanaryPackOptions, 'since'>,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const dir = yield* fs.makeTempDirectoryScoped();
-  const { files } = yield* packCanary(root, { preid: opts.preid, dir });
-  yield* git(root, 'checkout', '--quiet', '--', ...files);
+  const packed = yield* packCanary(root, { ...opts, dir });
+  if (packed === undefined) {
+    return undefined;
+  }
+  yield* git(root, 'checkout', '--quiet', '--', ...packed.files);
   return yield* publishCanary(root, { ...opts, dir });
 }, Effect.scoped);
 
@@ -532,28 +736,12 @@ export const printNotes = Effect.fn('printNotes')(function* (
 
 /**
  * `pnpm release github-release v11.23.0`, for a stable release whose GitHub
- * release wasn't created: waits for its packages, then creates it.
+ * release wasn't created.
  */
 export const githubReleaseForTag = Effect.fn('githubReleaseForTag')(function* (
   root: string,
   tag: string,
-  wait: WaitOptions,
 ) {
   const previousTag = yield* latestTag(root, `${tag}^`);
-  const dirs = yield* git(root, 'ls-tree', '--name-only', `${tag}:packages`);
-  const versions = new Map<string, string>();
-  for (const dir of dirs.split('\n')) {
-    const raw = yield* git(
-      root,
-      'show',
-      `${tag}:packages/${dir}/package.json`,
-    ).pipe(Effect.orElseSucceed(() => undefined));
-    const pkg =
-      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
-    if (pkg?.name !== undefined && pkg.version !== undefined && !pkg.private) {
-      versions.set(pkg.name, pkg.version);
-    }
-  }
-  yield* waitForVersions(versions, yield* publishRegistry(root), wait);
   yield* githubRelease(root, { tag, previousTag });
 });

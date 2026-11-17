@@ -38,6 +38,8 @@ export function nextAppDirCaller<TContext, TMeta>(
       normalizeFormData?: boolean;
       /**
        * Called when a procedure throws.
+       * `input` is the value the procedure received, so `FormData` is
+       * already normalized to an object when `normalizeFormData` is on.
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
     } & CreateContextCallback<TContext, () => MaybePromise<TContext>>
@@ -65,13 +67,13 @@ export function nextAppDirCaller<TContext, TMeta>(
       throw error;
     });
 
-    const handleError = (cause: unknown) => {
+    const handleError = (input: unknown) => (cause: unknown) => {
       const error = getTRPCErrorFromUnknown(cause);
 
       config.onError?.({
         ctx,
         error,
-        input: opts.args[0],
+        input,
         path,
         type: opts._def.type,
       });
@@ -107,7 +109,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             if (data instanceof TRPCRedirectError) throw data;
             return data;
           })
-          .catch(handleError);
+          .catch(handleError(input));
       }
       case 'query': {
         const input = opts.args[0];
@@ -125,7 +127,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             if (data instanceof TRPCRedirectError) throw data;
             return data;
           })
-          .catch(handleError);
+          .catch(handleError(input));
       }
       case 'subscription':
       default: {
