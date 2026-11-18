@@ -57,7 +57,6 @@
     "express": "catalog:",
     "fast-glob": "^3.2.12",
     "hash-sum": "catalog:",
-    "konn": "catalog:",
     "npm-run-all2": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",

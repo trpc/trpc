@@ -5,18 +5,13 @@ import type { DehydratedState } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
-import { konn } from 'konn';
 import type { AppType, NextPageContext } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import { expect, vitest } from 'vitest';
 
-const ctx = konn()
-  .beforeEach(() => createAppRouter())
-  .afterEach((ctx) => ctx?.close?.())
-  .done();
-
 describe('withTRPC()', () => {
   test('useQuery', async () => {
+    await using ctx = createAppRouter();
     // @ts-ignore
     const { window } = global;
 
@@ -47,6 +42,7 @@ describe('withTRPC()', () => {
 
   describe('NextPageContext conditional ssr', async () => {
     test('useQuery: conditional ssr', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
@@ -81,6 +77,7 @@ describe('withTRPC()', () => {
     });
 
     test('useQuery: should not ssr when conditional function throws', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
@@ -115,6 +112,7 @@ describe('withTRPC()', () => {
     });
 
     test('useQuery: conditional ssr false', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
@@ -149,6 +147,7 @@ describe('withTRPC()', () => {
     });
 
     test('useQuery: async conditional ssr with delay', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
@@ -184,6 +183,7 @@ describe('withTRPC()', () => {
     }, 7000); // increase the timeout just for this test
 
     test('browser render', async () => {
+      await using ctx = createAppRouter();
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -211,6 +211,7 @@ describe('withTRPC()', () => {
     });
 
     test('useInfiniteQuery with ssr: false in query but conditional ssr returns true', async () => {
+      await using ctx = createAppRouter();
       const { window } = global;
 
       // @ts-ignore
@@ -261,6 +262,7 @@ describe('withTRPC()', () => {
     }, 20000);
 
     test('ssr function not called on browser render', async () => {
+      await using ctx = createAppRouter();
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -290,6 +292,7 @@ describe('withTRPC()', () => {
   });
 
   test('useQueries', async () => {
+    await using ctx = createAppRouter();
     // @ts-ignore
     const { window } = global;
 
@@ -360,6 +363,7 @@ describe('withTRPC()', () => {
   });
 
   test('useInfiniteQuery', async () => {
+    await using ctx = createAppRouter();
     const { window } = global;
 
     // @ts-ignore
@@ -395,6 +399,7 @@ describe('withTRPC()', () => {
   });
 
   test('browser render', async () => {
+    await using ctx = createAppRouter();
     const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.allPosts.useQuery();
@@ -421,6 +426,7 @@ describe('withTRPC()', () => {
 
   describe('`ssr: false` on query', () => {
     test('useQuery()', async () => {
+      await using ctx = createAppRouter();
       const { window } = global;
 
       // @ts-ignore
@@ -456,6 +462,7 @@ describe('withTRPC()', () => {
     });
 
     test('useInfiniteQuery', async () => {
+      await using ctx = createAppRouter();
       const { window } = global;
 
       // @ts-ignore
@@ -500,6 +507,7 @@ describe('withTRPC()', () => {
   });
 
   test('useQuery - ssr batching', async () => {
+    await using ctx = createAppRouter();
     // @ts-ignore
     const { window } = global;
 
@@ -538,6 +546,7 @@ describe('withTRPC()', () => {
   describe('`enabled: false` on query during ssr', () => {
     describe('useQuery', () => {
       test('query is not included in serialized state', async () => {
+        await using ctx = createAppRouter();
         const { window } = global;
 
         // @ts-ignore
@@ -582,6 +591,7 @@ describe('withTRPC()', () => {
         });
       });
       test('query is not serialized when disabled or ssr: false', async () => {
+        await using ctx = createAppRouter();
         const { window } = global;
 
         // @ts-ignore
@@ -631,6 +641,7 @@ describe('withTRPC()', () => {
       });
 
       test('queryKey changes', async () => {
+        await using ctx = createAppRouter();
         const { window } = global;
 
         // @ts-ignore
@@ -684,6 +695,7 @@ describe('withTRPC()', () => {
 
     describe('useInfiniteQuery', () => {
       test('queryKey does not change', async () => {
+        await using ctx = createAppRouter();
         const { window } = global;
 
         // @ts-ignore
@@ -738,6 +750,7 @@ describe('withTRPC()', () => {
       });
 
       test('queryKey changes', async () => {
+        await using ctx = createAppRouter();
         const { window } = global;
 
         // @ts-ignore
@@ -795,6 +808,7 @@ describe('withTRPC()', () => {
 
   describe('individual pages', () => {
     test('useQuery', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
 
@@ -822,6 +836,7 @@ describe('withTRPC()', () => {
       });
     });
     test('useQuery - ssr', async () => {
+      await using ctx = createAppRouter();
       // @ts-ignore
       const { window } = global;
 

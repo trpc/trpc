@@ -2,33 +2,27 @@ import { createQueryClient } from '../__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const inputSpy = vi.fn();
+function setup() {
+  const t = initTRPC.create();
+  const inputSpy = vi.fn();
 
-    const appRouter = t.router({
-      posts: t.procedure
-        .input(z.object({ cursor: z.number().nullish() }))
-        .query(({ input }) => {
-          inputSpy(input);
-          return { items: ['post'], nextCursor: null };
-        }),
-    });
+  const appRouter = t.router({
+    posts: t.procedure
+      .input(z.object({ cursor: z.number().nullish() }))
+      .query(({ input }) => {
+        inputSpy(input);
+        return { items: ['post'], nextCursor: null };
+      }),
+  });
 
-    const opts = testServerAndClientResource(appRouter);
-    const queryClient = createQueryClient();
-    const utils = createTRPCQueryUtils({ queryClient, client: opts.client });
+  const opts = testServerAndClientResource(appRouter);
+  const queryClient = createQueryClient();
+  const utils = createTRPCQueryUtils({ queryClient, client: opts.client });
 
-    return { ...opts, queryClient, utils, inputSpy };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return { ...opts, queryClient, utils, inputSpy };
+}
 
 const cases = [
   {
@@ -52,6 +46,7 @@ describe('issue #6862: cursor injection in utility functions', () => {
   test.each(cases)(
     'fetchInfinite() $name',
     async ({ initialCursor, expectedInput }) => {
+      await using ctx = setup();
       await ctx.utils.posts.fetchInfinite({}, { initialCursor });
 
       expect(ctx.inputSpy.mock.calls).toStrictEqual([[expectedInput]]);
@@ -61,6 +56,7 @@ describe('issue #6862: cursor injection in utility functions', () => {
   test.each(cases)(
     'prefetchInfinite() $name',
     async ({ initialCursor, expectedInput }) => {
+      await using ctx = setup();
       await ctx.utils.posts.prefetchInfinite({}, { initialCursor });
 
       expect(ctx.inputSpy.mock.calls).toStrictEqual([[expectedInput]]);
@@ -70,6 +66,7 @@ describe('issue #6862: cursor injection in utility functions', () => {
   test.each(cases)(
     'infiniteQueryOptions() $name',
     async ({ initialCursor, expectedInput }) => {
+      await using ctx = setup();
       const options = ctx.utils.posts.infiniteQueryOptions(
         {},
         {
