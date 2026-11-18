@@ -45,8 +45,9 @@ function getEndingLink(): TRPCLink<AppRouter> {
     url: WS_URL,
     experimental_encoder: msgpackEncoder,
     // connect on the first subscription, so the spare client that React's
-    // Strict Mode makes in development never opens a socket
-    lazy: { enabled: true, closeMs: 0 },
+    // Strict Mode makes in development never opens a socket. The idle check
+    // re-arms while a subscription is open, so give it a real interval.
+    lazy: { enabled: true, closeMs: 10_000 },
   });
 
   return wsLink({ client });
