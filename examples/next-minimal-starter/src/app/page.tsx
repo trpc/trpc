@@ -6,6 +6,7 @@ import {
   CardTitle,
 } from '@shared/ui/components/card';
 import { Skeleton } from '@shared/ui/components/skeleton';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { HydrateClient, prefetch, trpc } from '~/trpc/server';
 import { Greeting } from './greeting';
@@ -25,7 +26,10 @@ export default function IndexPage() {
             <span className="text-brand">tRPC</span> Next.js Minimal Starter
           </h1>
           <p className="text-sm text-muted-foreground">
-            The Next.js App Router with @trpc/tanstack-react-query
+            The Next.js App Router with @trpc/tanstack-react-query.{' '}
+            <Link className="underline" href="/nested">
+              Nested queries without TanStack Query
+            </Link>
           </p>
         </div>
       </header>

@@ -154,12 +154,23 @@ html {
   }
 }
 
+/*
+ * Every color of the typography plugin, for both themes: one left out keeps
+ * the plugin's own, which is for one theme only. `prose.test.ts` checks it.
+ */
 .prose {
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);
   --tw-prose-links: var(--link);
   --tw-prose-bold: var(--foreground);
   --tw-prose-code: var(--foreground);
+  /* What a code block without a language has, as nothing highlights it */
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--card);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-kbd-shadows: var(--border);
   --tw-prose-quotes: var(--muted-foreground);
   --tw-prose-quote-borders: var(--border);
   --tw-prose-hr: var(--border);
@@ -172,6 +183,12 @@ html {
   --tw-prose-invert-links: var(--link);
   --tw-prose-invert-bold: var(--foreground);
   --tw-prose-invert-code: var(--foreground);
+  --tw-prose-invert-pre-code: var(--foreground);
+  --tw-prose-invert-pre-bg: var(--card);
+  --tw-prose-invert-lead: var(--muted-foreground);
+  --tw-prose-invert-captions: var(--muted-foreground);
+  --tw-prose-invert-kbd: var(--foreground);
+  --tw-prose-invert-kbd-shadows: var(--border);
   --tw-prose-invert-quotes: var(--muted-foreground);
   --tw-prose-invert-quote-borders: var(--border);
   --tw-prose-invert-hr: var(--border);
