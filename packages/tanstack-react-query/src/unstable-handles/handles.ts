@@ -86,6 +86,11 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
    * fetched again, it loads that for its items, in the same request.
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
+  /**
+   * Only for an entry whose input is `skipToken`: its query is disabled, and
+   * `fromHandle()` gives options with `skipToken`. Read it with `useQuery`.
+   */
+  readonly skipped?: true;
 }
 
 /**
@@ -108,6 +113,8 @@ export interface TRPCInfiniteQueryHandle<
   /** The query's input, without `cursor` and `direction` */
   readonly input: InfiniteHandleInput<TDef['input']>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
+  /** Only for an entry whose input is `skipToken`, as on a query's handle */
+  readonly skipped?: true;
   /**
    * Only when an `experimental_entryPerItem()` entry is loaded for the items of
    * every page: what that entry loads for an item. A page that is fetched
@@ -228,6 +235,8 @@ export interface experimental_TRPCQueryHandlePerItem<
    * for an item. The finished handle keeps it.
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
+  /** Only for an entry whose input is `skipToken`: every item's query is disabled */
+  readonly skipped?: true;
 }
 
 /**
@@ -447,6 +456,12 @@ type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
   ? [input?: TDef['input'], opts?: TRPCEntryOptions]
   : [input: TDef['input'], opts?: TRPCEntryOptions];
 
+/** A prefetch entry's arguments: its input can be `skipToken`, to start nothing */
+type PrefetchEntryArgs<TDef extends ResolverDef> =
+  undefined extends TDef['input']
+    ? [input?: TDef['input'] | typeof skipToken, opts?: TRPCEntryOptions]
+    : [input: TDef['input'] | typeof skipToken, opts?: TRPCEntryOptions];
+
 /**
  * The handle type of a query procedure, for typing props.
  * @example
@@ -527,6 +542,8 @@ function toHandle(options: any, type: HandleType) {
   const handle: Record<string, unknown> = {
     queryKey: options.queryKey,
     ...(input !== undefined && { input }),
+    // `skipToken` is no value a handle can carry from a loader to a component
+    ...(options.queryFn === skipToken && { skipped: true }),
   };
   if (type === 'infinite' && options.initialPageParam != null) {
     handle['initialCursor'] = options.initialPageParam;
@@ -888,12 +905,11 @@ function itemsOfList(list: unknown, depth: number): ListItem[] {
     return list.map((_, index) => ({ indexes: [index], element: true }));
   }
   return list.flatMap((inner: unknown, index) => {
+    // A `null` is an item like any other: it gets a query
     const items: ListItem[] =
       depth > 1 || Array.isArray(inner)
         ? itemsOfList(inner, depth - 1)
-        : inner == null
-          ? []
-          : [{ indexes: [], element: false }];
+        : [{ indexes: [], element: false }];
     return items.map((item) => ({
       indexes: [index, ...item.indexes],
       element: item.element,
@@ -907,6 +923,10 @@ function startEntry(opts: {
   options: any;
 }) {
   const { queryClient, options } = opts;
+  // A `skipToken` input: its query is disabled, and nothing starts
+  if (options.queryFn === skipToken) {
+    return Promise.resolve(undefined);
+  }
   if (opts.state.type === 'infinite') {
     switch (opts.state.kind) {
       case 'prefetch':
@@ -1382,7 +1402,18 @@ function beginEntries(opts: {
 
     const published: Published = { settled: null, listeners: [] };
     const start = (options: any) => {
-      if (state.kind === 'prefetch' && readLeaves.has(leaf)) {
+      if (options.queryFn === skipToken) {
+        // Nothing starts: an entry that reads this one's data has none to
+        // read. Not in this step, in which the load still builds its entries
+        void Promise.resolve().then(() =>
+          publish(published, {
+            ok: false,
+            error: new Error(
+              `"${leaf.key}" has \`skipToken\` as its input, so it has no data for the entries that read it`,
+            ),
+          }),
+        );
+      } else if (state.kind === 'prefetch' && readLeaves.has(leaf)) {
         watch(options, published);
       }
       return startEntry({ queryClient, state, options }).catch(
@@ -2334,6 +2365,7 @@ export function experimental_handleOfItem(
     initialCursor?: unknown;
     itemInputs?: { to: string[]; path: PipelinePath }[];
     experimental_perItem?: unknown;
+    skipped?: true;
   } | null;
   if (!Array.isArray(perItem?.queryKey) || !Array.isArray(perItem.itemInputs)) {
     throw new Error(
@@ -2362,6 +2394,8 @@ export function experimental_handleOfItem(
     queryKey: [...perItem.queryKey.slice(0, -1), { ...args, input }],
     ...(input !== undefined && { input }),
     ...(initialCursor != null && { initialCursor }),
+    // An item of an entry whose input is `skipToken` is skipped too
+    ...(perItem.skipped && { skipped: true }),
     // What the items of its own list load, if it is a list
     ...(perItem.experimental_perItem !== undefined && {
       experimental_perItem: perItem.experimental_perItem,
@@ -2593,7 +2627,7 @@ function useHandles<
  */
 export function prefetchEntry<TDef extends ResolverDef>(
   procedure: DecorateQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
+  ...args: PrefetchEntryArgs<TDef>
 ): TRPCQueryEntry<TDef, 'prefetch'>;
 export function prefetchEntry(
   procedure: unknown,
@@ -2667,7 +2701,7 @@ export function ensureEntry(
  */
 export function prefetchInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
+  input: TDef['input'] | typeof skipToken,
   opts?: TRPCInfiniteEntryOptions<TDef>,
 ): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
   return entry({
@@ -2784,7 +2818,10 @@ export function fromHandle(
           ...opts,
         }
       : opts;
-  const options = optionsOf(procedure, handle.type)(handle.input, readOpts);
+  const options = optionsOf(procedure, handle.type)(
+    rawHandle.skipped ? skipToken : handle.input,
+    readOpts,
+  );
   const perItem = rawHandle.experimental_perItem;
   return prepareHandleRead({
     queryClient: queryClientOf(ctx),
@@ -2835,8 +2872,12 @@ function withItemQueries(opts: {
       );
       for (const queries of opts.perItem) {
         const { path } = readQueryKey(queries.queryKey);
-        if (!ctx.path.every((segment, index) => path[index] === segment)) {
+        if (
+          // Its input is `skipToken`: an item has nothing to load
+          queries.skipped ||
           // The items' procedure isn't in this part of the router
+          !ctx.path.every((segment, index) => path[index] === segment)
+        ) {
           continue;
         }
         const procedure = path

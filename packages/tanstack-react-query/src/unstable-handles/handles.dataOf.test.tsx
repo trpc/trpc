@@ -126,6 +126,15 @@ const createAppRouter = () => {
         calls('author.byId', opts.input);
         return { id: opts.input.id, name: 'KATT', teamId: 'team1' };
       }),
+      /** An author, or `null` for no id: its input takes `null` */
+      maybe: t.procedure
+        .input(z.object({ id: z.string().nullable() }))
+        .query((opts) => {
+          calls('author.maybe', opts.input);
+          return opts.input.id === null
+            ? null
+            : { id: opts.input.id, name: 'KATT', teamId: 'team1' };
+        }),
     }),
     team: t.router({
       byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
@@ -143,6 +152,8 @@ const createAppRouter = () => {
         groups: [{ members: ['u1'] }, { members: null as unknown as string[] }],
         owners: null as unknown as string[],
         leads: [{ id: 'u1' }, { id: null as unknown as string }],
+        /** Ids, of which one is `null`, as their type says */
+        maybeIds: ['u1', null] as (string | null)[],
       })),
     }),
     big: t.router({
@@ -756,32 +767,117 @@ describe('edges of a load', () => {
     ]);
   });
 
-  test('lists that are not there have no items', async () => {
+  test('a list that is not there has no items', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const sparse = ensureEntry(trpc.group.sparse);
-    const byId = (id: string) => ensureEntry(trpc.author.byId, { id });
     const [, data] = await loadHandles(trpc, {
       sparse,
-      // A list of lists, of which one is missing
-      members: experimental_entryPerItem(
-        experimental_dataOf(sparse).groups.map((group) => group.members),
-        byId,
-      ),
-      // No list at all
       owners: experimental_entryPerItem(
         experimental_dataOf(sparse).owners,
-        byId,
-      ),
-      // A value that `.map()` read is `null`: that looks like a missing list
-      leads: experimental_entryPerItem(
-        experimental_dataOf(sparse).leads.map((lead) => lead.id),
-        byId,
+        (id) => ensureEntry(trpc.author.byId, { id }),
       ),
     });
-    expect(data.members).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
     expect(data.owners).toEqual([]);
-    expect(data.leads).toEqual([{ id: 'u1', name: 'KATT', teamId: 'team1' }]);
+  });
+
+  test('a `null` in a list is an item like any other: it gets a query, with `null` read from it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const sparse = ensureEntry(trpc.group.sparse);
+    const maybe = (id: string) => ensureEntry(trpc.author.maybe, { id });
+    const [, data] = await loadHandles(trpc, {
+      sparse,
+      // A list of lists, of which one is `null`: that is an item too
+      members: experimental_entryPerItem(
+        experimental_dataOf(sparse).groups.map((group) => group.members),
+        maybe,
+      ),
+      // A value that `.map()` read is `null`
+      leads: experimental_entryPerItem(
+        experimental_dataOf(sparse).leads.map((lead) => lead.id),
+        maybe,
+      ),
+      // As the list's type says
+      maybeIds: experimental_entryPerItem(
+        experimental_dataOf(sparse).maybeIds,
+        (id) => ensureEntry(trpc.author.maybe, { id }),
+      ),
+    });
+    const author = { id: 'u1', name: 'KATT', teamId: 'team1' };
+    expect(data.members).toEqual([author, null]);
+    expect(data.leads).toEqual([author, null]);
+    expect(data.maybeIds).toEqual([author, null]);
+    expect(resource.calls).toHaveBeenCalledWith('author.maybe', { id: null });
+  });
+
+  test('`null` as an input is a type error unless the procedure takes it, and the callback returns an entry', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const sparse = ensureEntry(trpc.group.sparse);
+    experimental_entryPerItem(experimental_dataOf(sparse).maybeIds, (id) =>
+      // @ts-expect-error `author.byId` takes no `null`
+      prefetchEntry(trpc.author.byId, { id }),
+    );
+    experimental_entryPerItem(experimental_dataOf(sparse).maybeIds, (id) =>
+      prefetchEntry(trpc.author.maybe, { id }),
+    );
+    expect(() =>
+      experimental_entryPerItem(
+        experimental_dataOf(sparse).maybeIds,
+        // @ts-expect-error the callback returns an entry, not `null`
+        () => null,
+      ),
+    ).toThrow('must return an entry');
+    // A prefetch entry can be skipped. One the load waits for can't
+    prefetchEntry(trpc.author.byId, skipToken);
+    prefetchInfiniteEntry(trpc.post.paged, skipToken);
+    // @ts-expect-error the load would wait for data that never comes
+    ensureEntry(trpc.author.byId, skipToken);
+    // @ts-expect-error the load would wait for data that never comes
+    fetchEntry(trpc.author.byId, skipToken);
+  });
+
+  test('a prefetch entry with `skipToken` starts nothing: its handle reads a disabled query, also from JSON', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const [handles] = await loadHandles(trpc, {
+      draft: prefetchEntry(trpc.post.bySlug, skipToken),
+      more: prefetchInfiniteEntry(trpc.post.paged, skipToken),
+    });
+    expect(handles.draft.skipped).toBe(true);
+    expect(handles.more.skipped).toBe(true);
+    // As a loader passes it to a component
+    const draft = JSON.parse(JSON.stringify(handles.draft));
+    const options = fromHandle(trpc, draft);
+    expect(options.queryFn).toBe(skipToken);
+    expect(
+      fromHandle(trpc, handles.more, {
+        getNextPageParam: (last) => last.nextCursor,
+      }).queryFn,
+    ).toBe(skipToken);
+    expect(
+      resource.queryClient.getQueryState(options.queryKey),
+    ).toBeUndefined();
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+
+  test('an entry that reads the data of an entry with `skipToken` fails, and says why', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const draft = prefetchEntry(trpc.post.bySlug, skipToken);
+    // A prefetch entry has no result to say so in, so the load rejects
+    await expect(
+      loadHandlesSettled(trpc, {
+        draft,
+        author: ensureEntry(trpc.author.byId, {
+          id: experimental_dataOf(draft).authorId,
+        }),
+      }),
+    ).rejects.toThrow(
+      '"draft" has `skipToken` as its input, so it has no data for the entries that read it',
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
   });
 
   test('a query for every item rejects the load when its list fails', async () => {
@@ -1774,6 +1870,41 @@ describe.each([
       'tag.byIds',
       expect.anything(),
     );
+  });
+
+  test('an entry per item whose callback returns an entry with `skipToken` gives every item a disabled entry, and sends no call', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      // The post alone: a call for its tags would be refused
+      maxBatchSize: 1,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, () =>
+        prefetchEntry(trpc.tag.byIds, skipToken),
+      ),
+    });
+
+    expect(handles.tags.skipped).toBe(true);
+    const handle = experimental_handleOfItem(handles.tags, { id: 't1' });
+    expect(handle.skipped).toBe(true);
+    const options = fromHandle(trpc, handle);
+    expect(options.queryFn).toBe(skipToken);
+    expect(
+      resource.queryClient.getQueryState(options.queryKey),
+    ).toBeUndefined();
+    // An ordinary request, for the post
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain('batch=1');
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+    ]);
   });
 
   test('an entry per item is one call that the server runs for every item', async () => {

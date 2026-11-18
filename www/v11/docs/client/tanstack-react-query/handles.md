@@ -424,6 +424,12 @@ export const postRoute = createRoute({
 - It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
 - Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Nested queries](#nested-queries).
 
+Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.post.byId, skipToken)`, or `prefetchInfiniteEntry` the same way. Nothing starts, and the entry still has a handle:
+
+- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: its `status` is `'pending'` and its `fetchStatus` `'idle'`. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
+- **Only a prefetch entry takes it.** A load waits for the data of an ensure or fetch entry, which would never come, so `ensureEntry(procedure, skipToken)` is a type error.
+- **An entry that reads its data with `experimental_dataOf()` fails**, as there is none: the load rejects, and says so.
+
 #### TanStack Query equivalents {#tanstack-equivalents}
 
 Each entry is one TanStack Query call:
