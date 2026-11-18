@@ -6,7 +6,10 @@ import {
 
 import { type TRPC, useTRPC } from '../-trpc.ts';
 
-/** Reads the post the loader loaded. It never names the input. */
+/**
+ * Reads the post the loader loaded, by its handle: it never names the
+ * procedure's input. Refetching sends one request, for this query alone.
+ */
 export function Post(props: {
   readonly post: inferQueryHandle<TRPC['post']['byId']>;
 }) {
@@ -24,7 +27,7 @@ export function Post(props: {
         }}
         type="button"
       >
-        {postQuery.isFetching ? 'Refetching…' : 'Refetch from the endpoint'}
+        {postQuery.isFetching ? 'Refetching…' : 'Refetch the post'}
       </button>
     </article>
   );

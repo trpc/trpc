@@ -13,6 +13,7 @@ import { site } from '~/site.ts';
 
 import { showcases } from '../-showcases.ts';
 import { Comments } from './-components/comments.tsx';
+import { Note, SeeItYourself } from './-components/note.tsx';
 import { Post } from './-components/post.tsx';
 import { postNumbers } from './-posts.ts';
 import { loaderTRPC, useRequestCount } from './-trpc.ts';
@@ -52,7 +53,11 @@ export const Route = createFileRoute('/kitchen-sink/handles/')({
   component: HandlesPage,
 });
 
-const sourceUrl = `${site.github}/tree/main/www/src/routes/kitchen-sink/handles`;
+/**
+ * The commit this build is from, so the links show the code that runs. It
+ * changes this route's own chunk on each deploy, and no other.
+ */
+const source = `${site.github}/blob/${__TRPC_SENTRY_RELEASE__ || 'main'}/www/src/routes/kitchen-sink/handles`;
 
 function HandlesPage() {
   const data = Route.useLoaderData();
@@ -62,32 +67,50 @@ function HandlesPage() {
       <h1 className="text-4xl font-extrabold tracking-tight">
         {showcase.title}
       </h1>
-      <p className="text-muted-foreground">{showcase.description}</p>
-      <ul className="list-disc pl-5 text-sm">
-        <li>
-          The loader in <code>index.tsx</code> calls <code>loadHandles</code> on
-          the server, against the router in <code>-server/router.ts</code>.
-        </li>
-        <li>
-          The components in <code>-components/</code> read the queries with{' '}
-          <code>fromHandle</code>.
-        </li>
-        <li>
-          Opened from a link, the loader runs in the browser and calls the
-          endpoint in <code>api.$.ts</code>.
-        </li>
-      </ul>
+      <p className="text-muted-foreground">
+        Before sending this page, the server loaded the post and started its
+        comments with <code>loadHandles</code>. The parts below read those
+        queries with <code>fromHandle</code>, by a handle: the query's name and
+        input, without its data. Your browser gets the data with the page, so it
+        doesn't fetch it again.{' '}
+        <a className="underline" href={`${source}/index.tsx`}>
+          How it works
+        </a>{' '}
+        ·{' '}
+        <a className="underline" href={`${source}/-server/router.ts`}>
+          The router
+        </a>
+      </p>
+      <SeeItYourself>
+        <p>
+          Open your browser's Network tab and reload. The post and its comments
+          are in the page, and the counter below stays at 0: nothing was fetched
+          again.
+        </p>
+        <p>
+          Then pick another post. The loader runs in your browser this time, and
+          gets the post and its comments in one request:{' '}
+          <code>post.byId,post.comments</code>.
+        </p>
+        <p>
+          “Refetch the post” reads the same handle, and asks for{' '}
+          <code>post.byId</code> alone.
+        </p>
+      </SeeItYourself>
       <p
         className="rounded-md border px-3 py-2 text-sm"
         data-testid="request-count"
       >
-        Requests this tab sent to the endpoint: <strong>{requests}</strong>
+        Requests from this tab to the tRPC endpoint: <strong>{requests}</strong>
       </p>
       <nav aria-label="Posts" className="flex flex-wrap gap-2 text-sm">
         {postNumbers.map((id) => (
           <Link
             className="rounded-md border px-3 py-1 hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold"
             key={id}
+            // The click loads the post, not hovering, so the counter is
+            // easy to follow.
+            preload={false}
             // Switching posts keeps the page where it is.
             resetScroll={false}
             search={{ post: id === 1 ? undefined : id }}
@@ -97,18 +120,30 @@ function HandlesPage() {
           </Link>
         ))}
       </nav>
-      <Post post={data.handles.post} />
+      <section className="grid gap-2">
+        <Note label="ensureEntry · waited for">
+          The page waited for <code>post.byId</code>, so the post was in the
+          HTML the server sent.
+        </Note>
+        <Post post={data.handles.post} />
+      </section>
       <section className="grid gap-2">
         <h2 className="text-lg font-semibold">Comments</h2>
-        <Suspense fallback={<p>Loading comments…</p>}>
+        <Note label="prefetchEntry · not waited for">
+          The loader started <code>post.comments</code> with the post but didn't
+          wait for it. The comments stream in as they load.
+        </Note>
+        <Suspense
+          fallback={
+            <Note label="Suspense">
+              Waiting for <code>post.comments</code>, which the loader started
+              with the post.
+            </Note>
+          }
+        >
           <Comments comments={data.handles.comments} />
         </Suspense>
       </section>
-      <p className="text-sm">
-        <a className="underline" href={sourceUrl}>
-          The source on GitHub
-        </a>
-      </p>
     </HydrationBoundary>
   );
 }

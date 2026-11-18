@@ -4,7 +4,7 @@ import { kitchenSinkPath } from '../../site.ts';
 /** The kitchen sink's own page. */
 export const kitchenSink = {
   description:
-    'Small, working showcases of tRPC features, each with its own server and router.',
+    'Small, working demos of tRPC features. Each one has its own tRPC server, so you can watch the requests it makes.',
   path: kitchenSinkPath,
   title: 'Kitchen sink',
 } as const;
@@ -16,7 +16,7 @@ export const kitchenSink = {
 export const showcases = [
   {
     description:
-      'A server loader starts the queries, components read them by handle, and the browser gets the data without fetching it again.',
+      'The server loads the page’s queries once. Components read them by handle, and the browser gets the data with the page instead of fetching it again.',
     path: '/kitchen-sink/handles',
     title: 'Handles',
   },
