@@ -19,20 +19,27 @@ function QueryClient() {
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<AppRouter>();
 
-export function makeTRPCClient() {
+export function makeTRPCClient(config = QueryClient()) {
   return createTRPCClient<AppRouter>({
-    links: QueryClient().links,
+    links: config.links,
   });
 }
 
-export function makeQueryClient() {
-  const config = QueryClient();
-
+export function makeQueryClient(config = QueryClient()) {
   return new QC(
     'queryClientConfig' in config
       ? (config.queryClientConfig as QueryClientConfig)
       : undefined,
   );
+}
+
+function makeClients() {
+  const config = QueryClient();
+
+  return {
+    queryClient: makeQueryClient(config),
+    trpcClient: makeTRPCClient(config),
+  };
 }
 
 /**
@@ -44,8 +51,7 @@ export function withTRPC<TInitialProps extends object>(
   App: AppType<TInitialProps>,
 ): AppType<TInitialProps> {
   const WithTRPC: AppType<TInitialProps> = (props) => {
-    const [queryClient] = useState(makeQueryClient);
-    const [trpcClient] = useState(makeTRPCClient);
+    const [{ queryClient, trpcClient }] = useState(makeClients);
 
     const pageProps = props.pageProps as
       | {

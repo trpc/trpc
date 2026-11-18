@@ -1,7 +1,7 @@
 {
   "name": "@trpc/tanstack-react-query",
   "type": "module",
-  "version": "11.29.2",
+  "version": "11.29.3",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -66,8 +66,8 @@
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^5.106.0",
-    "@trpc/client": "11.29.2",
-    "@trpc/server": "11.29.2",
+    "@trpc/client": "11.29.3",
+    "@trpc/server": "11.29.3",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },

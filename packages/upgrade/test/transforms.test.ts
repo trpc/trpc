@@ -1,8 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cleanup } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { format } from 'oxfmt';
+import { createElement, type FC } from 'react';
 import { describe, expect, it } from 'vitest';
 import * as hooksTransform from '../src/transforms/hooksToOptions';
 import * as providerTransform from '../src/transforms/provider';
@@ -182,6 +183,32 @@ describe('provider', () => {
   it.each(fixtures)('provider %s', async (file) => {
     await executeTests(globDir, fixturesDir, file, providerTransform);
   });
+
+  // Classic `withTRPC` calls `config` once per mount. A second call opens a
+  // second WebSocket when `config` makes a `createWSClient`.
+  it.each([
+    'nextConfigOnce.snap.tsx',
+    'nextConfigOnceUnknown.snap.tsx',
+    'nextConfigNamedLikeWrapper.snap.tsx',
+  ])(
+    'the generated `withTRPC` in %s calls `config` once per mount',
+    async (file) => {
+      const setup = await importFixture<{
+        configCalls: { count: number };
+        withTRPC: (app: FC) => FC<{ pageProps: object }>;
+      }>(globDir, file);
+      const App = setup.withTRPC(() => createElement('p', null, 'app'));
+
+      try {
+        const utils = render(createElement(App, { pageProps: {} }));
+
+        expect(utils.container).toHaveTextContent('app');
+        expect(setup.configCalls.count).toBe(1);
+      } finally {
+        cleanup();
+      }
+    },
+  );
 });
 
 describe('printing', () => {

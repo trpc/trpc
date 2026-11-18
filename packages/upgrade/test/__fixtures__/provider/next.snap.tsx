@@ -36,14 +36,23 @@ function getConfig(opts: { ctx?: NextPageContext }) {
   };
 }
 
-export function makeTRPCClient() {
+export function makeTRPCClient(config = getConfig({})) {
   return createTRPCClient<AppRouter>({
-    links: getConfig({}).links,
+    links: config.links,
   });
 }
 
-export function makeQueryClient() {
-  return new QueryClient(getConfig({}).queryClientConfig);
+export function makeQueryClient(config = getConfig({})) {
+  return new QueryClient(config.queryClientConfig);
+}
+
+function makeClients() {
+  const config = getConfig({});
+
+  return {
+    queryClient: makeQueryClient(config),
+    trpcClient: makeTRPCClient(config),
+  };
 }
 
 /**
@@ -55,8 +64,7 @@ export function withTRPC<TInitialProps extends object>(
   App: AppType<TInitialProps>,
 ): AppType<TInitialProps> {
   const WithTRPC: AppType<TInitialProps> = (props) => {
-    const [queryClient] = useState(makeQueryClient);
-    const [trpcClient] = useState(makeTRPCClient);
+    const [{ queryClient, trpcClient }] = useState(makeClients);
 
     const pageProps = props.pageProps as
       | {
