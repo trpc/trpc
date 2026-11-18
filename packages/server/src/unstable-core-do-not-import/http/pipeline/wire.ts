@@ -235,19 +235,23 @@ function samePath(a: PipelinePath, b: PipelinePath) {
   return a.length === b.length && a.every((segment, at) => segment === b[at]);
 }
 
+/** Level by level, in a loop: a list can have more levels than a stack has room for */
 function sameFrame<TFrom>(
   a: PipelineFrame<TFrom> | null,
   b: PipelineFrame<TFrom> | null,
 ): boolean {
-  if (!a || !b) {
-    return a === b;
+  while (a && b && a !== b) {
+    if (
+      a.depth !== b.depth ||
+      a.list.from !== b.list.from ||
+      !samePath(a.list.path, b.list.path)
+    ) {
+      return false;
+    }
+    a = a.parent;
+    b = b.parent;
   }
-  return (
-    a.depth === b.depth &&
-    a.list.from === b.list.from &&
-    samePath(a.list.path, b.list.path) &&
-    sameFrame(a.parent, b.parent)
-  );
+  return a === b;
 }
 
 /** Whether `frame` starts with `start`: its runs are each in one of `start`'s */

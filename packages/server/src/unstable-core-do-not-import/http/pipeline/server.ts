@@ -680,43 +680,82 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
 
   /** The places of each frame, by what the frame is */
   const placesOfFrames = new Map<string, Places<Place>>();
-  const keyOf = (frame: PipelineFrame<Source> | null): string =>
-    frame
-      ? `${keyOf(frame.parent)}/${frame.list.from.index}:${JSON.stringify(frame.list.path)}`
-      : '';
-  /** Where the runs of a frame are, as the lists it is made of are ready */
+  /** The key of each frame: the id of its parent's key, and its own level */
+  const keysOfFrames = new WeakMap<PipelineFrame<Source>, string>();
+  const idsOfKeys = new Map<string, number>();
+  /**
+   * What a frame is, as a key: two frames of the same lists have the same.
+   * Each level's key holds its parent's as a short id, so keys take as much
+   * as the path does, and a loop makes them: a list can have more levels than
+   * a stack has room for
+   */
+  function keyOf(frame: PipelineFrame<Source>): string {
+    // The frame and the levels it is in that have no key yet, outermost last
+    const levels: PipelineFrame<Source>[] = [];
+    let key = '';
+    for (let at: PipelineFrame<Source> | null = frame; at; at = at.parent) {
+      const known = keysOfFrames.get(at);
+      if (known !== undefined) {
+        key = known;
+        break;
+      }
+      levels.push(at);
+    }
+    for (const level of levels.reverse()) {
+      let parent = idsOfKeys.get(key);
+      if (parent === undefined) {
+        parent = idsOfKeys.size;
+        idsOfKeys.set(key, parent);
+      }
+      key = `${parent}/${level.list.from.index}:${JSON.stringify(level.list.path)}`;
+      keysOfFrames.set(level, key);
+    }
+    return key;
+  }
+  /** Where the runs of one level are, as its list in each place before is ready */
+  function placesOfLevel(
+    frame: PipelineFrame<Source>,
+    before: Places<Place>,
+  ): Places<Place> {
+    const { list, inItem } = frame;
+    return mapPlaces(before, async (place): Promise<PlacesNode<Place>> => {
+      try {
+        const items = inItem
+          ? // A level after the first: its list is in the item of the one
+            // before
+            readPipelinePath(place.item, inItem)
+          : readPipelinePath(await dataOf(list.from, place.indexes), list.path);
+        return itemsOf({ list: items, indexes: place.indexes, tooLong });
+      } catch (cause) {
+        // The run the list is in failed, or the list can't be read: none
+        // of its items run, and other lists are as they are
+        return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
+      }
+    });
+  }
+  /**
+   * Where the runs of a frame are, as the lists it is made of are ready. In a
+   * loop, from the outermost level that has none yet
+   */
   function placesOf(frame: PipelineFrame<Source>): Places<Place> {
-    const key = keyOf(frame);
-    let places = placesOfFrames.get(key);
-    if (!places) {
-      const { parent, list } = frame;
-      places = mapPlaces(
-        parent
-          ? placesOf(parent)
-          : Promise.resolve<PlacesNode<Place>>({
-              kind: 'run',
-              value: { indexes: [], item: null },
-            }),
-        async (place): Promise<PlacesNode<Place>> => {
-          const { inItem } = frame;
-          try {
-            const items = inItem
-              ? // A level after the first: its list is in the item of the one
-                // before
-                readPipelinePath(place.item, inItem)
-              : readPipelinePath(
-                  await dataOf(list.from, place.indexes),
-                  list.path,
-                );
-            return itemsOf({ list: items, indexes: place.indexes, tooLong });
-          } catch (cause) {
-            // The run the list is in failed, or the list can't be read: none
-            // of its items run, and other lists are as they are
-            return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
-          }
-        },
-      );
-      placesOfFrames.set(key, places);
+    const levels: PipelineFrame<Source>[] = [];
+    let places: Places<Place> | undefined;
+    let at: PipelineFrame<Source> | null = frame;
+    while (at) {
+      places = placesOfFrames.get(keyOf(at));
+      if (places) {
+        break;
+      }
+      levels.push(at);
+      at = at.parent;
+    }
+    places ??= Promise.resolve<PlacesNode<Place>>({
+      kind: 'run',
+      value: { indexes: [], item: null },
+    });
+    for (const level of levels.reverse()) {
+      places = placesOfLevel(level, places);
+      placesOfFrames.set(keyOf(level), places);
     }
     return places;
   }

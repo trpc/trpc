@@ -1993,6 +1993,55 @@ describe('a call for every item', () => {
     expect(itemCount(res.of(each))).toBe(2);
     expect(echo).toHaveBeenCalledTimes(2);
   });
+  test('a list of more levels than a stack has room for runs for none of its items, and a call that reads it in its frame too', async () => {
+    const path = Array.from({ length: 200_000 }, () => null);
+    const pipeline = pipelineCalls({
+      calls: [0, 1, 2].map(() => ({
+        getRawInput: async () => ({}),
+        result: () => undefined,
+      })),
+      pipe: JSON.stringify({
+        1: { each: { from: 0, path }, reads: [] },
+        2: {
+          each: { from: 0, path },
+          reads: [{ to: ['n'], from: 1, path: [] }],
+        },
+      }),
+      transformer: transformers.none,
+      maxRuns: null,
+      limits: pipelineLimitDefaults,
+    });
+    const ran = vi.fn();
+    const [list, ...each] = pipeline.run<Outcome>({
+      call: async (_call, run) => {
+        try {
+          if (run?.kind === 'each') {
+            const runs = await run.each({
+              item: async (input) => {
+                ran(input);
+                return input;
+              },
+              error: wireError,
+            });
+            return { items: 'items' in runs ? runs.items : runs };
+          }
+          return { data: [] };
+        } catch (cause) {
+          return { error: wireError(cause) };
+        }
+      },
+      data: (outcome) => {
+        if ('error' in outcome) {
+          throw new Error(outcome.error.message);
+        }
+        return 'data' in outcome ? outcome.data : undefined;
+      },
+    });
+
+    expect(await list).toEqual({ data: [] });
+    expect(await Promise.all(each)).toEqual([{ items: [] }, { items: [] }]);
+    expect(ran).not.toHaveBeenCalled();
+  });
 });
 
 describe('the limits of a server', () => {
