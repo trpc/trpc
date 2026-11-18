@@ -11,30 +11,37 @@ import {
 import { isPlainObject } from './utils';
 
 /** An entry to load, by its place in what `loadHandles()` was given */
+/** What built an entry, which says how a load loads it */
+export type EntryBuilt =
+  /** `prefetchEntry()` and the like: one query */
+  | { by: 'entry' }
+  /**
+   * `experimental_entryPerItem()`: a query for every item of `list`. Its
+   * handle and its data are lists too
+   */
+  | { by: 'entryPerItem'; list: EntryDataRef }
+  /**
+   * `experimental_dataOf(entry, (data) => entry)`: built from the data of
+   * `data`, which the load doesn't wait for, so its handle has the input
+   * without it
+   */
+  | { by: 'dataOf'; data: object };
+
+/** An entry to load, by its place in what `loadHandles()` was given */
 export interface EntryLeaf {
-  /** The keys down to the entry, joined by dots */
-  key: string;
-  /** The keys down to the entry: `card.list` can be a key, or two */
+  /** The keys down to the entry, joined by dots, for messages. Not to tell entries apart: `card.list` can be a key, or two */
+  label: string;
+  /** The keys down to the entry */
   keys: string[];
   entry: object;
   state: EntryState;
-  /**
-   * For an entry from `experimental_entryPerItem()`: the list it is loaded for
-   * every item of. Its handle and its data are then lists too
-   */
-  each: EntryDataRef | null;
-  /**
-   * For an entry from `experimental_dataOf(entry, (data) => entry)`: the entry
-   * whose data it is built from. The load doesn't wait for that data, so its
-   * handle has the input without it
-   */
-  from: object | null;
+  built: EntryBuilt;
   /**
    * What its input reads of other entries, and the entry of each. A load
    * fills it in as it begins
    */
   reads: { ref: EntryInputRef; source: EntryLeaf }[];
-  /** `each`, and the entry it is in. A load fills it in as it begins */
+  /** The list of an entry per item, and the entry it is in. A load fills it in as it begins */
   list: { ref: EntryDataRef; source: EntryLeaf } | null;
 }
 
@@ -91,12 +98,15 @@ export function readEntries(opts: {
         [
           name,
           {
-            key,
+            label: key,
             keys,
             entry: entry as object,
             state,
-            each: perItem?.list ?? null,
-            from: fromData?.source ?? null,
+            built: perItem
+              ? { by: 'entryPerItem', list: perItem.list }
+              : fromData
+                ? { by: 'dataOf', data: fromData.source }
+                : { by: 'entry' },
             reads: [],
             list: null,
           },
@@ -144,7 +154,8 @@ export function mapEntryTree(
  * item and none of that data: the component that has them finishes it.
  */
 export function waitedByHandle(leaf: EntryLeaf): Set<object> {
-  const { from, list } = leaf;
+  const { list } = leaf;
+  const from = leaf.built.by === 'dataOf' ? leaf.built.data : null;
   return new Set([
     // It waits for the list if the load does. So not for a list from a
     // prefetch entry
@@ -220,8 +231,12 @@ export function describeEntries(opts: {
       firstCursor:
         typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
-      each: leaf.each ? describeRef(leaf.each) : null,
-      from: leaf.from ? (keysOfEntry.get(leaf.from) ?? null) : null,
+      built:
+        leaf.built.by === 'entryPerItem'
+          ? [leaf.built.by, describeRef(leaf.built.list)]
+          : leaf.built.by === 'dataOf'
+            ? [leaf.built.by, keysOfEntry.get(leaf.built.data) ?? null]
+            : [leaf.built.by],
     };
   };
   // In the shape of the entries, which is the shape of their handles: a group

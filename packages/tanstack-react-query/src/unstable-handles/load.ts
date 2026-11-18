@@ -235,15 +235,16 @@ export function beginEntries(opts: {
       const source = leafOfEntry.get(ref.entry);
       if (!source) {
         throw new Error(
-          `The entry for "${leaf.key}" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load`,
+          `The entry for "${leaf.label}" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load`,
         );
       }
       return source;
     };
     leaf.reads = leaf.state.refs.map((ref) => ({ ref, source: sourceOf(ref) }));
-    leaf.list = leaf.each
-      ? { ref: leaf.each, source: sourceOf(leaf.each) }
-      : null;
+    leaf.list =
+      leaf.built.by === 'entryPerItem'
+        ? { ref: leaf.built.list, source: sourceOf(leaf.built.list) }
+        : null;
   }
   const readLeaves = new Set(
     leaves.flatMap((leaf) => [
@@ -255,8 +256,8 @@ export function beginEntries(opts: {
     for (const leaf of leaves) {
       if (waitedByHandle(leaf).size > 0) {
         throw new Error(
-          `The handle of the entry for "${leaf.key}" has another entry's data in its input, and \`${opts.now}()\` doesn't wait for data. ${
-            leaf.each
+          `The handle of the entry for "${leaf.label}" has another entry's data in its input, and \`${opts.now}()\` doesn't wait for data. ${
+            leaf.built.by === 'entryPerItem'
               ? 'Make the entry of its list a prefetch entry, and read nothing else of the list in its input'
               : 'Build the entry from that data, with `experimental_dataOf(entry, (data) => entry)`'
           }, or wait in a loader with \`loadHandles()\``,
@@ -268,7 +269,7 @@ export function beginEntries(opts: {
   const failedLeafOf = new WeakMap<object, EntryLeaf>();
   /** An entry's failure, as a load reports it */
   const failureOf = (leaf: EntryLeaf, error: unknown) => {
-    const failure = toEntryError(leaf.key, leaf.state, error);
+    const failure = toEntryError(leaf.label, leaf.state, error);
     if (failure instanceof TRPCEntryError) {
       failedLeafOf.set(failure, leaf);
     }
@@ -409,7 +410,7 @@ export function beginEntries(opts: {
           publish(published, {
             ok: false,
             error: new Error(
-              `"${leaf.key}" has \`skipToken\` as its input, so it has no data for the entries that read it`,
+              `"${leaf.label}" has \`skipToken\` as its input, so it has no data for the entries that read it`,
             ),
           }),
         );
@@ -564,7 +565,7 @@ export function beginEntries(opts: {
       (loaded) => publish(published, { ok: true, data: loaded }),
       (error: unknown) => publish(published, { ok: false, error }),
     );
-    const { from } = leaf;
+    const from = leaf.built.by === 'dataOf' ? leaf.built.data : null;
     /** The input without the data it is built from, and where that data goes */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
       ...toHandle(
@@ -747,7 +748,7 @@ export function beginEntries(opts: {
                   sameInput: async () => (await serverKeys).get(place) === key,
                 });
               }
-              const itemKey = `${leaf.key}.${index}`;
+              const itemKey = `${leaf.label}.${index}`;
               return startEntry({ queryClient, state, options }).catch(
                 (error: unknown) => {
                   throw toEntryError(itemKey, state, error);
@@ -809,18 +810,16 @@ export function handlesOfLoads(opts: {
   // A list's handle says what its items load, so that a later fetch of the
   // list, such as the next page, can load that in the same request
   for (const [leaf, handle] of handleOfLeaf) {
-    const source = leaf.each && opts.leafOfEntry.get(leaf.each.entry);
+    if (leaf.built.by !== 'entryPerItem' || !leaf.state.request.pipelines) {
+      continue;
+    }
+    const source = opts.leafOfEntry.get(leaf.built.list.entry);
     const sourceHandle = source && handleOfLeaf.get(source);
-    if (
-      !leaf.each ||
-      !source ||
-      !sourceHandle ||
-      !leaf.state.request.pipelines
-    ) {
+    if (!source || !sourceHandle) {
       continue;
     }
     // The items in one request's result: a query's data, or any page
-    const itemPath = itemPathOf(leaf.each);
+    const itemPath = itemPathOf(leaf.built.list);
     const inRequest = requestPath({
       type: source.state.type,
       path: itemPath,
@@ -857,7 +856,7 @@ export async function startEntries(opts: {
     Promise.all(
       waited.map((load) =>
         // An entry per item settles every item itself
-        opts.settle && !load.leaf.each
+        opts.settle && load.leaf.built.by !== 'entryPerItem'
           ? settleLoad(load.promise)
           : load.promise,
       ),
