@@ -310,7 +310,8 @@ export function createPipelineSizeOf() {
   const objects = new WeakMap<object, { size: number; exact: boolean }>();
   const strings = new Map<string, number>();
   /** How long `value` is, its `toJSON` already called, as JSON calls it once */
-  const sizeOf = (value: unknown, room: number): number => {
+  const sizeOf = (boxed: unknown, room: number): number => {
+    const value = unboxed(boxed);
     if (typeof value === 'string') {
       // Its length, with its quotes, is as long as it can be at least
       if (value.length + 2 > room) {
@@ -374,8 +375,17 @@ function addParts(
   addSeparators: (length: number) => void,
 ) {
   let over = false;
-  if (Symbol.iterator in value) {
-    // An array, or what a transformer makes, such as a `Map` or a `Set`
+  if (Array.isArray(value)) {
+    // By index, as JSON reads it, whatever its iterator gives
+    for (let index = 0; index < value.length; index++) {
+      // A `,` before each but the first
+      addSeparators(index === 0 ? 0 : 1);
+      if ((over = add(asJSON(value[index], String(index))))) {
+        break;
+      }
+    }
+  } else if (Symbol.iterator in value) {
+    // What a transformer makes, such as a `Map` or a `Set`
     let index = 0;
     for (const part of value as Iterable<unknown>) {
       // A `,` before each but the first
@@ -414,12 +424,29 @@ function addParts(
  */
 function asJSON(value: unknown, key: string): unknown {
   if (
-    ((typeof value === 'object' && value !== null) ||
-      typeof value === 'function') &&
-    'toJSON' in value &&
-    typeof value.toJSON === 'function'
+    (typeof value === 'object' && value !== null) ||
+    typeof value === 'function' ||
+    typeof value === 'bigint'
   ) {
-    return value.toJSON(key);
+    // Read once, as JSON reads it: a getter can give something else each time
+    const toJSON: unknown = (value as { toJSON?: unknown }).toJSON;
+    if (typeof toJSON === 'function') {
+      return Reflect.apply(toJSON, value, [key]) as unknown;
+    }
+  }
+  return value;
+}
+
+/** The primitive JSON writes for a boxed one, such as `Object(1)` */
+function unboxed(value: unknown): unknown {
+  if (value instanceof Number) {
+    return Number(value);
+  }
+  if (value instanceof String) {
+    return String(value);
+  }
+  if (value instanceof Boolean || value instanceof BigInt) {
+    return value.valueOf();
   }
   return value;
 }

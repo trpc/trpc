@@ -2949,6 +2949,55 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('a `toJSON` that a getter gives is read once, as JSON reads it', () => {
+    const sizeOf = createPipelineSizeOf();
+    let reads = 0;
+    const value = {
+      get toJSON() {
+        reads++;
+        return () => 'x';
+      },
+    };
+
+    const size = sizeOf(value, Infinity);
+    expect(reads).toBe(1);
+    expect(size).toBe(JSON.stringify(value).length);
+  });
+
+  test('a bigint with a `toJSON` is as long as what it gives', () => {
+    const sizeOf = createPipelineSizeOf();
+    const proto = BigInt.prototype as { toJSON?: unknown };
+    proto.toJSON = function (this: bigint) {
+      return this.toString();
+    };
+    try {
+      const value = { n: 12n };
+      expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+    } finally {
+      delete proto.toJSON;
+    }
+  });
+
+  test('an array is read by index, as JSON reads it, not by its iterator', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = ['abcdef'];
+    Object.defineProperty(value, Symbol.iterator, {
+      value: function* () {
+        // gives nothing
+      },
+    });
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
+  test('a boxed primitive is as long as the primitive JSON writes for it', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = [Object(12345), Object('ab'), Object(true)];
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+    expect(sizeOf(Object(12345), Infinity)).toBe(5);
+  });
+
   test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {
     const sizeOf = createPipelineSizeOf();
     const value = { at: new Date('2026-01-01T00:00:00Z') };
@@ -2992,7 +3041,10 @@ describe('how long a value is, for what a request fills in', () => {
       ),
       {
         get(target, key, receiver) {
-          reads++;
+          // Its `toJSON` is looked up each time, as JSON looks it up
+          if (key !== 'toJSON') {
+            reads++;
+          }
           return Reflect.get(target, key, receiver);
         },
       },
@@ -3012,6 +3064,13 @@ describe('how long a value is, for what a request fills in', () => {
         100,
       ),
     ).toBe(101);
+    // And what a transformer makes, such as a `Set`
+    expect(
+      sizeOf(
+        new Set(Array.from({ length: 10_000 }, (_it, index) => index)),
+        100,
+      ),
+    ).toBeGreaterThan(100);
   });
 });
 
