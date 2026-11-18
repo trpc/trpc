@@ -125,6 +125,8 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
         try {
           if (run?.kind === 'each') {
             const items = await run.each({
+              // What a run returned is its data
+              read: (data) => data,
               item: async (input) => {
                 ran += 1;
                 // Each run's whole input counts

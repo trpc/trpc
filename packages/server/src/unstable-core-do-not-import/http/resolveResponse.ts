@@ -280,51 +280,74 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
  * getter that changes, can't pass and then fail the response
  */
 interface SentValue {
-  /**
-   * The JSON of what the transformer made of it, parsed: for a response that
-   * doesn't stream, which sends it as it is
-   */
-  sent: unknown;
-  /**
-   * That, read back through the transformer: for a stream, which serializes
-   * what it sends itself, and for `responseMeta`. The transformer's own
-   * making, so it serializes as `sent` again
-   */
+  /** As it was made: for `responseMeta`, and for a stream's data */
   value: unknown;
+  /**
+   * The JSON of what the transformer made of it, as it was checked.
+   * `undefined` for what JSON writes nothing for, such as `undefined`
+   */
+  json: string | undefined;
+}
+
+/** An error shape of a pipelined batch's response, serialized once */
+interface SentShape {
+  /** As it was made: for `responseMeta` */
+  value: unknown;
+  /** The JSON of what the transformer made of it, as it was checked */
+  json: string;
 }
 
 /**
  * `value` serialized once, for a pipelined batch's response. Throws what
- * serializing it throws, such as for a `BigInt`
+ * serializing it throws, such as for a `BigInt`. Nothing is read back
  */
 function sendable(
   transformer: CombinedDataTransformer['output'],
   value: unknown,
 ): SentValue {
-  const json = JSON.stringify(transformer.serialize(value));
-  if (json === undefined) {
-    return { sent: undefined, value: undefined };
-  }
-  return {
-    sent: JSON.parse(json),
-    value: transformer.deserialize(JSON.parse(json)),
-  };
+  return { value, json: JSON.stringify(transformer.serialize(value)) };
 }
 
-/** `value` serialized once, or `null` if it can't be */
-function trySendable(
+/** What a response that doesn't stream sends of a value: its checked JSON */
+function sentOf(sent: SentValue | SentShape): unknown {
+  return sent.json === undefined ? undefined : JSON.parse(sent.json);
+}
+
+/**
+ * An error shape serialized once, or `null` if it can't be, or if JSON writes
+ * nothing for it: a response has an error there
+ */
+function trySendableShape(
   transformer: CombinedDataTransformer['output'],
-  value: unknown,
-) {
+  shape: unknown,
+): SentShape | null {
   try {
-    return sendable(transformer, value);
+    const { json } = sendable(transformer, shape);
+    return json === undefined ? null : { value: shape, json };
   } catch {
     return null;
   }
 }
 
+/**
+ * An error shape as a stream sends it. The stream serializes what it sends
+ * itself, so it gets the checked JSON read back through the transformer,
+ * which serializes to the same again. If the transformer can't read it back,
+ * the shape as it was made
+ */
+function streamedShape(
+  transformer: CombinedDataTransformer['output'],
+  shape: SentShape,
+): unknown {
+  try {
+    return transformer.deserialize(JSON.parse(shape.json));
+  } catch {
+    return shape.value;
+  }
+}
+
 /** The runs of a call that runs for every item, as far as they are ready */
-type PipelineItemsNode = Awaited<PipelineRuns<SentValue>>;
+type PipelineItemsNode = Awaited<PipelineRuns<SentShape, SentValue>>;
 
 /**
  * The runs of a call for every item, for a response that streams: the items
@@ -527,7 +550,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       call: TRPCRequestInfo['calls'][number] | undefined;
       /** Whether the server refused the call before any of its runs ran */
       notRun: boolean;
-    }): SentValue => {
+    }): SentShape => {
       const path = sending.call?.path;
       const shapeOf = (error: TRPCError, input: unknown): unknown => {
         const shape = getErrorShape({
@@ -541,7 +564,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         return sending.notRun ? markPipelineNotRun(shape) : shape;
       };
       const output = config.transformer.output;
-      const sent = trySendable(output, shapeOf(sending.error, sending.input));
+      const sent = trySendableShape(
+        output,
+        shapeOf(sending.error, sending.input),
+      );
       if (sent) {
         return sent;
       }
@@ -554,12 +580,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         path,
         isDev: config.isDev,
       });
+      const marked = sending.notRun ? markPipelineNotRun(fallback) : fallback;
       return (
-        trySendable(output, shapeOf(error, undefined)) ??
-        sendable(
-          output,
-          sending.notRun ? markPipelineNotRun(fallback) : fallback,
-        )
+        trySendableShape(output, shapeOf(error, undefined)) ?? {
+          value: marked,
+          // Strings and numbers only, which JSON can carry
+          json: JSON.stringify(output.serialize(marked)),
+        }
       );
     };
 
@@ -665,8 +692,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   }
                   // What JSON can't carry fails the run, not the response or
                   // the stream. Serialized once: what was checked is sent
-                  return sendable(config.transformer.output, itemData).value;
+                  return sendable(config.transformer.output, itemData);
                 },
+                read: (sent) => sent.value,
                 error: (failure) => {
                   const error = getTRPCErrorFromUnknown(failure.cause);
                   opts.onError?.({
@@ -965,14 +993,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const call = info.calls[index];
 
           if (error) {
+            const shape = pipeline
+              ? pipelinedErrorShape({
+                  error,
+                  input: call!.result(),
+                  call,
+                  notRun: pipeline.isNotRun(error),
+                })
+              : null;
             return {
-              error: pipeline
-                ? pipelinedErrorShape({
-                    error,
-                    input: call!.result(),
-                    call,
-                    notRun: pipeline.isNotRun(error),
-                  }).value
+              error: shape
+                ? streamedShape(config.transformer.output, shape)
                 : getErrorShape({
                     config,
                     ctx: ctxManager.valueOrUndefined(),
@@ -984,8 +1015,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             };
           }
           if (result.items) {
+            // A run's data as it was made, as for a call that runs once
             return streamedItems(result.items, (outcome) =>
-              'error' in outcome ? { error: outcome.error.value } : outcome,
+              'error' in outcome
+                ? {
+                    error: streamedShape(
+                      config.transformer.output,
+                      outcome.error,
+                    ),
+                  }
+                : { result: { data: outcome.result.data.value } },
             );
           }
 
@@ -1090,7 +1129,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               return {
                 error,
                 meta: { error: shape.value },
-                sent: { error: shape.sent },
+                sent: { error: sentOf(shape) },
               };
             };
             const [error, result] = res;
@@ -1099,10 +1138,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }
             if (result.items) {
               // A call for every item has no data of its own: each run's was
-              // serialized as it ran. `responseMeta` gets a result, with the
-              // runs as its data, and the response has them in place of it
-              const serialize = (value: unknown) =>
-                config.transformer.output.serialize(value);
+              // serialized as it ran, and is sent as it was checked.
+              // `responseMeta` gets a result, with the runs as its data, and
+              // the response has them in place of it
               return {
                 error: undefined,
                 meta: {
@@ -1110,14 +1148,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                     data: await settledItems(result.items, (outcome) =>
                       'error' in outcome
                         ? { error: outcome.error.value }
-                        : outcome,
+                        : { result: { data: outcome.result.data.value } },
                     ),
                   },
                 },
                 sent: await settledItems(result.items, (outcome) =>
                   'error' in outcome
-                    ? { error: outcome.error.sent }
-                    : { result: { data: serialize(outcome.result.data) } },
+                    ? { error: sentOf(outcome.error) }
+                    : { result: { data: sentOf(outcome.result.data) } },
                 ),
               };
             }
@@ -1139,7 +1177,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             return {
               error: undefined,
               meta: { result: { data: data.value } },
-              sent: { result: { data: data.sent } },
+              sent: { result: { data: sentOf(data) } },
             };
           }),
         )

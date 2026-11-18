@@ -201,6 +201,8 @@ function serve(opts: {
           }
           if (run?.kind === 'each') {
             const items = await run.each({
+              // What a run returned is its data
+              read: (data) => data,
               item: async (input) => {
                 const data = await fn(input);
                 // What can't go in the response is that run's error
@@ -280,7 +282,7 @@ function serve(opts: {
   });
 }
 
-type Items = Awaited<PipelineRuns<WireError>>;
+type Items = Awaited<PipelineRuns<WireError, unknown>>;
 
 /** The runs of a call for every item, once all of them are done */
 async function settle(
@@ -1764,7 +1766,7 @@ describe('a call for every item', () => {
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
-  test('the lists at a level of a list of lists count together against `maxRuns`, even when no call runs for their items', async () => {
+  test('the lists at a level of a list of lists count together against `maxRuns`, even when no call runs for their items: a call none of whose runs started is refused as a whole', async () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
@@ -1795,19 +1797,15 @@ describe('a call for every item', () => {
       calls: [each],
     });
 
-    const group = { items: { 0: { items: {} }, 1: { items: {} } } };
+    // Its third group's two lists would make six at their level. None of
+    // its runs started, so it is refused as a whole, and can be asked for
+    // by itself
     expect(res.of(each)).toEqual({
-      items: {
-        0: group,
-        1: group,
-        // Its two lists would make six at their level
-        2: {
-          error: {
-            code: 'BAD_REQUEST',
-            message:
-              'The lists at one level have 6 items together, more than `maxRuns` (4) allows',
-          },
-        },
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'The lists at one level have 6 items together, more than `maxRuns` (4) allows',
+        data: { pipeline: 'not-run' },
       },
     });
     expect(echo).not.toHaveBeenCalled();
@@ -2300,6 +2298,7 @@ describe('a call for every item', () => {
         try {
           if (run?.kind === 'each') {
             const runs = await run.each({
+              read: (data) => data,
               item: async (input) => {
                 ran(input);
                 return input;
@@ -4697,6 +4696,65 @@ describe('an input its transformer would send other than as the client sent it',
 
     expect(res.of(reader)).toMatchObject({
       error: { code: 'BAD_REQUEST', data: { pipeline: 'not-run' } },
+    });
+    expect(echo).not.toHaveBeenCalled();
+  });
+});
+
+describe('the mark of a call refused before it ran', () => {
+  test('leaves a shape that is no object as it is', () => {
+    expect(markPipelineNotRun('error')).toBe('error');
+    expect(markPipelineNotRun(null)).toBe(null);
+  });
+});
+
+describe('a value a call reads that is in itself', () => {
+  test('is refused as longer than `maxValueLength` allows, and the call can be sent by itself', async () => {
+    // Reads the data of `post` back with its `v` in itself
+    const inItself: CombinedDataTransformer = {
+      input: transformers.none.input,
+      output: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) => {
+          if (!isObject(it) || !isObject(it['v'])) {
+            return it;
+          }
+          const v: Record<string, unknown> = { ...it['v'] };
+          v['self'] = v;
+          return { v };
+        },
+      },
+    };
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      transformer: inItself,
+      limits: { ...pipelineLimitDefaults, allowWholeValues: true },
+      fns: { post: () => ({ v: { id: 'ada' } }), echo },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      {},
+      reads(null, { to: ['v'], from: post, path: ['v'] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: inItself,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'A value this call reads is longer than `maxValueLength` (1024 characters of JSON) allows',
+        data: { pipeline: 'not-run' },
+      },
     });
     expect(echo).not.toHaveBeenCalled();
   });
