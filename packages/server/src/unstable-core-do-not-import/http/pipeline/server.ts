@@ -323,6 +323,10 @@ export function createPipelineSizeOf() {
       }
       return size;
     }
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      // JSON writes `null` for it
+      return 4;
+    }
     if (
       typeof value === 'number' ||
       typeof value === 'bigint' ||
@@ -385,15 +389,31 @@ function addParts(
     }
   } else {
     // A property is read once the room is known to have what is before it
-    for (const [index, key] of Object.keys(value).entries()) {
+    let first = true;
+    for (const key of Object.keys(value)) {
+      const part = (value as Record<string, unknown>)[key];
+      if (leftOut(part)) {
+        // JSON writes neither it nor its key
+        continue;
+      }
       // A `,` before each but the first, and a `:` after its key
-      addSeparators((index === 0 ? 0 : 1) + 1);
-      if ((over = add(key) || add((value as Record<string, unknown>)[key]))) {
+      addSeparators((first ? 0 : 1) + 1);
+      first = false;
+      if ((over = add(key) || add(part))) {
         break;
       }
     }
   }
   return over;
+}
+
+/** Whether JSON leaves a property with this value out of an object */
+function leftOut(value: unknown) {
+  return (
+    value === undefined ||
+    typeof value === 'function' ||
+    typeof value === 'symbol'
+  );
 }
 
 /** What the server needs of a batch's call to fill in its input */

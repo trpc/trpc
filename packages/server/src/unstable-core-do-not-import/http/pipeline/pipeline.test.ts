@@ -2896,6 +2896,27 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('a number JSON can not write is as long as the `null` it writes instead', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = [Number.NaN, Number.POSITIVE_INFINITY, -1.5];
+
+    expect(sizeOf(Number.NaN, Infinity)).toBe(4);
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
+  test('a property JSON leaves out of an object counts for nothing', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = {
+      a: 1,
+      gone: undefined,
+      fn: () => 1,
+      sym: Symbol('x'),
+      b: [undefined, 2],
+    };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
   test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {
     const sizeOf = createPipelineSizeOf();
     const value = { at: new Date('2026-01-01T00:00:00Z') };
