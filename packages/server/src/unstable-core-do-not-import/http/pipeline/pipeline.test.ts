@@ -1825,7 +1825,7 @@ describe('a call for every item', () => {
     });
   });
 
-  test('a run whose item can not be read fails by itself, and what else it reads is still waited for', async () => {
+  test('a run whose item can not be read fails by itself, and the rejection of what else it reads is handled', async () => {
     const unhandled = vi.fn();
     process.on('unhandledRejection', unhandled);
     using _listener = makeResource({}, () =>
@@ -1866,7 +1866,14 @@ describe('a call for every item', () => {
     // A turn for a rejection nothing waits for to be reported
     await new Promise((resolve) => setImmediate(resolve));
 
-    expect(itemCount(res.of(each))).toBe(1);
+    // The item's own error, not the one of what else it reads
+    expect(res.of(each)).toEqual({
+      items: {
+        0: {
+          error: { code: 'INTERNAL_SERVER_ERROR', message: 'Can not read it' },
+        },
+      },
+    });
     expect(unhandled).not.toHaveBeenCalled();
   });
 

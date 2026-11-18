@@ -1136,7 +1136,7 @@ No. Only queries can be sent this way, and such a batch of mutations is rejected
 
 #### Can a later page of an infinite list load its authors in the same request? {#later-pages}
 
-Yes, if the component reads the list through its handle, each page has one flat list, and the author's query reads the post. A query that reads nothing of its item, such as a fixed id, loads when a row reads it. See [When the list is fetched again](#later-fetches).
+Yes, if the component reads the list through its handle, each page has one flat list, and the author's query reads the post. The proxy you pass to `fromHandle` must have the author's procedure too, such as the root `trpc`: with `trpc.post`, the later pages load without their authors. A query that reads nothing of its item, such as a fixed id, loads when a row reads it. See [When the list is fetched again](#later-fetches).
 
 #### What does `createContext` see? {#create-context}
 

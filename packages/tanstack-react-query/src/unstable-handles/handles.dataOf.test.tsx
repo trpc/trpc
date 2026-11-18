@@ -2738,8 +2738,18 @@ describe.each([
       }),
     });
 
-    const [page] = data.rest.pages;
-    expect(page?.items[0]?.id).toBe(`p${String(data.rest.pageParams[0])}`);
+    // The server ran its page from cursor 1, in the request of the first.
+    // That page is not the cached pages' first, so the entry fetched them
+    // again by itself, from cursor 2
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.paged', { cursor: 0 }],
+      ['post.paged', { cursor: 1 }],
+      ['post.paged', { cursor: 2 }],
+    ]);
+    expect(data.rest).toEqual({
+      pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
+      pageParams: [2],
+    });
   });
 
   test('an entry that keeps its cached data makes the entry that reads it fetch with the input the client filled in', async () => {

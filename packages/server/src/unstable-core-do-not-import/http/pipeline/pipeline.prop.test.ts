@@ -6,6 +6,7 @@
  * of every order; this checks the code, for random batches and orders.
  */
 import { fc, test } from '@fast-check/vitest';
+import { isObject } from '../../utils';
 import { encodePipelineReads, readPipelinedItem } from './client';
 import { parsePipelineReads, pipelineCalls } from './server';
 import type { PipelineCallReads, PipelineLimits, PipelinePipe } from './wire';
@@ -127,8 +128,8 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
           ran += 1;
           const read = batch.calls[index]?.read;
           if (read?.kind === 'whole') {
-            // Only the value it reads counts
-            filled += sizeOf(onceData.get(read.from)?.v);
+            // Only the value it reads counts, as the procedure got it
+            filled += sizeOf(isObject(input) ? input['w'] : undefined);
           }
           const result = await data();
           onceData.set(index, result);
