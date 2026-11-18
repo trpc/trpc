@@ -21,6 +21,9 @@ tester.run(
       "import { waitFor } from './utils';",
       "import { screen } from '@testing-library/dom';",
       'await vi.waitFor(() => {});',
+      "export { screen } from '@testing-library/dom';",
+      "import * as utils from './utils';",
+      "import '@testing-library/react';",
     ],
     invalid: [
       {
@@ -29,6 +32,18 @@ tester.run(
       },
       {
         code: "import { waitFor as wait } from '@testing-library/dom';",
+        errors: [{ message }],
+      },
+      {
+        code: "import * as testing from '@testing-library/react';",
+        errors: [{ message }],
+      },
+      {
+        code: "export { waitFor } from '@testing-library/dom';",
+        errors: [{ message }],
+      },
+      {
+        code: "export * from '@testing-library/react';",
         errors: [{ message }],
       },
     ],
