@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import type { FieldValues, UseFormProps, UseFormReturn } from 'react-hook-form';
 import { FormProvider, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import { uploadFileSchema } from '~/utils/schemas';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
 
 type ZodFormData<TSchema extends FieldValues> = UseFormReturn<TSchema> & {
   formRef: React.RefObject<HTMLFormElement | null>;
@@ -42,11 +43,13 @@ function useZodForm<TInput extends FieldValues>(
 }
 
 export default function Page() {
-  const mutation = trpc.room.sendMessage.useMutation({
+  const trpc = useTRPC();
+  const mutationOptions = trpc.room.sendMessage.mutationOptions({
     onError(err) {
       alert('Error from server: ' + err.message);
     },
   });
+  const mutation = useMutation(mutationOptions);
 
   const form = useZodForm({
     schema: uploadFileSchema,
@@ -64,7 +67,7 @@ export default function Page() {
       <FormProvider {...form}>
         <form
           method="post"
-          action={`/api/trpc/${mutation.trpc.path}`}
+          action={`/api/trpc/${mutationOptions.trpc.path}`}
           encType="multipart/form-data"
           onSubmit={(_event) => {
             if (noJs) {

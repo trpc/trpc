@@ -1,3 +1,15 @@
+# `@trpc/upgrade`
+
+Moves an app from `@trpc/react-query` (and `@trpc/next`'s `createTRPCNext`) to `@trpc/tanstack-react-query`:
+
+```sh
+npx @trpc/upgrade --yes
+```
+
+See the [migration guide](https://trpc.io/docs/client/tanstack-react-query/migrating#codemod-migration).
+
+## Development
+
 run locally with source files
 
 ```sh

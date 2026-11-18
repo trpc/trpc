@@ -1,10 +1,12 @@
 /**
  * This is a Next.js page.
  */
-import { trpc } from '../utils/trpc';
+import { useMutation } from '@tanstack/react-query';
+import { useTRPC } from '../utils/trpc';
 
 export default function IndexPage() {
-  const mutation = trpc.room.sendMessage.useMutation({
+  const trpc = useTRPC();
+  const mutationOptions = trpc.room.sendMessage.mutationOptions({
     onSuccess() {
       alert('success!');
     },
@@ -12,6 +14,7 @@ export default function IndexPage() {
       alert('Error: ' + err.message);
     },
   });
+  const mutation = useMutation(mutationOptions);
 
   return (
     <>
@@ -26,7 +29,7 @@ export default function IndexPage() {
         <legend>Form with file upload</legend>
         <form
           method="post"
-          action={`/api/trpc/${mutation.trpc.path}`}
+          action={`/api/trpc/${mutationOptions.trpc.path}`}
           encType="multipart/form-data"
           onSubmit={(e) => {
             const formData = new FormData(e.currentTarget);

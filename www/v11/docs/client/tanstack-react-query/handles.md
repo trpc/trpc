@@ -100,6 +100,11 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
+export const trpcStatic = createTRPCOptionsProxy({
+  ctx: {},
+  router: appRouter,
+  queryClient: getQueryClient,
+});
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
@@ -974,6 +979,55 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 - Handle inputs cross through React's serialization, not your transformer. Keep them to JSON values and `Date`s.
 - For a 404, use an ensure entry and call `notFound()`: see [Errors](#errors).
 
+#### Metadata, static and ISR pages {#nextjs-static}
+
+- `generateMetadata` gets the page's query client. Fetch there, and the page's ensure entry reuses the data.
+- A page whose tRPC context reads `headers()` renders on every request. `loadHandles` lets Next.js see that, so the build marks the page dynamic.
+- To prerender the page and revalidate it, load it with a proxy whose context reads no request data, `trpcStatic` from [Static and ISR pages](/docs/client/nextjs/static-pages#static-pages):
+
+```tsx twoslash title='app/posts/[id]/page.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: app/posts/[id]/post.tsx
+export { Post } from '~/components/post';
+// @filename: app/posts/[id]/page.tsx
+// ---cut---
+// ---collapse---
+import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { getQueryClient, HydrateClient, trpcStatic } from '~/trpc/server';
+import { Post } from './post';
+// ---/collapse---
+
+type Props = { params: Promise<{ id: string }> };
+
+export const revalidate = 60;
+
+export function generateStaticParams() {
+  return [{ id: '1' }];
+}
+
+export async function generateMetadata(props: Props) {
+  const { id } = await props.params;
+  const post = await getQueryClient().fetchQuery(
+    trpcStatic.post.byId.queryOptions({ id }),
+  );
+  return { title: post.title };
+}
+
+export default async function PostPage(props: Props) {
+  const { id } = await props.params;
+  const [handles] = await loadHandles(trpcStatic, {
+    post: ensureEntry(trpcStatic.post.byId, { id }),
+  });
+  return (
+    <HydrateClient>
+      <Post post={handles.post} />
+    </HydrateClient>
+  );
+}
+```
+
 </div>
 </div>
 
@@ -1018,6 +1072,7 @@ async function loader(id: string) {
 
 - `error.key` is the entry's key, `error.path` the procedure, `error.code` the tRPC code.
 - The load rejects on the first failure, without waiting for the others.
+- An error with a `digest`, such as the one Next.js's `headers()` throws in a static render, is rethrown as it is, also by `loadHandlesSettled`, so Next.js still sees it. A procedure's errors arrive as a `TRPCError`, as with `fetchQuery`.
 
 #### Errors as values {#errors-as-values}
 

@@ -32,13 +32,25 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
+import {
+  dehydrate,
+  useQueryClient,
+  useMutation,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
+import {
+  createTRPCOptionsProxy,
+  useSubscription,
+  type TRPCSubscriptionStatus,
+} from '@trpc/tanstack-react-query';
+import type { GetServerSidePropsContext } from 'next';
+import superjson from 'superjson';
+import { createContext } from '~/server/context';
+import { appRouter } from '~/server/routers/_app';
+import { makeQueryClient } from '~/utils/query-client';
 
-type SubscriptionStatus = ReturnType<
-  typeof trpc.post.onAdd.useSubscription
->['status'];
-
-function LiveBadge(props: { status: SubscriptionStatus }) {
+function LiveBadge(props: { status: TRPCSubscriptionStatus }) {
   switch (props.status) {
     case 'idle':
       return <Badge variant="outline">Idle</Badge>;
@@ -72,7 +84,8 @@ function UserAvatar(props: { name: string }) {
 }
 
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
-  const addPost = trpc.post.add.useMutation();
+  const trpc = useTRPC();
+  const addPost = useMutation(trpc.post.add.mutationOptions());
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
   const [enterToPostMessage, setEnterToPostMessage] = useState(true);
@@ -87,7 +100,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     } catch {}
   }
 
-  const isTyping = trpc.post.isTyping.useMutation();
+  const isTyping = useMutation(trpc.post.isTyping.mutationOptions());
 
   const userName = session?.user?.name;
   if (!userName) {
@@ -165,13 +178,16 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
 const subscribeToNothing = () => () => undefined;
 
 export default function IndexPage() {
-  const postsQuery = trpc.post.infinite.useInfiniteQuery(
-    {},
-    {
-      getNextPageParam: (d) => d.nextCursor,
-    },
+  const trpc = useTRPC();
+  const postsQuery = useInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      {},
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
   );
-  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -228,18 +244,22 @@ export default function IndexPage() {
     // oxlint-disable-next-line react/exhaustive-deps
   }, []);
   // subscribe to new posts and add
-  const onAdd = trpc.post.onAdd.useSubscription(undefined, {
-    onData(post) {
-      addMessages([post]);
-    },
-    onError(err) {
-      console.error('Subscription error:', err);
-      // we might have missed a message - invalidate cache
-      utils.post.infinite.invalidate();
-    },
-  });
+  const onAdd = useSubscription(
+    trpc.post.onAdd.subscriptionOptions(undefined, {
+      onData(post) {
+        addMessages([post]);
+      },
+      onError(err) {
+        console.error('Subscription error:', err);
+        // we might have missed a message - invalidate cache
+        queryClient.invalidateQueries(trpc.post.infinite.pathFilter());
+      },
+    }),
+  );
 
-  const whoIsTyping = trpc.post.whoIsTyping.useSubscription();
+  const whoIsTyping = useSubscription(
+    trpc.post.whoIsTyping.subscriptionOptions(),
+  );
 
   return (
     <>
@@ -486,27 +506,29 @@ export default function IndexPage() {
 }
 
 /**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @see https://trpc.io/docs/v11/ssg
+ * Puts the first page of messages in the server-rendered HTML.
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
  */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createServerSideHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext({ req: context.req, res: context.res }),
+    queryClient,
+  });
+
+  await queryClient.prefetchInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      {},
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+
+  return {
+    props: {
+      trpcState: superjson.serialize(dehydrate(queryClient)),
+    },
+  };
+}

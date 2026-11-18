@@ -1,6 +1,6 @@
 {
   "name": "@trpc/upgrade",
-  "version": "11.28.6",
+  "version": "11.29.1",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -21,7 +21,8 @@
     }
   },
   "scripts": {
-    "build": "tsdown"
+    "build": "tsdown",
+    "try-examples": "tsx scripts/tryExamples.ts"
   },
   "files": [
     "dist",
