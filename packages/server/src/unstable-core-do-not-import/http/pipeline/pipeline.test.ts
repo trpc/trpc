@@ -3450,7 +3450,11 @@ describe('the order things happen in', () => {
           release('client');
         }
       },
-    }).finally(() => clearTimeout(timeout));
+    }).finally(() => {
+      clearTimeout(timeout);
+      // So `slow` ends even if the read failed first; the first release wins
+      release('timeout');
+    });
 
     // The slow one was still running when the client read the fast ones
     expect(releasedBy).toBe('client');
