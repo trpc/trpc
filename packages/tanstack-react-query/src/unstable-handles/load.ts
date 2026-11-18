@@ -260,18 +260,30 @@ export function beginEntries(opts: {
       }
     }
   }
-  const waitedKeys = new Set(
-    leaves
-      .filter((leaf) => leaf.state.kind !== 'prefetch')
-      .map((leaf) => leaf.key),
-  );
+  /** The entry each failure is of, by the error. Not by its key: `card.post` can be a key, or two */
+  const failedLeafOf = new WeakMap<object, EntryLeaf>();
+  /** An entry's failure, as a load reports it */
+  const failureOf = (leaf: EntryLeaf, error: unknown) => {
+    const failure = toEntryError(leaf.key, leaf.state, error);
+    if (failure instanceof TRPCEntryError) {
+      failedLeafOf.set(failure, leaf);
+    }
+    return failure;
+  };
   /**
    * Whether an entry couldn't start because an entry it reads failed, and
    * `loadHandlesSettled()` has that failure in its results. The entry then
    * has no handle. A failed prefetch entry has no result, so it still rejects
    */
-  const isSettledFailure = (error: unknown) =>
-    opts.settle && error instanceof TRPCEntryError && waitedKeys.has(error.key);
+  const isSettledFailure = (error: unknown) => {
+    const failed =
+      typeof error === 'object' && error !== null
+        ? failedLeafOf.get(error)
+        : undefined;
+    return (
+      opts.settle && failed !== undefined && failed.state.kind !== 'prefetch'
+    );
+  };
 
   /** The data of the entries an entry reads, by entry */
   const dataOfSources = (
@@ -410,7 +422,7 @@ export function beginEntries(opts: {
       }
       return startEntry({ queryClient, state, options }).catch(
         (error: unknown) => {
-          throw toEntryError(leaf.key, state, error);
+          throw failureOf(leaf, error);
         },
       );
     };
@@ -540,7 +552,7 @@ export function beginEntries(opts: {
             // A prefetch resolves to nothing and never rejects
             const query = queryClient.getQueryState((await options).queryKey);
             if (query?.data === undefined) {
-              throw toEntryError(leaf.key, state, query?.error);
+              throw failureOf(leaf, query?.error);
             }
             return query.data;
           })

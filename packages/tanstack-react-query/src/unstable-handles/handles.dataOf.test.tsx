@@ -497,6 +497,22 @@ describe('dataOf', () => {
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
   });
 
+  test('loadHandlesSettled rejects for a failed prefetch entry at a key with a dot in it, next to a waited entry of the same name', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const failing = prefetchEntry(trpc.post.bySlug, { slug: 'missing' });
+    await expect(
+      loadHandlesSettled(trpc, {
+        card: { post: ensureEntry(trpc.post.bySlug, { slug: 'hello' }) },
+        'card.post': failing,
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(failing).authorId,
+        }),
+      }),
+    ).rejects.toMatchObject({ key: 'card.post', code: 'NOT_FOUND' });
+  });
+
   test('throws for an entry that is not in the load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
@@ -3782,6 +3798,38 @@ describe('experimental_useHandles', () => {
     );
     // The entries are the same, in the same places, but for where the entry
     // per item reads its list
+    expect(seen[1]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('an input that reads data and a literal input shaped like its description are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { literal: boolean }) {
+      const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+      seen.push(
+        experimental_useHandles(trpc, {
+          post,
+          author: experimental_dataOf(post, (it) =>
+            prefetchEntry(trpc.author.byId, {
+              id: props.literal
+                ? ({ '~dataOf': [['post'], ['authorId'], null] } as never)
+                : it.authorId,
+            }),
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card literal={false} />
+        <Card literal />
+      </>,
+    );
     expect(seen[1]).not.toBe(seen[0]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);

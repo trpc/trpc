@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { hashKey, skipToken } from '@tanstack/react-query';
 import type { EntryDataRef, EntryInputRef } from './dataRef';
-import { entryDataRefOf } from './dataRef';
+import { blankInput, entryDataRefOf } from './dataRef';
 import type { EntryState } from './entry';
 import {
   entryFromDataStateOf,
@@ -193,17 +193,17 @@ export function describeEntries(opts: {
   const keysOfEntry = new Map(
     leavesOf(tree).map((leaf) => [leaf.entry, leaf.keys]),
   );
-  const describeRef = (ref: EntryDataRef): unknown => ({
-    '~dataOf': [
-      keysOfEntry.get(ref.entry) ?? null,
-      ref.path,
-      // The list it is an item of
-      ref.itemOf ? describeRef(ref.itemOf) : null,
-    ],
-  });
+  /** Where a `experimental_dataOf()` value reads: the entry's keys, the path, and the list it is an item of */
+  const describeRef = (ref: EntryDataRef): unknown => [
+    keysOfEntry.get(ref.entry) ?? null,
+    ref.path,
+    ref.itemOf ? describeRef(ref.itemOf) : null,
+  ];
   const describeLeaf = (leaf: EntryLeaf) => {
+    // What the input reads is a hole in it, and listed apart, so that no
+    // value in the input can read the same as a read
     const options = leaf.state.options({
-      dataOfRef: describeRef,
+      dataOfRef: () => blankInput,
       pipeline: null,
     });
     const firstCursor: unknown = options.initialPageParam;
@@ -219,6 +219,7 @@ export function describeEntries(opts: {
       // A cursor can be a bigint, which has no JSON
       firstCursor:
         typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
+      reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       each: leaf.each ? describeRef(leaf.each) : null,
       from: leaf.from ? (keysOfEntry.get(leaf.from) ?? null) : null,
     };
