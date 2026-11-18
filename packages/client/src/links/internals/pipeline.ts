@@ -465,25 +465,22 @@ export function experimental_pipelining(
           }
           // An input the transformer can't take before the server fills it
           // in, such as one still without an id it reads: the call waits for
-          // what it reads and goes on its own, and the request goes without it
+          // what it reads and goes on its own, and the request goes without it.
+          // Encoded as the request is, so what JSON can't carry fails too. Its
+          // URL encodes the body as well, for a query sent as a POST
+          let url: string;
           try {
-            for (const call of next.calls) {
-              // As the request encodes it: what JSON can't carry fails too
-              JSON.stringify(link.transformer.input.serialize(call.input));
-            }
-          } catch {
-            return false;
-          }
-          return (
-            link.maxURLLength === Infinity ||
-            pipelinedRequest(next.pipe).getUrl({
+            url = pipelinedRequest(next.pipe).getUrl({
               ...link,
               type: 'query',
               path: sent.map((it) => it.path).join(','),
               inputs: sent.map((it) => it.input),
               signal: null,
-            }).length <= link.maxURLLength
-          );
+            });
+          } catch {
+            return false;
+          }
+          return url.length <= link.maxURLLength;
         },
       });
     };

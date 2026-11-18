@@ -1078,6 +1078,25 @@ describe.each([
     maxURLLength: 2000,
     refuses: 'cyclic',
   },
+  // JSON can carry it by itself, but not inside the request's batch
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: Infinity,
+    refuses: 'keyed',
+  },
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: 2000,
+    refuses: 'keyed',
+  },
+  {
+    name: 'httpBatchStreamLink',
+    link: httpBatchStreamLink,
+    maxURLLength: Infinity,
+    refuses: 'keyed',
+  },
 ] as const)(
   '$name, with a `maxURLLength` of $maxURLLength, and a transformer that refuses an input still missing a value ($refuses)',
   (scenario) => {
@@ -1088,6 +1107,11 @@ describe.each([
           if (isObject(value) && 'id' in value && value['id'] === undefined) {
             if (scenario.refuses === 'throws') {
               throw new Error('An id is missing');
+            }
+            if (scenario.refuses === 'keyed') {
+              return {
+                toJSON: (key: string) => (key === '' ? { id: null } : 1n),
+              };
             }
             const cyclic: Record<string, unknown> = {};
             cyclic['self'] = cyclic;
