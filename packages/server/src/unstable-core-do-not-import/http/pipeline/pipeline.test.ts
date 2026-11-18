@@ -2904,6 +2904,13 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('a function with `toJSON` is as long as what it gives, as JSON writes it', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = { a: 1, fn: Object.assign(() => 1, { toJSON: () => 'fn' }) };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
   test('a property JSON leaves out of an object counts for nothing', () => {
     const sizeOf = createPipelineSizeOf();
     const value = {

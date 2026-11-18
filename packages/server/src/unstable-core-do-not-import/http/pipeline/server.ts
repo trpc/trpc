@@ -334,12 +334,12 @@ export function createPipelineSizeOf() {
     ) {
       return String(value).length;
     }
+    if (hasToJSON(value)) {
+      // As JSON has it, such as a `Date`'s string. A function can have one too
+      return sizeOf(value.toJSON(), room);
+    }
     if (typeof value !== 'object' || value === null) {
       return 4;
-    }
-    if ('toJSON' in value && typeof value.toJSON === 'function') {
-      // As JSON has it, such as a `Date`'s string
-      return sizeOf(value.toJSON(), room);
     }
     const known = objects.get(value);
     if (known && (known.exact || known.size > room)) {
@@ -388,7 +388,9 @@ function addParts(
       }
     }
   } else {
-    // A property is read once the room is known to have what is before it
+    // A property is read once the room is known to have what is before it.
+    // The room bounds what JSON writes, not what is read: a property JSON
+    // leaves out is read, and counts for nothing
     let first = true;
     for (const key of Object.keys(value)) {
       const part = (value as Record<string, unknown>)[key];
@@ -407,11 +409,21 @@ function addParts(
   return over;
 }
 
+/** Whether JSON writes this value as what its `toJSON` gives */
+function hasToJSON(value: unknown): value is { toJSON: () => unknown } {
+  return (
+    ((typeof value === 'object' && value !== null) ||
+      typeof value === 'function') &&
+    'toJSON' in value &&
+    typeof value.toJSON === 'function'
+  );
+}
+
 /** Whether JSON leaves a property with this value out of an object */
 function leftOut(value: unknown) {
   return (
     value === undefined ||
-    typeof value === 'function' ||
+    (typeof value === 'function' && !hasToJSON(value)) ||
     typeof value === 'symbol'
   );
 }
