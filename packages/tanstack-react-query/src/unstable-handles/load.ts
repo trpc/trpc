@@ -7,9 +7,8 @@ import type {
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import type {
-  OperationPipeline,
-  PipelineSource,
   PipelinedCall,
+  PipelineSource,
 } from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
@@ -25,18 +24,30 @@ import { blankInput } from './dataRef';
 import type { EntryQueryOptions, EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
-import { itemPathOf, itemsAt, perItemPlan, requestPath } from './list';
+import { itemPathOf, itemsAt, requestPath } from './list';
 import type { ListItem } from './list';
-import type { DataPath, RequestPath } from './path';
+import type { Outcome, Unit } from './outcome';
+import {
+  allOf,
+  attempt,
+  attemptNow,
+  createUnit,
+  failed,
+  ok,
+  unitOf,
+  whenAll,
+} from './outcome';
+import type { RequestPath } from './path';
 import {
   dataOfCall,
-  resultOfItem,
+  outcomeOfCall,
+  outcomeOfItem,
   sameCursor,
   withPipelinedResult,
 } from './pipelined';
-import type { EntryLeaf, EntryTree } from './plan';
-import { leavesOf, mapEntryTree, readEntries, waitedByHandle } from './plan';
-import { nothing, startOwn } from './utils';
+import type { EntryTree, LinkedLeaf } from './plan';
+import { linkEntries, mapEntryTree, readEntries } from './plan';
+import { nothing } from './utils';
 
 export function startEntry(opts: {
   queryClient: QueryClient;
@@ -89,126 +100,212 @@ export function hasDigest(error: unknown): error is Error & { digest: string } {
   );
 }
 
-export function toEntryError(key: string, state: EntryState, error: unknown) {
-  // Not failures of the entry: pass them on as they are
+/** Why an entry, or one item's query of it, has no data of its own */
+export type OwnFailure =
+  /** Its request failed, or its query couldn't start */
+  | { readonly kind: 'failed'; readonly error: TRPCEntryError }
+  /**
+   * Not a failure of the entry, such as a cancelled query or Next.js's
+   * control flow: passed on as it is
+   */
+  | { readonly kind: 'interrupted'; readonly error: unknown }
+  /** Its input is `skipToken`: it has no data for the entries that read it */
+  | { readonly kind: 'skipped'; readonly error: Error };
+
+/** Why an entry has no data */
+export type EntryFailure =
+  | OwnFailure
+  /**
+   * An entry it reads has none, so it never started. `origin` is the entry
+   * whose own failure it is, also through entries that read each other
+   */
+  | {
+      readonly kind: 'blocked';
+      readonly origin: LinkedLeaf;
+      readonly cause: OwnFailure;
+    };
+
+/** An entry's own failure, as a load reports it under `key` */
+export function ownFailure(
+  key: string,
+  state: EntryState,
+  error: unknown,
+): OwnFailure {
   if (isCancelledError(error) || hasDigest(error)) {
-    return error;
+    return { kind: 'interrupted', error };
   }
-  return new TRPCEntryError({
-    key,
-    path: state.path.join('.'),
-    ...entryCause(error),
+  return {
+    kind: 'failed',
+    error: new TRPCEntryError({
+      key,
+      path: state.path.join('.'),
+      ...entryCause(error),
+    }),
+  };
+}
+
+/** What a load rejects with for a failure */
+export function errorOf(failure: EntryFailure): unknown {
+  return failure.kind === 'blocked' ? failure.cause.error : failure.error;
+}
+
+/**
+ * Whether `loadHandlesSettled()` has a failure of `leaf` in its results
+ * rather than rejecting with it: the failure of a fetch or ensure entry,
+ * also when `leaf` never started because of it. Such an entry then has no
+ * handle. A prefetch entry has no result, so its failure still rejects
+ */
+export function isReported(leaf: LinkedLeaf, failure: EntryFailure) {
+  const origin = failure.kind === 'blocked' ? failure.origin : leaf;
+  const cause = failure.kind === 'blocked' ? failure.cause : failure;
+  return cause.kind === 'failed' && origin.state.kind !== 'prefetch';
+}
+
+type Handle = Record<string, unknown>;
+
+/** The data of the entries an entry reads, by entry, as they were in one step */
+type SourceData = ReadonlyMap<object, unknown>;
+
+const noData: SourceData = new Map();
+
+/**
+ * The one place an entry's options are built from the data of the entries
+ * it reads. `item` is the item of an entry per item to build them for, and
+ * `holes` leaves out what its handle doesn't have: the values that
+ * `experimental_handleOfItem()` fills in.
+ */
+function optionsFrom(
+  leaf: LinkedLeaf,
+  view: { data: SourceData; item: ListItem | null; holes: boolean },
+) {
+  return leaf.state.options({
+    dataOfRef: (ref) => {
+      const fromItem = leaf.fromItem(ref);
+      if (fromItem && view.holes) {
+        return blankInput;
+      }
+      const path =
+        fromItem && view.item
+          ? [...view.item.path, ...ref.path.slice(leaf.itemDepth)]
+          : ref.path;
+      return readPipelinePath(view.data.get(ref.entry), path, null);
+    },
+    pipeline: null,
   });
 }
 
-export function settleLoad(promise: Promise<unknown>) {
-  return promise.then(
-    (data) => ({ status: 'success', data }),
-    (error: unknown) => {
-      if (error instanceof TRPCEntryError) {
-        return { status: 'error', error };
-      }
-      throw error;
-    },
-  );
+/**
+ * The handle of an entry per item or from another's data: its input without
+ * what comes from the item or that data, and where each of those goes
+ */
+function unfinishedHandle(leaf: LinkedLeaf, data: SourceData) {
+  return {
+    ...toHandle(
+      optionsFrom(leaf, { data, item: null, holes: true }),
+      leaf.state.type,
+    ),
+    itemInputs: leaf.state.refs.filter(leaf.fromItem).map((ref) => ({
+      to: ref.to,
+      path: ref.path.slice(leaf.itemDepth),
+    })),
+  };
 }
 
-export interface EntryLoad {
-  leaf: EntryLeaf;
+/**
+ * What the server read of an entry, for the entries that read its data: the
+ * pipeline of its request, which a link that pipelines opens, or the call
+ * the server makes for it in another's request; and what that returned, in
+ * the shape of the query's data. That is only ever compared with the
+ * client's data: what an entry's input is filled in with is the cache's.
+ */
+interface ServerSide {
+  source: PipelineSource;
+  sent: Unit<unknown>;
+}
+
+/** The load of an entry that is one query */
+interface OneLoad {
+  shape: 'one';
+  leaf: LinkedLeaf;
+  server: ServerSide | null;
   /**
-   * What the entries that read this one's data have the server read: the
-   * pipeline that goes with the query's request, which a link that pipelines
-   * opens, or the call the server makes for this entry in another's request.
+   * The query's data as the cache got it from the load's own fetch, or as
+   * the cache had it if the load fetched nothing. The one source of what the
+   * entries that read it fill in, and of its result.
    */
-  pipeline: OperationPipeline | PipelinedCall | null;
-  /**
-   * The result of that request or call, in the shape of the query's data. It
-   * is what the server read for the entries that read this one
-   */
-  requestData: Promise<unknown> | null;
+  data: Unit<unknown, EntryFailure>;
+  /** `data`, with a failure as the entries that read it see it: blocked by this one */
+  forReaders: Unit<unknown, EntryFailure>;
   /**
    * The entry's handle. It waits for the data that the handle's input has:
    * all that the entry reads with `experimental_dataOf()`, but for an entry
    * per item or from another's data, not the item or that data
    */
-  handle: Promise<Record<string, unknown>>;
+  handle: Promise<Outcome<Handle, EntryFailure>>;
   /**
    * The handle without the data that `handle` waits for. It is whole if
    * that is none, which a load that can't wait checks before it starts
    */
-  handleNow: () => Record<string, unknown>;
-  /** Settles like the `QueryClient` method the entry is named after */
-  promise: Promise<unknown>;
-  /** The query's data, also for a prefetch entry */
-  data: Promise<unknown>;
-  /** The query's data, from the step in which it is known */
-  published: Published;
+  handleNow: () => Handle;
+}
+
+/** The load of an entry from `experimental_entryPerItem()`: a query for every item */
+interface PerItemLoad {
+  shape: 'perItem';
+  leaf: LinkedLeaf;
+  handle: Promise<Outcome<Handle, EntryFailure>>;
+  handleNow: () => Handle;
+  /**
+   * Once the list has data: each item's outcome, which is that item's own.
+   * Blocked if the list, or another entry it reads, has no data
+   */
+  items: Promise<ItemsOutcome>;
+}
+
+/** Each item's own outcome, once the list has data */
+type ItemsOutcome = Outcome<
+  Promise<Outcome<unknown, EntryFailure>>[],
+  EntryFailure
+>;
+
+export type EntryLoad = OneLoad | PerItemLoad;
+
+/** Resolves once every part of the entry's load has settled. Never rejects */
+export function settledOf(load: EntryLoad): Promise<unknown> {
+  return load.shape === 'one'
+    ? load.data.outcome
+    : load.items.then((items) => (items.ok ? Promise.all(items.data) : null));
+}
+
+/** A call the server makes in another's request, and what it read */
+interface PipelinedSend {
+  call: PipelinedCall;
+  /** What the server read of each entry the call reads, by entry */
+  sent: ReadonlyMap<object, Unit<unknown>>;
 }
 
 /**
- * An entry's data or failure, for the entries that read it. They are told in
- * the same step as the `QueryClient` gets the data, so that their queries
- * exist before a component can read that data and ask for them itself.
+ * What the server read of an entry's sources: what their requests returned
+ * for those the call read, and the client's data for the rest, which the
+ * client filled in itself. Never rejects
  */
-export interface Published {
-  settled: { ok: true; data: unknown } | { ok: false; error: unknown } | null;
-  listeners: (() => void)[];
-}
-
-export function publish(published: Published, settled: Published['settled']) {
-  if (published.settled) {
-    return;
-  }
-  published.settled = settled;
-  for (const listener of published.listeners.splice(0)) {
-    listener();
-  }
+function serverData(
+  send: PipelinedSend,
+  clientData: SourceData,
+): Promise<Outcome<SourceData>> {
+  return allOf(send.sent).then((sent) =>
+    sent.ok ? ok(new Map([...clientData, ...sent.data])) : sent,
+  );
 }
 
 /**
- * Calls `run` once, in the step in which the last of the entries has data, or
- * the first of them has failed.
+ * Whether a load still starts what its entries need: open until each
+ * entry has settled, or until it throws while it starts them. Only an open
+ * load listens to the query cache.
  */
-export function whenPublished(
-  sources: Map<object, EntryLoad>,
-  run: (
-    result:
-      | { ok: true; data: Map<object, unknown> }
-      | { ok: false; error: unknown },
-  ) => void,
-) {
-  let done = false;
-  const check = () => {
-    if (done) {
-      return;
-    }
-    const data = new Map<object, unknown>();
-    let pending = false;
-    for (const [entry, source] of sources) {
-      const { settled } = source.published;
-      if (!settled) {
-        pending = true;
-      } else if (!settled.ok) {
-        done = true;
-        run(settled);
-        return;
-      } else {
-        data.set(entry, settled.data);
-      }
-    }
-    if (!pending) {
-      done = true;
-      run({ ok: true, data });
-    }
-  };
-  // Nothing has settled when a load builds its entries
-  for (const source of sources.values()) {
-    source.published.listeners.push(check);
-  }
-}
-
-/** In place of the options of an entry that couldn't start */
-export const notStarted = Symbol('trpc.handleEntryNotStarted');
+type LoadState =
+  | { status: 'open'; unwatch: (() => void) | null }
+  | { status: 'closed' };
 
 /**
  * Starts every entry. Nothing waits here: each entry's load says what it
@@ -217,8 +314,6 @@ export const notStarted = Symbol('trpc.handleEntryNotStarted');
 export function beginEntries(opts: {
   queryClient: QueryClient;
   entries: Record<string, unknown>;
-  /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
-  settle: boolean;
   /**
    * The name of the hook that needs every handle at once, without the data
    * of any entry. `null` for a load that waits
@@ -226,35 +321,12 @@ export function beginEntries(opts: {
   now: string | null;
 }) {
   const { queryClient } = opts;
-  const tree = readEntries({ queryClient, entries: opts.entries, keys: [] });
-  const leaves = leavesOf(tree);
-  const leafOfEntry = new Map(leaves.map((leaf) => [leaf.entry, leaf]));
-  // Checked for every entry before any query starts
-  for (const leaf of leaves) {
-    const sourceOf = (ref: EntryDataRef) => {
-      const source = leafOfEntry.get(ref.entry);
-      if (!source) {
-        throw new Error(
-          `The entry for "${leaf.label}" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load`,
-        );
-      }
-      return source;
-    };
-    leaf.reads = leaf.state.refs.map((ref) => ({ ref, source: sourceOf(ref) }));
-    leaf.list =
-      leaf.built.by === 'entryPerItem'
-        ? { ref: leaf.built.list, source: sourceOf(leaf.built.list) }
-        : null;
-  }
-  const readLeaves = new Set(
-    leaves.flatMap((leaf) => [
-      ...leaf.reads.map((read) => read.source),
-      ...(leaf.list ? [leaf.list.source] : []),
-    ]),
+  const linked = linkEntries(
+    readEntries({ queryClient, entries: opts.entries, keys: [] }),
   );
   if (opts.now) {
-    for (const leaf of leaves) {
-      if (waitedByHandle(leaf).size > 0) {
+    for (const leaf of linked.leaves) {
+      if (leaf.waited.size > 0) {
         throw new Error(
           `The handle of the entry for "${leaf.label}" has another entry's data in its input, and \`${opts.now}()\` doesn't wait for data. ${
             leaf.built.by === 'entryPerItem'
@@ -265,41 +337,53 @@ export function beginEntries(opts: {
       }
     }
   }
-  /** The entry each failure is of, by the error. Not by its key: `card.post` can be a key, or two */
-  const failedLeafOf = new WeakMap<object, EntryLeaf>();
-  /** An entry's failure, as a load reports it */
-  const failureOf = (leaf: EntryLeaf, error: unknown) => {
-    const failure = toEntryError(leaf.label, leaf.state, error);
-    if (failure instanceof TRPCEntryError) {
-      failedLeafOf.set(failure, leaf);
-    }
-    return failure;
-  };
-  /**
-   * Whether an entry couldn't start because an entry it reads failed, and
-   * `loadHandlesSettled()` has that failure in its results. The entry then
-   * has no handle. A failed prefetch entry has no result, so it still rejects
-   */
-  const isSettledFailure = (error: unknown) => {
-    const failed =
-      typeof error === 'object' && error !== null
-        ? failedLeafOf.get(error)
-        : undefined;
-    return (
-      opts.settle && failed !== undefined && failed.state.kind !== 'prefetch'
-    );
-  };
 
-  /** The data of the entries an entry reads, by entry */
-  const dataOfSources = (
-    sources: Map<object, EntryLoad>,
-    read: (source: EntryLoad, entry: object) => Promise<unknown> | null,
-  ) =>
-    Promise.all(
-      [...sources].map(async ([entry, source]) => {
-        return [entry, await read(source, entry)] as const;
-      }),
-    ).then((resolved) => new Map(resolved));
+  let state: LoadState = { status: 'open', unwatch: null };
+  function close() {
+    if (state.status === 'open') {
+      state.unwatch?.();
+    }
+    state = { status: 'closed' };
+  }
+
+  /** The prefetch entries whose data another entry reads, by their query's hash */
+  const watched = new Map<
+    string,
+    { leaf: LinkedLeaf; data: Unit<unknown, EntryFailure> }[]
+  >();
+  /**
+   * Settles a prefetch entry's data from its fetch, in the step in which the
+   * `QueryClient` gets it. A fetch or ensure entry's data is what its
+   * `QueryClient` method resolves to, which the load waits for anyway
+   */
+  function watch(
+    leaf: LinkedLeaf,
+    options: EntryQueryOptions,
+    data: Unit<unknown, EntryFailure>,
+  ) {
+    if (state.status === 'closed') {
+      return;
+    }
+    const { queryHash } = queryClient.defaultQueryOptions(options);
+    watched.set(queryHash, [...(watched.get(queryHash) ?? []), { leaf, data }]);
+    state.unwatch ??= queryClient.getQueryCache().subscribe((event) => {
+      if (event.type !== 'updated') {
+        return;
+      }
+      const { action } = event;
+      for (const one of watched.get(event.query.queryHash) ?? []) {
+        // Not a write, such as `setQueryData()`, while the request runs:
+        // what the entries read is what the request returns, or its failure
+        if (action.type === 'success' && !action.manual) {
+          one.data.settle(ok(event.query.state.data));
+        } else if (action.type === 'error') {
+          one.data.settle(
+            failed(ownFailure(one.leaf.label, one.leaf.state, action.error)),
+          );
+        }
+      }
+    });
+  }
 
   /**
    * Has the server make an entry's request in the request of the entries it
@@ -307,28 +391,27 @@ export function beginEntries(opts: {
    * its input
    */
   function sendPipelined(pipelined: {
-    state: EntryState;
+    leaf: LinkedLeaf;
     /** What the entry's input reads, and the load of the entry of each */
-    reads: { ref: EntryInputRef; source: EntryLoad }[];
+    reads: { ref: EntryInputRef; source: OneLoad }[];
     /**
      * For an entry for every item: the list, the load of its entry, and the
      * path of the list in the result of that entry's request
      */
-    list: { ref: EntryDataRef; source: EntryLoad; path: RequestPath } | null;
-  }) {
-    const { state, list } = pipelined;
-    const { request } = state;
-    if (!request.pipelines) {
+    list: { ref: EntryDataRef; source: OneLoad; path: RequestPath } | null;
+  }): PipelinedSend | null {
+    const { leaf, list } = pipelined;
+    const { request } = leaf.state;
+    if (request.kind !== 'pipelined') {
       return null;
     }
     const read = pipelined.reads.filter(({ ref }) =>
       request.serverReads.has(ref),
     );
-    // Not by its path: the whole list, read with `.map()`, has the same one
-    const readsItem = (ref: EntryDataRef) => !!list && ref.itemOf === list.ref;
+    const sent = new Map<object, Unit<unknown>>();
     const reads = read.flatMap(
       ({ ref, source }): PipelineCallReads<PipelineSource>['reads'] => {
-        if (list && readsItem(ref)) {
+        if (list && leaf.fromItem(ref)) {
           return [
             {
               kind: 'item',
@@ -343,342 +426,306 @@ export function beginEntries(opts: {
           path: ref.path,
           item: false,
         });
-        return source.pipeline && path
-          ? [{ kind: 'whole', to: ref.to, from: source.pipeline, path }]
-          : [];
+        if (!source.server || !path) {
+          return [];
+        }
+        sent.set(ref.entry, source.server.sent);
+        return [
+          { kind: 'whole', to: ref.to, from: source.server.source, path },
+        ];
       },
     );
-    const each = list?.source.pipeline
-      ? { from: list.source.pipeline, path: list.path }
-      : null;
-    if (reads.length !== read.length || (list && !each)) {
+    if (reads.length !== read.length) {
       return null;
     }
-    return pipeCall({
+    let each: PipelineCallReads<PipelineSource>['each'] = null;
+    if (list) {
+      if (!list.source.server) {
+        return null;
+      }
+      each = { from: list.source.server.source, path: list.path };
+      sent.set(list.ref.entry, list.source.server.sent);
+    }
+    const call = pipeCall({
       path: request.path,
       input: request.input,
       reads: { each, reads },
     });
+    return call && { call, sent };
   }
 
-  /** The prefetch entries whose data another entry reads, by their query's hash */
-  const watched = new Map<string, Published[]>();
-  let unwatch: (() => void) | null = null;
-  /**
-   * Tells the entries that read a prefetch entry's data in the step in which
-   * the `QueryClient` gets it. A fetch or ensure entry's data is what its
-   * `QueryClient` method resolves to, which the load waits for anyway
-   */
-  function watch(options: EntryQueryOptions, published: Published) {
-    const { queryHash } = queryClient.defaultQueryOptions(options);
-    watched.set(queryHash, [...(watched.get(queryHash) ?? []), published]);
-    unwatch ??= queryClient.getQueryCache().subscribe((event) => {
-      if (
-        event.type === 'updated' &&
-        event.action.type === 'success' &&
-        // Not a write, such as `setQueryData()`, while the request runs:
-        // what the entries read is what the request returns
-        !event.action.manual
-      ) {
-        for (const published of watched.get(event.query.queryHash) ?? []) {
-          publish(published, { ok: true, data: event.query.state.data });
-        }
+  /** The units the data of an entry's sources is read from, by entry */
+  const readersOf = (sources: ReadonlyMap<object, OneLoad>) =>
+    new Map([...sources].map(([entry, source]) => [entry, source.forReaders]));
+
+  /** The data of the sources an entry's handle has in its input */
+  const handleData = (
+    leaf: LinkedLeaf,
+    sources: ReadonlyMap<object, OneLoad>,
+  ) =>
+    allOf(
+      readersOf(
+        new Map([...sources].filter(([entry]) => leaf.waited.has(entry))),
+      ),
+    );
+
+  /** An entry's handle that is built from the data it waits for */
+  const unfinishedOf = (
+    leaf: LinkedLeaf,
+    sources: ReadonlyMap<object, OneLoad>,
+  ): Promise<Outcome<Handle, EntryFailure>> =>
+    handleData(leaf, sources).then((data) => {
+      if (!data.ok) {
+        return data;
       }
+      const handle = attemptNow(() => unfinishedHandle(leaf, data.data));
+      return handle.ok
+        ? handle
+        : failed(ownFailure(leaf.label, leaf.state, handle.error));
     });
-  }
 
-  /** Stops listening to the query cache for prefetch entries */
-  function stopWatching() {
-    unwatch?.();
-    unwatch = null;
-  }
-
-  const loads = new Map<EntryLeaf, EntryLoad>();
-  // An entry only reads entries built before it, so this can't loop
-  function loadOf(leaf: EntryLeaf): EntryLoad {
-    const existing = loads.get(leaf);
+  const oneLoads = new Map<LinkedLeaf, OneLoad>();
+  /**
+   * The load of an entry that is one query, also as an entry that others
+   * read: `experimental_dataOf()` takes no entry per item. An entry only
+   * reads entries built before it, so this can't loop
+   */
+  function sourceOf(leaf: LinkedLeaf): OneLoad {
+    const existing = oneLoads.get(leaf);
     if (existing) {
       return existing;
     }
-    const { state } = leaf;
+    const load = loadOne(leaf);
+    oneLoads.set(leaf, load);
+    return load;
+  }
+
+  function readsOf(leaf: LinkedLeaf) {
     const reads = leaf.reads.map((read) => ({
       ref: read.ref,
-      source: loadOf(read.source),
+      source: sourceOf(read.source),
     }));
     const sources = new Map(reads.map((read) => [read.ref.entry, read.source]));
-    if (leaf.list) {
-      sources.set(leaf.list.ref.entry, loadOf(leaf.list.source));
-      const load = loadPerItem({ leaf, list: leaf.list.ref, sources, reads });
-      loads.set(leaf, load);
-      return load;
-    }
+    return { reads, sources };
+  }
 
-    const published: Published = { settled: null, listeners: [] };
+  function loadOne(leaf: LinkedLeaf): OneLoad {
+    const { state } = leaf;
+    const own = (error: unknown) =>
+      failed(ownFailure(leaf.label, state, error));
+    const { reads, sources } = readsOf(leaf);
+    const data = createUnit<unknown, EntryFailure>();
+    const forReaders = createUnit<unknown, EntryFailure>();
+    data.onSettled((outcome) =>
+      forReaders.settle(
+        outcome.ok || outcome.error.kind === 'blocked'
+          ? outcome
+          : failed({ kind: 'blocked', origin: leaf, cause: outcome.error }),
+      ),
+    );
+    const isRead = linked.read.has(leaf);
+
+    /** Starts the query. A throw is the caller's */
     const start = (options: EntryQueryOptions) => {
-      if (options.queryFn === skipToken) {
-        // Nothing starts: an entry that reads this one's data has none to
-        // read. Not in this step, in which the load still builds its entries
-        void Promise.resolve().then(() =>
-          publish(published, {
-            ok: false,
-            error: new Error(
-              `"${leaf.label}" has \`skipToken\` as its input, so it has no data for the entries that read it`,
-            ),
-          }),
-        );
-      } else if (state.kind === 'prefetch' && readLeaves.has(leaf)) {
-        watch(options, published);
+      if (state.kind === 'prefetch' && isRead) {
+        watch(leaf, options, data);
       }
-      return startEntry({ queryClient, state, options }).catch(
-        (error: unknown) => {
-          throw failureOf(leaf, error);
-        },
-      );
+      return startEntry({ queryClient, state, options });
     };
-    let pipeline: OperationPipeline | PipelinedCall | null = null;
-    let requestData: Promise<unknown> | null = null;
-    let options: Promise<EntryQueryOptions>;
-    let promise: Promise<unknown>;
+
+    let server: ServerSide | null = null;
+    /** The options the query starts with, once the data they read is in */
+    const options = createUnit<EntryQueryOptions, EntryFailure>();
+    /** What the `QueryClient` method the entry is named after settled to */
+    const started = createUnit<unknown, EntryFailure>();
     if (sources.size === 0) {
-      let built = state.options({ dataOfRef: nothing, pipeline: null });
-      if (
-        readLeaves.has(leaf) &&
-        state.request.pipelines &&
-        typeof built.queryFn === 'function'
-      ) {
+      let built = optionsFrom(leaf, { data: noData, item: null, holes: false });
+      if (isRead && state.request.kind === 'pipelined') {
         // Another entry reads this one: its request can take part in pipelining
-        const sent = createOperationPipeline();
-        pipeline = sent;
-        const withPipeline = state.options({
-          dataOfRef: nothing,
-          pipeline: sent,
-        });
+        const pipeline = createOperationPipeline();
+        const withPipeline = state.options({ dataOfRef: nothing, pipeline });
         // The same input as without the pipeline, so not `skipToken` either
         const queryFn = withPipeline.queryFn as QueryFunction<
           unknown,
           any,
           any
         >;
-        built = withPipeline;
-        let first: Promise<unknown> | null = null;
-        const request = new Promise<unknown>((resolve) => {
-          built = {
-            ...built,
-            queryFn: (context: QueryFunctionContext<any, any>) => {
-              const result = Promise.resolve(queryFn(context));
-              if (!first) {
-                // Its first request is the one a link takes into a batch. For
-                // an infinite query, it is the first page
-                first = result;
-                resolve(
-                  state.type === 'infinite'
-                    ? result.then((page) => ({
-                        pages: [page],
-                        pageParams: [context.pageParam],
-                      }))
-                    : result,
-                );
-              }
-              return result;
-            },
-          };
-        });
-        request.catch(nothing);
-        requestData = request;
+        const sent = createUnit<unknown>();
+        let first = true;
+        built = {
+          ...withPipeline,
+          queryFn: (context: QueryFunctionContext<any, any>) => {
+            const result = Promise.resolve(queryFn(context));
+            if (first) {
+              // Its first request is the one a link takes into a batch. For
+              // an infinite query, it is the first page
+              first = false;
+              void attempt(() =>
+                state.type === 'infinite'
+                  ? result.then((page) => ({
+                      pages: [page],
+                      pageParams: [context.pageParam],
+                    }))
+                  : result,
+              ).then(sent.settle);
+            }
+            return result;
+          },
+        };
+        server = { source: pipeline, sent };
       }
-      options = Promise.resolve(built);
-      // The query starts now, not a tick later
-      promise = start(built);
+      options.settle(ok(built));
+      // The query starts now, not a tick later. A throw here is the load's:
+      // it starts no entry after this one
+      void start(built).then(ok, own).then(started.settle);
     } else {
-      const call = sendPipelined({ state, reads, list: null });
-      if (call && state.type === 'query') {
+      const send = sendPipelined({ leaf, reads, list: null });
+      if (send && state.type === 'query') {
         // An infinite query's data is its pages, which no one request returns,
         // so the server can't read it for the entries that read this one
-        pipeline = call;
-        requestData = dataOfCall(call);
+        server = { source: send.call, sent: unitOf(dataOfCall(send.call)) };
       }
-      const fill = (dataOfEntry: Map<object, unknown>) =>
-        state.options({
-          dataOfRef: (ref) =>
-            readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
-          pipeline: null,
-        });
       // The query starts in the step in which the last of the entries it reads
-      // has data. When one of them fails, its error is this entry's too: it
-      // never started
-      const started = new Promise<{
-        options: EntryQueryOptions;
-        promise: Promise<unknown>;
-      }>((resolve, reject) => {
-        whenPublished(sources, (result) => {
-          if (!result.ok) {
-            reject(result.error);
-            return;
-          }
-          try {
-            const filled = fill(result.data);
-            const built = call
-              ? withPipelinedResult({
-                  options: filled,
-                  result: dataOfCall(call),
-                  unresolved: () => call.status === 'unresolved',
-                  sameInput: async (context) => {
-                    if (
-                      state.type === 'infinite' &&
-                      // The call was for the first page
-                      !(
-                        context.direction === 'forward' &&
-                        Object.is(context.pageParam, filled.initialPageParam)
-                      )
-                    ) {
-                      return false;
-                    }
-                    // What the server read. What it didn't fill in is the
-                    // client's, and an entry the cache had made no request
-                    const serverRead = new Set(
-                      reads
-                        .filter(({ ref }) => state.request.serverReads.has(ref))
-                        .map(({ ref }) => ref.entry),
-                    );
-                    const sent = fill(
-                      await dataOfSources(sources, (source, entry) =>
-                        serverRead.has(entry)
-                          ? source.requestData
-                          : Promise.resolve(result.data.get(entry)),
-                      ),
-                    );
-                    return (
-                      hashKey(filled.queryKey) === hashKey(sent.queryKey) &&
-                      // An infinite query's cursor isn't in its key
-                      sameCursor(filled.initialPageParam, sent.initialPageParam)
-                    );
-                  },
-                })
-              : filled;
-            resolve({ options: built, promise: start(built) });
-          } catch (error) {
-            reject(error);
-          }
-        });
+      // has data. When one of them has none, this entry never starts
+      whenAll(readersOf(sources), (sourceData) => {
+        if (!sourceData.ok) {
+          options.settle(sourceData);
+          started.settle(sourceData);
+          return;
+        }
+        const filled = attemptNow(() =>
+          optionsFrom(leaf, {
+            data: sourceData.data,
+            item: null,
+            holes: false,
+          }),
+        );
+        if (!filled.ok) {
+          options.settle(own(filled.error));
+          started.settle(own(filled.error));
+          return;
+        }
+        const built = send
+          ? withPipelinedResult({
+              options: filled.data,
+              result: outcomeOfCall(send.call),
+              sameInput: async (context) => {
+                if (
+                  state.type === 'infinite' &&
+                  // The call was for the first page
+                  !(
+                    context.direction === 'forward' &&
+                    Object.is(context.pageParam, filled.data.initialPageParam)
+                  )
+                ) {
+                  return false;
+                }
+                const server = await serverData(send, sourceData.data);
+                if (!server.ok) {
+                  return false;
+                }
+                const same = attemptNow(() => {
+                  const sent = optionsFrom(leaf, {
+                    data: server.data,
+                    item: null,
+                    holes: false,
+                  });
+                  return (
+                    hashKey(filled.data.queryKey) === hashKey(sent.queryKey) &&
+                    // An infinite query's cursor isn't in its key
+                    sameCursor(
+                      filled.data.initialPageParam,
+                      sent.initialPageParam,
+                    )
+                  );
+                });
+                return same.ok && same.data;
+              },
+            })
+          : filled.data;
+        options.settle(ok(built));
+        void attempt(() => start(built)).then((outcome) =>
+          started.settle(outcome.ok ? outcome : own(outcome.error)),
+        );
       });
-      options = started.then((entry) => entry.options);
-      promise = started.then((entry) => entry.promise);
     }
-    // Nothing waits for the options of an entry from another's data
-    options.catch(nothing);
-    const data =
-      state.kind === 'prefetch'
-        ? promise.then(async () => {
-            // A prefetch resolves to nothing and never rejects
-            const query = queryClient.getQueryState((await options).queryKey);
-            if (query?.data === undefined) {
-              throw failureOf(leaf, query?.error);
-            }
-            return query.data;
-          })
-        : promise;
-    // Only an entry that reads it with `experimental_dataOf()` waits for it
-    data.then(
-      (loaded) => publish(published, { ok: true, data: loaded }),
-      (error: unknown) => publish(published, { ok: false, error }),
-    );
-    const from = leaf.built.by === 'dataOf' ? leaf.built.data : null;
-    /** The input without the data it is built from, and where that data goes */
-    const unfinished = (dataOfEntry: Map<object, unknown>) => ({
-      ...toHandle(
-        state.options({
-          dataOfRef: (ref) =>
-            ref.entry === from
-              ? blankInput
-              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
-          pipeline: null,
-        }),
-        state.type,
-      ),
-      itemInputs: state.refs
-        .filter((ref) => ref.entry === from)
-        .map((ref) => ({ to: ref.to, path: ref.path })),
+    started.onSettled((outcome) => {
+      if (state.request.kind === 'skipped') {
+        // Nothing started: an entry that reads this one's data has none to read
+        data.settle(
+          failed({
+            kind: 'skipped',
+            error: new Error(
+              `"${leaf.label}" has \`skipToken\` as its input, so it has no data for the entries that read it`,
+            ),
+          }),
+        );
+        return;
+      }
+      if (!outcome.ok || state.kind !== 'prefetch') {
+        data.settle(outcome);
+        return;
+      }
+      // A prefetch resolves to nothing and never rejects. What it fetched
+      // settled `data` as the cache got it; else the cache had fresh data
+      // and the load fetched nothing
+      const built = options.state();
+      const query =
+        built.status === 'settled' && built.outcome.ok
+          ? queryClient.getQueryState(built.outcome.data.queryKey)
+          : undefined;
+      data.settle(
+        query?.data !== undefined ? ok(query.data) : own(query?.error),
+      );
     });
-    const waitedEntries = waitedByHandle(leaf);
-    const waited = new Map(
-      [...sources].filter(([entry]) => waitedEntries.has(entry)),
-    );
-    const load: EntryLoad = {
+
+    const from = leaf.built.by === 'dataOf';
+    return {
+      shape: 'one',
       leaf,
-      pipeline,
-      requestData,
-      handle:
-        from === null
-          ? options.then((built) => toHandle(built, state.type))
-          : dataOfSources(waited, (source) => source.data).then(unfinished),
-      handleNow: () =>
-        from === null
-          ? toHandle(
-              state.options({ dataOfRef: nothing, pipeline: null }),
-              state.type,
-            )
-          : unfinished(new Map()),
-      promise,
+      server,
       data,
-      published,
+      forReaders,
+      handle: from
+        ? unfinishedOf(leaf, sources)
+        : options.outcome.then((built) =>
+            built.ok ? ok(toHandle(built.data, state.type)) : built,
+          ),
+      handleNow: () =>
+        from
+          ? unfinishedHandle(leaf, noData)
+          : toHandle(
+              optionsFrom(leaf, { data: noData, item: null, holes: false }),
+              state.type,
+            ),
     };
-    loads.set(leaf, load);
-    return load;
   }
 
   /** Loads an entry from `experimental_entryPerItem()`: a query for every item of a list */
-  function loadPerItem(perItem: {
-    leaf: EntryLeaf;
-    list: EntryDataRef;
-    sources: Map<object, EntryLoad>;
-    reads: { ref: EntryInputRef; source: EntryLoad }[];
-  }): EntryLoad {
-    const { leaf, list, sources } = perItem;
+  function loadPerItem(
+    leaf: LinkedLeaf,
+    list: NonNullable<LinkedLeaf['list']>,
+  ): PerItemLoad {
     const { state } = leaf;
-    const itemPath = itemPathOf(list);
-    // Not by its path: the whole list, read with `.map()`, has the same one
-    const readsItem = (ref: EntryDataRef) => ref.itemOf === list;
-    /** The items of the list in an entry's data, as the server walks them */
-    const itemsOf = (dataOfEntry: Map<object, unknown>) =>
-      itemsAt(dataOfEntry.get(list.entry), itemPath);
-    /** Where a value read from the item's stand-in is, for one item */
-    const pathOfItem = (path: DataPath, listItem: ListItem) => [
-      ...listItem.path,
-      ...path.slice(itemPath.length),
-    ];
-    const optionsOfItem = (
-      dataOfEntry: Map<object, unknown>,
-      listItem: ListItem,
-    ) =>
-      state.options({
-        dataOfRef: (ref) =>
-          readPipelinePath(
-            dataOfEntry.get(ref.entry),
-            readsItem(ref) ? pathOfItem(ref.path, listItem) : ref.path,
-            null,
-          ),
-        pipeline: null,
-      });
+    const { itemPath } = list.plan;
+    const { reads, sources } = readsOf(leaf);
+    const listSource = sourceOf(list.source);
+    sources.set(list.ref.entry, listSource);
+    /** The items of the list in the data of the entries it reads, as the server walks them */
+    const itemsOf = (data: SourceData) =>
+      itemsAt(data.get(list.ref.entry), itemPath);
 
     // One call, which the server runs once for every item. Its result is a
     // `{ result }` or an `{ error }` for every item. An entry that reads
     // nothing of its item has no call for every item: its query is an ordinary one
-    const listSource = sources.get(list.entry);
     /** The list in the result of its entry's request: the first page's, of an infinite query */
-    const listPath =
-      listSource &&
-      perItemPlan({
-        list,
-        listType: listSource.leaf.state.type,
-        pipelines:
-          state.request.pipelines && listSource.leaf.state.request.pipelines,
-      }).first;
-    const call =
-      listSource && listPath && perItem.reads.some(({ ref }) => readsItem(ref))
+    const listPath = list.plan.first;
+    const send =
+      listPath && reads.some(({ ref }) => leaf.fromItem(ref))
         ? sendPipelined({
-            state,
-            reads: perItem.reads,
-            list: { ref: list, source: listSource, path: listPath },
+            leaf,
+            reads,
+            list: { ref: list.ref, source: listSource, path: listPath },
           })
         : null;
     /**
@@ -695,171 +742,160 @@ export function beginEntries(opts: {
         ? listItem.indexes.slice(skipped)
         : null;
     };
-
     /** Where an item is in the list, as a key */
     const placeOf = (listItem: ListItem) => listItem.indexes.join(',');
 
-    /** The input without the item's parts, and where they go */
-    const unfinished = (dataOfEntry: Map<object, unknown>) => ({
-      ...toHandle(
-        state.options({
-          dataOfRef: (ref) =>
-            readsItem(ref)
-              ? blankInput
-              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
-          pipeline: null,
-        }),
-        state.type,
-      ),
-      itemInputs: state.refs
-        .filter(readsItem)
-        .map((ref) => ({ to: ref.to, path: ref.path.slice(itemPath.length) })),
-    });
-    const waitedEntries = waitedByHandle(leaf);
-    const handle = dataOfSources(
-      new Map([...sources].filter(([entry]) => waitedEntries.has(entry))),
-      (source) => source.data,
-    ).then(unfinished);
-
     // The items' queries start in the step in which the list has data
-    const started = new Promise<Promise<unknown>[]>((resolve, reject) => {
-      whenPublished(sources, (result) => {
-        if (!result.ok) {
-          reject(result.error);
+    const items = new Promise<ItemsOutcome>((resolve) => {
+      whenAll(readersOf(sources), (sourceData) => {
+        if (!sourceData.ok) {
+          resolve(sourceData);
           return;
         }
-        try {
-          const { data } = result;
-          /**
-           * The key of every item's query, with the input the server filled
-           * in, by where the item is: the place it reads its result from
-           */
-          const serverKeys = call
-            ? dataOfSources(sources, (source) => source.requestData).then(
-                (serverData) =>
-                  new Map(
-                    itemsOf(serverData).map((listItem) => [
-                      placeOf(listItem),
-                      hashKey(optionsOfItem(serverData, listItem).queryKey),
-                    ]),
-                  ),
-              )
-            : null;
-          serverKeys?.catch(nothing);
-
-          resolve(
+        const { data } = sourceData;
+        /**
+         * The key of every item's query, with the input the server filled
+         * in, by where the item is: the place it reads its result from.
+         * Each item's own: `null` for one whose key can't be held
+         */
+        const serverKeys = send
+          ? serverData(send, data).then(
+              (server) =>
+                new Map(
+                  server.ok
+                    ? itemsOf(server.data).map((listItem) => {
+                        const key = attemptNow(() =>
+                          hashKey(
+                            optionsFrom(leaf, {
+                              data: server.data,
+                              item: listItem,
+                              holes: false,
+                            }).queryKey,
+                          ),
+                        );
+                        return [placeOf(listItem), key.ok ? key.data : null];
+                      })
+                    : [],
+                ),
+            )
+          : null;
+        resolve(
+          ok(
             itemsOf(data).map((listItem, index) =>
-              startOwn(() => {
-                const place = placeOf(listItem);
-                let options = optionsOfItem(data, listItem);
-                if (call && serverKeys) {
+              // Each item starts by itself: what it throws is its own
+              attempt(() => {
+                let options = optionsFrom(leaf, {
+                  data,
+                  item: listItem,
+                  holes: false,
+                });
+                if (send && serverKeys) {
                   const key = hashKey(options.queryKey);
-                  const item = resultOfItem(
-                    dataOfCall(call),
-                    serverIndexes(listItem),
-                  );
+                  const place = placeOf(listItem);
                   options = withPipelinedResult({
                     options,
-                    result: item.result,
-                    unresolved: () =>
-                      call.status === 'unresolved' || item.missing(),
+                    result: outcomeOfItem(send.call, serverIndexes(listItem)),
                     // The server ran the same query at the item's place
                     sameInput: async () =>
                       (await serverKeys).get(place) === key,
                   });
                 }
                 return startEntry({ queryClient, state, options });
-              }).catch((error: unknown) => {
-                throw toEntryError(`${leaf.label}.${index}`, state, error);
-              }),
+              }).then((outcome) =>
+                outcome.ok
+                  ? outcome
+                  : failed(
+                      ownFailure(
+                        `${leaf.label}.${index}`,
+                        state,
+                        outcome.error,
+                      ),
+                    ),
+              ),
             ),
-          );
-        } catch (error) {
-          reject(error);
-        }
+          ),
+        );
       });
     });
-    const promise = started.then(
-      (items) =>
-        Promise.all(
-          items.map((itemPromise) =>
-            opts.settle ? settleLoad(itemPromise) : itemPromise,
-          ),
-        ),
-      (error: unknown) => {
-        if (isSettledFailure(error)) {
-          // Without the list, there are no items to have results
-          return [];
-        }
-        throw error;
-      },
-    );
-    // A prefetch entry's load isn't waited for
-    promise.catch(nothing);
     return {
+      shape: 'perItem',
       leaf,
-      // Nothing reads the data of an entry that is a list of queries
-      pipeline: null,
-      requestData: null,
-      handle,
-      handleNow: () => unfinished(new Map()),
-      promise,
-      data: promise,
-      published: { settled: null, listeners: [] },
+      handle: unfinishedOf(leaf, sources),
+      handleNow: () => unfinishedHandle(leaf, noData),
+      items,
     };
   }
 
   let allLoads: EntryLoad[];
   try {
-    allLoads = leaves.map(loadOf);
+    allLoads = linked.leaves.map((leaf): EntryLoad =>
+      leaf.list ? loadPerItem(leaf, leaf.list) : sourceOf(leaf),
+    );
   } catch (error) {
     // An entry that threw as it started: nothing waits for the ones before
     // it, so nothing would stop listening for them
-    stopWatching();
+    close();
     throw error;
   }
   // Until every entry has settled. An entry that starts later can watch too
-  void Promise.allSettled(allLoads.map((load) => load.promise)).then(
-    stopWatching,
-  );
-  return { tree, leafOfEntry, allLoads, isSettledFailure };
+  void Promise.all(allLoads.map(settledOf)).then(close);
+  return { tree: linked.tree, allLoads };
 }
 
 /** The handles of a load's entries, in the shape of the entries */
 export function handlesOfLoads(opts: {
-  tree: EntryTree;
-  leafOfEntry: Map<object, EntryLeaf>;
+  tree: EntryTree<LinkedLeaf>;
   /** An entry that couldn't start has none */
-  handleOfLeaf: Map<EntryLeaf, Record<string, unknown>>;
+  handleOfLeaf: Map<LinkedLeaf, Handle>;
 }) {
   const { handleOfLeaf } = opts;
   // A list's handle says what its items load, so that a later fetch of the
   // list, such as the next page, can load that in the same request
   for (const [leaf, handle] of handleOfLeaf) {
-    if (leaf.built.by !== 'entryPerItem') {
+    const later = leaf.list?.plan.later;
+    const sourceHandle = leaf.list && handleOfLeaf.get(leaf.list.source);
+    if (!later || !sourceHandle) {
       continue;
     }
-    const source = opts.leafOfEntry.get(leaf.built.list.entry);
-    const sourceHandle = source && handleOfLeaf.get(source);
-    if (!source || !sourceHandle) {
-      continue;
-    }
-    const { later } = perItemPlan({
-      list: leaf.built.list,
-      listType: source.state.type,
-      pipelines: leaf.state.request.pipelines && source.state.request.pipelines,
-    });
-    if (later) {
-      sourceHandle['experimental_perItem'] = [
-        ...((sourceHandle['experimental_perItem'] as unknown[] | undefined) ??
-          []),
-        { ...handle, ...later },
-      ];
-    }
+    sourceHandle['experimental_perItem'] = [
+      ...((sourceHandle['experimental_perItem'] as unknown[] | undefined) ??
+        []),
+      { ...handle, ...later },
+    ];
   }
   return mapEntryTree(opts.tree, (leaf) => {
     const handle = handleOfLeaf.get(leaf);
     return handle ? [handle] : [];
+  });
+}
+
+/**
+ * What a public load resolves to for an entry, from its outcome: with
+ * `settle`, a `TRPCEntryResult`, else its data. A failure it doesn't report
+ * rejects. This is where an outcome becomes a rejection, and nowhere before
+ */
+function resultOf(load: EntryLoad, settle: boolean): Promise<unknown> {
+  const resultOfOutcome = (outcome: Outcome<unknown, EntryFailure>) => {
+    if (outcome.ok) {
+      return settle ? { status: 'success', data: outcome.data } : outcome.data;
+    }
+    if (settle && isReported(load.leaf, outcome.error)) {
+      return { status: 'error', error: errorOf(outcome.error) };
+    }
+    throw errorOf(outcome.error);
+  };
+  if (load.shape === 'one') {
+    return load.data.outcome.then(resultOfOutcome);
+  }
+  return load.items.then((items) => {
+    if (!items.ok) {
+      if (settle && isReported(load.leaf, items.error)) {
+        // Without the list, there are no items to have results
+        return [];
+      }
+      throw errorOf(items.error);
+    }
+    return Promise.all(items.data.map((item) => item.then(resultOfOutcome)));
   });
 }
 
@@ -869,29 +905,27 @@ export async function startEntries(opts: {
   /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
   settle: boolean;
 }) {
-  const { tree, leafOfEntry, allLoads, isSettledFailure } = beginEntries({
-    ...opts,
+  const { tree, allLoads } = beginEntries({
+    queryClient: opts.queryClient,
+    entries: opts.entries,
     now: null,
   });
   const waited = allLoads.filter((load) => load.leaf.state.kind !== 'prefetch');
   const [results, loadedHandles] = await Promise.all([
-    Promise.all(
-      waited.map((load) =>
-        // An entry per item settles every item itself
-        opts.settle && load.leaf.built.by !== 'entryPerItem'
-          ? settleLoad(load.promise)
-          : load.promise,
-      ),
-    ),
+    Promise.all(waited.map((load) => resultOf(load, opts.settle))),
     // A handle needs its input, so also wait for the data that prefetch
     // entries read into theirs
     Promise.all(
       allLoads.map((load) =>
-        load.handle.catch((error: unknown) => {
-          if (isSettledFailure(error)) {
-            return notStarted;
+        load.handle.then((handle) => {
+          if (handle.ok) {
+            return handle.data;
           }
-          throw error;
+          // An entry that couldn't start has none
+          if (opts.settle && isReported(load.leaf, handle.error)) {
+            return null;
+          }
+          throw errorOf(handle.error);
         }),
       ),
     ),
@@ -902,14 +936,10 @@ export async function startEntries(opts: {
   );
   const handles = handlesOfLoads({
     tree,
-    leafOfEntry,
     handleOfLeaf: new Map(
       allLoads.flatMap((load, index) => {
         const handle = loadedHandles[index];
-        // An entry that couldn't start has none
-        return handle === undefined || typeof handle === 'symbol'
-          ? []
-          : [[load.leaf, handle] as const];
+        return handle ? [[load.leaf, handle] as const] : [];
       }),
     ),
   });

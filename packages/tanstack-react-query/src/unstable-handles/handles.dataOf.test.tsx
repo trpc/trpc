@@ -188,7 +188,7 @@ const createAppRouter = () => {
       /** Ids that no query key can hold */
       ids: t.procedure.query(() => ({ first: 1n, all: [1n, 2n] })),
       /** Ids of which the second is one no query key can hold */
-      mixed: t.procedure.query(() => ({ ids: ['u1', 1n] as unknown[] })),
+      mixed: t.procedure.query(() => ({ ids: ['u1', 1n, 'u2'] as unknown[] })),
       byId: t.procedure
         .input(z.object({ id: z.bigint() }))
         .query((opts) => opts.input.id),
@@ -1062,7 +1062,151 @@ describe('edges of a load', () => {
     expect(results.authors).toMatchObject([
       { status: 'success', data: { id: 'u1' } },
       { status: 'error' },
+      { status: 'success', data: { id: 'u2' } },
     ]);
+  });
+
+  test("an entry whose input from another's data can't start fails by itself, and the entries beside it still load", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const ids = ensureEntry(trpc.big.ids);
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      ids,
+      one: ensureEntry(trpc.big.byId, { id: experimental_dataOf(ids).first }),
+      author: ensureEntry(trpc.author.byId, { id: 'u1' }),
+    });
+    expect(results.ids).toMatchObject({ status: 'success' });
+    expect(results.author).toMatchObject({
+      status: 'success',
+      data: { id: 'u1' },
+    });
+    expect(results.one.status).toBe('error');
+    const error = results.one.status === 'error' ? results.one.error : null;
+    expect(isTRPCEntryError(error)).toBe(true);
+    expect(error?.key).toBe('one');
+    expect(error?.message).toContain('BigInt');
+    expect(handles.author).toBeDefined();
+  });
+
+  test('a prefetch entry whose request fails after a cache write while it ran fails the entries that read it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'missing' });
+    const loaded = loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    // While the post's request runs, which then fails
+    resource.queryClient.setQueryData(
+      trpc.post.bySlug.queryKey({ slug: 'missing' }),
+      {
+        id: 'written',
+        title: 'Written',
+        authorId: 'u1',
+        tags: [],
+      },
+    );
+    const error = await loaded.then(
+      () => null,
+      (rejected: unknown) => rejected,
+    );
+    expect(isTRPCEntryError(error) && error.code).toBe('NOT_FOUND');
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([]);
+  });
+
+  test("a cache write as a prefetch entry's request succeeds is in neither its items' queries nor the handle", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const loaded = loadHandles(trpc, {
+      post,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, {
+          ids: experimental_dataOf(post).tags.map((each) => each.id),
+          first: tag.id,
+        }),
+      ),
+    });
+    // After the load's own listener: like a `QueryCache` `onSuccess` that
+    // writes to the query it is told of
+    const cache = resource.queryClient.getQueryCache();
+    using _subscription = makeResource(
+      {},
+      cache.subscribe((event) => {
+        if (
+          event.type === 'updated' &&
+          event.action.type === 'success' &&
+          !event.action.manual &&
+          event.query.queryHash === hashKey(key)
+        ) {
+          resource.queryClient.setQueryData(key, {
+            id: 'written',
+            title: 'Written',
+            authorId: 'u1',
+            tags: [{ id: 'w1' }],
+          });
+        }
+      }),
+    );
+    const [handles] = await loaded;
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The handle's input is the one the item's query was started with
+    expect(experimental_handleOfItem(handles.tags, { id: 't1' }).input).toEqual(
+      { ids: ['t1', 't2'], first: 't1' },
+    );
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'tag.byIds'),
+    ).toEqual([
+      ['tag.byIds', { ids: ['t1', 't2'], first: 't1' }],
+      ['tag.byIds', { ids: ['t1', 't2'], first: 't2' }],
+    ]);
+  });
+
+  test('a load that throws while it starts its entries leaves no listener once its earlier entries load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const cache = resource.queryClient.getQueryCache();
+    resource.queryClient.setQueryData(trpc.author.byId.queryKey({ id: 'u1' }), {
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team1',
+    });
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    // Starts once the post is in, and is read by the team: the load would
+    // listen to the cache for it then
+    const author = prefetchEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        author,
+        team: prefetchEntry(trpc.team.byId, {
+          id: experimental_dataOf(author).teamId,
+        }),
+        cached: prefetchEntry(
+          trpc.author.byId,
+          { id: 'u1' },
+          {
+            staleTime: () => {
+              throw new Error('staleTime threw');
+            },
+          },
+        ),
+      }),
+    ).rejects.toThrow('staleTime threw');
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(cache.hasListeners()).toBe(false);
   });
 
   test('a load that throws while it starts its entries leaves no listener on the query cache', async () => {
@@ -2955,6 +3099,119 @@ describe.each([
     ).toMatchObject({ id: 'u1' });
   });
 
+  test("a server row whose item key can't be held makes only that row ask by itself", async () => {
+    // A row whose id no query key can hold, as an app with a transformer for
+    // it can have, comes last in the list the client reads
+    const addRow: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) =>
+        observable((observer) =>
+          next(op).subscribe({
+            next(value) {
+              const data = value.result.data as
+                | { items?: unknown[] }
+                | undefined;
+              observer.next(
+                op.path === 'post.paged' && data?.items
+                  ? ({
+                      ...value,
+                      result: {
+                        ...value.result,
+                        data: {
+                          ...data,
+                          items: [...data.items, { id: 'big', authorId: 1n }],
+                        },
+                      },
+                    } as typeof value)
+                  : value,
+              );
+            },
+            error: (error) => observer.error(error),
+            complete: () => observer.complete(),
+          }),
+        );
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [addRow],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const posts = ensureEntry(trpc.post.paged, {});
+    await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // The first row's author is from the list's request: none of its own
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 'u0' }),
+      ),
+    ).toMatchObject({ id: 'u0' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u0' }]]);
+  });
+
+  test("a list read with a `trpc.context` of its own carries none of its items' calls", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const route = Symbol('route');
+
+    const posts = ensureEntry(trpc.post.byAuthor, { authorId: 'u1' });
+    const [loaded] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (id) => prefetchEntry(trpc.author.byId, { id }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(loaded.posts.experimental_perItem).toHaveLength(1);
+    resource.onRequestSpy.mockClear();
+
+    for (const context of [{ route: 'posts' }, { [route]: 'posts' }]) {
+      await resource.queryClient.fetchQuery({
+        ...fromHandle(trpc, loaded.posts, { trpc: { context } }),
+        staleTime: 0,
+      });
+    }
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // Each list request went by itself: a link may route by its context
+    expect(resource.onRequestSpy.mock.calls.length).toBeGreaterThan(0);
+    for (const [req] of resource.onRequestSpy.mock.calls) {
+      expect(req.url).not.toContain('author.byId');
+    }
+    // An empty context is none: the list's request still carries the calls
+    resource.onRequestSpy.mockClear();
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, loaded.posts, { trpc: { context: {} } }),
+      staleTime: 0,
+    });
+    expect(resource.onRequestSpy.mock.calls[0]?.[0].url).toContain(
+      'post.byAuthor,author.byId',
+    );
+  });
+
   test("a list fetched again loads its items' queries from `.map()` in the same request", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
@@ -4433,6 +4690,38 @@ describe('experimental_useHandles', () => {
     resource.rerenderApp(utils, <List />);
     expect(seen[0]!['posts'].initialCursor).toBe(5n);
     expect(seen[1]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('a bigint first cursor and the string that reads like it are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: Record<string, any>[] = [];
+    function List(props: { cursor: unknown }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          posts: prefetchInfiniteEntry(
+            trpc.post.paged,
+            {},
+            // Against its type, as an app with a transformer for it can have
+            { initialCursor: props.cursor as number },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <List cursor={5n} />
+        <List cursor="5n" />
+        <List cursor={5n} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[1]!['posts'].initialCursor).toBe('5n');
+    expect(seen[2]).toBe(seen[0]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

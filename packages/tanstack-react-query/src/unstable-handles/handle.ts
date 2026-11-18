@@ -30,9 +30,10 @@ import type {
 } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type { EntryQueryOptions, ProxyContext } from './entry';
-import { optionsOf, queryClientOf, readProxy } from './entry';
+import { optionsOf, ownContextOf, queryClientOf, readProxy } from './entry';
 import type { ErrorOf } from './entryError';
-import { dataOfCall, resultOfItem, withPipelinedResult } from './pipelined';
+import { attempt } from './outcome';
+import { outcomeOfItem, withPipelinedResult } from './pipelined';
 import type {
   AnyTRPCHandle,
   HandleType,
@@ -42,7 +43,7 @@ import type {
   experimental_TRPCInfiniteQueryHandlePerItem,
   experimental_TRPCQueryHandlePerItem,
 } from './types';
-import { isPlainObject, nothing, startOwn } from './utils';
+import { isPlainObject, nothing } from './utils';
 
 export const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
@@ -220,6 +221,41 @@ export function withInputAt(
   return container;
 }
 
+/** An unfinished handle's input with the parts of `item` in it */
+function finishInput(
+  unfinished: {
+    input: unknown;
+    itemInputs: readonly {
+      readonly to: readonly string[];
+      readonly path: PipelinePath;
+    }[];
+  },
+  item: unknown,
+) {
+  return unfinished.itemInputs.reduce(
+    (input, itemInput) =>
+      withInputAt(
+        input,
+        itemInput.to,
+        readPipelinePath(item, itemInput.path, null),
+      ),
+    unfinished.input,
+  );
+}
+
+/**
+ * The procedure of the options proxy at `path`, from a proxy at `ctx`.
+ * `null` if `path` isn't in the part of the router that `ctx` is
+ */
+function procedureAt(ctx: ProxyContext, path: readonly string[]) {
+  if (!ctx.path.every((segment, index) => path[index] === segment)) {
+    return null;
+  }
+  return path
+    .slice(ctx.path.length)
+    .reduce((level, segment) => level[segment], ctx.proxy);
+}
+
 /**
  * The handle of one item's query, from the handle of an `experimental_entryPerItem()` entry.
  * Read it with `fromHandle(trpc, handle)`, like any handle.
@@ -260,14 +296,9 @@ export function experimental_handleOfItem(
       `Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got ${JSON.stringify(handle)}`,
     );
   }
-  const filled = perItem.itemInputs.reduce(
-    (input, itemInput) =>
-      withInputAt(
-        input,
-        itemInput.to,
-        readPipelinePath(item, itemInput.path, null),
-      ),
-    perItem.input,
+  const filled = finishInput(
+    { input: perItem.input, itemInputs: perItem.itemInputs },
+    item,
   );
   const args = perItem.queryKey[perItem.queryKey.length - 1] as {
     type?: unknown;
@@ -347,14 +378,12 @@ export function fromHandle(
     );
   }
   const handle = readHandle(rawHandle, ctx.prefix);
-  if (!ctx.path.every((segment, index) => handle.path[index] === segment)) {
+  const procedure = procedureAt(ctx, handle.path);
+  if (procedure === null) {
     throw new Error(
       `\`fromHandle(trpc.${ctx.path.join('.')}, handle)\` got a handle for \`${handle.path.join('.')}\`, which isn't in \`${ctx.path.join('.')}\`. Pass the root proxy, \`trpc\``,
     );
   }
-  const procedure = handle.path
-    .slice(ctx.path.length)
-    .reduce((level, segment) => level[segment], ctx.proxy);
   const firstCursor = (rawHandle as TRPCInfiniteQueryHandle).initialCursor;
   const readOpts =
     handle.type === 'infinite' ? { initialCursor: firstCursor, ...opts } : opts;
@@ -368,15 +397,20 @@ export function fromHandle(
     rawHandle.skipped ? skipToken : input,
     readOpts,
   );
-  const perItem = rawHandle.experimental_perItem;
+  // Not for a read with a `trpc.context` of its own, which a link may route
+  // by: the items' calls would go where the list goes
+  const itemQueries =
+    ownContextOf(readOpts) === null
+      ? readItemQueries(ctx, rawHandle.experimental_perItem ?? [])
+      : [];
   return prepareHandleRead({
     queryClient: queryClientOf(ctx),
     handle,
     options:
-      perItem && perItem.length > 0 && typeof options.queryFn === 'function'
+      itemQueries.length > 0 && typeof options.queryFn === 'function'
         ? withItemQueries({
             ctx,
-            perItem,
+            itemQueries,
             options,
             // The request of one fetch, which a link that pipelines marks
             optionsWith: (pipeline) =>
@@ -396,19 +430,64 @@ export function fromHandle(
 }
 
 /**
+ * What an `experimental_entryPerItem()` entry loads for each item of a list,
+ * as a later fetch of the list loads it: read once, as the handle is read
+ */
+interface ItemQueries {
+  /** The procedure of the options proxy the items' queries are of */
+  procedure: any;
+  path: string;
+  /** The input, without the parts that come from an item */
+  input: unknown;
+  itemInputs: readonly { readonly to: string[]; readonly path: PipelinePath }[];
+  list: readonly string[];
+  itemRead: readonly string[];
+}
+
+/**
+ * The item queries a handle's list loads in its later fetches. Not one whose
+ * input is `skipToken`, for which an item has nothing to load; nor one that
+ * reads nothing of its item, which every row loads once, when it reads it;
+ * nor one whose procedure isn't in the part of the router `ctx` is
+ */
+function readItemQueries(
+  ctx: ProxyContext,
+  perItem: readonly PerItemQueries[],
+): ItemQueries[] {
+  return perItem.flatMap((queries) => {
+    if (queries.skipped || queries.itemInputs.length === 0) {
+      return [];
+    }
+    const { path } = readQueryKey(queries.queryKey);
+    const procedure = procedureAt(ctx, path);
+    return procedure === null
+      ? []
+      : [
+          {
+            procedure,
+            path: path.join('.'),
+            input: queries.input,
+            itemInputs: queries.itemInputs,
+            list: queries.list,
+            itemRead: queries.itemRead,
+          },
+        ];
+  });
+}
+
+/**
  * Makes every fetch of a list also load what its items load, in the same
  * request, when the link pipelines. Each item's query is then in the cache
  * when the item's component reads it.
  */
 export function withItemQueries(opts: {
   ctx: ProxyContext;
-  perItem: readonly PerItemQueries[];
+  itemQueries: readonly ItemQueries[];
   options: any;
   /** The list's options, with a pipeline on their requests */
   optionsWith: (pipeline: OperationPipeline) => any;
 }) {
-  const { ctx } = opts;
-  const queryClient = queryClientOf(ctx);
+  const queryClient = queryClientOf(opts.ctx);
   return {
     ...opts.options,
     queryFn: (context: QueryFunctionContext<any, any>) => {
@@ -416,27 +495,12 @@ export function withItemQueries(opts: {
       const list: Promise<unknown> = Promise.resolve(
         opts.optionsWith(pipeline).queryFn(context),
       );
-      for (const queries of opts.perItem) {
-        const { path } = readQueryKey(queries.queryKey);
-        if (
-          // Its input is `skipToken`: an item has nothing to load
-          queries.skipped ||
-          // It reads nothing of its item: every row has the same query,
-          // which the rows load once, when they read it
-          queries.itemInputs.length === 0 ||
-          // The items' procedure isn't in this part of the router
-          !ctx.path.every((segment, index) => path[index] === segment)
-        ) {
-          continue;
-        }
-        const procedure = path
-          .slice(ctx.path.length)
-          .reduce((level, segment) => level[segment], ctx.proxy);
+      for (const queries of opts.itemQueries) {
         // One call, which the server runs for every item of the list. Without
         // a link that took the list into a batch, the items load when they
         // are read
         const call = pipeCall({
-          path: path.join('.'),
+          path: queries.path,
           input: queries.input,
           reads: {
             each: { from: pipeline, path: [...queries.list] },
@@ -458,25 +522,22 @@ export function withItemQueries(opts: {
             ? listData.entries()
             : []) {
             const item = readPipelinePath(element, [...queries.itemRead], null);
-            const itemResult = resultOfItem(dataOfCall(call), [index]);
             // A row whose query can't start, such as for an input no query
             // key can hold, fails by itself: the row that reads it gets that
             // error, and the others load
-            void startOwn(() =>
+            void attempt(() =>
               queryClient.prefetchQuery(
                 withPipelinedResult({
-                  options: optionsOf(procedure, 'query')(
-                    experimental_handleOfItem(queries, item).input,
+                  options: optionsOf(queries.procedure, 'query')(
+                    finishInput(queries, item),
                     undefined,
                   ),
-                  result: itemResult.result,
-                  unresolved: () =>
-                    call.status === 'unresolved' || itemResult.missing(),
+                  result: outcomeOfItem(call, [index]),
                   // The server filled in the inputs from the same list
                   sameInput: () => Promise.resolve(true),
                 }) as unknown as FetchQueryOptions,
               ),
-            ).catch(nothing);
+            );
           }
         }, nothing);
       }

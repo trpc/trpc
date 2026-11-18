@@ -554,6 +554,7 @@ Content-Type: application/json
 - **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
 - **Only the item's part of an input is new.** What an item's input reads besides the item, such as the whole list or another entry, stays as it was in the first load. That is the input the items' handles have, so each row still finds its query.
 - **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
+- **Not with a `trpc.context` of its own.** `fromHandle(trpc, handles.posts, { trpc: { context } })` with a non-empty `context` fetches the list alone, since a link may route by that context. Each row's query loads when the row reads it.
 
 ## Entries next to components {#groups}
 
@@ -780,7 +781,8 @@ export async function AuthorSection(props: {
 
 When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
 
-- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`. A prefetch entry that nothing reads never makes a load reject.
+- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`, and if its request fails while the cache has data, such as from `setQueryData()`. A prefetch entry that nothing reads never makes a load reject.
+- **An entry whose query can't start** fails by itself, with a `TRPCEntryError`, such as for an input built from another entry's data that no query key can hold.
 - **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. Those have no handle, so check the results before you return the handles.
 
 ```ts twoslash

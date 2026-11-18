@@ -8,9 +8,10 @@ import {
   entryPerItemStateOf,
   entryStateOf,
 } from './entry';
+import type { PerItemPlan } from './list';
+import { perItemPlan } from './list';
 import { isPlainObject } from './utils';
 
-/** An entry to load, by its place in what `loadHandles()` was given */
 /** What built an entry, which says how a load loads it */
 export type EntryBuilt =
   /** `prefetchEntry()` and the like: one query */
@@ -36,17 +37,45 @@ export interface EntryLeaf {
   entry: object;
   state: EntryState;
   built: EntryBuilt;
+}
+
+/**
+ * An entry of a load, linked to the entries it reads: every one of them is
+ * in the load. Only `linkEntries()` makes one, so a leaf of this type has
+ * been checked, and what it decides is decided once, for every use.
+ */
+export interface LinkedLeaf extends EntryLeaf {
+  /** What its input reads of other entries, and the entry of each */
+  reads: readonly { ref: EntryInputRef; source: LinkedLeaf }[];
   /**
-   * What its input reads of other entries, and the entry of each. A load
-   * fills it in as it begins
+   * For an entry per item: the list, the entry it is in, and how the calls
+   * for its items go with that entry's requests
    */
-  reads: { ref: EntryInputRef; source: EntryLeaf }[];
-  /** The list of an entry per item, and the entry it is in. A load fills it in as it begins */
-  list: { ref: EntryDataRef; source: EntryLeaf } | null;
+  list: { ref: EntryDataRef; source: LinkedLeaf; plan: PerItemPlan } | null;
+  /**
+   * Whether a value its input reads is left out of its handle, for
+   * `experimental_handleOfItem()` to fill in: of an entry per item, a value
+   * of the item; of an entry built from another's data, a value of that data
+   */
+  fromItem: (ref: EntryDataRef) => boolean;
+  /**
+   * How many of a value's path segments `experimental_handleOfItem()` reads
+   * from its item, from the end: the rest is the path to the item
+   */
+  itemDepth: number;
+  /**
+   * The entries whose data its handle has in its input, which a load waits
+   * for. For an entry per item or from another's data, the handle has no
+   * item and none of that data: the component that has them finishes it
+   */
+  waited: ReadonlySet<object>;
 }
 
 /** What `loadHandles()` was given, with `skipToken` keys left out */
-export type EntryTree = [name: string, node: EntryLeaf | EntryTree][];
+export type EntryTree<TLeaf = EntryLeaf> = [
+  name: string,
+  node: TLeaf | EntryTree<TLeaf>,
+][];
 
 /** Whether a value is something `loadHandles()` loads: an entry or `skipToken` */
 export function isLoadable(value: unknown) {
@@ -107,8 +136,6 @@ export function readEntries(opts: {
               : fromData
                 ? { by: 'dataOf', data: fromData.source }
                 : { by: 'entry' },
-            reads: [],
-            list: null,
           },
         ],
       ];
@@ -127,15 +154,15 @@ export function readEntries(opts: {
   });
 }
 
-export function leavesOf(tree: EntryTree): EntryLeaf[] {
+export function leavesOf<TLeaf>(tree: EntryTree<TLeaf>): TLeaf[] {
   return tree.flatMap(([, node]) =>
     Array.isArray(node) ? leavesOf(node) : [node],
   );
 }
 
-export function mapEntryTree(
-  tree: EntryTree,
-  map: (leaf: EntryLeaf) => [value: unknown] | [],
+export function mapEntryTree<TLeaf>(
+  tree: EntryTree<TLeaf>,
+  map: (leaf: TLeaf) => [value: unknown] | [],
 ): Record<string, unknown> {
   // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
   return Object.fromEntries(
@@ -148,27 +175,106 @@ export function mapEntryTree(
   );
 }
 
+/** A load's entries, linked: each to the entries it reads */
+export interface LinkedEntries {
+  tree: EntryTree<LinkedLeaf>;
+  leaves: LinkedLeaf[];
+  /** The entries whose data another entry reads */
+  read: ReadonlySet<LinkedLeaf>;
+}
+
 /**
- * The entries whose data an entry's handle has in its input, which a load
- * waits for. For an entry per item or from another's data, the handle has no
- * item and none of that data: the component that has them finishes it.
+ * Links every entry to the entries it reads, before any query starts. The
+ * one place that checks that each of them is in the load.
  */
-export function waitedByHandle(leaf: EntryLeaf): Set<object> {
-  const { list } = leaf;
-  const from = leaf.built.by === 'dataOf' ? leaf.built.data : null;
-  return new Set([
-    // It waits for the list if the load does. So not for a list from a
-    // prefetch entry
-    ...(list && list.source.state.kind !== 'prefetch'
-      ? [list.source.entry]
-      : []),
-    ...leaf.reads
-      .filter(({ ref, source }) =>
-        // For an entry per item: another part of the list than the item
-        list ? ref.itemOf !== list.ref : source.entry !== from,
-      )
-      .map((read) => read.source.entry),
-  ]);
+export function linkEntries(tree: EntryTree): LinkedEntries {
+  // What an entry reads is an entry that is one query: `experimental_dataOf()`
+  // takes no entry per item
+  const leafOfEntry = new Map(
+    leavesOf(tree)
+      .filter((leaf) => leaf.built.by !== 'entryPerItem')
+      .map((leaf) => [leaf.entry, leaf]),
+  );
+  const linked = new Map<EntryLeaf, LinkedLeaf>();
+  // An entry only reads entries built before it, so this can't loop
+  const link = (leaf: EntryLeaf): LinkedLeaf => {
+    const existing = linked.get(leaf);
+    if (existing) {
+      return existing;
+    }
+    const sourceOf = (ref: EntryDataRef) => {
+      const source = leafOfEntry.get(ref.entry);
+      if (!source) {
+        throw new Error(
+          `The entry for "${leaf.label}" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load`,
+        );
+      }
+      return link(source);
+    };
+    const reads = leaf.state.refs.map((ref) => ({
+      ref,
+      source: sourceOf(ref),
+    }));
+    const { built } = leaf;
+    let list: LinkedLeaf['list'] = null;
+    let fromItem: LinkedLeaf['fromItem'] = () => false;
+    let itemDepth = 0;
+    if (built.by === 'entryPerItem') {
+      const source = sourceOf(built.list);
+      list = {
+        ref: built.list,
+        source,
+        plan: perItemPlan({
+          list: built.list,
+          listType: source.state.type,
+          listRequest: source.state.request,
+          itemRequest: leaf.state.request,
+        }),
+      };
+      // Not by its path: the whole list, read with `.map()`, has the same one
+      fromItem = (ref) => ref.itemOf === built.list;
+      itemDepth = list.plan.itemPath.length;
+    } else if (built.by === 'dataOf') {
+      fromItem = (ref) => ref.entry === built.data;
+    }
+    const waited = new Set([
+      // It waits for the list if the load does. So not for a list from a
+      // prefetch entry
+      ...(list && list.source.state.kind !== 'prefetch'
+        ? [list.source.entry]
+        : []),
+      ...reads
+        .filter(({ ref }) => !fromItem(ref))
+        .map((read) => read.source.entry),
+    ]);
+    const result: LinkedLeaf = {
+      ...leaf,
+      reads,
+      list,
+      fromItem,
+      itemDepth,
+      waited,
+    };
+    linked.set(leaf, result);
+    return result;
+  };
+  const mapTree = (nodes: EntryTree): EntryTree<LinkedLeaf> =>
+    nodes.map(([name, node]) => [
+      name,
+      Array.isArray(node) ? mapTree(node) : link(node),
+    ]);
+  const linkedTree = mapTree(tree);
+  const leaves = leavesOf(linkedTree);
+  return {
+    tree: linkedTree,
+    leaves,
+    read: new Set(
+      leaves.flatMap((leaf) => [
+        ...leaf.reads.map((read) => read.source),
+        ...(leaf.list ? [leaf.list.source] : []),
+      ]),
+    ),
+  };
 }
 
 /** The options of an entry that say how a load starts its query */
@@ -281,12 +387,17 @@ export function describeEntries(opts: {
       // Not all of the options: `meta` can hold what has no JSON, or what is
       // new on every render
       options: startOptions.map((name) => describeOption(options[name])),
-      // A cursor can be a bigint, which has no JSON
+      // A cursor can be a bigint, which has no JSON. Tagged with its type,
+      // so that a bigint and a string that reads like it differ
       firstCursor:
-        typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
+        typeof firstCursor === 'bigint'
+          ? ['bigint', String(firstCursor)]
+          : firstCursor === undefined
+            ? ['none']
+            : ['value', firstCursor],
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       // Where its requests go, and so whether they can go in another's
-      context: describeContext(leaf.state.request.context),
+      context: describeContext(leaf.state.context),
       built:
         leaf.built.by === 'entryPerItem'
           ? [leaf.built.by, describeRef(leaf.built.list)]

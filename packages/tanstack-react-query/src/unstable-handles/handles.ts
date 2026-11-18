@@ -8,7 +8,7 @@ import type { FeatureFlags, ResolverDef } from '../internals/types';
 import { queryClientOf, readProxy, readRoot } from './entry';
 import { TRPCEntryError } from './entryError';
 import { isServerEnvironment } from './handle';
-import { beginEntries, handlesOfLoads, startEntries } from './load';
+import { beginEntries, handlesOfLoads, settledOf, startEntries } from './load';
 import { describeEntries } from './plan';
 import type {
   TRPCLoadEntries,
@@ -239,13 +239,11 @@ function useHandles<
     const started = beginEntries({
       queryClient,
       entries,
-      settle: false,
       now: 'experimental_useHandles',
     });
     const load: UsedLoad = {
       handles: handlesOfLoads({
         tree: started.tree,
-        leafOfEntry: started.leafOfEntry,
         handleOfLeaf: new Map(
           started.allLoads.map((entryLoad) => [
             entryLoad.leaf,
@@ -259,9 +257,7 @@ function useHandles<
     loads.set(key, load);
     // A component that never got on the page keeps nothing. On a server, the
     // request's `QueryClient` goes with the request
-    void Promise.allSettled(
-      started.allLoads.map((entryLoad) => entryLoad.promise),
-    ).then(() => {
+    void Promise.all(started.allLoads.map(settledOf)).then(() => {
       if (!isServerEnvironment()) {
         setTimeout(() => {
           if (load.mounts === 0 && loads.get(key) === load) {

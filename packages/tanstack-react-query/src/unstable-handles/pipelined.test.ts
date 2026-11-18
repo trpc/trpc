@@ -18,4 +18,12 @@ describe('sameCursor', () => {
     expect(sameCursor({ at: 1 }, { at: 1 })).toBe(true);
     expect(sameCursor({ at: 1 }, { at: 2 })).toBe(false);
   });
+
+  test('a date is not the string JSON writes for it, which a transformer can tell apart', () => {
+    const at = new Date(0);
+    expect(sameCursor(at, at.toISOString())).toBe(false);
+    expect(sameCursor({ at }, { at: at.toISOString() })).toBe(false);
+    expect(sameCursor(new Date(0), new Date(0))).toBe(true);
+    expect(sameCursor(new Date(0), new Date(1))).toBe(false);
+  });
 });

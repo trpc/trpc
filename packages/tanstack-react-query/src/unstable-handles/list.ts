@@ -4,6 +4,7 @@ import {
   readPipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { EntryDataRef } from './dataRef';
+import type { EntryRequest } from './entry';
 import type { DataPath, ItemPath, RequestPath } from './path';
 import type { HandleType } from './types';
 
@@ -80,11 +81,17 @@ export function perItemPlan(opts: {
   list: EntryDataRef;
   /** The type of the list's entry */
   listType: HandleType;
-  /** Whether both the entry per item and the list's entry take part in pipelining */
-  pipelines: boolean;
+  /** How the list's entry's first request goes */
+  listRequest: EntryRequest;
+  /** How the entry per item's requests go */
+  itemRequest: EntryRequest;
 }): PerItemPlan {
   const itemPath = itemPathOf(opts.list);
-  if (!opts.pipelines) {
+  // The calls go in the list's requests only if both take part in pipelining
+  if (
+    opts.listRequest.kind !== 'pipelined' ||
+    opts.itemRequest.kind !== 'pipelined'
+  ) {
     return { itemPath, first: null, later: null };
   }
   const { each, itemRead } = serverList(itemPath);

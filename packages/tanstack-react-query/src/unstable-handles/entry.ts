@@ -1,5 +1,5 @@
 import type { QueryClient, QueryFunction } from '@tanstack/react-query';
-import type { skipToken } from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import type { OperationPipeline } from '@trpc/client/unstable-internals';
 import { pipelineContext } from '@trpc/client/unstable-internals';
 import type {
@@ -38,29 +38,51 @@ import type {
 import { nothing } from './utils';
 
 /**
- * An entry's first request, as the server can make it in another's request:
- * for an infinite query, the request of the first page.
+ * How an entry's first request goes, decided once, when the entry is built.
+ * Only a `pipelined` request has what the server needs to make it in
+ * another's request, so code that pipelines has to narrow to it first.
  */
-export interface EntryRequest {
-  /** The procedure's path, joined by dots */
-  path: string;
-  /** The input, with `undefined` for every value the server fills in */
-  input: unknown;
+export type EntryRequest =
+  /** Its input is `skipToken`: no request */
+  | { readonly kind: 'skipped' }
   /**
-   * The `experimental_dataOf()` values the server fills in. Not a cursor that
-   * `initialCursor` takes the place of, nor an infinite query's direction:
-   * TanStack Query sets those, and the page would be another
+   * A request of its own, which neither goes in another's nor carries
+   * others'. For an entry with a `trpc.context` of its own, which a link may
+   * route by, or an infinite query that reads its whole input, to which the
+   * request adds the cursor
    */
-  serverReads: ReadonlySet<EntryInputRef>;
+  | { readonly kind: 'alone' }
   /**
-   * Whether its request can go in another's, or carry others' in it. Not with
-   * a `trpc.context` of its own, which a link may route by; nor for an
-   * infinite query that reads its whole input, to which the request adds the
-   * cursor
+   * A request that can go in another's, or carry others' in it: for an
+   * infinite query, the request of the first page
    */
-  pipelines: boolean;
-  /** The entry's own `trpc.context`, which its requests go to the links with. `null` for none */
-  context: Readonly<Record<PropertyKey, unknown>> | null;
+  | {
+      readonly kind: 'pipelined';
+      /** The procedure's path, joined by dots */
+      readonly path: string;
+      /** The input, with `undefined` for every value the server fills in */
+      readonly input: unknown;
+      /**
+       * The `experimental_dataOf()` values the server fills in. Not a cursor
+       * that `initialCursor` takes the place of, nor an infinite query's
+       * direction: TanStack Query sets those, and the page would be another
+       */
+      readonly serverReads: ReadonlySet<EntryInputRef>;
+    };
+
+/** A request that can take part in pipelining */
+export type PipelinedRequest = Extract<EntryRequest, { kind: 'pipelined' }>;
+
+/**
+ * The `trpc.context` of a query's options, if it has one of its own: one
+ * with a key, symbol keys too, as a link may route by any of them. The one
+ * check of it, for an entry and for a handle that is read alike
+ */
+export function ownContextOf(
+  opts: TRPCQueryBaseOptions | undefined,
+): Readonly<Record<PropertyKey, unknown>> | null {
+  const context = opts?.trpc?.context;
+  return context && Reflect.ownKeys(context).length > 0 ? context : null;
 }
 
 /** Builds an entry's `EntryRequest`. Pure: it reads only what the entry was built with */
@@ -74,9 +96,15 @@ function planRequest(opts: {
   const entryOpts = opts.opts as
     | (TRPCQueryBaseOptions & { initialCursor?: unknown })
     | undefined;
-  const context = entryOpts?.trpc?.context ?? null;
-  // Symbol keys too: a link may route by any of them
-  const ownContext = context !== null && Reflect.ownKeys(context).length > 0;
+  if (opts.input === skipToken) {
+    return { kind: 'skipped' };
+  }
+  if (
+    ownContextOf(entryOpts) !== null ||
+    (opts.type === 'infinite' && opts.refs.some((ref) => ref.to.length === 0))
+  ) {
+    return { kind: 'alone' };
+  }
   let input = replaceEntryDataRefs(opts.input, [], nothing);
   let cursorFromOptions = false;
   if (opts.type === 'infinite') {
@@ -92,6 +120,7 @@ function planRequest(opts: {
     };
   }
   return {
+    kind: 'pipelined',
     path: opts.path.join('.'),
     input,
     serverReads: new Set(
@@ -101,12 +130,6 @@ function planRequest(opts: {
           !(ref.to[0] === 'direction' && opts.type === 'infinite'),
       ),
     ),
-    context: ownContext ? context : null,
-    pipelines:
-      !ownContext &&
-      !(
-        opts.type === 'infinite' && opts.refs.some((ref) => ref.to.length === 0)
-      ),
   };
 }
 
@@ -126,8 +149,10 @@ export interface EntryState {
     dataOfRef: (ref: EntryDataRef) => unknown;
     pipeline: OperationPipeline | null;
   }) => EntryQueryOptions;
-  /** What the entry's first request is, decided when the entry is built */
+  /** How the entry's first request goes, decided when the entry is built */
   request: EntryRequest;
+  /** The entry's own `trpc.context`, which its requests go to the links with. `null` for none */
+  context: Readonly<Record<PropertyKey, unknown>> | null;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -291,6 +316,7 @@ export function entry(opts: {
       opts: opts.opts,
       refs,
     }),
+    context: ownContextOf(queryOpts),
     queryClient: queryClientOf(ctx),
   });
 }
