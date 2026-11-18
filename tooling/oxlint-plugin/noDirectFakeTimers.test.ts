@@ -18,6 +18,7 @@ tester.run('no-direct-fake-timers', plugin.rules['no-direct-fake-timers']!, {
     'await vi.advanceTimersByTimeAsync(100);',
     'other.useFakeTimers();',
     'useFakeTimers();',
+    'vi[useFakeTimers]();',
   ],
   invalid: [
     {
@@ -27,6 +28,14 @@ tester.run('no-direct-fake-timers', plugin.rules['no-direct-fake-timers']!, {
     {
       code: 'vi.useFakeTimers({ now: 0 });',
       errors: [{ message: message('useFakeTimers') }],
+    },
+    {
+      code: "vi['useFakeTimers']();",
+      errors: [{ message: message('useFakeTimers') }],
+    },
+    {
+      code: 'vi["useRealTimers"]();',
+      errors: [{ message: message('useRealTimers') }],
     },
     {
       code: 'afterAll(() => { vi.useRealTimers(); });',

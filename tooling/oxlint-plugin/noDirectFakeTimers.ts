@@ -27,9 +27,15 @@ export const noDirectFakeTimers = defineRule({
         if (callee.type !== 'MemberExpression') return;
         if (callee.object.type !== 'Identifier' || callee.object.name !== 'vi')
           return;
-        if (callee.property.type !== 'Identifier') return;
-        const name = callee.property.name;
-        if (!METHODS.has(name)) return;
+        const property = callee.property;
+        // `vi.useFakeTimers()` or `vi['useFakeTimers']()`.
+        const name =
+          property.type === 'Identifier' && !callee.computed
+            ? property.name
+            : property.type === 'Literal' && typeof property.value === 'string'
+              ? property.value
+              : null;
+        if (name === null || !METHODS.has(name)) return;
         context.report({ node, messageId: 'banned', data: { name } });
       },
     };
