@@ -21,7 +21,9 @@ export interface EntryDataRef {
    * - `mapped`: what `.map()` returned, a value for every item of a list.
    * - `flat`: what `.flatMap()` returned, the items of a list in every item.
    *   The wire can read no such list into an input, so it is only the list
-   *   of an `experimental_entryPerItem()` entry.
+   *   of an `experimental_entryPerItem()` entry. As on the server, what isn't
+   *   a list there has no items: unlike an array's `.flatMap()`, a callback
+   *   that returns a value gives none.
    */
   shape: 'value' | 'mapped' | 'flat';
 }

@@ -78,8 +78,15 @@ export const appRouter = t.router({
       .query(({ input }) => {
         const cursor = input.cursor ?? 0;
         return {
-          items: [] as Post[],
-          // Pages of 10, up to 30
+          items: [cursor + 1, cursor + 2].map(
+            (n): Post => ({
+              slug: `post-${n}`,
+              title: `Post ${n}`,
+              authorId: `u${n % 3}`,
+              tags: [],
+            }),
+          ),
+          // Three pages of two posts, at cursors 0, 10 and 20
           nextCursor: cursor < 20 ? cursor + 10 : null,
         };
       }),
@@ -510,7 +517,7 @@ function AuthorName(props: {
 - **Items with the same input share a query**, as two posts by one author do.
 - **The items are the list's elements.** For a list from `.map()`, they are the values its callback returned: `experimental_dataOf(post).tags.map((tag) => tag.id)` has an item for every tag's id.
 - **For the items of every list in a list, use `.flatMap()`**, as above: the items of every page of an infinite entry. A `.flatMap()` value can only be such a list, not a value in an input: the server can't flatten one into an input. A list of lists without it has the inner lists as its items, as its type says.
-- **A `null` in the list is an item like any other.** Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items, also in `.flatMap()`.
+- **A `null` in the list is an item like any other.** Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items, also in `.flatMap()`: unlike an array's `.flatMap()`, a callback that returns a value, such as `(post) => post.id`, gives no items. Return a list, or use `.map()`.
 - **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as idle: `'pending'`, unless the cache has data for its key. No call goes to the server, and it takes nothing from `maxBatchSize`.
 - **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.

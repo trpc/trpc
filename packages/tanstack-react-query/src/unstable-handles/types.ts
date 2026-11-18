@@ -23,6 +23,20 @@ export type InfiniteHandleInput<TInput> = TInput extends object
   : TInput;
 
 /**
+ * The input of an unfinished handle: the parts that come from an item or the
+ * data aren't there yet. A key may be absent, an item of an array `null`, and
+ * the whole input `undefined`. `experimental_handleOfItem()` fills them in.
+ */
+export type UnfinishedInput<TInput> = UnfinishedPart<TInput> | undefined;
+type UnfinishedPart<TInput> = TInput extends readonly (infer TItem)[]
+  ? (UnfinishedPart<TItem> | null)[]
+  : TInput extends (...args: any[]) => unknown
+    ? TInput
+    : TInput extends object
+      ? { [TKey in keyof TInput]?: UnfinishedPart<TInput[TKey]> }
+      : TInput;
+
+/**
  * A plain tuple typed with the procedure's input. TanStack Router's serializability check
  * rejects `unknown` inputs and `DataTag`-ged keys, so handles in `beforeLoad` need this shape.
  */
@@ -193,9 +207,13 @@ export interface experimental_TRPCQueryHandlePerItem<
    */
   readonly [handleDef]: TDef & { kind: 'perItem'; item: TItem };
   /** The query's key, without the parts of the input that come from an item */
-  readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
+  readonly queryKey: HandleQueryKey<
+    TDef,
+    UnfinishedInput<TDef['input']>,
+    'query'
+  >;
   /** The query's input, without the parts that come from an item */
-  readonly input: TDef['input'];
+  readonly input: UnfinishedInput<TDef['input']>;
   /** Where each part of an item goes in the input */
   readonly itemInputs: readonly {
     readonly to: string[];
@@ -230,11 +248,11 @@ export interface experimental_TRPCInfiniteQueryHandlePerItem<
   /** The query's key, without the parts of the input that come from the data */
   readonly queryKey: HandleQueryKey<
     TDef,
-    InfiniteHandleInput<TDef['input']>,
+    UnfinishedInput<InfiniteHandleInput<TDef['input']>>,
     'infinite'
   >;
   /** The query's input, without the parts that come from the data */
-  readonly input: InfiniteHandleInput<TDef['input']>;
+  readonly input: UnfinishedInput<InfiniteHandleInput<TDef['input']>>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
   /** Where each part of the data goes in the input */
   readonly itemInputs: readonly {

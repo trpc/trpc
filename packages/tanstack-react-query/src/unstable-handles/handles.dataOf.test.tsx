@@ -1112,8 +1112,9 @@ describe('edges of a load', () => {
     const posts = prefetchEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const loaded = loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(experimental_dataOf(posts).items, (id) =>
-        prefetchEntry(trpc.author.byId, { id }),
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (id) => prefetchEntry(trpc.author.byId, { id }),
       ),
     });
     // While the list's request runs: a write that the request then replaces
@@ -1170,6 +1171,11 @@ describe('entryPerItem', () => {
 
     expectTypeOf(data.tags).toEqualTypeOf<{ id: string }[][]>();
     expectTypeOf<keyof typeof data>().toEqualTypeOf<'post' | 'tags'>();
+    // The item's part isn't in the input until `experimental_handleOfItem()`
+    expect(handles.tags.input).toEqual({ ids: [null, 'extra'] });
+    expectTypeOf(handles.tags.input).toEqualTypeOf<
+      { ids?: (string | null)[]; first?: string } | undefined
+    >();
     expect(data.tags).toEqual([
       [{ id: 't1' }, { id: 'extra' }],
       [{ id: 't2' }, { id: 'extra' }],
