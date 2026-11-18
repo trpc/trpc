@@ -62,7 +62,9 @@ export interface OperationPipeline {
   /**
    * The paths of the calls that went in the operation's request. It settles
    * once no more calls can be added: as the request goes, or as the operation
-   * ends without one. For a link that logs the operation.
+   * ends without one. A link that pipelines replaces it as it opens the
+   * pipeline, so an operation sent again has one for each attempt. For a link
+   * that logs the operation, which reads it once it has sent the operation on.
    */
   sent: Promise<readonly string[]>;
   /** Only for the link that takes the operation */
@@ -441,7 +443,8 @@ function settlePipelinedBatch(opts: {
  * of their input from the data of other queries in the same request. Pass what
  * it returns as the link's `experimental_pipelining` option.
  *
- * It is apart from the links so that only an app that uses it has its code.
+ * It is apart from the links, so a bundler that tree-shakes leaves its code
+ * out of an app that does not import it.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
@@ -498,6 +501,11 @@ export function experimental_pipelining(
           pipeline.open = true;
           pipeline.limits = limits;
           pipeline.streams = link.streams;
+          // Each attempt has its own: an operation sent again sends its calls
+          // anew, and a link that logs it waits for those
+          const sent = createDeferred<readonly string[]>();
+          pipeline.sent = sent.promise;
+          pipeline.settleSent = sent.resolve;
         }
       },
       close: closePipeline,

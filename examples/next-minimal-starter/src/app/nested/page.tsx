@@ -26,7 +26,9 @@ export default async function NestedPage(props: {
     <main className="mx-auto grid max-w-2xl gap-4 p-4 sm:gap-6 sm:p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Nested queries</CardTitle>
+          <CardTitle>
+            <h1>Nested queries</h1>
+          </CardTitle>
           <CardDescription>
             Posts, their authors and the authors&apos; teams, in one request
             with <code>experimental_nested()</code> and a plain{' '}

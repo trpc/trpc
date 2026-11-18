@@ -30,7 +30,8 @@ export function pipelineLimitsOf(
     return null;
   }
   if (option === true) {
-    return pipelineLimitDefaults;
+    // A copy: what a handler's request does to it changes no other's
+    return { ...pipelineLimitDefaults };
   }
   return {
     maxValueLength:
@@ -209,15 +210,7 @@ function writePipelinePath(opts: {
         `the input has a value on the way to "${opts.to.join('.')}" that can't be written to`,
       );
     }
-    // With its prototype: an input's transformer can make it a class instance
-    const copy: object = Array.isArray(target)
-      ? [...target]
-      : Object.create(
-          Object.getPrototypeOf(target),
-          Object.getOwnPropertyDescriptors(target),
-        );
-    // Not an assignment, which would set the prototype for a `__proto__` key
-    Object.defineProperty(copy, key, {
+    const replacement: PropertyDescriptor = {
       value: write(
         Object.prototype.hasOwnProperty.call(target, key)
           ? (target as Record<string, unknown>)[key]
@@ -227,18 +220,40 @@ function writePipelinePath(opts: {
       writable: true,
       enumerable: true,
       configurable: true,
+    };
+    if (Array.isArray(target)) {
+      const copy = [...target];
+      Object.defineProperty(copy, key, replacement);
+      return copy;
+    }
+    const descriptors = Object.getOwnPropertyDescriptors(target);
+    // In place of its own, where it is, rather than over it once copied: a
+    // frozen input's can't be redefined. Not an assignment, which would set
+    // the prototype for a `__proto__` key
+    Object.defineProperty(descriptors, key, {
+      value: replacement,
+      writable: true,
+      enumerable: true,
+      configurable: true,
     });
-    return copy;
+    // With its prototype: an input's transformer can make it a class instance
+    return Object.create(Object.getPrototypeOf(target), descriptors) as object;
   };
   return write(opts.input, 0);
 }
 
-/** A value as it is after a trip over the wire. What JSON can't carry is left out */
+/**
+ * A value as it is after a trip over the wire. What JSON can't carry is left
+ * out. `measure` is told how long its JSON is before it is read back, and
+ * throws to read none of it
+ */
 function overTheWire(
   transformer: CombinedDataTransformer['input' | 'output'],
   value: unknown,
+  measure: (length: number) => void,
 ) {
   const json = JSON.stringify(transformer.serialize(value));
+  measure(json === undefined ? 0 : json.length);
   return json === undefined
     ? undefined
     : transformer.deserialize(JSON.parse(json));
@@ -683,6 +698,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }
     return null;
   }
+  const wholeValueRefused = () =>
+    overLimit(
+      `A value this call reads is an object or an array, and \`allowWholeValues\` is false`,
+    );
+  const valueTooLong = () =>
+    overLimit(
+      `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
+    );
   /** Checks a value before it is written into an input */
   function checkValue(value: unknown) {
     if (
@@ -690,15 +713,30 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       typeof value === 'object' &&
       value !== null
     ) {
-      throw overLimit(
-        `A value this call reads is an object or an array, and \`allowWholeValues\` is false`,
-      );
+      throw wholeValueRefused();
     }
     if (sizeOf(value, limits.maxValueLength) > limits.maxValueLength) {
-      throw overLimit(
-        `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
-      );
+      throw valueTooLong();
     }
+  }
+  /**
+   * The value at `path` in `data`, for a call to read. Throws before it makes
+   * a list of items that `checkValue` would refuse: the list is as long as
+   * the one it is of, which can be long
+   */
+  function readValue(data: unknown, path: PipelinePath) {
+    let room = limits.maxValueLength;
+    return readPipelinePath(data, path, (length) => {
+      if (!limits.allowWholeValues) {
+        throw wholeValueRefused();
+      }
+      // At least its brackets, and a `,` between each two of its items. An
+      // item that is a list counts for itself as it is made
+      room -= Math.max(length + 1, 2);
+      if (room < 0) {
+        throw valueTooLong();
+      }
+    });
   }
 
   /**
@@ -734,7 +772,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const key = JSON.stringify(read.path);
     let value = values.get(key);
     if (!value) {
-      value = dataOfRun(run).then((data) => readPipelinePath(data, read.path));
+      value = dataOfRun(run).then((data) => readValue(data, read.path));
       // Read only by the runs that ask for it
       value.catch(() => undefined);
       values.set(key, value);
@@ -812,8 +850,12 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         const items = inItem
           ? // A level after the first: its list is in the item of the one
             // before
-            readPipelinePath(place.item, inItem)
-          : readPipelinePath(await dataOf(list.from, place.indexes), list.path);
+            readPipelinePath(place.item, inItem, null)
+          : readPipelinePath(
+              await dataOf(list.from, place.indexes),
+              list.path,
+              null,
+            );
         return itemsOf({ list: items, indexes: place.indexes, tooLong });
       } catch (cause) {
         // The run the list is in failed, or the list can't be read: none
@@ -856,8 +898,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    * is a value of its own too, so a call that changes its input in place
    * changes nothing that another call, or another run, reads.
    */
-  function asSent(input: unknown) {
-    return overTheWire(opts.transformer.input, input);
+  function asSent(input: unknown, measure: (length: number) => void) {
+    return overTheWire(opts.transformer.input, input, measure);
   }
   /**
    * The runs of the batch. Each call holds a place from the start; a call for
@@ -933,18 +975,20 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               indexes: run.place.indexes,
               path: read.path,
             })
-          : readPipelinePath(run.place.item, read.path),
+          : readValue(run.place.item, read.path),
       ),
     );
     let size = 0;
-    const count = (value: unknown) => {
-      size += sizeOf(value, limits.maxFillSize - filledSize - size);
+    const charge = (length: number) => {
+      size += length;
       if (filledSize + size > limits.maxFillSize) {
         throw overLimit(
           `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
         );
       }
     };
+    const count = (value: unknown) =>
+      charge(sizeOf(value, limits.maxFillSize - filledSize - size));
     let input = run.base;
     for (const [at, read] of run.reads.reads.entries()) {
       const value = values[at];
@@ -954,11 +998,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       }
       input = writePipelinePath({ input, to: read.to, value });
     }
-    input = asSent(input);
-    if (run.perItem) {
-      // All of it, with the keys its values are written under
-      count(input);
-    }
+    // All of a run's input for every item, with the keys its values are
+    // written under, as the transformer writes it: before it is read back
+    input = asSent(input, run.perItem ? charge : () => undefined);
     filledSize += size;
     return input;
   }

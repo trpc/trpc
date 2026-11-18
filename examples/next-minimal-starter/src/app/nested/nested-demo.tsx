@@ -7,7 +7,8 @@ import {
   experimental_pipelining,
   httpBatchStreamLink,
 } from '@trpc/client';
-import { Suspense, use, useEffect, useState } from 'react';
+import { Component, Suspense, use, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { AppRouter } from '~/trpc/routers/_app';
 import { LiveBar } from './live-bar';
 import { meter, type Fetch, type Mode } from './meter';
@@ -66,9 +67,18 @@ export function NestedDemo(props: { initialMode: Mode }) {
   const [mode, setMode] = useState(props.initialMode);
   // Set once mounted: a promise made while rendering would be made again for
   // every render React throws away before the first commit, and on the server
-  const [posts, setPosts] = useState<ReturnType<typeof loadPosts>>();
+  const [run, setRun] = useState<{
+    id: number;
+    posts: ReturnType<typeof loadPosts>;
+  }>();
+  /** Starts a load. Its `id` is new, so what failed in the last one is gone */
+  const start = (next: Mode) => {
+    // Not in the updater, which React may call twice
+    const posts = load(next);
+    setRun((last) => ({ id: (last?.id ?? 0) + 1, posts }));
+  };
   useEffect(() => {
-    setPosts(load(mode));
+    start(mode);
     // Only the first load: a switch or a reload starts the others
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -81,14 +91,17 @@ export function NestedDemo(props: { initialMode: Mode }) {
           writeMode(next);
           setMode(next);
           // A new load: nothing of the other mode's is kept
-          setPosts(load(next));
+          start(next);
         }}
-        onReload={() => setPosts(load(mode))}
+        onReload={() => start(mode)}
       />
-      {posts && (
-        <Suspense fallback={<PostsSkeleton />}>
-          <PostList posts={posts} />
-        </Suspense>
+      {/* A query that fails shows in its own place, and the bar stays to retry */}
+      {run && (
+        <Failed key={run.id} fallback="The posts didn't load.">
+          <Suspense fallback={<PostsSkeleton />}>
+            <PostList posts={run.posts} />
+          </Suspense>
+        </Failed>
       )}
     </div>
   );
@@ -104,9 +117,11 @@ function PostList(props: { posts: Promise<Posts> }) {
           className="animate-pop grid gap-2 rounded-xl bg-card p-4 shadow-sm ring-1 ring-foreground/10"
         >
           <span className="font-medium">{post.node.title}</span>
-          <Suspense fallback={<Skeleton className="h-6 w-40" />}>
-            <AuthorLine author={post.edges.author} />
-          </Suspense>
+          <Failed fallback="The author didn't load.">
+            <Suspense fallback={<Skeleton className="h-6 w-40" />}>
+              <AuthorLine author={post.edges.author} />
+            </Suspense>
+          </Failed>
         </li>
       ))}
     </ul>
@@ -121,9 +136,11 @@ function AuthorLine(props: { author: Promise<Author> }) {
         <span className="size-2 rounded-full bg-sky-500" />
         {author.node.name}
       </span>
-      <Suspense fallback={<Skeleton className="h-5 w-20" />}>
-        <TeamName team={author.edges.team} />
-      </Suspense>
+      <Failed fallback="The team didn't load.">
+        <Suspense fallback={<Skeleton className="h-5 w-20" />}>
+          <TeamName team={author.edges.team} />
+        </Suspense>
+      </Failed>
     </span>
   );
 }
@@ -146,4 +163,25 @@ function PostsSkeleton() {
       ))}
     </div>
   );
+}
+
+/**
+ * Shows `fallback` in place of what it holds, if that throws: a query that
+ * rejects. A new load has a new key above it, so it starts over.
+ */
+class Failed extends Component<
+  { fallback: string; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override render() {
+    return this.state.failed ? (
+      <span className="text-sm text-destructive">{this.props.fallback}</span>
+    ) : (
+      this.props.children
+    );
+  }
 }

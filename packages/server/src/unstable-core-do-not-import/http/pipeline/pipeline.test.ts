@@ -444,6 +444,11 @@ async function send(opts: {
     })),
   });
   await reading;
+  // A response that left one out fails the test, rather than waiting for it
+  const missing = [...all.keys()].filter((index) => !arrived.includes(index));
+  if (missing.length > 0) {
+    throw new Error(`The response has nothing for call ${missing.join(', ')}`);
+  }
   const outcomeOf = new Map<Sent, Outcome>();
   for (const [index, it] of all.entries()) {
     const outcome = await outcomes[index]?.promise;
@@ -2201,6 +2206,16 @@ describe('the limits of a server', () => {
     expect(pipelineLimitsOf(undefined)).toBeNull();
   });
 
+  test('`true` gives each handler limits of its own, which changing changes no other', () => {
+    const changed = pipelineLimitsOf(true);
+    expect(changed).not.toBe(pipelineLimitDefaults);
+    assert(changed);
+    changed.maxRuns = 1;
+
+    expect(pipelineLimitsOf(true)?.maxRuns).toBe(100);
+    expect(pipelineLimitDefaults.maxRuns).toBe(100);
+  });
+
   /** Sends a batch to a server with `limits`, and what ran */
   async function sendWith(opts: {
     limits: PipelineLimits;
@@ -2736,6 +2751,92 @@ describe('the limits of a server', () => {
       expect(res.of(ids)).toEqual({ items: { 0: { result: { data: 'a' } } } });
     });
   });
+
+  describe('a list of the items of a list, which is as long', () => {
+    const count = 50;
+    /**
+     * How a call that reads the ids of `count` items goes, and how many of
+     * the ids are read to make the list of them
+     */
+    async function readIds(limits: PipelineLimits) {
+      let read = 0;
+      const transformer: CombinedDataTransformer = {
+        input: transformers.none.input,
+        output: {
+          serialize: (it: unknown) => it,
+          // Items whose ids count each time they are read
+          deserialize: (it: unknown) =>
+            Array.isArray(it)
+              ? it.map((item: { id: string }) => ({
+                  get id() {
+                    read++;
+                    return item.id;
+                  },
+                }))
+              : it,
+        },
+      };
+      const pipeline = pipelineCalls({
+        calls: [0, 1].map(() => ({
+          getRawInput: async () => ({}),
+          result: () => undefined,
+        })),
+        pipe: JSON.stringify({
+          1: { reads: [{ to: ['ids'], from: 0, path: [null, 'id'] }] },
+        }),
+        transformer,
+        maxRuns: null,
+        limits,
+      });
+      const [, reader] = pipeline.run<Outcome>({
+        call: async (_call, run) => {
+          if (run?.kind !== 'once') {
+            return {
+              data: Array.from({ length: count }, (_, id) => ({
+                id: String(id),
+              })),
+            };
+          }
+          try {
+            return { data: await run.input() };
+          } catch (cause) {
+            return { error: wireError(cause) };
+          }
+        },
+        data: (outcome) => ('data' in outcome ? outcome.data : null),
+      });
+      return { outcome: await reader, read };
+    }
+
+    test('is refused before any of it is made, if `allowWholeValues` is false', async () => {
+      expect(await readIds(pipelineLimitDefaults)).toEqual({
+        outcome: refused(
+          'A value this call reads is an object or an array, and `allowWholeValues` is false',
+        ),
+        read: 0,
+      });
+    });
+
+    test('is refused before any of it is made, if it is longer than `maxValueLength` at least', async () => {
+      expect(await readIds({ ...wholeValues, maxValueLength: count })).toEqual({
+        outcome: refused(
+          `A value this call reads is longer than \`maxValueLength\` (${count} characters of JSON) allows`,
+        ),
+        read: 0,
+      });
+    });
+
+    test('is made, and read, if it can fit', async () => {
+      const { outcome, read } = await readIds(wholeValues);
+
+      expect(outcome).toEqual({
+        data: {
+          ids: Array.from({ length: count }, (_, id) => String(id)),
+        },
+      });
+      expect(read).toBe(count);
+    });
+  });
 });
 
 describe('`maxFillSize`: what a request fills in', () => {
@@ -3007,6 +3108,55 @@ describe('`maxFillSize`: what a request fills in', () => {
       items: { 0: { result: { data: null } } },
     });
     expect(within.echo).toHaveBeenCalledWith({ longField: 'x' });
+  });
+
+  test('the input of a run counts as long as its transformer writes it, not as it reads it back', async () => {
+    const pad = 'x'.repeat(40_000);
+    // Adds what it takes away again
+    const padded: CombinedDataTransformer = {
+      input: {
+        serialize: (it: unknown) => ({ it, pad }),
+        deserialize: (it: unknown) => (isObject(it) ? it['it'] : undefined),
+      },
+      output: transformers.none.output,
+    };
+    const echo = vi.fn((input: { n: number }) => input.n);
+    await using server = serve({
+      ...defaults,
+      transformer: padded,
+      fns: { list: () => [1, 2, 3], echo },
+    });
+    const list = sent('list', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: padded,
+      url: server.url,
+      method: 'POST',
+      sent: [list],
+      calls: [each],
+    });
+
+    // Two runs' inputs are about 80,000 characters of JSON, and a third's
+    // would go over the default 100,000
+    expect(res.of(each)).toEqual({
+      items: {
+        0: { result: { data: 1 } },
+        1: { result: { data: 2 } },
+        2: {
+          error: {
+            code: 'BAD_REQUEST',
+            message: `What this call fills in goes over \`maxFillSize\` (${pipelineLimitDefaults.maxFillSize} characters of JSON for the batch)`,
+          },
+        },
+      },
+    });
+    expect(echo).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -3779,6 +3929,7 @@ describe('what a client puts in a request', () => {
       readPipelinePath(
         { items: [{}, {}, { tags: [{ id: 'a' }] }] },
         bindPipelinePath(['items', null, 'tags', null, 'id'], 2),
+        null,
       ),
     ).toEqual(['a']);
   });
@@ -4166,5 +4317,52 @@ describe('a place in an input that a read cannot write to', () => {
     const [input] = seen;
     assert(input instanceof Range);
     expect(input.length).toBe(8);
+  });
+
+  test('an input its transformer froze is written to in a copy, with its keys in their order', async () => {
+    const freeze = (it: unknown): unknown => {
+      if (isObject(it)) {
+        Object.values(it).forEach(freeze);
+        Object.freeze(it);
+      }
+      return it;
+    };
+    const transformer: CombinedDataTransformer = {
+      input: { serialize: (it: unknown) => it, deserialize: freeze },
+      output: transformers.none.output,
+    };
+    const seen: unknown[] = [];
+    await using server = serve({
+      ...defaults,
+      transformer,
+      fns: {
+        post: () => ({ authorId: 'ada' }),
+        echo: (input) => {
+          seen.push(input);
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      { filter: { id: null, kind: 'author' }, n: 1 },
+      reads(null, { to: ['filter', 'id'], from: post, path: ['authorId'] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toEqual({ data: null });
+    const [input] = seen;
+    assert(isObject(input) && isObject(input['filter']));
+    expect(input).toEqual({ filter: { id: 'ada', kind: 'author' }, n: 1 });
+    expect(Object.keys(input['filter'])).toEqual(['id', 'kind']);
   });
 });

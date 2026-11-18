@@ -1,6 +1,9 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { transformResult } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isObject,
+  transformResult,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import {
@@ -127,12 +130,21 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         });
         const resJSON = Array.isArray(res.json)
           ? res.json
-          : sent.map(() => res.json);
+          : answeredBy(res.json).map(() => res.json);
         const result = resJSON.map((item) => ({
           meta: res.meta,
           json: item,
         }));
         return result;
+
+        /**
+         * What an answer that is not by index is the result of: an error is
+         * every call's, and anything else only the operations', as without
+         * pipelining. It has no result for a call the server makes.
+         */
+        function answeredBy(json: unknown) {
+          return isObject(json) && 'error' in json ? sent : batchOps;
+        }
       }
     };
 
