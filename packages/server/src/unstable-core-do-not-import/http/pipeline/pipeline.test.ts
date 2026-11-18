@@ -3011,6 +3011,17 @@ describe('how long a value is, for what a request fills in', () => {
 
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
     expect(sizeOf(Object(12345), Infinity)).toBe(5);
+    // As its digits, as a bigint is measured
+    expect(sizeOf(Object(12n), Infinity)).toBe(2);
+  });
+
+  test('a boxed boolean is as long as the value it holds, whatever its `valueOf` gives', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = Object(false) as boolean;
+    Object.defineProperty(value, 'valueOf', { value: () => true });
+
+    // JSON writes `false`, the value it holds, not what `valueOf` gives
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
   test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {

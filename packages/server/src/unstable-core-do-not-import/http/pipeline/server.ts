@@ -447,8 +447,12 @@ function unboxed(value: unknown): unknown {
   if (value instanceof String) {
     return String(value);
   }
-  if (value instanceof Boolean || value instanceof BigInt) {
-    return value.valueOf();
+  // The value it holds, as JSON reads it, not what an own `valueOf` gives
+  if (value instanceof Boolean) {
+    return Boolean.prototype.valueOf.call(value);
+  }
+  if (value instanceof BigInt) {
+    return BigInt.prototype.valueOf.call(value);
   }
   return value;
 }
