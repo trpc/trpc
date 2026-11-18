@@ -17,7 +17,7 @@ import { TRPCClientError } from '@trpc/client';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { getUntypedClient } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
+import type { inferProcedureOutput, TRPC_ERROR_CODE_KEY } from '@trpc/server';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -175,7 +175,7 @@ describe('types', () => {
     }
   });
 
-  test('a skipToken entry has an `undefined` handle and no data or result', async () => {
+  test('a skipToken entry has an `undefined` handle, and a maybe-skipped one maybe data or a result', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     const isAdmin = Math.random() < 0.5;
@@ -190,14 +190,20 @@ describe('types', () => {
       inferQueryHandle<TRPC['post']['draftById']> | undefined
     >();
     expectTypeOf(handles.never).toEqualTypeOf<undefined>();
-    expectTypeOf<keyof typeof data>().toEqualTypeOf<'post'>();
-    // @ts-expect-error a maybe-skipped entry may have no data
-    void data.draft;
+    expectTypeOf<keyof typeof data>().toEqualTypeOf<'post' | 'draft'>();
+    // A maybe-skipped entry may have no data
+    expectTypeOf(data.draft).toEqualTypeOf<
+      inferProcedureOutput<AppRouter['post']['draftById']> | undefined
+    >();
 
     const [, results] = await loadHandlesSettled(trpc, {
       draft: isAdmin ? fetchEntry(trpc.post.draftById, { id: '1' }) : skipToken,
+      never: skipToken,
     });
-    expectTypeOf<keyof typeof results>().toEqualTypeOf<never>();
+    expectTypeOf<keyof typeof results>().toEqualTypeOf<'draft'>();
+    expectTypeOf(results.draft?.status).toEqualTypeOf<
+      'success' | 'error' | undefined
+    >();
 
     const client = {} as TRPC;
     // @ts-expect-error read a maybe-skipped handle only once it's there

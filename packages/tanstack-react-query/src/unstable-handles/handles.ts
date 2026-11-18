@@ -345,47 +345,85 @@ type WaitedEntry = {
 };
 
 /**
- * Only fetch and ensure entries are waited for, so only they have data. A
- * group keeps its key, with the data of the entries in it.
+ * Whether an entry is waited for: only fetch and ensure entries are, so only
+ * they have data. A group is, with the data of the entries in it. For a union,
+ * such as `isAdmin ? fetchEntry(…) : skipToken`, it is a union too.
  */
-type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends
+type IsWaited<TEntry> = TEntry extends
   | WaitedEntry
   | experimental_TRPCEntryPerItem<WaitedEntry, any>
   | experimental_TRPCEntryFromData<WaitedEntry, any>
-  ? TKey
-  : TEntries[TKey] extends
+  ? true
+  : TEntry extends
         | AnyTRPCEntry
         | typeof skipToken
         | experimental_TRPCEntryPerItem<any, any>
         | experimental_TRPCEntryFromData<any, any>
-    ? never
-    : TKey;
+    ? false
+    : true;
 
-type DataOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: TEntries[TKey] extends
-    | AnyTRPCEntry
-    | experimental_TRPCEntryFromData<any, any>
-    ? DataOfEntry<TEntries[TKey]>
-    : TEntries[TKey] extends experimental_TRPCEntryPerItem<infer TEntry, any>
-      ? DataOfEntry<TEntry>[]
-      : TEntries[TKey] extends TRPCLoadEntries
-        ? DataOf<TEntries[TKey]>
+/** A key whose entry is always waited for */
+type WaitedKey<TEntries, TKey extends keyof TEntries> = [
+  IsWaited<TEntries[TKey]>,
+] extends [true]
+  ? TKey
+  : never;
+
+/** A key whose entry is waited for unless it is a `skipToken`: it may have no data */
+type MaybeWaitedKey<TEntries, TKey extends keyof TEntries> = [
+  IsWaited<TEntries[TKey]>,
+] extends [true]
+  ? never
+  : true extends IsWaited<TEntries[TKey]>
+    ? TKey
+    : never;
+
+/** One object type out of an intersection of them, to read in a tooltip */
+type Flatten<TObject> = { [TKey in keyof TObject]: TObject[TKey] };
+
+type DataOfValue<TEntry> = TEntry extends
+  | AnyTRPCEntry
+  | experimental_TRPCEntryFromData<any, any>
+  ? DataOfEntry<TEntry>
+  : TEntry extends experimental_TRPCEntryPerItem<infer TInner, any>
+    ? DataOfEntry<TInner>[]
+    : TEntry extends TRPCLoadEntries
+      ? DataOf<TEntry>
+      : never;
+
+type DataOf<TEntries extends TRPCLoadEntries> = Flatten<
+  {
+    [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: DataOfValue<
+      TEntries[TKey]
+    >;
+  } & {
+    [TKey in keyof TEntries as MaybeWaitedKey<TEntries, TKey>]?: DataOfValue<
+      TEntries[TKey]
+    >;
+  }
+>;
+
+type ResultOfValue<TEntry> = TEntry extends AnyTRPCEntry
+  ? TRPCEntryResult<DefOfEntry<TEntry>, DataOfEntry<TEntry>>
+  : TEntry extends experimental_TRPCEntryFromData<infer TInner, any>
+    ? TRPCEntryResult<DefOfEntry<TInner>, DataOfEntry<TInner>>
+    : TEntry extends experimental_TRPCEntryPerItem<infer TInner, any>
+      ? TRPCEntryResult<DefOfEntry<TInner>, DataOfEntry<TInner>>[]
+      : TEntry extends TRPCLoadEntries
+        ? ResultsOf<TEntry>
         : never;
-};
 
-type ResultsOf<TEntries extends TRPCLoadEntries> = {
-  [
-    TKey in keyof TEntries as WaitedKey<TEntries, TKey>
-  ]: TEntries[TKey] extends AnyTRPCEntry
-    ? TRPCEntryResult<DefOfEntry<TEntries[TKey]>, DataOfEntry<TEntries[TKey]>>
-    : TEntries[TKey] extends experimental_TRPCEntryFromData<infer TEntry, any>
-      ? TRPCEntryResult<DefOfEntry<TEntry>, DataOfEntry<TEntry>>
-      : TEntries[TKey] extends experimental_TRPCEntryPerItem<infer TEntry, any>
-        ? TRPCEntryResult<DefOfEntry<TEntry>, DataOfEntry<TEntry>>[]
-        : TEntries[TKey] extends TRPCLoadEntries
-          ? ResultsOf<TEntries[TKey]>
-          : never;
-};
+type ResultsOf<TEntries extends TRPCLoadEntries> = Flatten<
+  {
+    [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: ResultOfValue<
+      TEntries[TKey]
+    >;
+  } & {
+    [TKey in keyof TEntries as MaybeWaitedKey<TEntries, TKey>]?: ResultOfValue<
+      TEntries[TKey]
+    >;
+  }
+>;
 
 /**
  * What `loadHandlesSettled()` has for a fetch or ensure entry: its data, or
@@ -510,6 +548,13 @@ export type experimental_inferHandles<
 
 /** For what needs a function and wants nothing done */
 const nothing = () => undefined;
+
+/**
+ * Whether two cursors are the same. No cursor isn't `null`, though JSON, and
+ * so `hashKey`, writes both alike
+ */
+const sameCursor = (a: unknown, b: unknown) =>
+  a === undefined || b === undefined ? a === b : hashKey([a]) === hashKey([b]);
 
 const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
@@ -899,28 +944,51 @@ interface ListItem {
    * `.map()` of values that are no lists has those values as its items.
    */
   element: boolean;
+  /**
+   * Its index in the element it is in, where the list's path has no wildcard
+   * and that element is a list: a list of lists, as the types take it.
+   * `null` otherwise
+   */
+  inner: number | null;
 }
 
 /**
  * The items of a list whose path has `depth` wildcards, so that it is a list
- * of lists `depth` times down to the values at its path.
+ * of lists `depth` times down to the values at its path. A list with no
+ * wildcard whose elements are lists has their elements as its items.
  */
 function itemsOfList(list: unknown, depth: number): ListItem[] {
+  if (depth > 0 || !Array.isArray(list)) {
+    return itemsOfLevels(list, depth);
+  }
+  return list.flatMap((element: unknown, index): ListItem[] =>
+    Array.isArray(element)
+      ? element.map((_, inner) => ({ indexes: [index], element: true, inner }))
+      : [{ indexes: [index], element: true, inner: null }],
+  );
+}
+
+/** The items of a list whose path has `depth` wildcards */
+function itemsOfLevels(list: unknown, depth: number): ListItem[] {
   if (!Array.isArray(list)) {
     return [];
   }
   if (depth === 0) {
-    return list.map((_, index) => ({ indexes: [index], element: true }));
+    return list.map((_, index) => ({
+      indexes: [index],
+      element: true,
+      inner: null,
+    }));
   }
   return list.flatMap((inner: unknown, index) => {
     // A `null` is an item like any other: it gets a query
     const items: ListItem[] =
       depth > 1 || Array.isArray(inner)
-        ? itemsOfList(inner, depth - 1)
-        : [{ indexes: [], element: false }];
+        ? itemsOfLevels(inner, depth - 1)
+        : [{ indexes: [], element: false, inner: null }];
     return items.map((item) => ({
+      ...item,
       indexes: [index, ...item.indexes],
-      element: item.element,
     }));
   });
 }
@@ -1000,6 +1068,8 @@ function settleLoad(promise: Promise<unknown>) {
 interface EntryLeaf {
   /** The keys down to the entry, joined by dots */
   key: string;
+  /** The keys down to the entry: `card.list` can be a key, or two */
+  keys: string[];
   entry: object;
   state: EntryState;
   /**
@@ -1076,6 +1146,7 @@ function readEntries(opts: {
           name,
           {
             key,
+            keys,
             entry: entry as object,
             state,
             each: perItem?.list ?? null,
@@ -1320,11 +1391,13 @@ function beginEntries(opts: {
 
   /**
    * Whether the server fills in what a `experimental_dataOf()` value in an
-   * entry's input reads. Not a cursor that `initialCursor` takes the place of:
-   * the page would be another
+   * entry's input reads. Not a cursor that `initialCursor` takes the place of,
+   * nor an infinite query's direction, which is TanStack Query's: the page
+   * would be another
    */
   const filledByServer = (state: EntryState, ref: EntryInputRef) =>
-    !(ref.to[0] === 'cursor' && state.request().cursorFromOptions);
+    !(ref.to[0] === 'cursor' && state.request().cursorFromOptions) &&
+    !(ref.to[0] === 'direction' && state.type === 'infinite');
 
   /**
    * Has the server make an entry's request in the request of the entries it
@@ -1546,8 +1619,10 @@ function beginEntries(opts: {
                       return (
                         hashKey(filled.queryKey) === hashKey(sent.queryKey) &&
                         // An infinite query's cursor isn't in its key
-                        hashKey([filled.initialPageParam]) ===
-                          hashKey([sent.initialPageParam])
+                        sameCursor(
+                          filled.initialPageParam,
+                          sent.initialPageParam,
+                        )
                       );
                     },
                   })
@@ -1649,6 +1724,14 @@ function beginEntries(opts: {
         bindPipelinePath,
         path,
       );
+      if (listItem.inner !== null) {
+        // One list further down, in the element it is in
+        return [
+          ...bound.slice(0, item.length),
+          String(listItem.inner),
+          ...bound.slice(item.length),
+        ];
+      }
       // An item that is no element has no place in a list of its own
       return listItem.element
         ? bound
@@ -1697,7 +1780,9 @@ function beginEntries(opts: {
     const serverIndexes = (listItem: ListItem) => {
       const skipped =
         depth - (listPath ?? []).filter((segment) => segment === null).length;
+      // The server's items are the elements, which are lists here
       return listItem.element &&
+        listItem.inner === null &&
         listItem.indexes.slice(0, skipped).every((index) => index === 0)
         ? listItem.indexes.slice(skipped)
         : null;
@@ -1705,7 +1790,7 @@ function beginEntries(opts: {
 
     /** Where an item is in the list, as a key */
     const placeOf = (listItem: ListItem) =>
-      `${listItem.element}:${listItem.indexes.join(',')}`;
+      `${listItem.element}:${listItem.indexes.join(',')}:${listItem.inner}`;
 
     /** The input without the item's parts, and where they go */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
@@ -1971,12 +2056,12 @@ function describeEntries(opts: {
   entries: Record<string, unknown>;
 }) {
   const tree = readEntries({ ...opts, keys: [] });
-  const keyOfEntry = new Map(
-    leavesOf(tree).map((leaf) => [leaf.entry, leaf.key]),
+  const keysOfEntry = new Map(
+    leavesOf(tree).map((leaf) => [leaf.entry, leaf.keys]),
   );
   const describeRef = (ref: EntryDataRef): unknown => ({
     '~dataOf': [
-      keyOfEntry.get(ref.entry) ?? null,
+      keysOfEntry.get(ref.entry) ?? null,
       ref.path,
       // The list it is an item of
       ref.itemOf ? describeRef(ref.itemOf) : null,
@@ -2001,7 +2086,7 @@ function describeEntries(opts: {
       firstCursor:
         typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
       each: leaf.each ? describeRef(leaf.each) : null,
-      from: leaf.from ? (keyOfEntry.get(leaf.from) ?? null) : null,
+      from: leaf.from ? (keysOfEntry.get(leaf.from) ?? null) : null,
     };
   };
   // In the shape of the entries, which is the shape of their handles: a group
@@ -2326,7 +2411,8 @@ export function experimental_dataOf(
  *
  * The list is a `experimental_dataOf()` value. A list of lists works too, such as the items
  * of every page of an infinite query:
- * `experimental_dataOf(posts).pages.map((page) => page.items)`.
+ * `experimental_dataOf(posts).pages.map((page) => page.items)`. Its items are
+ * the elements of its lists.
  * @example
  * ```ts
  * const posts = ensureEntry(trpc.post.list);

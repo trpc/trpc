@@ -106,14 +106,21 @@ export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 // @filename: trpc/server.tsx
 import { QueryClient } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
+import { cache } from 'react';
 import { appRouter } from '~/server/router';
 
+// One per request
+export const getQueryClient = cache(() => new QueryClient());
 export const trpc = createTRPCOptionsProxy({
   ctx: {},
   router: appRouter,
-  queryClient: new QueryClient(),
+  queryClient: getQueryClient,
 });
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
 ```twoslash include dq-post-entries
@@ -680,9 +687,6 @@ export declare function Post(props: {
 export declare function Author(props: {
   author: inferQueryHandle<TRPC['author']['byId']>;
 }): React.ReactNode;
-export declare function HydrateClient(props: {
-  children: React.ReactNode;
-}): React.ReactNode;
 // @filename: page.tsx
 // ---cut---
 import {
@@ -692,8 +696,8 @@ import {
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
-import { trpc } from '~/trpc/server';
-import { Author, HydrateClient, Post } from './components';
+import { HydrateClient, trpc } from '~/trpc/server';
+import { Author, Post } from './components';
 
 export default async function PostPage(props: {
   params: Promise<{ slug: string }>;
@@ -733,19 +737,12 @@ import type { postPageEntries } from './post-page.entries';
 export declare function AuthorCard(props: {
   handles: experimental_inferHandles<typeof postPageEntries>;
 }): React.ReactNode;
-export declare function HydrateClient(props: {
-  children: React.ReactNode;
-}): React.ReactNode;
-// @filename: trpc/query-client.ts
-import type { QueryClient } from '@tanstack/react-query';
-export declare function getQueryClient(): QueryClient;
 // @filename: author-section.tsx
 // ---cut---
 import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { getQueryClient } from '~/trpc/query-client';
-import { trpc } from '~/trpc/server';
-import { AuthorCard, HydrateClient } from './components';
+import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
+import { AuthorCard } from './components';
 import type { postPageEntries } from './post-page.entries';
 
 // A server component, rendered in a Suspense boundary

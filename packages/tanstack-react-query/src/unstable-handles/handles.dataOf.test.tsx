@@ -67,6 +67,29 @@ const createAppRouter = () => {
             tags: [{ id: 't1' }, { id: 't2' }],
           };
         }),
+      /** The direction of a page it is asked for, and the order it would be in */
+      directed: t.procedure
+        .input(
+          z.object({
+            order: z.string(),
+            cursor: z.number().nullish(),
+            direction: z.enum(['forward', 'backward']).optional(),
+          }),
+        )
+        .query((opts) => {
+          calls('post.directed', opts.input);
+          return { direction: opts.input.direction, nextCursor: null };
+        }),
+      /** Which cursor its page is for: none, `null` or a number */
+      cursorKind: t.procedure
+        .input(z.object({ cursor: z.number().nullish() }))
+        .query((opts) => ({
+          cursor:
+            opts.input.cursor === undefined
+              ? 'missing'
+              : (opts.input.cursor ?? 'null'),
+          nextCursor: null,
+        })),
       /** Three pages of one post each, by authors `u0`, `u1` and `u2` */
       paged: t.procedure
         .input(z.object({ cursor: z.number().nullish() }))
@@ -149,6 +172,8 @@ const createAppRouter = () => {
       list: t.procedure.query(() => ({
         groups: [{ members: ['u1', 'u2'] }, { members: ['u3'] }],
       })),
+      /** A list of lists with no object around it: every group's members */
+      memberLists: t.procedure.query(() => [['u1', 'u2'], ['u3']]),
       /** Lists that aren't there, against their types */
       sparse: t.procedure.query(() => ({
         groups: [{ members: ['u1'] }, { members: null as unknown as string[] }],
@@ -1599,7 +1624,10 @@ describe('groups', () => {
     expectTypeOf(handles.page.team).toEqualTypeOf<
       inferQueryHandle<TRPC['team']['byId']> | undefined
     >();
-    expectTypeOf<keyof typeof data.page>().toEqualTypeOf<never>();
+    expectTypeOf<keyof typeof data.page>().toEqualTypeOf<'team'>();
+    expectTypeOf(data.page.team).toEqualTypeOf<
+      { id: string; name: string } | undefined
+    >();
   });
 
   test('a component reads the handles of its own entries', async () => {
@@ -1695,6 +1723,35 @@ describe.each([
     ]);
   });
 
+  test("an infinite entry's first page goes forward, whatever its input reads into `direction`", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      pages: ensureInfiniteEntry(trpc.post.directed, {
+        order: experimental_dataOf(post).title,
+        // Not in the type: an infinite query's direction is TanStack Query's
+        ...({ direction: experimental_dataOf(post).title } as object),
+      }),
+    });
+
+    expect(resource.calls).toHaveBeenCalledWith('post.directed', {
+      order: 'Post hello',
+      direction: 'forward',
+    });
+    expect(data.pages.pages).toEqual([
+      { direction: 'forward', nextCursor: null },
+    ]);
+  });
+
   test('a cursor that `initialCursor` replaces, from an entry the cache has, keeps nothing waiting', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
@@ -1731,6 +1788,32 @@ describe.each([
       'post.pagedByAuthor',
       { authorId: 'u1', cursor: 2 },
     ]);
+  });
+
+  test('an entry per item of a list of lists, with no `.map()`, has an item for every element of its lists', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const lists = ensureEntry(trpc.group.memberLists);
+    const [handles, data] = await loadHandles(trpc, {
+      lists,
+      members: experimental_entryPerItem(experimental_dataOf(lists), (id) =>
+        ensureEntry(trpc.author.byId, { id }),
+      ),
+    });
+
+    expect(data.members.map((member) => member.id)).toEqual(['u1', 'u2', 'u3']);
+    expect(
+      resource.queryClient.getQueryData(
+        experimental_handleOfItem(handles.members, 'u3').queryKey,
+      ),
+    ).toMatchObject({ id: 'u3' });
   });
 
   test('an entry per item that reads nothing of its item is an ordinary query', async () => {
@@ -2135,7 +2218,9 @@ describe.each([
     const trpc = resource.optionsProxyClient;
     const { queryClient } = resource;
 
-    // Two pages, whose posts have different authors
+    // Two pages, whose posts have different authors. The authors' inputs are
+    // the same until the server fills them in: those are the identical ones.
+    // Pages with the same input would be one query, which no link sees twice
     const first = prefetchEntry(trpc.post.paged, { cursor: 0 });
     const second = prefetchEntry(trpc.post.paged, { cursor: 1 });
     await loadHandles(trpc, {
@@ -2701,6 +2786,34 @@ describe.each([
       pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
       pageParams: [2],
     });
+  });
+
+  test("a stale ensure entry's missing cursor is not the server's `null` one", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cached last page has no next cursor. Its refetch has `null`
+    resource.queryClient.setQueryData(
+      trpc.post.paged.queryKey({ cursor: 2 }),
+      { items: [{ id: 'p2', authorId: 'u2' }] } as never,
+      { updatedAt: 1 },
+    );
+
+    const last = ensureEntry(trpc.post.paged, { cursor: 2 });
+    const [, data] = await loadHandles(trpc, {
+      last,
+      rest: ensureInfiniteEntry(trpc.post.cursorKind, {
+        cursor: experimental_dataOf(last).nextCursor,
+      }),
+    });
+
+    // The page is for the cursor the client has: none
+    expect(data.rest.pages).toEqual([{ cursor: 'missing', nextCursor: null }]);
   });
 
   test('an infinite entry whose cached pages start at another cursor fetches by itself: its page and its param agree', async () => {
@@ -3638,6 +3751,39 @@ describe('experimental_useHandles', () => {
     expect(new Set(seen).size).toBe(2);
     await vi.waitFor(() => {
       expect(resource.calls).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  test('an entry per item of a nested list and of a key with a dot in it are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { from: 'nested' | 'dotted' }) {
+      const nested = prefetchEntry(trpc.post.bySlug, { slug: 'a' });
+      const dotted = prefetchEntry(trpc.post.bySlug, { slug: 'b' });
+      seen.push(
+        experimental_useHandles(trpc, {
+          card: { list: nested },
+          'card.list': dotted,
+          authors: experimental_entryPerItem(
+            experimental_dataOf(props.from === 'nested' ? nested : dotted).tags,
+            (tag) => prefetchEntry(trpc.author.byId, { id: tag.id }),
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card from="nested" />
+        <Card from="dotted" />
+      </>,
+    );
+    // The entries are the same, in the same places, but for where the entry
+    // per item reads its list
+    expect(seen[1]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
