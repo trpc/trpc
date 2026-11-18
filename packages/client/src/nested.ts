@@ -228,6 +228,8 @@ interface Call {
   sent: Promise<unknown> | null;
   /** What the inputs of other calls read of its data */
   reads: Segment[][];
+  /** The lists in its data that a `.map()` runs for */
+  lists: Segment[][];
   /** The data of each run, by its indexes */
   runs: Map<string, Promise<Run>>;
 }
@@ -374,6 +376,50 @@ function copyReads(value: unknown, paths: readonly Segment[][]): unknown {
 }
 
 /**
+ * The error a response has in place of the items of a list that the run at
+ * `indexes` is in, outer first. `null` if each of those lists has items
+ */
+async function listErrorOf(data: unknown, indexes: readonly number[]) {
+  for (let depth = 0; depth < indexes.length; depth++) {
+    const level = await readPipelinedItem(data, indexes.slice(0, depth));
+    if (level.kind === 'error') {
+      return level;
+    }
+  }
+  return null;
+}
+
+/**
+ * The arrays at the places `paths` take as lists, each with a copy of its
+ * items as they are now, into `orders`
+ */
+function recordLists(
+  value: unknown,
+  paths: readonly Segment[][],
+  orders: WeakMap<object, readonly unknown[]>,
+) {
+  for (const [segment, ...rest] of paths) {
+    if (segment === undefined) {
+      if (Array.isArray(value) && !orders.has(value)) {
+        orders.set(value, [...value]);
+      }
+    } else if (!isScope(segment)) {
+      if (hasOwn(value, segment)) {
+        recordLists(
+          (value as Record<string, unknown>)[segment],
+          [rest],
+          orders,
+        );
+      }
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        recordLists(item, [rest], orders);
+      }
+    }
+  }
+}
+
+/**
  * Whether a value that isn't a plain object, an array or a Date has a
  * stand-in in it. `seen` keeps a cycle from looping
  */
@@ -478,6 +524,11 @@ export function experimental_nested<
     context: { ...opts?.context, ...pipeline },
   });
   const calls: Call[] = [];
+  /**
+   * The items of each list a `.map()` runs for, in the order they arrived: a
+   * change the caller makes to the list doesn't change which item a run is for
+   */
+  const listOrders = new WeakMap<object, readonly unknown[]>();
   /** The lists whose callback runs, outer first */
   const scopes: Scope[] = [];
 
@@ -561,6 +612,7 @@ export function experimental_nested<
           const [fn] = args;
           if (method === 'map' && typeof fn === 'function') {
             const scope: Scope = { list: of };
+            of.call.lists.push(of.path);
             const item: Ref = { call: of.call, path: [...of.path, scope] };
             scopes.push(scope);
             // Also when the callback throws, and the builder goes on
@@ -631,6 +683,7 @@ export function experimental_nested<
       frame: [],
       sent: null,
       reads: [],
+      lists: [],
       runs: new Map(),
     };
     calls.push(call);
@@ -708,10 +761,10 @@ export function experimental_nested<
     let run = call.runs.get(key);
     if (!run) {
       // Copied as it arrives, before the caller can change it
-      run = startRun(call, items).then((data) => ({
-        data,
-        read: copyReads(data, call.reads),
-      }));
+      run = startRun(call, items).then((data) => {
+        recordLists(data, call.lists, listOrders);
+        return { data, read: copyReads(data, call.reads) };
+      });
       run.catch(nothing);
       call.runs.set(key, run);
     }
@@ -729,15 +782,17 @@ export function experimental_nested<
         if (call.frame.length === 0) {
           return data;
         }
-        const item = await readPipelinedItem(
-          data,
-          call.frame.map((scope) => items.get(scope) ?? -1),
-        );
+        const indexes = call.frame.map((scope) => items.get(scope) ?? -1);
+        const item = await readPipelinedItem(data, indexes);
         if (item.kind === 'data') {
           return item.data;
         }
-        if (item.kind === 'error') {
-          throw TRPCClientError.from({ error: item.error } as any);
+        // A run's error, or the error of a list it is in, sent in place of
+        // the list's items: such a list didn't run for any of them
+        const error =
+          item.kind === 'error' ? item : await listErrorOf(data, indexes);
+        if (error) {
+          throw TRPCClientError.from({ error: error.error } as any);
         }
       } catch (error) {
         if (source.status !== 'unresolved') {
@@ -757,6 +812,9 @@ export function experimental_nested<
   async function valueOf(ref: Ref, items: Items, as: keyof Run) {
     let value = (await runOf(ref.call, items))[as];
     for (const segment of ref.path) {
+      if (isScope(segment) && Array.isArray(value)) {
+        value = listOrders.get(value) ?? value;
+      }
       const key = isScope(segment) ? String(items.get(segment)) : segment;
       value = hasOwn(value, key)
         ? (value as Record<string, unknown>)[key]
@@ -808,8 +866,9 @@ export function experimental_nested<
       case 'list': {
         const list = await valueOf(shape.scope.list, items, 'data');
         const resolved = await Promise.all(
-          (Array.isArray(list) ? list : []).map((_item, index) =>
-            resolve(shape.item, new Map(items).set(shape.scope, index)),
+          (Array.isArray(list) ? (listOrders.get(list) ?? list) : []).map(
+            (_item, index) =>
+              resolve(shape.item, new Map(items).set(shape.scope, index)),
           ),
         );
         lists.add(resolved);

@@ -20,6 +20,7 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import {
   createDeferred,
+  isObject,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
@@ -420,6 +421,29 @@ describe.each([
     ]);
   });
 
+  test("an inner list whose runs would go over the server's `maxRuns` rejects its items' edges with its error: they are not asked for by themselves", async () => {
+    // The pages, and the runs for the two items of the first page
+    await using ctx = setupMaxRuns(3);
+
+    const pages = await experimental_nested(ctx.client, (q) =>
+      q.post.pages.query().pages.map((page) =>
+        page.items.map((it) => ({
+          author: q.author.byId.query({ id: it.authorId }),
+        })),
+      ),
+    );
+
+    expect(await pages[0]![1]!.edges.author).toEqual({
+      id: 'bob',
+      teamId: 'team-bob',
+    });
+    await expect(pages[1]![0]!.edges.author).rejects.toMatchObject({
+      data: { code: 'BAD_REQUEST' },
+    });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.calls).toHaveBeenCalledTimes(2);
+  });
+
   test('the error of a run that ran rejects its edge: its query is not asked for again', async () => {
     await using ctx = setupMaxRuns(4);
 
@@ -735,6 +759,99 @@ describe('httpBatchStreamLink', () => {
     expect(await bob.edges.team).toMatchObject({ id: 'team-bob' });
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test("the error of a call settles its edge at once: it doesn't wait for another call it reads", async () => {
+    const t = initTRPC.create();
+    const gate = createDeferred<void>();
+    const appRouter = t.router({
+      // Its data holds a promise, so no call can read it
+      withPromise: t.procedure.query(() => ({
+        id: 'ada',
+        later: Promise.resolve('later'),
+      })),
+      slow: t.procedure.query(async () => {
+        await gate.promise;
+        return { id: 'bob' };
+      }),
+      pair: t.procedure
+        .input(z.object({ id: z.string(), other: z.string() }))
+        .query((opts) => opts.input),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    // Also when the test fails: the server's slow call must end
+    using _release = makeResource({}, () => gate.resolve());
+    const root = await experimental_nested(ctx.client, (q) => {
+      const slow = q.slow.query();
+      return q.withPromise.query().with((it) => ({
+        pair: q.pair.query({ id: it.id, other: slow.id }),
+        slow,
+      }));
+    });
+    const rejected = vi.fn();
+    void root.edges.pair.then(undefined, rejected);
+
+    // Bounded: if it waited for the slow call, this fails rather than hangs
+    await vi.waitFor(() => expect(rejected).toHaveBeenCalled());
+    expect(rejected.mock.calls[0]![0]).toMatchObject({
+      data: { code: 'UNSUPPORTED_MEDIA_TYPE' },
+    });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('the items of a list keep the order they arrived in, also when the caller changes the list before a slow edge maps it', async () => {
+    const { appRouter, gates } = createRouter();
+    const gate = createDeferred<void>();
+    gates.set('slow', gate.promise);
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    // Also when the test fails: the server's slow call must end
+    using _release = makeResource({}, () => gate.resolve());
+    const root = await experimental_nested(ctx.client, (q) =>
+      q.post.list.query({ limit: 2 }).with((list) => ({
+        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+          posts: list.items.map((it) => ({
+            author: q.author.byId.query({ id: it.authorId }),
+          })),
+        })),
+      })),
+    );
+    root.node.items.reverse();
+    gate.resolve();
+
+    const slow = await root.edges.slow;
+    const items = await slow.edges.posts;
+    expect(
+      await Promise.all(
+        items.map(async (it) => [it.node.authorId, (await it.edges.author).id]),
+      ),
+    ).toEqual([
+      ['ada', 'ada'],
+      ['bob', 'bob'],
+    ]);
+    // The caller's items are the ones it gets
+    expect(items[0]!.node).toBe(root.node.items[1]);
+  });
 });
 
 describe('httpBatchLink, without streaming', () => {
@@ -771,6 +888,52 @@ describe('httpBatchLink, without streaming', () => {
     await experimental_settle(experimental_nested(other, build));
     await experimental_settle(experimental_nested(other, build));
     expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  test("a run whose data the link can't deserialize rejects its edge by itself: the other runs keep their data", async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({ transformer: identity });
+    const appRouter = t.router({
+      ids: t.procedure.query(() => ['ada', 'bob']),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            transformer: {
+              ...identity,
+              deserialize: (value: unknown) => {
+                if (isObject(value) && value['id'] === 'ada') {
+                  throw new Error('cannot read ada');
+                }
+                return value;
+              },
+            },
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const list = await experimental_nested(ctx.client, (q) =>
+      q.ids.query().map((id) => ({ author: q.author.query({ id }) })),
+    );
+
+    expect(await list[1]!.edges.author).toEqual({ id: 'bob' });
+    await expect(list[0]!.edges.author).rejects.toThrow('cannot read ada');
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 });
 

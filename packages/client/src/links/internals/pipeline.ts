@@ -7,10 +7,10 @@ import type {
 import {
   createDeferred,
   deserializePipelinedItems,
+  isObject,
   isPipelineNotRun,
   pipelinedBatchBody,
   pipelinedBatchUrl,
-  pipelinedCallsRan,
   pipelineFrameOf,
   pipelineLimitDefaults,
   planPipelinedBatch,
@@ -412,7 +412,7 @@ function settlePipelinedBatch(opts: {
           return {
             data: opts.link.streams
               ? sent.json
-              : deserializePipelinedItems(sent.json, (value) =>
+              : deserializeRuns(sent.json, (value) =>
                   opts.link.transformer.output.deserialize(value),
                 ),
           };
@@ -435,25 +435,85 @@ function settlePipelinedBatch(opts: {
     result.catch(() => undefined);
     return { call, result };
   });
-  const settled = pipelinedCallsRan({
-    sent: opts.ops.map((_op, index) =>
+  /** Whether the result at each index of the request has arrived */
+  const arrived = opts.results.map(() => false);
+  for (const [index, result] of opts.results.entries()) {
+    const mark = () => {
+      arrived[index] = true;
+    };
+    Promise.resolve(result).then(mark, mark);
+  }
+  /** Whether what is at each index of the request succeeded */
+  const succeeded = [
+    ...opts.ops.map((_op, index) =>
       Promise.resolve(opts.results[index]).then(
         (result) => !!result && !('error' in result.json),
         () => false,
       ),
     ),
-    pipe: opts.plan.pipe,
-    calls,
-  });
-  for (const { call: sent, ran } of settled) {
-    sent.call.settle(
-      ran.then((itRan) => {
-        if (!itRan) {
-          moveCall(sent.call, { kind: 'source-failed' });
+    ...calls.map((it) =>
+      it.result.then(
+        () => true,
+        () => false,
+      ),
+    ),
+  ];
+  for (const [index, { call, result }] of calls.entries()) {
+    const piped = opts.plan.pipe[opts.ops.length + index];
+    const sources = [
+      ...(piped?.each ? [piped.each.from] : []),
+      ...(piped?.reads ?? []).flatMap((read) =>
+        read.from === undefined ? [] : [read.from],
+      ),
+    ];
+    call.settle(
+      // Settled by its own result, without waiting for a source still to come
+      result.catch(async (error: unknown) => {
+        // It didn't run if a source failed: the server sends a source's
+        // result before the error of a call that reads it, so a source whose
+        // result hasn't arrived isn't why it failed
+        const ran = await Promise.all(
+          sources.flatMap((source) => {
+            const ok = succeeded[source];
+            return ok && arrived[source] ? [ok] : [];
+          }),
+        );
+        if (ran.includes(false)) {
+          moveCall(call, { kind: 'source-failed' });
         }
-        return sent.result;
+        throw error;
       }),
     );
+  }
+}
+
+/**
+ * The runs of a call for every item, from a response that doesn't stream,
+ * each deserialized by itself: a run the transformer can't read rejects by
+ * itself, as an operation of a batch does, and the other runs keep their data
+ */
+function deserializeRuns(
+  value: unknown,
+  deserialize: (value: unknown) => unknown,
+): unknown {
+  if (isObject(value) && isObject(value['items'])) {
+    const items: Record<string, unknown> = {};
+    for (const [index, item] of Object.entries(value['items'])) {
+      items[index] = deserializeRuns(item, deserialize);
+    }
+    return { items };
+  }
+  try {
+    return deserializePipelinedItems(value, deserialize);
+  } catch (cause) {
+    // A promise, as a streamed run is: `readPipelinedItem()` awaits it
+    const failed = Promise.reject(
+      TRPCClientError.from(
+        cause instanceof Error ? cause : new Error(String(cause)),
+      ),
+    );
+    failed.catch(() => undefined);
+    return failed;
   }
 }
 

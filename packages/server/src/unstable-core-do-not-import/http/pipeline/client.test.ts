@@ -15,6 +15,12 @@ describe('pipelinedBatchUrl', () => {
     ).toThrow('"pipe" is reserved for pipelining');
   });
 
+  test('a link URL with a `pipe` of its own is refused for a POST too, which has its `pipe` in the body', () => {
+    expect(() =>
+      pipelinedBatchUrl({ url: 'http://x/a,b?pipe=1&batch=1', pipe: null }),
+    ).toThrow('"pipe" is reserved for pipelining');
+  });
+
   test('a search param that only looks like `pipe` is left alone', () => {
     expect(
       pipelinedBatchUrl({ url: 'http://x/a,b?pipeline=1&batch=1', pipe }),

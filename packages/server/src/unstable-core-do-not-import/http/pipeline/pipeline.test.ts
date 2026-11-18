@@ -149,6 +149,9 @@ function serve(opts: {
         calls,
         pipe: hasBody ? pipeOfBody(body) : pipeOfSearchParams(url.searchParams),
         transformer: opts.transformer,
+        // As the client sent it, before the transformer read it
+        sentInputOf: async (index) =>
+          isObject(inputs) ? inputs[index] : undefined,
         maxRuns: opts.maxRuns,
         limits: opts.limits,
       });
@@ -1334,20 +1337,28 @@ describe('a call for every item', () => {
 
   test('a call for the items of an empty list has no run: its place goes to one that needs it', async () => {
     const echo = vi.fn((input: unknown) => input);
+    // Opened when the client has the result for the items of the empty list
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     await using server = serve({
       ...defaults,
+      stream: true,
       // Four calls, and three runs for the items of the long list
       maxRuns: 5,
       fns: {
         empty: () => [],
-        // Its list is ready after the empty one
+        // Its list is ready after the client has the empty one's
         long: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await opened;
           return [1, 2, 3];
         },
         echo,
       },
     });
+    // Disposed before the server: `long` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
     const empty = sent('empty', undefined);
     const long = sent('long', undefined);
     const ofEmpty = call(
@@ -1363,10 +1374,17 @@ describe('a call for every item', () => {
 
     const res = await send({
       ...defaults,
+      stream: true,
       url: server.url,
       method: 'GET',
       sent: [empty, long],
       calls: [ofEmpty, ofLong],
+      onArrive: (index) => {
+        // In the request: empty, long, of empty, of long
+        if (index === 2) {
+          open();
+        }
+      },
     });
 
     expect(res.of(ofEmpty)).toEqual({ items: {} });
@@ -1380,22 +1398,31 @@ describe('a call for every item', () => {
 
   test('a call for every item whose list is from a failed call has no run: its place goes to one that needs it', async () => {
     const echo = vi.fn((input: unknown) => input);
+    // Opened when the client has the failure of the call for the items of `broken`
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     await using server = serve({
       ...defaults,
+      stream: true,
       // Four calls, and two runs for the items of the list
       maxRuns: 4,
       fns: {
         broken: () => {
           throw new Error('broken');
         },
-        // Ready after the call for the items of `broken` has failed
+        // Ready after the client has the failure of the call for the items
+        // of `broken`
         list: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await opened;
           return [1, 2];
         },
         echo,
       },
     });
+    // Disposed before the server: `list` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
     const broken = sent('broken', undefined);
     const list = sent('list', undefined);
     const ofBroken = call(
@@ -1411,10 +1438,17 @@ describe('a call for every item', () => {
 
     const res = await send({
       ...defaults,
+      stream: true,
       url: server.url,
       method: 'GET',
       sent: [broken, list],
       calls: [ofBroken, ofList],
+      onArrive: (index) => {
+        // In the request: broken, list, of broken, of list
+        if (index === 2) {
+          open();
+        }
+      },
     });
 
     expect(res.of(ofBroken)).toMatchObject({
@@ -1433,6 +1467,11 @@ describe('a call for every item', () => {
     // itself; the HTTP adapter reads all of a request's inputs at once, so
     // there one that can't be read fails every call of the request
     const echo = vi.fn((input: unknown) => input);
+    // Opened when the client has the failure of the unreadable call
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     await using server = serve({
       ...defaults,
       // A transformer that can't read the input `'unreadable'`
@@ -1448,16 +1487,20 @@ describe('a call for every item', () => {
           },
         },
       },
+      stream: true,
       // Three calls, and two runs for the items of the list
       maxRuns: 3,
       fns: {
+        // Ready after the client has the failure of the unreadable call
         list: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await opened;
           return [1, 2];
         },
         echo,
       },
     });
+    // Disposed before the server: `list` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
     const list = sent('list', undefined);
     const unreadable = call(
       'echo',
@@ -1472,10 +1515,17 @@ describe('a call for every item', () => {
 
     const res = await send({
       ...defaults,
+      stream: true,
       url: server.url,
       method: 'GET',
       sent: [list],
       calls: [unreadable, ofList],
+      onArrive: (index) => {
+        // In the request: list, unreadable, of list
+        if (index === 1) {
+          open();
+        }
+      },
     });
 
     expect(res.of(unreadable)).toMatchObject({
@@ -2143,19 +2193,27 @@ describe('a call for every item', () => {
 
   test('a call that fails before it begins to read, such as for a procedure that is not there, gives back its place', async () => {
     const echo = vi.fn((input: unknown) => input);
+    // Opened when the client has the failure of the call below
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     await using server = serve({
       ...defaults,
+      stream: true,
       // The list, the call that isn't there, and the two runs below
       limits: { ...pipelineLimitDefaults, maxRuns: 3 },
       fns: {
         list: async () => {
-          // Ready after the call below has failed
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          // Ready after the client has the failure of the call below
+          await opened;
           return [1, 2];
         },
         echo,
       },
     });
+    // Disposed before the server: `list` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
     const list = sent('list', undefined);
     const missing = call(
       'missing',
@@ -2170,10 +2228,17 @@ describe('a call for every item', () => {
 
     const res = await send({
       ...defaults,
+      stream: true,
       url: server.url,
       method: 'GET',
       sent: [list],
       calls: [missing, each],
+      onArrive: (index) => {
+        // In the request: list, missing, each
+        if (index === 1) {
+          open();
+        }
+      },
     });
 
     expect(res.of(missing)).toMatchObject({ error: { code: 'NOT_FOUND' } });
@@ -2195,6 +2260,7 @@ describe('a call for every item', () => {
         },
       }),
       transformer: transformers.none,
+      sentInputOf: async () => ({}),
       maxRuns: null,
       limits: pipelineLimitDefaults,
     });
@@ -2376,6 +2442,7 @@ describe('the limits of a server', () => {
           1: { reads: Array.from({ length: 200_000 }, () => read) },
         }),
         transformer: transformers.none,
+        sentInputOf: async () => ({}),
         maxRuns: null,
         limits: pipelineLimitDefaults,
       });
@@ -2629,20 +2696,43 @@ describe('the limits of a server', () => {
         {},
         reads({ from: short, path: [] }, { to: ['n'], path: [] }),
       );
-      const { res } = await sendWith({
+      // Opened when the client has the refusal of the call for the items of
+      // `list`
+      let open: () => void = () => undefined;
+      const opened = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      await using server = serve({
+        ...defaults,
+        stream: true,
         // Four calls, and two runs for the items of `short`
         limits: { ...pipelineLimitDefaults, maxRuns: 4 },
         fns: {
           list: () => [1, 2, 3],
-          // Ready after the call for the items of `list` is refused
+          // Ready after the client has the refusal of the call for the items
+          // of `list`
           short: async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await opened;
             return [1, 2];
           },
           echo: () => null,
         },
+      });
+      // Disposed before the server: `short` ends even if the test failed first
+      using _opened = makeResource({}, () => open());
+      const res = await send({
+        ...defaults,
+        stream: true,
+        url: server.url,
+        method: 'POST',
         sent: [list, short],
         calls: [ofList, ofShort],
+        onArrive: (index) => {
+          // In the request: list, short, of list, of short
+          if (index === 2) {
+            open();
+          }
+        },
       });
 
       expect(res.of(ofList)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
@@ -2864,6 +2954,7 @@ describe('the limits of a server', () => {
           1: { reads: [{ to: ['ids'], from: 0, path: [null, 'id'] }] },
         }),
         transformer,
+        sentInputOf: async () => ({}),
         maxRuns: null,
         limits,
       });
@@ -3058,21 +3149,30 @@ describe('`maxFillSize`: what a request fills in', () => {
     const echo = vi.fn((input: unknown) =>
       isObject(input) ? input['n'] : null,
     );
+    // Opened when the client has the runs for the items of `three`
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
     await using server = serve({
       ...defaults,
+      stream: true,
       limits,
       // A run that is refused gives its place back
       maxRuns: 6,
       fns: {
         three: () => ({ big, items: [1, 2, 3] }),
-        // Ready after the first is refused
+        // Ready after the client has the runs for the items of `three`, the
+        // last of them refused
         two: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await opened;
           return { big, items: [1, 2] };
         },
         echo,
       },
     });
+    // Disposed before the server: `two` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
     const three = sent('three', undefined);
     const two = sent('two', undefined);
     // Three runs, each with the big value: the third is too much
@@ -3095,10 +3195,17 @@ describe('`maxFillSize`: what a request fills in', () => {
 
     const res = await send({
       ...defaults,
+      stream: true,
       url: server.url,
       method: 'POST',
       sent: [three, two],
       calls: [ofThree, ofTwo],
+      onArrive: (index) => {
+        // In the request: three, two, of three, of two
+        if (index === 2) {
+          open();
+        }
+      },
     });
 
     expect(res.of(ofThree)).toEqual({
@@ -3637,23 +3744,20 @@ describe('the order things happen in', () => {
   });
 
   test('with a response that streams, each result arrives when it is ready', async () => {
-    let releasedBy: 'client' | 'timeout' | null = null;
-    let release: (by: 'client' | 'timeout') => void = () => undefined;
+    let releasedBy: 'client' | 'deadline' | 'cleanup' | null = null;
+    let release: (by: 'client' | 'deadline' | 'cleanup') => void = () =>
+      undefined;
     const held = new Promise<void>((resolve) => {
       release = (by) => {
         releasedBy ??= by;
         resolve();
       };
     });
-    let timeout: ReturnType<typeof setTimeout> | undefined;
     await using server = serve({
       ...defaults,
       stream: true,
       fns: {
         slow: async () => {
-          // So that a response that waits for every call still ends. From
-          // when `slow` starts, so a slow start can't release it early
-          timeout = setTimeout(() => release('timeout'), 1000);
           await held;
           return notFound('slow');
         },
@@ -3661,6 +3765,12 @@ describe('the order things happen in', () => {
         echo: (input) => input,
       },
     });
+    // Disposed before the server: `slow` ends even if the test failed first
+    using _held = makeResource({}, () => release('cleanup'));
+    // A response that waits for every call never gives the client the fast
+    // ones; this ends `slow` before the test times out, and the test fails
+    const deadline = setTimeout(() => release('deadline'), 4000);
+    using _deadline = makeResource({}, () => clearTimeout(deadline));
     const slow = sent('slow', undefined);
     const fast = sent('fast', undefined);
     const ofSlow = call(
@@ -3687,10 +3797,6 @@ describe('the order things happen in', () => {
           release('client');
         }
       },
-    }).finally(() => {
-      clearTimeout(timeout);
-      // So `slow` ends even if the read failed first; the first release wins
-      release('timeout');
     });
 
     // The slow one was still running when the client read the fast ones
@@ -4451,5 +4557,111 @@ describe('a place in an input that a read cannot write to', () => {
     assert(isObject(input) && isObject(input['filter']));
     expect(input).toEqual({ filter: { id: 'ada', kind: 'author' }, n: 1 });
     expect(Object.keys(input['filter'])).toEqual(['id', 'kind']);
+  });
+});
+
+describe('an input its transformer would send other than as the client sent it', () => {
+  /** What the server's input transformer makes of the string at `at` */
+  class Stamp {
+    constructor(public iso: string) {}
+  }
+  // It reads a string at `at` as a `Stamp`, and writes what it is given: the
+  // client sends a string there, so it never writes a `Stamp` for it
+  const stamps: CombinedDataTransformer = {
+    input: {
+      serialize: (it: unknown) => it,
+      deserialize: (it: unknown) => {
+        if (!isObject(it) || !('at' in it)) {
+          return it;
+        }
+        if (typeof it['at'] !== 'string') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '"at" is not a string',
+          });
+        }
+        return { ...it, at: new Stamp(it['at']) };
+      },
+    },
+    output: transformers.none.output,
+  };
+
+  test.each([false, true])(
+    'is refused before it runs, so the client can send it by itself (for every item: %s)',
+    async (perItem) => {
+      const echo = vi.fn((input: unknown) => input);
+      await using server = serve({
+        ...defaults,
+        transformer: stamps,
+        fns: { post: () => ({ ids: ['ada'], authorId: 'ada' }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call(
+        'echo',
+        { at: '2020-01-01', id: null },
+        perItem
+          ? reads({ from: post, path: ['ids'] }, { to: ['id'], path: [] })
+          : reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+      );
+
+      const res = await send({
+        ...defaults,
+        transformer: stamps,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message:
+            "This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in",
+          data: { pipeline: 'not-run' },
+        },
+      });
+      expect(echo).not.toHaveBeenCalled();
+    },
+  );
+
+  test('is refused before it runs when what the transformer reads of it is what JSON cannot carry', async () => {
+    // It reads the string at `n` as a `BigInt`, which it writes as it is
+    const bigints: CombinedDataTransformer = {
+      input: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) =>
+          isObject(it) && typeof it['n'] === 'string'
+            ? { ...it, n: BigInt(it['n']) }
+            : it,
+      },
+      output: transformers.none.output,
+    };
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      transformer: bigints,
+      fns: { post: () => ({ authorId: 'ada' }), echo },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      { n: '1', id: null },
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: bigints,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toMatchObject({
+      error: { code: 'BAD_REQUEST', data: { pipeline: 'not-run' } },
+    });
+    expect(echo).not.toHaveBeenCalled();
   });
 });

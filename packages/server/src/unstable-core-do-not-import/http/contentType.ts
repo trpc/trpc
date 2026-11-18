@@ -284,6 +284,10 @@ const jsonContentTypeHandler: ContentTypeHandler = {
               }
               return (await getJSON.read()).bodyPipe;
             },
+            getSentInput: async (index) => {
+              const { inputs } = await getJSON.read();
+              return isObject(inputs) ? inputs[index] : undefined;
+            },
           },
         }),
     };

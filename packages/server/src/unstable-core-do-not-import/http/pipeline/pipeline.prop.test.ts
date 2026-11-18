@@ -104,6 +104,9 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
       })),
       pipe,
       transformer: { input: none, output: none },
+      sentInputOf: async (index) => ({
+        pad: 'p'.repeat(batch.calls[index]?.pad ?? 0),
+      }),
       maxRuns: null,
       limits,
     });

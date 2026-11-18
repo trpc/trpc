@@ -124,6 +124,11 @@ export interface TRPCRequestInfo {
      * to fill in from earlier calls' data. The `pipe` isn't validated.
      */
     getPipe: () => Promise<unknown>;
+    /**
+     * Reads a call's input as the client sent it, by the call's index: its
+     * JSON, before the transformer reads it
+     */
+    getSentInput: (index: number) => Promise<unknown>;
   };
   /**
    * The procedure calls in the request.

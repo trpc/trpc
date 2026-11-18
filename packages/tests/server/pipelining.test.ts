@@ -27,6 +27,7 @@ import type {
 import {
   createDeferred,
   isObject,
+  makeResource,
   pipelineLimitDefaults,
   readPipelinedItem,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -845,7 +846,7 @@ describe.each([
   );
 
   test.runIf(scenario.link === httpBatchStreamLink)(
-    'a response that breaks off fails what it had no result for, and such calls did not run for sure',
+    'a response that breaks off fails what it had no result for: such calls are `unresolved`, as the client never had their results',
     async () => {
       await using ctx = setup({
         allowPipelining: true,
@@ -885,6 +886,10 @@ describe.each([
       await expect(postResult).rejects.toThrow('The connection broke');
       await expect(author.result).rejects.toThrow('The connection broke');
       expect(author.status).toBe('unresolved');
+      // The server ran it: this `fetch` read the whole response before it
+      // broke it off. `unresolved` is about what the client was sent, so a
+      // call that wants it asks for it again
+      expect(ctx.calls).toHaveBeenCalledWith('author', { id: 'u1' });
     },
   );
 
@@ -1523,7 +1528,7 @@ describe('a server without `experimental_allowPipelining`', () => {
     await serve(true);
     // An ordinary request is the same request either way
     expect(infos[1]).toEqual(infos[0]);
-    expect(infos[0]).not.toContain('experimental_getPipe');
+    expect(infos[0]).not.toContain('experimental_pipeline');
   });
 });
 
@@ -2540,6 +2545,9 @@ describe('a call of a pipelined batch, on its own', () => {
   });
   test('a run whose data JSON can not carry fails by itself in a stream too: the runs after it still arrive', async () => {
     const t = initTRPC.create();
+    const released = createDeferred<void>();
+    // `t1` ends even if the test failed first
+    using _released = makeResource({}, () => released.resolve());
     const router = t.router({
       post: t.procedure.query(() => ({
         authorId: 'u1',
@@ -2551,8 +2559,8 @@ describe('a call of a pipelined batch, on its own', () => {
           if (opts.input.id === 'big') {
             return { n: 1n };
           }
-          // Arrives after the run that fails
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          // Held until the client has the error of the run that fails
+          await released.promise;
           return { id: opts.input.id };
         }),
     });
@@ -2562,14 +2570,23 @@ describe('a call of a pipelined batch, on its own', () => {
       router,
       experimental_allowPipelining: true,
     });
-    const text = await res.text();
+    assert(res.body);
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let text = '';
+    while (!text.includes('INTERNAL_SERVER_ERROR')) {
+      const chunk = await reader.read();
+      assert(!chunk.done, 'The stream ended without the error of the run');
+      text += chunk.value;
+    }
+    // The first run's error arrived while the second run was still running
+    expect(text).not.toContain('"data":{"id":"t1"}');
 
-    // The first run's error, and the second run's result after it
-    expect(text).toContain('INTERNAL_SERVER_ERROR');
+    released.resolve();
+    for (let chunk = await reader.read(); !chunk.done;) {
+      text += chunk.value;
+      chunk = await reader.read();
+    }
     expect(text).toContain('"data":{"id":"t1"}');
-    expect(text.indexOf('INTERNAL_SERVER_ERROR')).toBeLessThan(
-      text.indexOf('"data":{"id":"t1"}'),
-    );
   });
 
   test('a call for every item is not refused for a transformer that can not take `undefined`', async () => {
@@ -2719,6 +2736,8 @@ describe('a call that reads more than one call', () => {
         ],
       }),
     });
+    // Disposed before the server: `slow` ends even if the test failed first
+    using _released = makeResource({}, () => released.abort());
     const untyped = getUntypedClient(ctx.client);
 
     const slow = createOperationPipeline();
