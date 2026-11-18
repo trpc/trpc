@@ -349,35 +349,51 @@ export function createPipelineSizeOf() {
       size += sizeOf(part, room - size);
       return size > room;
     };
-    let over = false;
-    if (Symbol.iterator in value) {
-      // An array, or what a transformer makes, such as a `Map` or a `Set`
-      let index = 0;
-      for (const part of value as Iterable<unknown>) {
-        // A `,` before each but the first
-        size += index++ === 0 ? 0 : 1;
-        if ((over = add(part))) {
-          break;
-        }
-      }
-    } else {
-      // A property is read once the room is known to have what is before it
-      for (const [index, key] of Object.keys(value).entries()) {
-        // A `,` before each but the first, and a `:` after its key
-        size += (index === 0 ? 0 : 1) + 1;
-        if ((over = add(key) || add((value as Record<string, unknown>)[key]))) {
-          break;
-        }
-      }
+    let over: boolean;
+    try {
+      over = addParts(value, add, (length) => (size += length));
+    } catch (cause) {
+      // Not measured: the next read measures it again
+      objects.delete(value);
+      throw cause;
     }
-    if (over) {
-      objects.set(value, { size, exact: false });
-      return size;
-    }
-    objects.set(value, { size, exact: true });
+    objects.set(value, { size, exact: !over });
     return size;
   };
   return sizeOf;
+}
+
+/**
+ * Adds each part of an object, and the `,` and `:` JSON writes between them,
+ * until `add` says the object is longer than the room. Whether it is
+ */
+function addParts(
+  value: object,
+  add: (part: unknown) => boolean,
+  addSeparators: (length: number) => void,
+) {
+  let over = false;
+  if (Symbol.iterator in value) {
+    // An array, or what a transformer makes, such as a `Map` or a `Set`
+    let index = 0;
+    for (const part of value as Iterable<unknown>) {
+      // A `,` before each but the first
+      addSeparators(index++ === 0 ? 0 : 1);
+      if ((over = add(part))) {
+        break;
+      }
+    }
+  } else {
+    // A property is read once the room is known to have what is before it
+    for (const [index, key] of Object.keys(value).entries()) {
+      // A `,` before each but the first, and a `:` after its key
+      addSeparators((index === 0 ? 0 : 1) + 1);
+      if ((over = add(key) || add((value as Record<string, unknown>)[key]))) {
+        break;
+      }
+    }
+  }
+  return over;
 }
 
 /** What the server needs of a batch's call to fill in its input */

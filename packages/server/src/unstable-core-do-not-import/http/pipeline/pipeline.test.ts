@@ -2914,6 +2914,23 @@ describe('how long a value is, for what a request fills in', () => {
     }
   });
 
+  test('an object that could not be measured is measured again, not taken as empty', () => {
+    let reads = 0;
+    const value = {
+      get long() {
+        reads++;
+        if (reads === 1) {
+          throw new Error('Not yet');
+        }
+        return 'x'.repeat(100);
+      },
+    };
+    const sizeOf = createPipelineSizeOf();
+
+    expect(() => sizeOf(value, Infinity)).toThrow('Not yet');
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
   test('an object is measured until it is longer than the room, and once', () => {
     let reads = 0;
     const big = new Proxy(
