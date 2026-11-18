@@ -1840,7 +1840,7 @@ describe.each([
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('a list read with .map() is refused by a server without `allowWholeValues`, which says so', async () => {
+  test('a list read with .map() from a server without `allowWholeValues` loads in a request of its own', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
@@ -1851,27 +1851,19 @@ describe.each([
     const trpc = resource.optionsProxyClient;
 
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
-    const [, results] = await loadHandlesSettled(trpc, {
+    const [handles] = await loadHandles(trpc, {
       post,
       tags: fetchEntry(trpc.tag.byIds, {
         ids: experimental_dataOf(post).tags.map((tag) => tag.id),
       }),
     });
-    expect(results.post).toMatchObject({ status: 'success' });
-    expect(results.tags).toMatchObject({
-      status: 'error',
-      error: {
-        code: 'BAD_REQUEST',
-        cause: {
-          message:
-            'A value this call reads is an object or an array, and `allowWholeValues` is false',
-        },
-      },
+    // The server refused the call before it ran, so the client asked for it
+    // by itself, once the post was there
+    expect(handles.tags.input).toEqual({ ids: ['t1', 't2'] });
+    expect(resource.calls).toHaveBeenCalledWith('tag.byIds', {
+      ids: ['t1', 't2'],
     });
-    expect(resource.calls).not.toHaveBeenCalledWith(
-      'tag.byIds',
-      expect.anything(),
-    );
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
   });
 
   test('an entry per item whose callback returns an entry with `skipToken` gives every item a disabled entry, and sends no call', async () => {

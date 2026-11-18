@@ -379,7 +379,7 @@ const moreFromTeam = prefetchInfiniteEntry(trpc.post.list, {
 });
 
 // A part of every item of a list. With one request, that is a list: the
-// server takes it only with `allowWholeValues`
+// server takes it only with `allowWholeValues`, else it loads by itself
 const tags = prefetchEntry(trpc.tag.byIds, {
   ids: experimental_dataOf(post).tags.map((tag) => tag.id),
 });
@@ -389,7 +389,7 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 ```
 
 - **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
-- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it. With [one request](#one-request), the list it makes is a whole value, which the server takes only with [`allowWholeValues`](/docs/client/vanilla/nested-queries#limit-whole-values).
+- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it. With [one request](#one-request), the list it makes is a whole value, which the server takes only with [`allowWholeValues`](/docs/client/vanilla/nested-queries#limit-whole-values). Without it, the query loads in a request of its own once the data is there.
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
