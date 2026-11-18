@@ -7,6 +7,8 @@ export function fakeTimersResource() {
   return makeResource(
     {
       advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
+      advanceTimersToNextTimer: vi.advanceTimersToNextTimer,
+      getTimerCount: vi.getTimerCount,
       runAllTimersAsync: vi.runAllTimersAsync,
       runAllTimers: vi.runAllTimers,
     },

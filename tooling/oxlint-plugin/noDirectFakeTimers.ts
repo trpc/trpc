@@ -1,23 +1,42 @@
 import { defineRule } from '@oxlint/plugins';
 
-const METHODS = new Set(['useFakeTimers', 'useRealTimers']);
+const SWITCHES = new Set(['useFakeTimers', 'useRealTimers']);
+
+/** Vitest's fake timer controls; `fakeTimersResource()` returns the ones tests use. */
+const CONTROLS = new Set([
+  'advanceTimersByTime',
+  'advanceTimersByTimeAsync',
+  'advanceTimersToNextFrame',
+  'advanceTimersToNextTimer',
+  'advanceTimersToNextTimerAsync',
+  'clearAllTimers',
+  'getTimerCount',
+  'runAllTicks',
+  'runAllTimers',
+  'runAllTimersAsync',
+  'runOnlyPendingTimers',
+  'runOnlyPendingTimersAsync',
+]);
 
 /**
  * A test that throws between `vi.useFakeTimers()` and `vi.useRealTimers()`
  * leaks fake timers into the next test. `fakeTimersResource()` restores real
- * timers when its scope ends, whatever happens in between.
+ * timers when its scope ends, whatever happens in between. Timer controls go
+ * through the resource too, so a test can only drive fake timers it holds.
  */
 export const noDirectFakeTimers = defineRule({
   meta: {
     type: 'problem',
     docs: {
       description:
-        'Disallow `vi.useFakeTimers()`/`vi.useRealTimers()` in favor of `using _timers = fakeTimersResource()`',
+        'Disallow `vi.useFakeTimers()`, `vi.useRealTimers()` and fake timer controls on `vi` in favor of `using timers = fakeTimersResource()`',
     },
     schema: [],
     messages: {
       banned:
         '`vi.{{name}}()` can leak fake timers into the next test - use `using _timers = fakeTimersResource()` from `@trpc/server/__tests__/fakeTimersResource`',
+      control:
+        'Call `{{name}}()` on the `fakeTimersResource()` that set up the fake timers, not on `vi`',
     },
   },
   create(context) {
@@ -35,8 +54,13 @@ export const noDirectFakeTimers = defineRule({
             : property.type === 'Literal' && typeof property.value === 'string'
               ? property.value
               : null;
-        if (name === null || !METHODS.has(name)) return;
-        context.report({ node, messageId: 'banned', data: { name } });
+        if (name === null) return;
+        if (SWITCHES.has(name)) {
+          context.report({ node, messageId: 'banned', data: { name } });
+        }
+        if (CONTROLS.has(name)) {
+          context.report({ node, messageId: 'control', data: { name } });
+        }
       },
     };
   },

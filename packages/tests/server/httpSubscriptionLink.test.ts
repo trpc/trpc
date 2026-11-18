@@ -1146,7 +1146,7 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     await using ctx = getCtx(opts);
     const ac = new AbortController();
     ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
@@ -1157,7 +1157,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(
+    await timers.advanceTimersByTimeAsync(
       opts.sse.client.reconnectAfterInactivityMs + 100,
     );
 
@@ -1199,7 +1199,7 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     await using ctx = getCtx(opts);
     const ac = new AbortController();
     ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
@@ -1210,7 +1210,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(
+    await timers.advanceTimersByTimeAsync(
       opts.sse.client.reconnectAfterInactivityMs * 10,
     );
 

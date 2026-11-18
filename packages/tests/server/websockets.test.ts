@@ -5089,7 +5089,7 @@ describe('keep alive on the server', () => {
     return onPong;
   }
   test('pong message should be received', async () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const pingMs = 2_000;
     const pongWaitMs = 5_000;
     await using ctx = factory({
@@ -5109,16 +5109,16 @@ describe('keep alive on the server', () => {
     });
 
     {
-      await vi.advanceTimersByTimeAsync(pingMs);
-      await vi.advanceTimersByTimeAsync(pongWaitMs);
-      await vi.advanceTimersByTimeAsync(100);
+      await timers.advanceTimersByTimeAsync(pingMs);
+      await timers.advanceTimersByTimeAsync(pongWaitMs);
+      await timers.advanceTimersByTimeAsync(100);
 
       expect(ctx.wsClient.connection).not.toBe(null);
       expect(onPong).toHaveBeenCalled();
     }
   });
   test('no pong message should be received', async () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     await using ctx = factory({});
 
     await new Promise((resolve) => {
@@ -5127,7 +5127,7 @@ describe('keep alive on the server', () => {
 
     const onPong = attachPongMock(ctx.wss);
     {
-      await vi.advanceTimersByTimeAsync(60_000);
+      await timers.advanceTimersByTimeAsync(60_000);
       expect(ctx.wsClient.connection).not.toBe(null);
       expect(onPong).not.toHaveBeenCalled();
     }
@@ -5136,7 +5136,7 @@ describe('keep alive on the server', () => {
 
 describe('keep alive from the client', () => {
   test('pong message should be received', async () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
@@ -5161,7 +5161,7 @@ describe('keep alive from the client', () => {
       },
     });
 
-    await vi.advanceTimersByTimeAsync(1);
+    await timers.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
       ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
@@ -5173,15 +5173,15 @@ describe('keep alive from the client', () => {
       }
     });
 
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(intervalMs);
-    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+    await timers.advanceTimersByTimeAsync(100);
+    await timers.advanceTimersByTimeAsync(intervalMs);
+    await timers.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(true);
   });
 
   test('should close if no pong is received', async () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
@@ -5206,7 +5206,7 @@ describe('keep alive from the client', () => {
       },
     });
 
-    await vi.advanceTimersByTimeAsync(1);
+    await timers.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
       ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
@@ -5218,9 +5218,9 @@ describe('keep alive from the client', () => {
       }
     });
 
-    await vi.advanceTimersByTimeAsync(100);
-    await vi.advanceTimersByTimeAsync(intervalMs);
-    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+    await timers.advanceTimersByTimeAsync(100);
+    await timers.advanceTimersByTimeAsync(intervalMs);
+    await timers.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(false);
 
