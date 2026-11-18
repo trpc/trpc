@@ -13,11 +13,12 @@ import { isPlainObject } from './utils';
  * is the same only as a date of the same time. Anything else, such as a
  * class instance a transformer keeps, is not, so the page is fetched by
  * itself rather than recorded with another cursor. No cursor isn't `null`,
- * and no key isn't a key whose value is `undefined`.
+ * no key isn't a key whose value is `undefined`, and `-0` isn't `0`.
  */
 export function sameCursor(a: unknown, b: unknown): boolean {
-  // `NaN` is the same cursor as `NaN`, and `-0` as `0`
-  if (a === b || Object.is(a, b)) {
+  // `NaN` is the same cursor as `NaN`. `-0` is not `0`: a transformer that
+  // keeps it, such as superjson, lets a resolver tell them apart
+  if (Object.is(a, b)) {
     return true;
   }
   if (a instanceof Date || b instanceof Date) {

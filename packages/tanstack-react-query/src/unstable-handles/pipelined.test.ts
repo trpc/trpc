@@ -8,6 +8,13 @@ describe('sameCursor', () => {
     expect(sameCursor(undefined, undefined)).toBe(true);
   });
 
+  test('`-0` is not the cursor `0`, which a transformer can tell apart', () => {
+    expect(sameCursor(-0, 0)).toBe(false);
+    expect(sameCursor({ at: -0 }, { at: 0 })).toBe(false);
+    expect(sameCursor(-0, -0)).toBe(true);
+    expect(sameCursor(Number.NaN, Number.NaN)).toBe(true);
+  });
+
   test('equal bigint cursors are the same, which JSON has no form for', () => {
     expect(sameCursor(5n, 5n)).toBe(true);
     expect(sameCursor(5n, 6n)).toBe(false);

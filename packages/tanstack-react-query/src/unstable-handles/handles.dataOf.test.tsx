@@ -4484,7 +4484,7 @@ describe('a run the link cannot read', () => {
   });
 });
 
-describe('a transformer that keeps `undefined`', () => {
+describe('a transformer that keeps what JSON drops', () => {
   test("a stale ensure entry's cursor without a key is not the server's one with the key as `undefined`", async () => {
     const t = initTRPC.create({ transformer: superjson });
     type Cursor = { at?: number } | null | undefined;
@@ -4531,6 +4531,51 @@ describe('a transformer that keeps `undefined`', () => {
 
     // The page is for the cursor the client has: no `at`
     expect(data.rest.pages).toEqual([{ cursor: 'no at', nextCursor: null }]);
+  });
+
+  test("a stale ensure entry's cursor `0` is not the server's `-0`", async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      /** The last page: its next cursor is `-0` */
+      last: t.procedure.query(() => ({ next: -0 })),
+      /** Whether its cursor is `-0` */
+      cursorSign: t.procedure
+        .input((raw: unknown) => raw as { cursor: number | null | undefined })
+        .query((opts) => ({
+          cursor: Object.is(opts.input.cursor, -0) ? '-0' : 'not -0',
+          nextCursor: null,
+        })),
+    });
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer: superjson,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cached last page's next cursor is `0`. Its refetch has `-0`
+    resource.queryClient.setQueryData(
+      trpc.last.queryKey(),
+      { next: 0 },
+      { updatedAt: 1 },
+    );
+
+    const last = ensureEntry(trpc.last);
+    const [, data] = await loadHandles(trpc, {
+      last,
+      rest: ensureInfiniteEntry(trpc.cursorSign, {
+        cursor: experimental_dataOf(last).next,
+      }),
+    });
+
+    // The page is for the cursor the client has: `0`
+    expect(data.rest.pages).toEqual([{ cursor: 'not -0', nextCursor: null }]);
   });
 });
 
