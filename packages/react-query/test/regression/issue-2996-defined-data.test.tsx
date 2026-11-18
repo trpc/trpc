@@ -2,7 +2,6 @@ import { getServerAndReactClient } from '../__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 
 const posts = [
@@ -13,22 +12,18 @@ type Post = (typeof posts)[number];
 
 const fetchPosts = async () => posts;
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const appRouter = t.router({
-      posts: t.procedure.query(fetchPosts),
-    });
+  const appRouter = t.router({
+    posts: t.procedure.query(fetchPosts),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('destructuring data', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
 
   function MyComponent() {
@@ -61,6 +56,7 @@ test('destructuring data', async () => {
 });
 
 test('using `initialData`', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
 
   function MyComponent() {
@@ -96,6 +92,7 @@ test('using `initialData`', async () => {
 });
 
 test('using `placeholderData`', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
 
   function MyComponent() {
