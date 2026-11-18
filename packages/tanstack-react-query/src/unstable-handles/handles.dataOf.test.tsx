@@ -2294,6 +2294,40 @@ describe.each([
     });
   });
 
+  test('an entry whose `trpc.context` has only symbol keys goes to the links with it', async () => {
+    const route = Symbol('route');
+    const ops: Pick<Operation, 'path' | 'context'>[] = [];
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [
+        () => (linkOpts) => {
+          const { path, context } = linkOpts.op;
+          ops.push({ path, context });
+          return linkOpts.next(linkOpts.op);
+        },
+      ],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    await loadHandles(trpc, {
+      post,
+      author: ensureEntry(
+        trpc.author.byId,
+        { id: experimental_dataOf(post).authorId },
+        { trpc: { context: { [route]: 'authors' } } },
+      ),
+    });
+
+    const context = ops.find((op) => op.path === 'author.byId')?.context as
+      | Record<PropertyKey, unknown>
+      | undefined;
+    expect(context?.[route]).toBe('authors');
+  });
+
   test('an entry with a `trpc.context` of its own carries no call of an entry that reads it', async () => {
     const ops: Pick<Operation, 'path' | 'input' | 'context'>[] = [];
     await using resource = pipeliningCtx({
@@ -4023,6 +4057,77 @@ describe('experimental_useHandles', () => {
     // The entries are the same, in the same places, but for where the entry
     // per item reads its list
     expect(seen[1]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('an entry per item of a list from `.map()` and from `.flatMap()` of the same path are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { flat: boolean }) {
+      const groups = prefetchEntry(trpc.group.list);
+      const members = experimental_dataOf(groups).groups;
+      // The same entry for every item: only how many items there are differs
+      const author = () => prefetchEntry(trpc.author.byId, { id: 'u1' });
+      seen.push(
+        experimental_useHandles(trpc, {
+          groups,
+          authors: props.flat
+            ? experimental_entryPerItem(
+                members.flatMap((group) => group.members),
+                author,
+              )
+            : experimental_entryPerItem(
+                members.map((group) => group.members),
+                author,
+              ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card flat={false} />
+        <Card flat />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('the same entries with another `trpc.context` are another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    const route = Symbol('route');
+    function Card(props: {
+      context: Record<PropertyKey, unknown> | undefined;
+    }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context: props.context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card context={undefined} />
+        <Card context={{ route: 'secondary' }} />
+        <Card context={{ [route]: 'secondary' }} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[1]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

@@ -192,6 +192,30 @@ export function describeOption(value: unknown) {
 }
 
 /**
+ * An entry's own `trpc.context` as a value with JSON, symbol keys and all.
+ * A value with no JSON, such as a function, is described by its type
+ */
+function describeContext(
+  context: Readonly<Record<PropertyKey, unknown>> | null,
+): unknown {
+  if (context === null) {
+    return null;
+  }
+  return Reflect.ownKeys(context)
+    .map((key) => {
+      const value = context[key];
+      let described: unknown;
+      try {
+        described = hashKey([value]);
+      } catch {
+        described = describeOption(value);
+      }
+      return [String(key), described] as const;
+    })
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/**
  * What the entries of a load are: the procedure, input and kind of each, how
  * its query starts, and where it reads another's data. Two loads with the same
  * description start the same queries.
@@ -208,6 +232,8 @@ export function describeEntries(opts: {
   const describeRef = (ref: EntryDataRef): unknown => [
     keysOfEntry.get(ref.entry) ?? null,
     ref.path,
+    // `.map()` and `.flatMap()` of one path are lists of other items
+    ref.shape,
     ref.itemOf ? describeRef(ref.itemOf) : null,
   ];
   const describeLeaf = (leaf: EntryLeaf) => {
@@ -231,6 +257,8 @@ export function describeEntries(opts: {
       firstCursor:
         typeof firstCursor === 'bigint' ? `${firstCursor}n` : firstCursor,
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
+      // Where its requests go, and so whether they can go in another's
+      context: describeContext(leaf.state.request.context),
       built:
         leaf.built.by === 'entryPerItem'
           ? [leaf.built.by, describeRef(leaf.built.list)]

@@ -59,6 +59,8 @@ export interface EntryRequest {
    * cursor
    */
   pipelines: boolean;
+  /** The entry's own `trpc.context`, which its requests go to the links with. `null` for none */
+  context: Readonly<Record<PropertyKey, unknown>> | null;
 }
 
 /** Builds an entry's `EntryRequest`. Pure: it reads only what the entry was built with */
@@ -72,7 +74,9 @@ function planRequest(opts: {
   const entryOpts = opts.opts as
     | (TRPCQueryBaseOptions & { initialCursor?: unknown })
     | undefined;
-  const ownContext = Object.keys(entryOpts?.trpc?.context ?? {}).length > 0;
+  const context = entryOpts?.trpc?.context ?? null;
+  // Symbol keys too: a link may route by any of them
+  const ownContext = context !== null && Reflect.ownKeys(context).length > 0;
   let input = replaceEntryDataRefs(opts.input, [], nothing);
   let cursorFromOptions = false;
   if (opts.type === 'infinite') {
@@ -97,6 +101,7 @@ function planRequest(opts: {
           !(ref.to[0] === 'direction' && opts.type === 'infinite'),
       ),
     ),
+    context: ownContext ? context : null,
     pipelines:
       !ownContext &&
       !(
