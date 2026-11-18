@@ -50,6 +50,11 @@ export interface OperationPipeline {
   /** The limits of the server, as the link that opens it says */
   limits: ClientPipelineLimits;
   /**
+   * Whether the response of the link that opens it streams, so that each
+   * call, and each run of one, settles by itself. `null` until a link opens it
+   */
+  streams: boolean | null;
+  /**
    * The calls added to the operation's request, with `pipeCall()`. They stay
    * here once the request has gone, for a link that logs the context.
    */
@@ -118,6 +123,7 @@ export function createOperationPipeline(): OperationPipeline {
   const pipeline: OperationPipeline = {
     open: false,
     limits: pipelineLimitDefaults,
+    streams: null,
     calls: [],
     sent: sent.promise,
     settleSent: sent.resolve,
@@ -324,7 +330,7 @@ export interface BatchPipelining {
  * data it reads, and goes in a request of its own.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
+ * @see https://trpc.io/docs/client/vanilla/nested-queries#limits
  */
 export interface experimental_PipeliningLinkOptions {
   /**
@@ -438,7 +444,7 @@ function settlePipelinedBatch(opts: {
  * It is apart from the links so that only an app that uses it has its code.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
+ * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
  */
 export function experimental_pipelining(
   opts?: experimental_PipeliningLinkOptions,
@@ -491,6 +497,7 @@ export function experimental_pipelining(
         if (pipeline && op.type === 'query') {
           pipeline.open = true;
           pipeline.limits = limits;
+          pipeline.streams = link.streams;
         }
       },
       close: closePipeline,

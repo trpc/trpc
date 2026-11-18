@@ -51,7 +51,7 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
      * option.
      *
      * Experimental: it may change in a minor release.
-     * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
+     * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
      */
     experimental_pipelining?: experimental_Pipelining;
   };

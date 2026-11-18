@@ -17,6 +17,16 @@ export {
   type inferRouterClient as inferRouterProxyClient,
 } from './createTRPCClient';
 
+export {
+  experimental_nested,
+  experimental_settle,
+  type experimental_NestedQueries,
+  type experimental_NestedShape,
+  type experimental_Node,
+  type experimental_Settled,
+  type experimental_StandIn,
+} from './nested';
+
 export { type TRPCProcedureOptions } from './internals/types';
 
 export {
