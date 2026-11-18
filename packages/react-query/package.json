@@ -1,7 +1,7 @@
 {
   "name": "@trpc/react-query",
   "type": "module",
-  "version": "11.29.0",
+  "version": "11.29.1",
   "description": "The tRPC React library",
   "deprecated": "@trpc/react-query only gets bug fixes and will be removed in the next major version of tRPC. Use @trpc/tanstack-react-query instead: https://trpc.io/docs/client/tanstack-react-query/migrating",
   "author": "KATT",
@@ -77,8 +77,8 @@
   ],
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.29.0",
-    "@trpc/server": "11.29.0",
+    "@trpc/client": "11.29.1",
+    "@trpc/server": "11.29.1",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
