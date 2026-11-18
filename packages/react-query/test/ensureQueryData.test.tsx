@@ -3,16 +3,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('ensureQueryData()', () => {
   test('with input', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');

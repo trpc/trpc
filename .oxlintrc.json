@@ -29,7 +29,7 @@
 
     // Set up in the test with `using`: a helper returns a Disposable that
     // undoes its setup, and the test's scope disposes it.
-    "vitest/no-hooks": ["error", { "allow": ["afterEach", "afterAll"] }]
+    "vitest/no-hooks": "error"
   },
   "overrides": [
     {
@@ -197,6 +197,14 @@
         "no-unused-expressions": "off",
         "typescript/only-throw-error": "off",
         "typescript/switch-exhaustiveness-check": "off"
+      }
+    },
+    {
+      // A setup file runs around every test in the project, and has no
+      // test scope to `using` in.
+      "files": ["www/vitest.setup.ts"],
+      "rules": {
+        "vitest/no-hooks": "off"
       }
     },
     {

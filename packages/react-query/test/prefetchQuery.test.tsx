@@ -3,16 +3,9 @@ import { dehydrate, useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('prefetchQuery()', () => {
   test('with input', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
@@ -43,6 +36,7 @@ describe('prefetchQuery()', () => {
 
 describe('prefetchInfiniteQuery()', () => {
   test('with one page', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
@@ -92,6 +86,7 @@ describe('prefetchInfiniteQuery()', () => {
   });
 
   test('with two pages', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
@@ -144,6 +139,7 @@ describe('prefetchInfiniteQuery()', () => {
 
 describe('usePrefetchQuery()', () => {
   test('with input', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
@@ -186,6 +182,7 @@ describe('usePrefetchQuery()', () => {
 
 describe('usePrefetchInfiniteQuery()', () => {
   test('with one page', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
@@ -234,6 +231,7 @@ describe('usePrefetchInfiniteQuery()', () => {
   });
 
   test('with two pages', async () => {
+    await using factory = createAppRouter();
     const { trpc, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');

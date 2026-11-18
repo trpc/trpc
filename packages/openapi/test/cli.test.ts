@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { describe, expect, it } from 'vitest';
 
 const cliPath = path.resolve(__dirname, '../src/cli.ts');
 const tsxPath = path.resolve(__dirname, '../../../node_modules/.bin/tsx');
@@ -35,15 +36,15 @@ function runCli(args: string[]): {
   }
 }
 
-describe('CLI', () => {
-  beforeAll(() => {
-    fs.mkdirSync(outDir, { recursive: true });
-  });
-
-  afterAll(() => {
+/** Creates the output directory, and removes it again when disposed. */
+function outDirResource() {
+  fs.mkdirSync(outDir, { recursive: true });
+  return makeResource({ outDir }, () => {
     fs.rmSync(outDir, { recursive: true, force: true });
   });
+}
 
+describe('CLI', () => {
   it('shows help with --help', () => {
     const result = runCli(['--help']);
     expect(result.stdout).toContain('trpc-openapi');
@@ -80,19 +81,21 @@ describe('CLI', () => {
   });
 
   it('errors when the export name is not found', () => {
+    using dir = outDirResource();
     const result = runCli([
       appRouterPath,
       '-e',
       'NonExistentExport',
       '-o',
-      path.join(outDir, 'bad-export.json'),
+      path.join(dir.outDir, 'bad-export.json'),
     ]);
     expect(result.stderr).toContain('NonExistentExport');
     expect(result.exitCode).not.toBe(0);
   });
 
   it('generates an OpenAPI document from a router file', () => {
-    const outputPath = path.join(outDir, 'cli-test-output.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-test-output.json');
 
     const result = runCli([
       appRouterPath,
@@ -116,7 +119,8 @@ describe('CLI', () => {
   });
 
   it('emits a servers entry with --server-url', () => {
-    const outputPath = path.join(outDir, 'cli-server-url.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-server-url.json');
 
     const result = runCli([
       appRouterPath,
@@ -132,7 +136,8 @@ describe('CLI', () => {
   });
 
   it('omits servers when --server-url is not provided', () => {
-    const outputPath = path.join(outDir, 'cli-no-server-url.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-no-server-url.json');
 
     const result = runCli([appRouterPath, '-o', outputPath]);
 
@@ -142,7 +147,8 @@ describe('CLI', () => {
   });
 
   it('uses -e shorthand for --export', () => {
-    const outputPath = path.join(outDir, 'cli-export-test.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-export-test.json');
 
     const result = runCli([
       errorFormatterRouterPath,
@@ -158,7 +164,8 @@ describe('CLI', () => {
   });
 
   it('supports --option=value syntax', () => {
-    const outputPath = path.join(outDir, 'cli-equals-long.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-equals-long.json');
 
     const result = runCli([
       appRouterPath,
@@ -174,7 +181,8 @@ describe('CLI', () => {
   });
 
   it('supports --long=value with --export', () => {
-    const outputPath = path.join(outDir, 'cli-equals-export.json');
+    using dir = outDirResource();
+    const outputPath = path.join(dir.outDir, 'cli-equals-export.json');
 
     const result = runCli([
       errorFormatterRouterPath,
@@ -188,14 +196,15 @@ describe('CLI', () => {
   });
 
   it('uses default output file name when -o is not specified', () => {
+    using dir = outDirResource();
     // Run from the isolated outDir so the default "openapi.json" lands there
-    const defaultOutput = path.join(outDir, 'openapi.json');
+    const defaultOutput = path.join(dir.outDir, 'openapi.json');
 
     try {
       execFileSync(tsxPath, [cliPath, appRouterPath], {
         encoding: 'utf8',
         timeout: 60_000,
-        cwd: outDir,
+        cwd: dir.outDir,
       });
     } catch {
       // ignore – we only care about the file
