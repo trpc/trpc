@@ -2755,7 +2755,10 @@ describe('a call that reads more than one call', () => {
     await expect(failingResult).rejects.toThrow();
     // `slow` is still running
     await vi.waitFor(() => expect(settled).toBe(true));
-    await expect(edge.result).rejects.toThrow();
+    // The server's refusal, not one the link made up
+    await expect(edge.result).rejects.toMatchObject({
+      data: { code: 'PRECONDITION_FAILED' },
+    });
 
     released.abort();
     expect(await slowResult).toEqual({ id: 'slow' });
@@ -2823,6 +2826,76 @@ describe('a call for every item', () => {
     expect(json[1]).toMatchObject({
       items: {
         0: { error: { data: { code: 'UNSUPPORTED_MEDIA_TYPE' } } },
+      },
+    });
+  });
+
+  test('a run whose data has a `subscribe` that is no function returns that data', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      post: t.procedure.query(() => ({ tags: [{ id: 't1' }] })),
+      tag: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id, subscribe: false })),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,tag',
+        pipe: {
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
+        },
+      }),
+      router,
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toEqual({
+      items: { 0: { result: { data: { id: 't1', subscribe: false } } } },
+    });
+  });
+
+  test('a run whose error JSON cannot carry fails as `INTERNAL_SERVER_ERROR`, not the response', async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape, error }) =>
+        error.code === 'NOT_FOUND'
+          ? { ...shape, data: { ...shape.data, big: BigInt(1) } }
+          : shape,
+    });
+    const router = t.router({
+      post: t.procedure.query(() => ({ tags: [{ id: 't1' }, { id: 't2' }] })),
+      tag: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        if (opts.input.id === 't2') {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
+        return { id: opts.input.id };
+      }),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,tag',
+        pipe: {
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
+        },
+      }),
+      router,
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toMatchObject({ result: { data: { tags: [{}, {}] } } });
+    expect(json[1]).toMatchObject({
+      items: {
+        0: { result: { data: { id: 't1' } } },
+        1: { error: { data: { code: 'INTERNAL_SERVER_ERROR' } } },
       },
     });
   });

@@ -221,15 +221,19 @@ function serve(opts: {
         start(controller) {
           let left = answers.length;
           for (const [index, answer] of answers.entries()) {
-            void answer.then((it) => {
-              controller.enqueue(
-                encoder.encode(`${JSON.stringify({ index, ...it })}\n`),
-              );
-              left -= 1;
-              if (left === 0) {
-                controller.close();
-              }
-            });
+            answer.then(
+              (it) => {
+                controller.enqueue(
+                  encoder.encode(`${JSON.stringify({ index, ...it })}\n`),
+                );
+                left -= 1;
+                if (left === 0) {
+                  controller.close();
+                }
+              },
+              // An answer that fails ends the stream, rather than leave it open
+              (cause: unknown) => controller.error(cause),
+            );
           }
         },
       }),

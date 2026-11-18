@@ -548,7 +548,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 item: async (input) => {
                   throwIfAborted();
                   const itemData = await callProcedure(async () => input);
-                  if (isDataStream(itemData) || isObservable(itemData)) {
+                  if (
+                    isDataStream(itemData) ||
+                    // Data with a `subscribe` that isn't a function is data
+                    (isObservable(itemData) &&
+                      typeof itemData.subscribe === 'function')
+                  ) {
                     // It would be inside a list, where nothing streams it
                     throw new TRPCError({
                       code: 'UNSUPPORTED_MEDIA_TYPE',
@@ -981,17 +986,41 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // The runs of each call for every item, once all of them are done: as
     // they are, and with the transformer's output of each run's outcome
     const settled = await Promise.all(
-      results.map(async ([error, result]) => {
+      results.map(async ([error, result], index) => {
         if (error || !result.items) {
           return null;
         }
         const serialize = (value: unknown) =>
           config.transformer.output.serialize(value);
+        const call = info.calls[index]!;
+        // A run's error that JSON can't carry fails that run as an
+        // `INTERNAL_SERVER_ERROR`, not the response
+        const serializeError = (shape: unknown) => {
+          try {
+            const serialized = serialize(shape);
+            assertJSON(serialized);
+            return serialized;
+          } catch {
+            return serialize(
+              getErrorShape({
+                config,
+                ctx: ctxManager.valueOrUndefined(),
+                error: new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: 'The error of this run cannot be sent',
+                }),
+                input: undefined,
+                path: call.path,
+                type: call.procedure?._def.type ?? 'unknown',
+              }),
+            );
+          }
+        };
         return {
           json: await settledItems(result.items, (outcome) => outcome),
           sent: await settledItems(result.items, (outcome) =>
             'error' in outcome
-              ? { error: serialize(outcome.error) }
+              ? { error: serializeError(outcome.error) }
               : { result: { data: serialize(outcome.result.data) } },
           ),
         };
