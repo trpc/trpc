@@ -168,7 +168,7 @@ export function postListEntries(trpc: TRPC) {
   return {
     posts,
     authors: experimental_entryPerItem(
-      experimental_dataOf(posts).pages.map((page) => page.items),
+      experimental_dataOf(posts).pages.flatMap((page) => page.items),
       (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
     ),
   } satisfies TRPCLoadEntries;
@@ -398,7 +398,7 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 ```
 
 - **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
-- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it. With [one request](#one-request), the list it makes is a whole value, which the server takes only with [`allowWholeValues`](/docs/client/vanilla/nested-queries#limit-whole-values). Without it, the query loads in a request of its own once the data is there.
+- **`.map()` is the one array method that works in an input.** `.flatMap()` works only for [a query for every item](#entry-per-item). The callback runs once, on a stand-in for every item, and must return the item or a part of it. With [one request](#one-request), the list it makes is a whole value, which the server takes only with [`allowWholeValues`](/docs/client/vanilla/nested-queries#limit-whole-values). Without it, the query loads in a request of its own once the data is there.
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
@@ -436,7 +436,7 @@ export function postListEntries(trpc: TRPC) {
     posts,
     // The author of every post, of every page
     authors: experimental_entryPerItem(
-      experimental_dataOf(posts).pages.map((page) => page.items),
+      experimental_dataOf(posts).pages.flatMap((page) => page.items),
       (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
     ),
   } satisfies TRPCLoadEntries;
@@ -504,15 +504,16 @@ function AuthorName(props: {
 - **It works for an item the load never had**, such as a post on a later page.
 - **The load doesn't wait for a list from a prefetch entry.** The items' queries start when the list arrives.
 - **Items with the same input share a query**, as two posts by one author do.
-- **The list can be a list of lists**, as above: the items of every page of an infinite entry.
-- **A `null` in the list is an item like any other**, a `null` in a list of lists too. Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items.
+- **The items are the list's elements.** For a list from `.map()`, they are the values its callback returned: `experimental_dataOf(post).tags.map((tag) => tag.id)` has an item for every tag's id.
+- **For the items of every list in a list, use `.flatMap()`**, as above: the items of every page of an infinite entry. A `.flatMap()` value can only be such a list, not a value in an input: the server can't flatten one into an input. A list of lists without it has the inner lists as its items, as its type says.
+- **A `null` in the list is an item like any other.** Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items, also in `.flatMap()`.
 - **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as idle: `'pending'`, unless the cache has data for its key. No call goes to the server, and it takes nothing from `maxBatchSize`.
 - **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server runs the call for none of the list's items, and each item asks by itself.
 - **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](/docs/client/vanilla/nested-queries#limits).
-- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page. If each page has one flat list, such as `pages.map((page) => page.items)`, and the item's query reads the item, the items of a later page load with that page, as [below](#later-fetches). If a page has a list of lists, they load when they are read.
+- **A list from `.map()` or `.flatMap()` loads in one request too.** The server walks the list as the client does, a level for every `null` in its path, and runs the call for the same items. Of an infinite entry, the request has the first page. If the items are the elements of one list in each page, such as `pages.flatMap((page) => page.items)`, and the item's query reads the item, the items of a later page load with that page, as [below](#later-fetches). Any other list's items load when they are read.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 

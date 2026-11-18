@@ -17,16 +17,19 @@ import type {
   PipelineCallReads,
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  bindPipelinePath,
-  readPipelinePath,
-} from '@trpc/server/unstable-core-do-not-import';
+import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import type { EntryDataRef, EntryInputRef } from './dataRef';
 import { blankInput } from './dataRef';
 import type { EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
-import { itemsOfList, requestPath } from './list';
+import {
+  itemPathOf,
+  itemsAt,
+  listOfElements,
+  requestPath,
+  serverList,
+} from './list';
 import type { ListItem } from './list';
 import {
   dataOfCall,
@@ -328,7 +331,8 @@ export function beginEntries(opts: {
             {
               kind: 'item',
               to: ref.to,
-              path: ref.path.slice(list.ref.path.length + 1),
+              // From the server's item: the element of its list
+              path: ref.path.slice(itemPathOf(list.ref).lastIndexOf(null) + 1),
             },
           ];
         }
@@ -612,35 +616,17 @@ export function beginEntries(opts: {
   }): EntryLoad {
     const { leaf, list, sources } = perItem;
     const { state } = leaf;
-    const item = [...list.path, null];
-    const depth = list.path.filter((segment) => segment === null).length;
+    const itemPath = itemPathOf(list);
     // Not by its path: the whole list, read with `.map()`, has the same one
     const readsItem = (ref: EntryDataRef) => ref.itemOf === list;
-    /** The items of the list in an entry's data */
+    /** The items of the list in an entry's data, as the server walks them */
     const itemsOf = (dataOfEntry: Map<object, unknown>) =>
-      itemsOfList(
-        readPipelinePath(dataOfEntry.get(list.entry), list.path, null),
-        depth,
-      );
+      itemsAt(dataOfEntry.get(list.entry), itemPath);
     /** Where a value read from the item's stand-in is, for one item */
-    const pathOfItem = (path: PipelinePath, listItem: ListItem) => {
-      const bound = listItem.indexes.reduce<PipelinePath>(
-        bindPipelinePath,
-        path,
-      );
-      if (listItem.inner !== null) {
-        // One list further down, in the element it is in
-        return [
-          ...bound.slice(0, item.length),
-          String(listItem.inner),
-          ...bound.slice(item.length),
-        ];
-      }
-      // An item that is no element has no place in a list of its own
-      return listItem.element
-        ? bound
-        : bound.filter((_, index) => index !== list.path.length);
-    };
+    const pathOfItem = (path: PipelinePath, listItem: ListItem) => [
+      ...listItem.path,
+      ...path.slice(itemPath.length),
+    ];
     const optionsOfItem = (
       dataOfEntry: Map<object, unknown>,
       listItem: ListItem,
@@ -664,7 +650,7 @@ export function beginEntries(opts: {
       listSource &&
       requestPath({
         type: listSource.leaf.state.type,
-        path: list.path,
+        path: serverList(itemPath).each,
         item: true,
       });
     const call =
@@ -682,19 +668,16 @@ export function beginEntries(opts: {
      * it ran none for
      */
     const serverIndexes = (listItem: ListItem) => {
-      const skipped =
-        depth - (listPath ?? []).filter((segment) => segment === null).length;
-      // The server's items are the elements, which are lists here
-      return listItem.element &&
-        listItem.inner === null &&
-        listItem.indexes.slice(0, skipped).every((index) => index === 0)
+      const levels = (path: PipelinePath) =>
+        path.filter((segment) => segment === null).length;
+      const skipped = levels(itemPath) - (levels(listPath ?? []) + 1);
+      return listItem.indexes.slice(0, skipped).every((index) => index === 0)
         ? listItem.indexes.slice(skipped)
         : null;
     };
 
     /** Where an item is in the list, as a key */
-    const placeOf = (listItem: ListItem) =>
-      `${listItem.element}:${listItem.indexes.join(',')}:${listItem.inner}`;
+    const placeOf = (listItem: ListItem) => listItem.indexes.join(',');
 
     /** The input without the item's parts, and where they go */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
@@ -710,7 +693,7 @@ export function beginEntries(opts: {
       ),
       itemInputs: state.refs
         .filter(readsItem)
-        .map((ref) => ({ to: ref.to, path: ref.path.slice(item.length) })),
+        .map((ref) => ({ to: ref.to, path: ref.path.slice(itemPath.length) })),
     });
     const waitedEntries = waitedByHandle(leaf);
     const handle = dataOfSources(
@@ -835,15 +818,17 @@ export function handlesOfLoads(opts: {
     ) {
       continue;
     }
-    // The list in one request's result: a query's data, or any page
-    const [pages, page, ...inPage] = leaf.each.path;
-    const list =
+    // The items in one request's result: a query's data, or any page
+    const itemPath = itemPathOf(leaf.each);
+    const inRequest =
       source.state.type === 'query'
-        ? leaf.each.path
-        : pages === 'pages' && page === null
-          ? inPage
+        ? itemPath
+        : itemPath[0] === 'pages' && itemPath[1] === null
+          ? itemPath.slice(2)
           : null;
-    if (list?.every((segment) => segment !== null)) {
+    // A later fetch reads the items there
+    const list = inRequest ? listOfElements(inRequest) : null;
+    if (list) {
       sourceHandle['experimental_perItem'] = [
         ...((sourceHandle['experimental_perItem'] as unknown[] | undefined) ??
           []),

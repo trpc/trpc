@@ -1,4 +1,9 @@
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
+import {
+  bindPipelinePath,
+  readPipelinePath,
+} from '@trpc/server/unstable-core-do-not-import';
+import type { EntryDataRef } from './dataRef';
 import type { HandleType } from './types';
 
 /**
@@ -20,60 +25,64 @@ export function requestPath(opts: {
     : null;
 }
 
-/** An item of the list of an `experimental_entryPerItem()` entry */
-export interface ListItem {
-  /** The indexes down to it, one for every list on the way */
-  indexes: number[];
-  /**
-   * Whether it is an element of the innermost list. A list made with
-   * `.map()` of values that are no lists has those values as its items.
-   */
-  element: boolean;
-  /**
-   * Its index in the element it is in, where the list's path has no wildcard
-   * and that element is a list: a list of lists, as the types take it.
-   * `null` otherwise
-   */
-  inner: number | null;
+/**
+ * The path to the items of the list an entry per item is for, with a `null`
+ * for each level of lists, as the server walks it. What `.map()` returned is
+ * a value for every item already. Any other list's items are its elements.
+ */
+export function itemPathOf(list: EntryDataRef): PipelinePath {
+  return list.mapped ? list.path : [...list.path, null];
 }
 
 /**
- * The items of a list whose path has `depth` wildcards, so that it is a list
- * of lists `depth` times down to the values at its path. A list with no
- * wildcard whose elements are lists has their elements as its items.
+ * How the server runs a call for every item at `itemPath`: over the list
+ * before its last `null`, reading `itemRead` of each element to get the item.
+ * For `["posts", null, "authorId"]`, the list is `["posts"]` and the item is
+ * each post's `["authorId"]`.
  */
-export function itemsOfList(list: unknown, depth: number): ListItem[] {
-  if (depth > 0 || !Array.isArray(list)) {
-    return itemsOfLevels(list, depth);
-  }
-  return list.flatMap((element: unknown, index): ListItem[] =>
-    Array.isArray(element)
-      ? element.map((_, inner) => ({ indexes: [index], element: true, inner }))
-      : [{ indexes: [index], element: true, inner: null }],
-  );
+export function serverList(itemPath: PipelinePath) {
+  const last = itemPath.lastIndexOf(null);
+  return {
+    each: itemPath.slice(0, last),
+    itemRead: itemPath.slice(last + 1) as string[],
+  };
 }
 
-/** The items of a list whose path has `depth` wildcards */
-export function itemsOfLevels(list: unknown, depth: number): ListItem[] {
+/**
+ * The list whose elements are the items at `itemPath`, if there is one
+ * level of lists: `["items", null]` is the elements of `["items"]`
+ */
+export function listOfElements(itemPath: PipelinePath): string[] | null {
+  return itemPath.indexOf(null) === itemPath.length - 1
+    ? (itemPath.slice(0, -1) as string[])
+    : null;
+}
+
+/** An item of a list: where it is, by its index at each `null` of the path */
+export interface ListItem {
+  indexes: number[];
+  /** The path to it, with each `null` in place of its index */
+  path: string[];
+}
+
+/**
+ * Every item at `itemPath` in `data`, in the order the server runs them.
+ * What isn't a list where the path has a `null` has no items. A `null` item
+ * is an item like any other.
+ */
+export function itemsAt(data: unknown, itemPath: PipelinePath): ListItem[] {
+  const at = itemPath.indexOf(null);
+  if (at === -1) {
+    return [{ indexes: [], path: itemPath as string[] }];
+  }
+  const list = readPipelinePath(data, itemPath.slice(0, at), null);
   if (!Array.isArray(list)) {
     return [];
   }
-  if (depth === 0) {
-    return list.map((_, index) => ({
-      indexes: [index],
-      element: true,
-      inner: null,
-    }));
-  }
-  return list.flatMap((inner: unknown, index) => {
-    // A `null` is an item like any other: it gets a query
-    const items: ListItem[] =
-      depth > 1 || Array.isArray(inner)
-        ? itemsOfLevels(inner, depth - 1)
-        : [{ indexes: [], element: false, inner: null }];
-    return items.map((item) => ({
-      ...item,
+  return list.flatMap((_, index) =>
+    itemsAt(data, bindPipelinePath(itemPath, index)).map((item) => ({
       indexes: [index, ...item.indexes],
-    }));
-  });
+      path: item.path,
+    })),
+  );
 }

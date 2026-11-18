@@ -16,8 +16,10 @@ import type { EntryDataRef, EntryInputRef } from './dataRef';
 import {
   createEntryDataRef,
   entryDataRefOf,
+  onlyAsList,
   replaceEntryDataRefs,
 } from './dataRef';
+import { itemPathOf } from './list';
 import type {
   AnyTRPCEntry,
   DataEntry,
@@ -231,6 +233,11 @@ export function entry(opts: {
   const ctx = readProxy(opts.procedure, opts.fn);
   const refs: EntryInputRef[] = [];
   replaceEntryDataRefs(opts.input, [], (ref) => refs.push(ref));
+  if (refs.some((ref) => ref.flat)) {
+    throw new Error(
+      `${onlyAsList}, not a value in the input of \`${opts.fn}()\`. To read a part of every item, use \`.map()\``,
+    );
+  }
   const queryOpts = opts.opts as TRPCQueryBaseOptions | undefined;
   const trpcOpts = (pipeline: OperationPipeline) => ({
     ...queryOpts?.trpc,
@@ -336,6 +343,7 @@ export function experimental_dataOf(
     path: [],
     itemOf: null,
     mapped: false,
+    flat: false,
   });
   if (entryFrom === undefined) {
     return data;
@@ -358,10 +366,10 @@ export function experimental_dataOf(
  * of an item's query, also for an item that loaded later, such as one on a
  * later page.
  *
- * The list is a `experimental_dataOf()` value. A list of lists works too, such as the items
- * of every page of an infinite query:
- * `experimental_dataOf(posts).pages.map((page) => page.items)`. Its items are
- * the elements of its lists.
+ * The list is a `experimental_dataOf()` value. Its items are its elements, or,
+ * for a list from `.map()`, the values the callback returned. For the items of
+ * every list in a list, such as of every page of an infinite query, use
+ * `.flatMap()`: `experimental_dataOf(posts).pages.flatMap((page) => page.items)`.
  * @example
  * ```ts
  * const posts = ensureEntry(trpc.post.list);
@@ -376,14 +384,6 @@ export function experimental_dataOf(
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#entry-per-item
  */
-export function experimental_entryPerItem<
-  TItem,
-  TDef extends ResolverDef,
-  TKind extends TRPCEntryKind,
->(
-  items: readonly (readonly TItem[])[],
-  entry: (item: TItem) => TRPCQueryEntry<TDef, TKind>,
-): experimental_TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
 export function experimental_entryPerItem<
   TItem,
   TDef extends ResolverDef,
@@ -405,9 +405,10 @@ export function experimental_entryPerItem(
   const returned = entry(
     createEntryDataRef({
       entry: list.entry,
-      path: [...list.path, null],
+      path: itemPathOf(list),
       itemOf: list,
       mapped: false,
+      flat: false,
     }),
   );
   if (entryStateOf(returned)?.type !== 'query') {

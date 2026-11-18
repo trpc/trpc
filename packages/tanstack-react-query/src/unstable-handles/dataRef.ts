@@ -16,7 +16,16 @@ export interface EntryDataRef {
   itemOf: EntryDataRef | null;
   /** Whether `.map()` returned it: it is a value for every item of a list */
   mapped: boolean;
+  /**
+   * Whether `.flatMap()` returned it: the items of a list in every item. The
+   * wire can read no such list into an input, so it is only the list of an
+   * `experimental_entryPerItem()` entry
+   */
+  flat: boolean;
 }
+
+export const onlyAsList =
+  'A `.flatMap()` value can only be the list of `experimental_entryPerItem()`';
 
 /** A `experimental_dataOf()` value in an entry's input */
 export interface EntryInputRef extends EntryDataRef {
@@ -42,12 +51,16 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
       if (typeof key === 'symbol') {
         return undefined;
       }
+      if (ref.flat && key !== 'toJSON') {
+        throw new Error(onlyAsList);
+      }
       return createEntryDataRef({
         entry: ref.entry,
         path: [...ref.path, key],
         itemOf: ref.itemOf,
-        // Kept for `.map`, which is called next
-        mapped: key === 'map' && ref.mapped,
+        // Kept for `.map()` or `.flatMap()`, which is called next
+        mapped: (key === 'map' || key === 'flatMap') && ref.mapped,
+        flat: false,
       });
     },
     apply(_target, _thisArg, args: unknown[]) {
@@ -57,9 +70,12 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
         return '[a experimental_dataOf() value]';
       }
       const callback = args[0];
-      if (method !== 'map' || typeof callback !== 'function') {
+      if (
+        (method !== 'map' && method !== 'flatMap') ||
+        typeof callback !== 'function'
+      ) {
         throw new Error(
-          `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item`,
+          `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_entryPerItem()\``,
         );
       }
       // The callback runs once, on a stand-in for every item. What an
@@ -73,19 +89,26 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
             path: item,
             itemOf: ref.itemOf,
             mapped: false,
+            flat: false,
           }),
         ),
       );
       if (
         mapped?.entry !== ref.entry ||
         mapped.itemOf !== ref.itemOf ||
+        mapped.flat ||
         !item.every((segment, index) => mapped.path[index] === segment)
       ) {
         throw new Error(
-          `${notData}. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
+          `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
         );
       }
-      return createEntryDataRef({ ...mapped, mapped: true });
+      // `.flatMap()`: every item's value is a list, whose items are the items
+      return createEntryDataRef(
+        method === 'flatMap'
+          ? { ...mapped, mapped: false, flat: true }
+          : { ...mapped, mapped: true, flat: false },
+      );
     },
   });
 }

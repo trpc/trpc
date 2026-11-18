@@ -564,7 +564,7 @@ describe('experimental_dataOf().map()', () => {
     expect(() =>
       experimental_dataOf(post).tags.filter((tag) => tag.id === 't1'),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item]`,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_entryPerItem()\`]`,
     );
   });
 });
@@ -852,9 +852,10 @@ describe('edges of a load', () => {
     const maybe = (id: string) => ensureEntry(trpc.author.maybe, { id });
     const [, data] = await loadHandles(trpc, {
       sparse,
-      // A list of lists, of which one is `null`: that is an item too
+      // A list of lists, of which one is `null`, against its type. What isn't
+      // a list has no items, as the server walks it
       members: experimental_entryPerItem(
-        experimental_dataOf(sparse).groups.map((group) => group.members),
+        experimental_dataOf(sparse).groups.flatMap((group) => group.members),
         maybe,
       ),
       // A value that `.map()` read is `null`
@@ -869,7 +870,7 @@ describe('edges of a load', () => {
       ),
     });
     const author = { id: 'u1', name: 'KATT', teamId: 'team1' };
-    expect(data.members).toEqual([author, null]);
+    expect(data.members).toEqual([author]);
     expect(data.leads).toEqual([author, null]);
     expect(data.maybeIds).toEqual([author, null]);
     expect(resource.calls).toHaveBeenCalledWith('author.maybe', { id: null });
@@ -1105,7 +1106,7 @@ describe('entryPerItem', () => {
     const [handles, data] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
     });
@@ -1430,7 +1431,7 @@ describe('without the options', () => {
     const [handles] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
@@ -1477,7 +1478,7 @@ describe('without the options', () => {
     const [handles] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
@@ -1827,7 +1828,7 @@ describe.each([
     ]);
   });
 
-  test('an entry per item of a list of lists, with no `.map()`, has an item for every element of its lists', async () => {
+  test('an entry per item of a list from `.flatMap()` has an item for every element of its lists', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
@@ -1840,8 +1841,9 @@ describe.each([
     const lists = ensureEntry(trpc.group.memberLists);
     const [handles, data] = await loadHandles(trpc, {
       lists,
-      members: experimental_entryPerItem(experimental_dataOf(lists), (id) =>
-        ensureEntry(trpc.author.byId, { id }),
+      members: experimental_entryPerItem(
+        experimental_dataOf(lists).flatMap((list) => list),
+        (id) => ensureEntry(trpc.author.byId, { id }),
       ),
     });
 
@@ -1851,6 +1853,38 @@ describe.each([
         experimental_handleOfItem(handles.members, 'u3').queryKey,
       ),
     ).toMatchObject({ id: 'u3' });
+    // The server ran the same items, in the same request: no list as an input
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([
+      ['author.byId', { id: 'u1' }],
+      ['author.byId', { id: 'u2' }],
+      ['author.byId', { id: 'u3' }],
+    ]);
+  });
+
+  test('an entry per item of a list from `.map()` loads in the request of the list', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(post).tags.map((tag) => tag.id),
+        (id) => ensureEntry(trpc.author.byId, { id }),
+      ),
+    });
+
+    expect(data.authors.map((author) => author.id)).toEqual(['t1', 't2']);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('an entry per item that reads nothing of its item is an ordinary query', async () => {
@@ -2075,7 +2109,7 @@ describe.each([
     const [handles, data] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
       // The first page is one request's result, which the server can read
@@ -2374,7 +2408,7 @@ describe.each([
     const [, data] = await loadHandles(trpc, {
       groups,
       members: experimental_entryPerItem(
-        experimental_dataOf(groups).groups.map((group) => group.members),
+        experimental_dataOf(groups).groups.flatMap((group) => group.members),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
     });
@@ -2422,7 +2456,7 @@ describe.each([
     const [, data] = await loadHandles(trpc, {
       groups,
       members: experimental_entryPerItem(
-        experimental_dataOf(groups).groups.map((group) => group.members),
+        experimental_dataOf(groups).groups.flatMap((group) => group.members),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
     });
@@ -2637,7 +2671,7 @@ describe.each([
       posts,
       // The same author for every row
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         () => prefetchEntry(trpc.author.byId, { id: 'u1' }),
       ),
     });
@@ -2684,7 +2718,7 @@ describe.each([
     const [loaded] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
@@ -3285,7 +3319,7 @@ describe.each([
     const [handles] = await loadHandles(trpc, {
       posts,
       authors: experimental_entryPerItem(
-        experimental_dataOf(posts).pages.map((page) => page.items),
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
@@ -3623,7 +3657,7 @@ describe.each([
         posts,
         rows: {
           authors: experimental_entryPerItem(
-            experimental_dataOf(posts).pages.map((page) => page.items),
+            experimental_dataOf(posts).pages.flatMap((page) => page.items),
             (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
           ),
         },
@@ -3777,7 +3811,7 @@ describe('experimental_useHandles', () => {
         entries={() => ({
           posts,
           authors: experimental_entryPerItem(
-            experimental_dataOf(posts).pages.map((page) => page.items),
+            experimental_dataOf(posts).pages.flatMap((page) => page.items),
             (item) => prefetchEntry(trpc.author.byId, { id: item.authorId }),
           ),
         })}
