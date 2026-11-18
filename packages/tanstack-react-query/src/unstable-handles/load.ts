@@ -1,4 +1,6 @@
 import type {
+  FetchInfiniteQueryOptions,
+  FetchQueryOptions,
   QueryClient,
   QueryFunction,
   QueryFunctionContext,
@@ -20,7 +22,7 @@ import type {
 import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import type { EntryDataRef, EntryInputRef } from './dataRef';
 import { blankInput } from './dataRef';
-import type { EntryState } from './entry';
+import type { EntryQueryOptions, EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
 import {
@@ -45,36 +47,40 @@ import { nothing } from './utils';
 export function startEntry(opts: {
   queryClient: QueryClient;
   state: EntryState;
-  options: any;
+  options: EntryQueryOptions;
 }) {
   const { queryClient, options } = opts;
   // A `skipToken` input: its query is disabled, and nothing starts
   if (options.queryFn === skipToken) {
     return Promise.resolve(undefined);
   }
+  // The options proxy built them for the query's type, as the `QueryClient`
+  // methods for that type take them
   if (opts.state.type === 'infinite') {
+    const infinite = options as unknown as FetchInfiniteQueryOptions;
     switch (opts.state.kind) {
       case 'prefetch':
-        return queryClient.prefetchInfiniteQuery(options);
+        return queryClient.prefetchInfiniteQuery(infinite);
       case 'ensure':
         return queryClient.ensureInfiniteQueryData({
-          ...options,
+          ...infinite,
           revalidateIfStale: true,
         });
       case 'fetch':
-        return queryClient.fetchInfiniteQuery(options);
+        return queryClient.fetchInfiniteQuery(infinite);
     }
   }
+  const query = options as unknown as FetchQueryOptions;
   switch (opts.state.kind) {
     case 'prefetch':
-      return queryClient.prefetchQuery(options);
+      return queryClient.prefetchQuery(query);
     case 'ensure':
       return queryClient.ensureQueryData({
-        ...options,
+        ...query,
         revalidateIfStale: true,
       });
     case 'fetch':
-      return queryClient.fetchQuery(options);
+      return queryClient.fetchQuery(query);
   }
 }
 
@@ -369,7 +375,7 @@ export function beginEntries(opts: {
    * the `QueryClient` gets it. A fetch or ensure entry's data is what its
    * `QueryClient` method resolves to, which the load waits for anyway
    */
-  function watch(options: any, published: Published) {
+  function watch(options: EntryQueryOptions, published: Published) {
     const { queryHash } = queryClient.defaultQueryOptions(options);
     watched.set(queryHash, [...(watched.get(queryHash) ?? []), published]);
     unwatch ??= queryClient.getQueryCache().subscribe((event) => {
@@ -402,7 +408,7 @@ export function beginEntries(opts: {
     }
 
     const published: Published = { settled: null, listeners: [] };
-    const start = (options: any) => {
+    const start = (options: EntryQueryOptions) => {
       if (options.queryFn === skipToken) {
         // Nothing starts: an entry that reads this one's data has none to
         // read. Not in this step, in which the load still builds its entries
@@ -425,7 +431,7 @@ export function beginEntries(opts: {
     };
     let pipeline: OperationPipeline | PipelinedCall | null = null;
     let requestData: Promise<unknown> | null = null;
-    let options: Promise<any>;
+    let options: Promise<EntryQueryOptions>;
     let promise: Promise<unknown>;
     if (sources.size === 0) {
       let built = state.options({ dataOfRef: nothing, pipeline: null });
@@ -437,8 +443,17 @@ export function beginEntries(opts: {
         // Another entry reads this one: its request can take part in pipelining
         const sent = createOperationPipeline();
         pipeline = sent;
-        built = state.options({ dataOfRef: nothing, pipeline: sent });
-        const queryFn: QueryFunction<any, any, any> = built.queryFn;
+        const withPipeline = state.options({
+          dataOfRef: nothing,
+          pipeline: sent,
+        });
+        // The same input as without the pipeline, so not `skipToken` either
+        const queryFn = withPipeline.queryFn as QueryFunction<
+          unknown,
+          any,
+          any
+        >;
+        built = withPipeline;
         let first: Promise<unknown> | null = null;
         const request = new Promise<unknown>((resolve) => {
           built = {
@@ -485,65 +500,61 @@ export function beginEntries(opts: {
       // The query starts in the step in which the last of the entries it reads
       // has data. When one of them fails, its error is this entry's too: it
       // never started
-      const started = new Promise<{ options: any; promise: Promise<unknown> }>(
-        (resolve, reject) => {
-          whenPublished(sources, (result) => {
-            if (!result.ok) {
-              reject(result.error);
-              return;
-            }
-            try {
-              const filled = fill(result.data);
-              const built = call
-                ? withPipelinedResult({
-                    options: filled,
-                    result: dataOfCall(call),
-                    unresolved: () => call.status === 'unresolved',
-                    sameInput: async (context) => {
-                      if (
-                        state.type === 'infinite' &&
-                        // The call was for the first page
-                        !(
-                          context.direction === 'forward' &&
-                          Object.is(context.pageParam, filled.initialPageParam)
-                        )
-                      ) {
-                        return false;
-                      }
-                      // What the server read. What it didn't fill in is the
-                      // client's, and an entry the cache had made no request
-                      const serverRead = new Set(
-                        reads
-                          .filter(({ ref }) =>
-                            state.request.serverReads.has(ref),
-                          )
-                          .map(({ ref }) => ref.entry),
-                      );
-                      const sent = fill(
-                        await dataOfSources(sources, (source, entry) =>
-                          serverRead.has(entry)
-                            ? source.requestData
-                            : Promise.resolve(result.data.get(entry)),
-                        ),
-                      );
-                      return (
-                        hashKey(filled.queryKey) === hashKey(sent.queryKey) &&
-                        // An infinite query's cursor isn't in its key
-                        sameCursor(
-                          filled.initialPageParam,
-                          sent.initialPageParam,
-                        )
-                      );
-                    },
-                  })
-                : filled;
-              resolve({ options: built, promise: start(built) });
-            } catch (error) {
-              reject(error);
-            }
-          });
-        },
-      );
+      const started = new Promise<{
+        options: EntryQueryOptions;
+        promise: Promise<unknown>;
+      }>((resolve, reject) => {
+        whenPublished(sources, (result) => {
+          if (!result.ok) {
+            reject(result.error);
+            return;
+          }
+          try {
+            const filled = fill(result.data);
+            const built = call
+              ? withPipelinedResult({
+                  options: filled,
+                  result: dataOfCall(call),
+                  unresolved: () => call.status === 'unresolved',
+                  sameInput: async (context) => {
+                    if (
+                      state.type === 'infinite' &&
+                      // The call was for the first page
+                      !(
+                        context.direction === 'forward' &&
+                        Object.is(context.pageParam, filled.initialPageParam)
+                      )
+                    ) {
+                      return false;
+                    }
+                    // What the server read. What it didn't fill in is the
+                    // client's, and an entry the cache had made no request
+                    const serverRead = new Set(
+                      reads
+                        .filter(({ ref }) => state.request.serverReads.has(ref))
+                        .map(({ ref }) => ref.entry),
+                    );
+                    const sent = fill(
+                      await dataOfSources(sources, (source, entry) =>
+                        serverRead.has(entry)
+                          ? source.requestData
+                          : Promise.resolve(result.data.get(entry)),
+                      ),
+                    );
+                    return (
+                      hashKey(filled.queryKey) === hashKey(sent.queryKey) &&
+                      // An infinite query's cursor isn't in its key
+                      sameCursor(filled.initialPageParam, sent.initialPageParam)
+                    );
+                  },
+                })
+              : filled;
+            resolve({ options: built, promise: start(built) });
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
       options = started.then((entry) => entry.options);
       promise = started.then((entry) => entry.promise);
     }

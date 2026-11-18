@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type { QueryClient, QueryFunction } from '@tanstack/react-query';
 import type { skipToken } from '@tanstack/react-query';
 import type { OperationPipeline } from '@trpc/client/unstable-internals';
 import { pipelineContext } from '@trpc/client/unstable-internals';
@@ -120,7 +120,7 @@ export interface EntryState {
   options: (opts: {
     dataOfRef: (ref: EntryDataRef) => unknown;
     pipeline: OperationPipeline | null;
-  }) => any;
+  }) => EntryQueryOptions;
   /** What the entry's first request is, decided when the entry is built */
   request: EntryRequest;
   /** The `QueryClient` of the proxy that built the entry */
@@ -204,10 +204,26 @@ export function queryClientOf(ctx: ProxyContext): QueryClient {
   return ctx.proxy['~queryClient']();
 }
 
+/**
+ * A query's options, as the options proxy builds them: what a load reads of
+ * them. The rest goes to the `QueryClient` as it is.
+ */
+export interface EntryQueryOptions {
+  queryKey: TRPCQueryKey<any>;
+  queryFn: QueryFunction<unknown, any, any> | typeof skipToken;
+  /** The first page's cursor, of an infinite query */
+  initialPageParam?: unknown;
+  [option: string]: unknown;
+}
+
+/**
+ * The options builder of a procedure of the options proxy, which has no
+ * types here: its options are `EntryQueryOptions` from here on
+ */
 export function optionsOf(
   procedure: any,
   type: HandleType,
-): (input: unknown, opts: unknown) => any {
+): (input: unknown, opts: unknown) => EntryQueryOptions {
   return type === 'infinite'
     ? procedure.infiniteQueryOptions
     : procedure.queryOptions;

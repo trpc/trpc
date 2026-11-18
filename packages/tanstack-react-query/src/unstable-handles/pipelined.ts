@@ -1,11 +1,9 @@
-import type {
-  QueryFunction,
-  QueryFunctionContext,
-} from '@tanstack/react-query';
-import { hashKey } from '@tanstack/react-query';
+import type { QueryFunctionContext } from '@tanstack/react-query';
+import { hashKey, skipToken } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 import type { PipelinedCall } from '@trpc/client/unstable-internals';
 import { readPipelinedItem } from '@trpc/server/unstable-core-do-not-import';
+import type { EntryQueryOptions } from './entry';
 import { nothing } from './utils';
 
 /**
@@ -20,7 +18,7 @@ export const sameCursor = (a: unknown, b: unknown) =>
  * made in an earlier request, before the query's key was known.
  */
 export function withPipelinedResult(opts: {
-  options: any;
+  options: EntryQueryOptions;
   result: Promise<unknown>;
   /** Whether the call didn't run, so the request has to be made */
   unresolved: () => boolean;
@@ -29,8 +27,12 @@ export function withPipelinedResult(opts: {
    * in the same input as this client did
    */
   sameInput: (context: QueryFunctionContext<any, any>) => Promise<boolean>;
-}) {
-  const queryFn: QueryFunction<any, any, any> = opts.options.queryFn;
+}): EntryQueryOptions {
+  const { queryFn } = opts.options;
+  if (queryFn === skipToken) {
+    // Disabled: it never fetches
+    return opts.options;
+  }
   let result: Promise<unknown> | null = opts.result;
   return {
     ...opts.options,
