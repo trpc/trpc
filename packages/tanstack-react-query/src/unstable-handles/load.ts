@@ -373,7 +373,13 @@ export function beginEntries(opts: {
     const { queryHash } = queryClient.defaultQueryOptions(options);
     watched.set(queryHash, [...(watched.get(queryHash) ?? []), published]);
     unwatch ??= queryClient.getQueryCache().subscribe((event) => {
-      if (event.type === 'updated' && event.action.type === 'success') {
+      if (
+        event.type === 'updated' &&
+        event.action.type === 'success' &&
+        // Not a write, such as `setQueryData()`, while the request runs:
+        // what the entries read is what the request returns
+        !event.action.manual
+      ) {
         for (const published of watched.get(event.query.queryHash) ?? []) {
           publish(published, { ok: true, data: event.query.state.data });
         }

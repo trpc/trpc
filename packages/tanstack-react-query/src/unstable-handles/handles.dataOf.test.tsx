@@ -1106,6 +1106,30 @@ describe('edges of a load', () => {
     ).toThrow('`.map()`');
   });
 
+  test("a cache write while a prefetch entry's list loads is not what its items read", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const posts = prefetchEntry(trpc.post.byAuthor, { authorId: 'u1' });
+    const loaded = loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(experimental_dataOf(posts).items, (id) =>
+        prefetchEntry(trpc.author.byId, { id }),
+      ),
+    });
+    // While the list's request runs: a write that the request then replaces
+    resource.queryClient.setQueryData(
+      trpc.post.byAuthor.queryKey({ authorId: 'u1' }),
+      { items: ['written'], nextCursor: null },
+    );
+    await loaded;
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u1' }]]);
+  });
+
   test('experimental_handleOfItem() throws for a handle that has nothing to fill in', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

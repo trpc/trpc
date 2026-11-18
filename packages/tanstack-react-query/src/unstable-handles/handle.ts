@@ -127,13 +127,15 @@ export function refetchRejectedHydration(
   type: HandleType,
   options: any,
 ) {
-  const enabled =
-    typeof options.enabled === 'function'
-      ? options.enabled
-      : () => options.enabled;
   if (isServerEnvironment()) {
     return;
   }
+  // With the QueryClient's defaults, which can disable it too
+  const defaulted = queryClient.defaultQueryOptions(options);
+  const enabled =
+    typeof defaulted.enabled === 'function'
+      ? defaulted.enabled
+      : () => defaulted.enabled;
   const query = queryClient
     .getQueryCache()
     .find({ queryKey: options.queryKey, exact: true });
@@ -158,7 +160,6 @@ export function refetchRejectedHydration(
     ) {
       return;
     }
-    const defaulted = queryClient.defaultQueryOptions(options);
     // Older query-core versions take the infinite behavior from the fetch's
     // options, so `query.fetch` would store a bare page there.
     // `fetchInfiniteQuery` skips retries unless asked, unlike a query's fetch

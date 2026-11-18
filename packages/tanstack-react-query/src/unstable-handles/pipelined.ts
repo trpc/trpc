@@ -8,10 +8,16 @@ import { nothing } from './utils';
 
 /**
  * Whether two cursors are the same. No cursor isn't `null`, though JSON, and
- * so `hashKey`, writes both alike
+ * so `hashKey`, writes both alike. A bigint, which JSON has no form for, is
+ * the same only as an equal bigint
  */
 export const sameCursor = (a: unknown, b: unknown) =>
-  a === undefined || b === undefined ? a === b : hashKey([a]) === hashKey([b]);
+  a === undefined ||
+  b === undefined ||
+  typeof a === 'bigint' ||
+  typeof b === 'bigint'
+    ? a === b
+    : hashKey([a]) === hashKey([b]);
 
 /**
  * Makes the first fetch of a query use the result of a call that the server
