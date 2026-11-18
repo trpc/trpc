@@ -1,7 +1,11 @@
 // @vitest-environment node
 import type { IncomingMessage } from 'node:http';
 import { initTRPC } from '@trpc/server';
-import type { WSClient, WSServer } from '@trpc/server/adapters/ws';
+import type {
+  CreateWSSContextFnOptions,
+  WSClient,
+  WSServer,
+} from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
 import type { RawData } from 'ws';
@@ -28,8 +32,12 @@ function wrapSocket(socket: WebSocket): WSClient {
   };
 }
 
+interface WrappedServer extends WSServer<WSClient> {
+  close: () => void;
+}
+
 /** A server that is not a `ws` `WebSocketServer`, only its read members. */
-function wrapServer(wss: WebSocketServer): WSServer & { close: () => void } {
+function wrapServer(wss: WebSocketServer): WrappedServer {
   const clients = new Set<WSClient>();
   return {
     clients,
@@ -101,4 +109,44 @@ test('a real `ws` server still satisfies the option', () => {
   const handler = applyWSSHandler({ router, wss });
   expect(handler.broadcastReconnectNotification).toBeTypeOf('function');
   wss.close();
+});
+
+test('the default types keep `ws` members in context and on the server', async () => {
+  const t = initTRPC.create();
+  const router = t.router({ ping: t.procedure.query(() => 'pong') });
+  const wss = new WebSocketServer({ host: '127.0.0.1', port: 0 });
+
+  const createContext = vi.fn((opts: CreateWSSContextFnOptions) => {
+    // Compile-time: a default `ws` socket still exposes its own API.
+    opts.res.ping();
+    const protocol: string = opts.res.protocol;
+    opts.res.on('pong', () => undefined);
+    return { protocol };
+  });
+  const options: Parameters<typeof applyWSSHandler>[0] = {
+    router,
+    wss,
+    createContext,
+  };
+  applyWSSHandler(options);
+
+  // Compile-time: the default option still exposes `ws` members and clients.
+  for (const client of options.wss.clients) client.ping();
+
+  await new Promise<void>((resolve) => wss.once('listening', resolve));
+  const address = wss.address();
+  assert(typeof address === 'object' && address !== null);
+
+  const client = new WebSocket(`ws://127.0.0.1:${address.port}`);
+  await new Promise<void>((resolve, reject) => {
+    client.once('open', resolve);
+    client.once('error', reject);
+  });
+  await vi.waitFor(() => {
+    expect(createContext).toHaveBeenCalledTimes(1);
+  });
+  expect(createContext.mock.calls[0]![0].res).toBeInstanceOf(WebSocket);
+
+  client.terminate();
+  await new Promise<void>((resolve) => options.wss.close(() => resolve()));
 });

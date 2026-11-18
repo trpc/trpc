@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type { RawData } from 'ws';
+import type { RawData, WebSocket, WebSocketServer } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -122,13 +122,18 @@ export interface WSClient {
  * them.
  * @public
  */
-export interface WSServer {
-  clients: ReadonlySet<WSClient>;
+export interface WSServer<TClient extends WSClient = WebSocket> {
+  clients: ReadonlySet<TClient>;
   on(
     event: 'connection',
-    listener: (client: WSClient, request: IncomingMessage) => void,
+    listener: (client: TClient, request: IncomingMessage) => void,
   ): unknown;
 }
+
+type InferWSServerClient<TServer extends WSServer<WSClient>> =
+  TServer['clients'] extends ReadonlySet<infer TClient extends WSClient>
+    ? TClient
+    : never;
 
 /**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
@@ -137,71 +142,81 @@ export interface WSServer {
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  * @public
  */
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  WSClient
->;
+export type CreateWSSContextFnOptions<TClient extends WSClient = WebSocket> =
+  NodeHTTPCreateContextFnOptions<IncomingMessage, TClient>;
 
 /**
  * The `createContext` function the WebSocket adapter takes.
  * @public
  */
-export type CreateWSSContextFn<TRouter extends AnyRouter> = (
-  opts: CreateWSSContextFnOptions,
+export type CreateWSSContextFn<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = (
+  opts: CreateWSSContextFnOptions<TClient>,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 /** The options of `getWSConnectionHandler`. */
-export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
-  BaseHandlerOptions<TRouter, IncomingMessage> &
-    CreateContextCallback<
-      inferRouterContext<TRouter>,
-      CreateWSSContextFn<TRouter>
-    >;
+export type WSConnectionHandlerOptions<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = BaseHandlerOptions<TRouter, IncomingMessage> &
+  CreateContextCallback<
+    inferRouterContext<TRouter>,
+    CreateWSSContextFn<TRouter, TClient>
+  >;
 
 /**
  * The options of `applyWSSHandler`.
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> =
-  WSConnectionHandlerOptions<TRouter> & {
-    /** The WebSocket server to serve the router on. */
-    wss: WSServer;
-    /** Only connections whose URL starts with this are served. */
-    prefix?: string;
+type WSConnectionOptionsForServer<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient>,
+> = WSConnectionHandlerOptions<TRouter, InferWSServerClient<TServer>>;
+
+export type WSSHandlerOptions<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+> = WSConnectionOptionsForServer<TRouter, TServer> & {
+  /** The WebSocket server to serve the router on. */
+  wss: TServer;
+  /** Only connections whose URL starts with this are served. */
+  prefix?: string;
+  /**
+   * Sends pings to each client and closes connections that stop
+   * answering.
+   */
+  keepAlive?: {
     /**
-     * Sends pings to each client and closes connections that stop
-     * answering.
-     */
-    keepAlive?: {
-      /**
-       * Whether to send pings.
-       * @default false
-       */
-      enabled: boolean;
-      /**
-       * How long a connection can be quiet before a ping, in milliseconds.
-       * @default 30_000
-       */
-      pingMs?: number;
-      /**
-       * How long to wait for a pong before closing the connection, in
-       * milliseconds.
-       * @default 5_000
-       */
-      pongWaitMs?: number;
-    };
-    /**
-     * Stops answering clients' pings. Meant for tests.
+     * Whether to send pings.
      * @default false
      */
-    dangerouslyDisablePong?: boolean;
+    enabled: boolean;
     /**
-     * Encodes and decodes messages, for formats other than JSON.
-     * Experimental: it may change in any release.
-     * @default jsonEncoder
+     * How long a connection can be quiet before a ping, in milliseconds.
+     * @default 30_000
      */
-    experimental_encoder?: Encoder;
+    pingMs?: number;
+    /**
+     * How long to wait for a pong before closing the connection, in
+     * milliseconds.
+     * @default 5_000
+     */
+    pongWaitMs?: number;
   };
+  /**
+   * Stops answering clients' pings. Meant for tests.
+   * @default false
+   */
+  dangerouslyDisablePong?: boolean;
+  /**
+   * Encodes and decodes messages, for formats other than JSON.
+   * Experimental: it may change in any release.
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
+};
 
 /**
  * `iterator.next()` for a subscription loop that races it against the
@@ -233,14 +248,15 @@ function nextUnlessStopped<TValue, TReturn>(
  * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
  * uses it; call it to attach tRPC to your own WebSocket server.
  */
-export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-) {
+export function getWSConnectionHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+>(opts: WSSHandlerOptions<TRouter, TServer>) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: WSClient, req: IncomingMessage) => {
+  return (client: InferWSServerClient<TServer>, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -966,12 +982,24 @@ export function handleKeepAlive(
  * ```
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
+export interface WSSHandler {
+  broadcastReconnectNotification: () => void;
+}
+
+export function applyWSSHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient>,
+>(opts: WSSHandlerOptions<TRouter, TServer>): WSSHandler;
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
-) {
+): WSSHandler;
+export function applyWSSHandler(
+  opts: WSSHandlerOptions<AnyRouter, WSServer<any>>,
+): WSSHandler {
   const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
-  opts.wss.on('connection', (client, req) => {
+  const wss: WSServer<WSClient> = opts.wss;
+  wss.on('connection', (client: WSClient, req: IncomingMessage) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
