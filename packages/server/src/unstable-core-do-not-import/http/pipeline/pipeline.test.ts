@@ -1902,6 +1902,12 @@ describe('a call for every item', () => {
     });
 
     expect(itemCount(res.of(each))).toBe(3);
+    // Each run has it
+    expect(echo.mock.calls.map(([input]) => input)).toEqual([
+      { n: 1, theme: 'dark' },
+      { n: 2, theme: 'dark' },
+      { n: 3, theme: 'dark' },
+    ]);
     // Once for the three runs
     expect(
       vi
