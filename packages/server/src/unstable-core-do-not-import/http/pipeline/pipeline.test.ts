@@ -220,7 +220,15 @@ async function send(opts: {
   calls: Call[];
   fits: Parameters<typeof planPipelineTree<Call>>[0]['fits'];
   stream: boolean;
+  /** Told the path of each outcome as it comes in, or `null` */
+  onArrive: ((path: string) => void) | null;
 }) {
+  /** The order the outcomes came in */
+  const arrived: string[] = [];
+  const arrive = (path: string) => {
+    arrived.push(path);
+    opts.onArrive?.(path);
+  };
   const { transformer } = opts;
   const plan = planPipelineTree({
     sent: opts.sent,
@@ -291,13 +299,11 @@ async function send(opts: {
       ),
     );
 
-  /** The order the outcomes came in */
-  const arrived: string[] = [];
   const outcomes = new Map<Sent, unknown>();
   await Promise.all([
     ...opts.sent.map(async (it, index) => {
       const outcome = await outcomeOf(await top[index]);
-      arrived.push(it.path);
+      arrive(it.path);
       outcomes.set(it, outcome);
     }),
     ...plan.calls.map(async (it) => {
@@ -311,7 +317,7 @@ async function send(opts: {
         ),
         place.steps,
       );
-      arrived.push(it.path);
+      arrive(it.path);
       outcomes.set(
         it,
         read.kind === 'outcome'
@@ -402,6 +408,7 @@ const defaults = {
   stream: false,
   fits: () => true,
   onError: () => undefined,
+  onArrive: null,
 } as const;
 
 /** For reads of objects and arrays, which a server takes only with `allowWholeValues` */
@@ -2404,15 +2411,18 @@ describe('the order things happen in', () => {
   });
 
   test('streamed, a child that is ready before the ones before it arrives first: nothing waits for its position', async () => {
-    const wait = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
+    // `slow` returns only once the client has `fast`
+    let releaseSlow: () => void = () => undefined;
+    const fastArrived = new Promise<void>((resolve) => {
+      releaseSlow = resolve;
+    });
     await using server = serve({
       ...defaults,
       stream: true,
       fns: {
         post: async () => ({ id: 'p' }),
         slow: async () => {
-          await wait(60);
+          await fastArrived;
           return 'slow';
         },
         fast: async () => 'fast',
@@ -2438,6 +2448,11 @@ describe('the order things happen in', () => {
       method: 'POST',
       sent: [post],
       calls: [slow, fast],
+      onArrive: (path) => {
+        if (path === 'fast') {
+          releaseSlow();
+        }
+      },
     });
 
     expect(res.arrived).toEqual(['post', 'fast', 'slow']);
@@ -2677,6 +2692,11 @@ describe('a request the server refuses, before anything of it runs', () => {
       name: 'a list with another key',
       tree: { 0: [{ l: [['items']], c: [author], x: 1 }] },
       message: childOrList,
+    },
+    {
+      name: 'a list without nodes',
+      tree: { 0: [{ l: [['items']], c: [] }] },
+      message: 'a list has at least one node: expected one at 0.0',
     },
     {
       name: 'a list right under a list',

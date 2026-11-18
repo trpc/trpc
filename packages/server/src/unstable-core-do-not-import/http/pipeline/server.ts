@@ -294,6 +294,13 @@ export function parsePipelineTree(opts: {
       }
       const levels: string[][] = child['l'];
       const listNodes: unknown[] = child['c'];
+      // Each item would get a place in the response, and no node would run
+      // to count it towards `maxRuns`
+      if (listNodes.length === 0) {
+        throw invalidTree(
+          `a list has at least one node: expected one at ${where}`,
+        );
+      }
       return {
         kind: 'list' as const,
         levels,

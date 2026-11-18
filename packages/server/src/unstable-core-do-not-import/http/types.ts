@@ -174,8 +174,8 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
 /**
  * The limits of `experimental_allowPipelining`: what a pipelined batch can make
  * the server do. A call that goes over one is refused with a `BAD_REQUEST`,
- * and the rest of the batch runs. A batch with more calls than `maxRuns`
- * fails as a whole.
+ * and the rest of the batch runs. Only a batch with more top-level calls
+ * than `maxRuns` fails as a whole.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
@@ -215,9 +215,10 @@ export interface experimental_PipeliningOptions {
   /**
    * The most procedure runs a batch can have: each of its calls, and a call
    * for every item once for each item. It keeps a small request from running
-   * a procedure for every item of a long list. A batch with more calls than
-   * this fails as a whole, as one over `maxBatchSize` does. `maxBatchSize`
-   * caps the runs too, if it is lower.
+   * a procedure for every item of a long list. A follow-up whose runs would
+   * go over it is refused, and the rest of the batch runs. A batch with more
+   * top-level calls than this fails as a whole, as one over `maxBatchSize`
+   * does. `maxBatchSize` caps the runs too, if it is lower.
    * @default 100
    */
   maxRuns?: number;
@@ -263,7 +264,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    *
    * `true` accepts them with the default limits. An object sets limits,
    * and a call that goes over one is refused while the rest of the batch
-   * runs. A batch with more calls than `maxRuns` fails as a whole.
+   * runs. Only a batch with more top-level calls than `maxRuns` fails as a
+   * whole.
    *
    * Experimental: it may change in a minor release.
    * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
