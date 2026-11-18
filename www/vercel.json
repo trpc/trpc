@@ -5,11 +5,6 @@
   "framework": "tanstack-start",
   "redirects": [
     {
-      "source": "/docs/client/tanstack-react-query/chained-queries",
-      "destination": "/docs/client/tanstack-react-query/nested-queries",
-      "permanent": true
-    },
-    {
       "source": "/docs/server/output-validation",
       "destination": "/docs/server/validators",
       "permanent": true

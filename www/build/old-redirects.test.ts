@@ -13,10 +13,6 @@ const { redirects } = JSON.parse(
 ) as { redirects: ReadonlyArray<Redirect> };
 
 const oldPages = [
-  [
-    '/docs/client/tanstack-react-query/chained-queries',
-    '/docs/client/tanstack-react-query/nested-queries',
-  ],
   ['/docs/reactjs/getquerykey', '/docs/client/react/getQueryKey'],
   ['/docs/reactjs/usecontext', '/docs/client/react/useUtils'],
   ['/docs/reactjs/useinfinitequery', '/docs/client/react/useInfiniteQuery'],
