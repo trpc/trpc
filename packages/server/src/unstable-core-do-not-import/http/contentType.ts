@@ -3,6 +3,9 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
+import { pipeOfBody, pipeOfSearchParams } from './pipeline/server';
+import { pipelineBatch } from './pipeline/wire';
+import type { PipelineLimits } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
@@ -36,6 +39,11 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
+  /**
+   * What a pipelined batch, `?batch=pipeline`, can make the server do, or
+   * `null` if it isn't accepted: it is then a bad request
+   */
+  pipelineLimits: PipelineLimits | null;
 };
 
 type ContentTypeHandler = {
@@ -101,7 +109,19 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   },
   async parse(opts) {
     const { req } = opts;
-    const isBatchCall = opts.searchParams.get('batch') === '1';
+    const batch = opts.searchParams.get('batch');
+    // A batch whose calls read their inputs from each other's data
+    const isPipelined = batch === pipelineBatch;
+    const { pipelineLimits } = opts;
+    if (isPipelined && !pipelineLimits) {
+      // Before anything of it runs: its calls have holes in their inputs
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message:
+          'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
+      });
+    }
+    const isBatchCall = batch === '1' || isPipelined;
     const maxBatchSize = opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -115,23 +135,45 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         message: `Batch call exceeds maximum size`,
       });
     }
+    // Each call is a run, so a pipelined batch with more of them than
+    // `maxRuns` would go over it before anything is filled in
+    if (
+      pipelineLimits &&
+      isPipelined &&
+      paths.length > pipelineLimits.maxRuns
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `The batch has ${paths.length} calls, more than \`maxRuns\` (${pipelineLimits.maxRuns}) allows`,
+      });
+    }
 
     type InputRecord = Record<number, unknown>;
-    const getInputs = memo(async (): Promise<InputRecord> => {
-      let inputs: unknown = undefined;
-      if (req.method === 'GET') {
-        const queryInput = opts.searchParams.get('input');
-        if (queryInput) {
-          inputs = JSON.parse(queryInput);
+    /**
+     * The inputs as JSON, before the transformer reads them, and the `pipe`
+     * that the body of a pipelined batch has beside them
+     */
+    const getJSON = memo(
+      async (): Promise<{ inputs: unknown; bodyPipe: unknown }> => {
+        if (req.method === 'GET') {
+          const queryInput = opts.searchParams.get('input');
+          return {
+            inputs: queryInput ? JSON.parse(queryInput) : undefined,
+            bodyPipe: undefined,
+          };
         }
-      } else {
         // `httpLink` sends no body when the input is `undefined`, so treat an
         // empty body like a GET without `?input=`
         const body = await req.text();
-        if (body) {
-          inputs = JSON.parse(body);
-        }
-      }
+        const inputs: unknown = body ? JSON.parse(body) : undefined;
+        return {
+          inputs,
+          bodyPipe: isPipelined ? pipeOfBody(inputs) : undefined,
+        };
+      },
+    );
+    const getInputs = memo(async (): Promise<InputRecord> => {
+      const { inputs } = await getJSON.read();
       if (inputs === undefined) {
         return emptyObject();
       }
@@ -228,6 +270,22 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
       url: opts.url,
+      ...(isPipelined &&
+        pipelineLimits && {
+          experimental_pipeline: {
+            limits: pipelineLimits,
+            getPipe: async () => {
+              // A GET has it in the URL. Any other request has it in its body,
+              // beside the inputs
+              // Without the transformer: an input it can't read fails its own
+              // call, not the batch
+              if (req.method === 'GET') {
+                return pipeOfSearchParams(opts.searchParams);
+              }
+              return (await getJSON.read()).bodyPipe;
+            },
+          },
+        }),
     };
     return info;
   },

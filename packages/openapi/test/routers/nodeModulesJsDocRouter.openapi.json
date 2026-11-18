@@ -167,6 +167,19 @@
             "type": "boolean",
             "description": "Whether the request is a batch."
           },
+          "experimental_pipeline": {
+            "type": "object",
+            "properties": {
+              "limits": {
+                "$ref": "#/components/schemas/PipelineLimits"
+              }
+            },
+            "required": [
+              "limits"
+            ],
+            "additionalProperties": false,
+            "description": "Only on a pipelined batch: the limits the server sets on it, and a\nfunction that reads its `pipe`, which says which parts of the calls'\ninputs to fill in from earlier calls' data. The `pipe` isn't validated."
+          },
           "calls": {
             "type": "array",
             "items": {
@@ -212,6 +225,44 @@
           "connectionParams",
           "signal",
           "url"
+        ],
+        "additionalProperties": false
+      },
+      "PipelineLimits": {
+        "type": "object",
+        "properties": {
+          "maxValueLength": {
+            "type": "number",
+            "description": "The longest value a call reads, in characters of JSON"
+          },
+          "maxReadsPerCall": {
+            "type": "number",
+            "description": "The most values one call reads"
+          },
+          "maxFillSize": {
+            "type": "number",
+            "description": "The most a batch fills in, in characters of JSON: every value written\ninto an input, and the whole input of every run of a call for every item"
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "The most calls in a chain of reads. A call that reads none is 1"
+          },
+          "allowWholeValues": {
+            "type": "boolean",
+            "description": "Whether a value a call reads can be an object or an array"
+          },
+          "maxRuns": {
+            "type": "number",
+            "description": "The most runs a batch has: each of its calls, and a call for every item\nonce for each item. `maxBatchSize` caps them too, if it is lower"
+          }
+        },
+        "required": [
+          "maxValueLength",
+          "maxReadsPerCall",
+          "maxFillSize",
+          "maxDepth",
+          "allowWholeValues",
+          "maxRuns"
         ],
         "additionalProperties": false
       },

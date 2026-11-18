@@ -75,6 +75,7 @@ type DataTransformerOptions = any;
 type HTTPHeaders = Record<string, string | string[]>;
 type Operation = { id: number; type: 'query' | 'mutation' | 'subscription'; path: string; input: unknown };
 type NonEmptyArray<T> = [T, ...T[]];
+import type { experimental_Pipelining } from '@trpc/client';
 // ---cut---
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**
@@ -87,6 +88,13 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
    * @default Infinity
    */
   maxItems?: number;
+  /**
+   * Lets a query read parts of its input from the data of another query in
+   * the same batch. Pass `experimental_pipelining()` from `@trpc/client`.
+   * The server must set `experimental_allowPipelining: true`
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
+   */
+  experimental_pipelining?: experimental_Pipelining;
 }
 
 export interface HTTPLinkOptions {
@@ -211,6 +219,46 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 ```
+
+## Pipelining (experimental) {#pipelining}
+
+Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      experimental_pipelining: experimental_pipelining(),
+    }),
+  ],
+});
+```
+
+- You pass it in, so only an app that uses it has its code in its bundle.
+
+- The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
+- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, how long they are, and how many calls it has. `experimental_pipelining({ maxReadsPerCall, maxDepth, maxRuns })` keeps to them, 16, 3 and 100 by default. The link doesn't send a call that would go over them: the call waits for the data it reads, and what wants its result makes a request of its own. The link doesn't ask the server for its limits: when you change the server's, set these to the same or lower, or the server refuses the calls that go over.
+- Other requests are sent as they are without the option.
+- A query that is sent this way isn't an operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/nested-queries#links).
+- `httpBatchStreamLink` takes the same option, and sends each result back when it is ready.
+
+See [Nested queries in one request](/docs/client/tanstack-react-query/nested-queries#one-request).
 
 ## Disabling request batching
 

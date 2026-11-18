@@ -24,6 +24,8 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
+import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
+import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -273,6 +275,51 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
  * Handles a Fetch API `Request` for a router and returns its `Response`.
  * Every adapter uses it; call it to write your own.
  */
+/** Throws what `JSON.stringify` throws for `value`, such as for a `BigInt` */
+function assertJSON(value: unknown) {
+  JSON.stringify(value);
+}
+
+/** The runs of a call that runs for every item, as far as they are ready */
+type PipelineItemsNode = Awaited<PipelineRuns<unknown>>;
+
+/**
+ * The runs of a call for every item, for a response that streams: the items
+ * of each level, and each run, are values of their own, so each arrives when
+ * it is ready
+ */
+function streamedItems(node: PipelineItemsNode): unknown {
+  if (!('items' in node)) {
+    return node;
+  }
+  const items: Record<string, Promise<unknown>> = {};
+  for (const [index, item] of node.items.entries()) {
+    items[index] = item.then(streamedItems);
+  }
+  // A value of its own: the stream only looks for them one level down
+  return { items: Promise.resolve(items) };
+}
+
+/**
+ * The runs of a call for every item, for a response that doesn't stream,
+ * once every run is done. `outcome` makes what a run's outcome is in it.
+ */
+async function settledItems(
+  node: PipelineItemsNode,
+  outcome: (
+    envelope: Exclude<PipelineItemsNode, { items: unknown }>,
+  ) => unknown,
+): Promise<unknown> {
+  if (!('items' in node)) {
+    return outcome(node);
+  }
+  const items: Record<string, unknown> = {};
+  for (const [index, item] of node.items.entries()) {
+    items[index] = await settledItems(await item, outcome);
+  }
+  return { items };
+}
+
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -310,6 +357,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
+          pipelineLimits: pipelineLimitsOf(opts.experimental_allowPipelining),
         }),
       ];
     } catch (cause) {
@@ -386,8 +434,40 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
+    // Only a pipelined batch has this, which the server only accepts with
+    // `experimental_allowPipelining`
+    const pipelined = info.experimental_pipeline;
+    const pipeline = pipelined
+      ? await run(async () => {
+          if (info.type === 'mutation') {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Only a batch of queries can be pipelined`,
+            });
+          }
+          return pipelineCalls({
+            calls: info.calls,
+            pipe: await pipelined.getPipe(),
+            transformer: config.transformer,
+            limits: pipelined.limits,
+            // Every run of a procedure counts towards `maxBatchSize`
+            maxRuns:
+              typeof opts.maxBatchSize === 'number' ? opts.maxBatchSize : null,
+          });
+        })
+      : null;
+    if (pipeline) {
+      // After `createContext`, which can't wait for an input that a call fills in
+      info.calls = pipeline.calls;
+    }
+
     interface RPCResultOk {
       data: unknown;
+      /**
+       * For a call of a pipelined batch that runs for every item: its runs,
+       * by item, in place of its data
+       */
+      items: PipelineItemsNode | null;
       /**
        * Only set for subscriptions
        */
@@ -399,7 +479,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       opts.req.signal,
       bodyCancelled.signal,
     ]);
-    const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
+    const runCall = async (
+      call: TRPCRequestInfo['calls'][number],
+      /** For a call of a pipelined batch that reads values: how it runs */
+      piped: PipelineCallRun | null,
+    ): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
       try {
@@ -435,18 +519,85 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const data: unknown = await proc({
-          path: call.path,
-          getRawInput: call.getRawInput,
-          ctx: ctxManager.value(),
-          type: proc._def.type,
-          signal: combinedAbort.signal,
-          batchIndex: call.batchIndex,
-        });
+        /**
+         * For a call of a pipelined batch, which starts once what it reads is
+         * ready: not if the client has gone by then
+         */
+        const throwIfAborted = () => {
+          if (callSignal.aborted) {
+            throw new TRPCError({
+              code: 'CLIENT_CLOSED_REQUEST',
+              message: 'The request was aborted',
+            });
+          }
+        };
+        const callProcedure = (getRawInput: () => Promise<unknown>) =>
+          proc({
+            path: call.path,
+            getRawInput,
+            ctx: ctxManager.value(),
+            type: proc._def.type,
+            signal: combinedAbort.signal,
+            batchIndex: call.batchIndex,
+          });
+        // Once per item of its frame. Every run validates its input and has
+        // its own result or error
+        const items =
+          piped?.kind === 'each'
+            ? await piped.each({
+                item: async (input) => {
+                  throwIfAborted();
+                  const itemData = await callProcedure(async () => input);
+                  if (isDataStream(itemData)) {
+                    // It would be inside a list, where nothing streams it
+                    throw new TRPCError({
+                      code: 'UNSUPPORTED_MEDIA_TYPE',
+                      message:
+                        'A call for every item cannot return a stream-like response',
+                    });
+                  }
+                  // What JSON can't carry fails the run, not the response or
+                  // the stream
+                  assertJSON(config.transformer.output.serialize(itemData));
+                  return itemData;
+                },
+                error: (cause, input) => {
+                  const error = getTRPCErrorFromUnknown(cause);
+                  opts.onError?.({
+                    error,
+                    path: call.path,
+                    input,
+                    ctx: ctxManager.valueOrUndefined(),
+                    type: proc._def.type,
+                    req: opts.req,
+                  });
+                  return getErrorShape({
+                    config,
+                    ctx: ctxManager.valueOrUndefined(),
+                    error,
+                    input,
+                    path: call.path,
+                    type: proc._def.type,
+                  });
+                },
+              })
+            : null;
+        const data = items
+          ? undefined
+          : piped?.kind === 'once'
+            ? // Its input is filled in first, so a procedure that never reads
+              // it is refused, or doesn't run, as any other
+              await run(async () => {
+                const input = await piped.input();
+                throwIfAborted();
+                return callProcedure(async () => input);
+              })
+            : await callProcedure(call.getRawInput);
         return [
           undefined,
           {
             data,
+            items,
             abort:
               proc._def.type === 'subscription' ? combinedAbort : undefined,
           },
@@ -466,7 +617,28 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
         return [error, undefined];
       }
-    });
+    };
+    const rpcCalls = pipeline
+      ? pipeline.run({
+          call: runCall,
+          // What the calls that read a call's data get of it
+          data: ([error, result]) => {
+            if (error) {
+              throw error;
+            }
+            if (!isStreamCall && isDataStream(result.data)) {
+              // The response can't carry it, so the client gets an error for
+              // this call. A call that reads it then doesn't run, as for any
+              // failed call
+              throw new TRPCError({
+                code: 'UNSUPPORTED_MEDIA_TYPE',
+                message: 'Cannot read the data of a stream-like response',
+              });
+            }
+            return result.data;
+          },
+        })
+      : info.calls.map((call) => runCall(call, null));
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
@@ -700,6 +872,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               }),
             };
           }
+          if (result.items) {
+            return streamedItems(result.items);
+          }
 
           /**
            * Not very pretty, but we need to wrap nested data in promises
@@ -780,8 +955,37 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             undefined,
           ];
         }
+        if (pipeline && !result.items) {
+          // In a pipelined batch, what JSON can't carry fails the call, not
+          // the response. A call for every item has no data of its own: each
+          // run's was checked as it ran
+          try {
+            assertJSON(config.transformer.output.serialize(result.data));
+          } catch (cause) {
+            return [getTRPCErrorFromUnknown(cause), undefined];
+          }
+        }
         return res;
       },
+    );
+    // The runs of each call for every item, once all of them are done: as
+    // they are, and with the transformer's output of each run's outcome
+    const settled = await Promise.all(
+      results.map(async ([error, result]) => {
+        if (error || !result.items) {
+          return null;
+        }
+        const serialize = (value: unknown) =>
+          config.transformer.output.serialize(value);
+        return {
+          json: await settledItems(result.items, (outcome) => outcome),
+          sent: await settledItems(result.items, (outcome) =>
+            'error' in outcome
+              ? { error: serialize(outcome.error) }
+              : { result: { data: serialize(outcome.result.data) } },
+          ),
+        };
+      }),
     );
     const resultAsRPCResponse = results.map(
       (
@@ -789,6 +993,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
         const call = info.calls[index]!;
+        const items = settled[index];
+        if (items) {
+          // What `responseMeta` gets: a result, with the runs as its data.
+          // The response has the runs in place of it, as `{ items }`
+          return { result: { data: items.json } };
+        }
         if (error) {
           return {
             error: getErrorShape({
@@ -819,7 +1029,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     return new Response(
-      JSON.stringify(transformTRPCResponse(config, resultAsRPCResponse)),
+      JSON.stringify(
+        resultAsRPCResponse.map(
+          (response, index) =>
+            settled[index]?.sent ?? transformTRPCResponse(config, response),
+        ),
+      ),
       {
         status: headResponse.status,
         headers,
