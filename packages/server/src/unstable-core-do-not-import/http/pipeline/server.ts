@@ -845,6 +845,25 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     before: Places<Place>,
   ): Places<Place> {
     const { list, inItem } = frame;
+    /**
+     * How many items the lists of this level have together, so far. A place
+     * is made for each, for a level of a list of lists too, which no call may
+     * run for: they count against `maxRuns` all the same
+     */
+    let placed = 0;
+    const tooMany = (length: number) => {
+      const error = tooLong(length);
+      if (error) {
+        return error;
+      }
+      if (placed + length > limits.maxRuns) {
+        return overLimit(
+          `The lists at one level have ${placed + length} items together, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+        );
+      }
+      placed += length;
+      return null;
+    };
     return mapPlaces(before, async (place): Promise<PlacesNode<Place>> => {
       try {
         const items = inItem
@@ -856,7 +875,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               list.path,
               null,
             );
-        return itemsOf({ list: items, indexes: place.indexes, tooLong });
+        return itemsOf({
+          list: items,
+          indexes: place.indexes,
+          tooLong: tooMany,
+        });
       } catch (cause) {
         // The run the list is in failed, or the list can't be read: none
         // of its items run, and other lists are as they are

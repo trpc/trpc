@@ -253,7 +253,7 @@
           },
           "maxRuns": {
             "type": "number",
-            "description": "The most runs a batch has: each of its calls, and a call for every item\nonce for each item. `maxBatchSize` caps them too, if it is lower"
+            "description": "The most runs a batch has: each of its calls, and a call for every item\nonce for each item. `maxBatchSize` caps them too, if it is lower. The\nitems of one level of a list of lists, together, can't be more than this\neither, whether or not a call runs for them"
           }
         },
         "required": [

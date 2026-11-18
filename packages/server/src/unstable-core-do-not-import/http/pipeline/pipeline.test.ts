@@ -1676,6 +1676,55 @@ describe('a call for every item', () => {
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
+  test('the lists at a level of a list of lists count together against `maxRuns`, even when no call runs for their items', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      limits: { ...pipelineLimitDefaults, maxRuns: 4 },
+      fns: {
+        // Two lists of no items in each group: no run, but a place for each
+        book: () => ({
+          groups: [{ subs: [[], []] }, { subs: [[], []] }, { subs: [[], []] }],
+        }),
+        echo,
+      },
+    });
+    const book = sent('book', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: book, path: ['groups', null, 'subs', null] },
+        { to: ['n'], path: [] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [book],
+      calls: [each],
+    });
+
+    const group = { items: { 0: { items: {} }, 1: { items: {} } } };
+    expect(res.of(each)).toEqual({
+      items: {
+        0: group,
+        1: group,
+        // Its two lists would make six at their level
+        2: {
+          error: {
+            code: 'BAD_REQUEST',
+            message:
+              'The lists at one level have 6 items together, more than `maxRuns` (4) allows',
+          },
+        },
+      },
+    });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
   test('a call for every item of a list in each run of a call for every item: its runs have an index for both', async () => {
     const echo = vi.fn((input: { group: string; member: string }) => input);
     await using server = serve({
