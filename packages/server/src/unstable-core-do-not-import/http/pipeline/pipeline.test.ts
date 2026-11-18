@@ -32,8 +32,6 @@ import {
 import type { PipelineLimits, PipeRead, PipeTree } from './wire';
 import {
   bindPipelinePath,
-  formatPipelineListKey,
-  parsePipelineKey,
   pipelineBatch,
   pipelineLimitDefaults,
   readPipelineList,
@@ -431,7 +429,7 @@ describe.each([
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['authorId'] }],
+      reads: [[['id'], ['authorId']]],
       list: null,
     });
 
@@ -449,14 +447,16 @@ describe.each([
       ['post', { slug: 'hello' }],
       ['author', { id: 'ada' }],
     ]);
+    // A node is [path, reads, children, input], and a read [to, from]
     const tree = {
-      0: {
-        author: {
-          path: 'author',
-          input: transformer.input.serialize({}),
-          reads: [{ to: ['id'], data: ['authorId'] }],
-        },
-      },
+      0: [
+        [
+          'author',
+          [[['id'], ['authorId']]],
+          [],
+          transformer.input.serialize({}),
+        ],
+      ],
     };
     expect(res.wire).toEqual(
       method === 'GET'
@@ -484,7 +484,7 @@ describe.each([
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['authorId'] }],
+      reads: [[['id'], ['authorId']]],
       list: null,
     });
     const team = call({
@@ -492,9 +492,9 @@ describe.each([
       path: 'echo',
       input: {},
       reads: [
-        { to: ['teamId'], data: ['teamId'] },
+        [['teamId'], ['teamId']],
         // Two calls up: the post
-        { to: ['slug'], data: ['slug'], up: 2 },
+        [['slug'], ['slug'], 2],
       ],
       list: null,
     });
@@ -512,7 +512,7 @@ describe.each([
     expect(ran.map(([path]) => path)).toEqual(['post', 'author', 'echo']);
   });
 
-  test('a list key: a follow-up runs for every item, and each run has a result or an error of its own', async () => {
+  test('a list: a follow-up runs for every item, and each run has a result or an error of its own', async () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, transformer, fns });
     const list = sent('posts', undefined);
@@ -520,7 +520,7 @@ describe.each([
       parent: list,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: ['authorId'] }],
+      reads: [[['id'], ['authorId'], 0]],
       list: [['items']],
     });
 
@@ -554,7 +554,7 @@ describe.each([
       parent: post,
       path: 'tags',
       input: {},
-      reads: [{ to: ['ids'], data: ['tags', null, 'id'] }],
+      reads: [[['ids'], ['tags', null, 'id']]],
       list: null,
     });
 
@@ -583,21 +583,21 @@ describe.each([
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['authorId'] }],
+      reads: [[['id'], ['authorId']]],
       list: null,
     });
     const team = call({
       parent: author,
       path: 'team',
       input: {},
-      reads: [{ to: ['id'], data: ['teamId'] }],
+      reads: [[['id'], ['teamId']]],
       list: null,
     });
     const tags = call({
       parent: post,
       path: 'tag',
       input: {},
-      reads: [{ to: ['id'], item: ['id'] }],
+      reads: [[['id'], ['id'], 0]],
       list: [['tags']],
     });
 
@@ -631,14 +631,14 @@ describe.each([
       parent: list,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: ['authorId'] }],
+      reads: [[['id'], ['authorId'], 0]],
       list: [['items']],
     });
     const team = call({
       parent: author,
       path: 'team',
       input: {},
-      reads: [{ to: ['id'], data: ['teamId'] }],
+      reads: [[['id'], ['teamId']]],
       list: null,
     });
 
@@ -672,14 +672,14 @@ describe.each([
       parent: list,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: ['authorId'] }],
+      reads: [[['id'], ['authorId'], 0]],
       list: [['items']],
     });
     const team = call({
       parent: author,
       path: 'team',
       input: {},
-      reads: [{ to: ['id'], data: ['teamId'] }],
+      reads: [[['id'], ['teamId']]],
       list: null,
     });
 
@@ -721,7 +721,7 @@ describe('what a node reads', () => {
       parent: list,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: ['authorId'] }],
+      reads: [[['id'], ['authorId'], 0]],
       list: [['items']],
     });
     const echo = call({
@@ -729,11 +729,11 @@ describe('what a node reads', () => {
       path: 'echo',
       input: { filter: { by: 'author' } },
       reads: [
-        { to: ['filter', 'name'], data: ['name'] },
+        [['filter', 'name'], ['name']],
         // The item the author ran for
-        { to: ['slug'], item: ['slug'], up: 1 },
+        [['slug'], ['slug'], -1],
         // The list the author is under
-        { to: ['count'], data: ['items', '1', 'slug'], up: 2 },
+        [['count'], ['items', '1', 'slug'], 2],
       ],
       list: null,
     });
@@ -767,7 +767,7 @@ describe('what a node reads', () => {
       parent: post,
       path: 'echo',
       input: undefined,
-      reads: [{ to: [], data: ['authorId'] }],
+      reads: [[[], ['authorId']]],
       list: null,
     });
 
@@ -817,7 +817,7 @@ describe('what a node reads', () => {
       parent: post,
       path: 'echo',
       input: { since: at },
-      reads: [{ to: ['at'], data: ['at'] }],
+      reads: [[['at'], ['at']]],
       list: null,
     });
 
@@ -847,8 +847,8 @@ describe('what a node reads', () => {
       path: 'echo',
       input: { list: ['a', 'b'], object: { a: 1 } },
       reads: [
-        { to: ['list', '1'], data: ['missing'] },
-        { to: ['object', 'a'], data: ['missing'] },
+        [['list', '1'], ['missing']],
+        [['object', 'a'], ['missing']],
       ],
       list: null,
     });
@@ -878,7 +878,7 @@ describe('what a node reads', () => {
       parent: post,
       path: 'echo',
       input: { a: 1 },
-      reads: [{ to: ['a'], data: ['missing'] }],
+      reads: [[['a'], ['missing']]],
       list: null,
     });
 
@@ -915,14 +915,14 @@ describe('what a node reads', () => {
       parent: post,
       path: 'change',
       input: {},
-      reads: [{ to: ['author'], data: ['author'] }],
+      reads: [[['author'], ['author']]],
       list: null,
     });
     const echo = call({
       parent: post,
       path: 'echo',
       input: {},
-      reads: [{ to: ['author'], data: ['author'] }],
+      reads: [[['author'], ['author']]],
       list: null,
     });
 
@@ -949,14 +949,14 @@ describe('what a node reads', () => {
       parent: post,
       path: 'big',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const reader = call({
       parent: big,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], data: ['n'] }],
+      reads: [[['n'], ['n']]],
       list: null,
     });
 
@@ -988,7 +988,7 @@ describe('what a node reads', () => {
       parent: nothing,
       path: 'echo',
       input: undefined,
-      reads: [{ to: [], data: [] }],
+      reads: [[[], []]],
       list: null,
     });
 
@@ -1027,7 +1027,7 @@ describe('what a node reads', () => {
       parent: post,
       path: 'echo',
       input: { broken: true },
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
 
@@ -1057,7 +1057,7 @@ describe('what a node reads', () => {
       parent: post,
       path: 'echo',
       input: {},
-      reads: [{ to: ['big'], data: ['big'] }],
+      reads: [[['big'], ['big']]],
       list: null,
     });
 
@@ -1079,7 +1079,7 @@ describe('what a node reads', () => {
   });
 });
 
-describe('a list key', () => {
+describe('a list', () => {
   test('a follow-up reads values of the item and values that are the same for every run, in the order they are written', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
@@ -1095,9 +1095,9 @@ describe('a list key', () => {
       path: 'echo',
       input: {},
       reads: [
-        { to: ['from'], data: ['from'] },
-        { to: ['id'], item: ['id'] },
-        { to: ['from'], item: ['id'] },
+        [['from'], ['from']],
+        [['id'], ['id'], 0],
+        [['from'], ['id'], 0],
       ],
       list: [['items']],
     });
@@ -1130,14 +1130,14 @@ describe('a list key', () => {
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], item: ['id'] }],
+      reads: [[['id'], ['id'], 0]],
       list: [['holes']],
     });
     const none = call({
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], item: ['id'] }],
+      reads: [[['id'], ['id'], 0]],
       list: [['none']],
     });
 
@@ -1157,7 +1157,7 @@ describe('a list key', () => {
     expect(res.of(none)).toEqual([]);
   });
 
-  test('a list key can be the data itself, when the call returns a list', async () => {
+  test('a list can be the data itself, when the call returns a list', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -1168,7 +1168,7 @@ describe('a list key', () => {
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], item: ['id'] }],
+      reads: [[['id'], ['id'], 0]],
       list: [[]],
     });
 
@@ -1180,14 +1180,17 @@ describe('a list key', () => {
       calls: [each],
     });
 
-    expect(res.wire.body).toMatchObject({ tree: { 0: { '[]': {} } } });
+    // A list of the data itself has one level, with no path
+    expect(res.wire.body).toMatchObject({
+      tree: { 0: [[[[]], [['echo', [[['id'], ['id'], 0]], [], {}]]]] },
+    });
     expect(res.of(each)).toEqual([
       { data: { id: 'a' } },
       { data: { id: 'b' } },
     ]);
   });
 
-  test('a list of lists is one key: a level of lists for each `[]`', async () => {
+  test('a list of lists is one list, with a level for each', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -1206,7 +1209,7 @@ describe('a list key', () => {
       parent: pages,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], item: ['id'] }],
+      reads: [[['id'], ['id'], 0]],
       list: [['pages'], ['items']],
     });
 
@@ -1245,20 +1248,16 @@ describe('a list key', () => {
     });
     expect(streamed.of(oneKey)).toEqual(res.of(oneKey));
 
-    // Not `pages[]` with `items[]` inside it: one way to write it, which
-    // also keeps how deep a tree goes to what `maxDepth` allows
-    const tree: PipeTree = {
-      0: {
-        'pages[]': {
-          'items[]': {
-            echo: {
-              path: 'echo',
-              input: {},
-              reads: [{ to: ['id'], item: ['id'] }],
-            },
-          },
-        },
-      },
+    // Not a list of `pages` with a list of `items` inside it: one way to
+    // write it, which also keeps how deep a tree goes to what `maxDepth`
+    // allows
+    const tree = {
+      0: [
+        [
+          [['pages']],
+          [[[['items']], [['echo', [[['id'], ['id'], 0]], [], {}]]]],
+        ],
+      ],
     };
     const response = await fetch(
       `${server.url}/pages?batch=tree&tree=${encodeURIComponent(JSON.stringify(tree))}`,
@@ -1267,12 +1266,12 @@ describe('a list key', () => {
     expect(await response.json()).toMatchObject({
       error: {
         message:
-          'Invalid "tree": a list at 0 "pages[]" "items[]" is right under another: write them as one key, such as "pages[].items[]"',
+          'Invalid "tree": a list\'s children are nodes: expected one at 0.0.0',
       },
     });
   });
 
-  test('a follow-up of a follow-up that runs for every item runs for every item too, and a list key under it for every item of its data', async () => {
+  test('a follow-up of a follow-up that runs for every item runs for every item too, and a list under it for every item of its data', async () => {
     const { fns, ran } = blog();
     await using server = serve({
       ...defaults,
@@ -1284,21 +1283,21 @@ describe('a list key', () => {
       parent: list,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: ['authorId'] }],
+      reads: [[['id'], ['authorId'], 0]],
       list: [['items']],
     });
     const team = call({
       parent: author,
       path: 'team',
       input: {},
-      reads: [{ to: ['id'], data: ['teamId'] }],
+      reads: [[['id'], ['teamId']]],
       list: null,
     });
     const members = call({
       parent: team,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], item: [] }],
+      reads: [[['id'], [], 0]],
       list: [['members']],
     });
 
@@ -1336,21 +1335,21 @@ describe('a list key', () => {
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], item: [] }],
+      reads: [[['n'], [], 0]],
       list: [['two']],
     });
     const three = call({
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], item: [] }],
+      reads: [[['n'], [], 0]],
       list: [['three']],
     });
     const one = call({
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], data: ['two', '0'] }],
+      reads: [[['n'], ['two', '0']]],
       list: null,
     });
 
@@ -1388,14 +1387,14 @@ describe('a list key', () => {
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], item: [] }],
+      reads: [[['n'], [], 0]],
       list: [['empty']],
     });
     const one = call({
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], item: [] }],
+      reads: [[['n'], [], 0]],
       list: [['one']],
     });
 
@@ -1490,7 +1489,7 @@ describe('the limits of a server', () => {
       parent: list,
       path: 'echo',
       input: {},
-      reads: [{ to: ['n'], item: [] }],
+      reads: [[['n'], [], 0]],
       list: [['items']],
     });
     const fns = (length: number) => ({
@@ -1533,14 +1532,14 @@ describe('the limits of a server', () => {
         parent: list,
         path: 'author',
         input: {},
-        reads: [{ to: ['id'], item: [] }],
+        reads: [[['id'], [], 0]],
         list: [['items']],
       });
       const team = call({
         parent: author,
         path: 'team',
         input: {},
-        reads: [{ to: ['id'], data: ['id'] }],
+        reads: [[['id'], ['id']]],
         list: null,
       });
 
@@ -1573,7 +1572,7 @@ describe('the limits of a server', () => {
           parent,
           path: 'echo',
           input: {},
-          reads: [{ to: ['id'], data: ['id'] }],
+          reads: [[['id'], ['id']]],
           list: null,
         });
       const ofFirst = under(first);
@@ -1608,10 +1607,10 @@ describe('the limits of a server', () => {
         parent: post,
         path,
         input: {},
-        reads: Array.from({ length: count }, (_it, index) => ({
-          to: [`k${index}`],
-          data: ['id'],
-        })),
+        reads: Array.from({ length: count }, (_it, index) => [
+          [`k${index}`],
+          ['id'],
+        ]),
         list: null,
       });
     const fns = { post: () => ({ id: 'ada' }), over: () => 1, within: () => 2 };
@@ -1651,21 +1650,21 @@ describe('the limits of a server', () => {
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['authorId'] }],
+      reads: [[['id'], ['authorId']]],
       list: null,
     });
     const team = call({
       parent: author,
       path: 'team',
       input: {},
-      reads: [{ to: ['id'], data: ['teamId'] }],
+      reads: [[['id'], ['teamId']]],
       list: null,
     });
     const teamPosts = call({
       parent: team,
       path: 'teamPosts',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     // 5: under one that is refused
@@ -1673,7 +1672,7 @@ describe('the limits of a server', () => {
       parent: teamPosts,
       path: 'first',
       input: {},
-      reads: [{ to: ['slug'], data: ['0'] }],
+      reads: [[['slug'], ['0']]],
       list: null,
     });
     const fns = {
@@ -1725,13 +1724,13 @@ describe('the limits of a server', () => {
       expect(lowered.res.of(team)).toEqual(deep(3, 2));
     });
 
-    test('a list key adds no depth', async () => {
+    test('a list adds no depth', async () => {
       const list = sent('list', undefined);
       const each = call({
         parent: list,
         path: 'each',
         input: {},
-        reads: [{ to: ['n'], item: [] }],
+        reads: [[['n'], [], 0]],
         list: [['a'], ['b']],
       });
 
@@ -1753,7 +1752,7 @@ describe('the limits of a server', () => {
         parent: post,
         path,
         input: {},
-        reads: [{ to: ['v'], data: [path] }],
+        reads: [[['v'], [path]]],
         list: null,
       });
     // Its quotes count: `"xx"` is 4 characters of JSON
@@ -1796,7 +1795,7 @@ describe('the limits of a server', () => {
         parent: list,
         path: 'each',
         input: {},
-        reads: [{ to: ['v'], item: ['v'] }],
+        reads: [[['v'], ['v'], 0]],
         list: [['items']],
       });
 
@@ -1825,7 +1824,7 @@ describe('the limits of a server', () => {
         parent: post,
         path,
         input: {},
-        reads: [{ to: ['v'], data: [path] }],
+        reads: [[['v'], [path]]],
         list: null,
       });
     const fns = {
@@ -1908,14 +1907,14 @@ describe('the limits of a server', () => {
         parent: list,
         path: 'items',
         input: {},
-        reads: [{ to: ['v'], item: [] }],
+        reads: [[['v'], [], 0]],
         list: [['items']],
       });
       const ids = call({
         parent: list,
         path: 'ids',
         input: {},
-        reads: [{ to: ['v'], item: ['id'] }],
+        reads: [[['v'], ['id'], 0]],
         list: [['items']],
       });
 
@@ -1956,10 +1955,10 @@ describe('the limits of a server', () => {
           parent: post,
           path: 'echo',
           input: { n },
-          reads: Array.from({ length: count }, (_it, index) => ({
-            to: [`big${index}`],
-            data: ['big'],
-          })),
+          reads: Array.from({ length: count }, (_it, index) => [
+            [`big${index}`],
+            ['big'],
+          ]),
           list: null,
         });
       const fits = node(1, 1);
@@ -1968,7 +1967,7 @@ describe('the limits of a server', () => {
         parent: post,
         path: 'echo',
         input: { n: 3 },
-        reads: [{ to: ['id'], data: ['id'] }],
+        reads: [[['id'], ['id']]],
         list: null,
       });
       const echo = vi.fn((input: { n: number }) => input.n);
@@ -1995,8 +1994,8 @@ describe('the limits of a server', () => {
         path: 'echo',
         input: {},
         reads: [
-          { to: ['a'], data: ['lines'] },
-          { to: ['b'], data: ['lines'] },
+          [['a'], ['lines']],
+          [['b'], ['lines']],
         ],
         list: null,
       });
@@ -2018,14 +2017,14 @@ describe('the limits of a server', () => {
         parent: post,
         path: 'echo',
         input: { id: 'text' },
-        reads: [{ to: ['id', 'big'], data: ['big'] }],
+        reads: [[['id', 'big'], ['big']]],
         list: null,
       });
       const fits = call({
         parent: post,
         path: 'echo',
         input: {},
-        reads: [{ to: ['big'], data: ['big'] }],
+        reads: [[['big'], ['big']]],
         list: null,
       });
 
@@ -2051,8 +2050,8 @@ describe('the limits of a server', () => {
         path: 'echo',
         input: {},
         reads: [
-          { to: ['n'], item: [] },
-          { to: ['big'], data: ['big'] },
+          [['n'], [], 0],
+          [['big'], ['big']],
         ],
         list: [['three']],
       });
@@ -2061,7 +2060,7 @@ describe('the limits of a server', () => {
         parent: list,
         path: 'echo',
         input: { big },
-        reads: [{ to: ['n'], item: [] }],
+        reads: [[['n'], [], 0]],
         list: [['two']],
       });
       const echo = vi.fn((input: { n: number }) => input.n);
@@ -2086,7 +2085,7 @@ describe('the limits of a server', () => {
           parent: list,
           path: 'echo',
           input: {},
-          reads: [{ to: ['longField'], item: [] }],
+          reads: [[['longField'], [], 0]],
           list: [['items']],
         });
         const echo = vi.fn(() => null);
@@ -2118,7 +2117,7 @@ describe('the limits of a server', () => {
         parent: list,
         path: 'author',
         input: {},
-        reads: [{ to: ['id'], item: [] }],
+        reads: [[['id'], [], 0]],
         list: [['items']],
       });
       // It reads one short value, and its input is long: the server copies
@@ -2127,7 +2126,7 @@ describe('the limits of a server', () => {
         parent: author,
         path: 'team',
         input: { pad: 'x'.repeat(maxFillSize * 0.6) },
-        reads: [{ to: ['id'], data: ['id'] }],
+        reads: [[['id'], ['id']]],
         list: null,
       });
       const teamFn = vi.fn(() => 'ran');
@@ -2167,7 +2166,7 @@ describe('data that is still to come', () => {
       parent: post,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const other = sent('other', undefined);
@@ -2182,7 +2181,7 @@ describe('data that is still to come', () => {
       parent: author,
       path: 'echo',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
 
@@ -2271,7 +2270,7 @@ describe('a call that failed', () => {
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['authorId'] }],
+      reads: [[['id'], ['authorId']]],
       list: null,
     });
 
@@ -2310,21 +2309,21 @@ describe('the order things happen in', () => {
       parent: post,
       path: 'a',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const b = call({
       parent: post,
       path: 'b',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const c = call({
       parent: b,
       path: 'c',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
 
@@ -2376,21 +2375,21 @@ describe('the order things happen in', () => {
       parent: post,
       path: 'author',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const team = call({
       parent: author,
       path: 'slowTeam',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
     const other = call({
       parent: post,
       path: 'other',
       input: {},
-      reads: [{ to: ['id'], data: ['id'] }],
+      reads: [[['id'], ['id']]],
       list: null,
     });
 
@@ -2414,14 +2413,14 @@ describe('what a client puts in a request', () => {
     parent: post,
     path: 'author',
     input: {},
-    reads: [{ to: ['id'], data: ['authorId'] }],
+    reads: [[['id'], ['authorId']]],
     list: null,
   });
   const team = call({
     parent: author,
     path: 'team',
     input: undefined,
-    reads: [{ to: ['id'], data: ['teamId'] }],
+    reads: [[['id'], ['teamId']]],
     list: null,
   });
   const plan = (calls: Call[], fits: (count: number) => boolean) =>
@@ -2469,76 +2468,73 @@ describe('what a client puts in a request', () => {
     expect(planned.left).toEqual([orphan]);
   });
 
-  test('two nodes with the same path at one place get names of their own, and an input left out is not in the tree', () => {
+  test('two nodes with the same path at one place sit side by side, by position, and an input left out is not in the tree', () => {
     const again = call({ ...author, parent: post, input: undefined });
-    const planned = plan([author, again, team], () => true);
+    const teamOfAgain = call({ ...team, parent: again });
+    const planned = plan([author, again, team, teamOfAgain], () => true);
+    // No input: the node ends with its children, or its reads
     expect(planned.tree).toEqual({
-      0: {
-        author: {
-          path: 'author',
-          input: {},
-          reads: [{ to: ['id'], data: ['authorId'] }],
-          children: {
-            team: { path: 'team', reads: [{ to: ['id'], data: ['teamId'] }] },
-          },
-        },
-        'author#2': {
-          path: 'author',
-          reads: [{ to: ['id'], data: ['authorId'] }],
-        },
-      },
+      0: [
+        [
+          'author',
+          [[['id'], ['authorId']]],
+          [['team', [[['id'], ['teamId']]]]],
+          {},
+        ],
+        [
+          'author',
+          [[['id'], ['authorId']]],
+          [['team', [[['id'], ['teamId']]]]],
+        ],
+      ],
     });
     const steps = (it: Call): PipelineStep[] | undefined =>
       planned.places.get(it)?.steps;
-    expect(steps(again)).toEqual([{ kind: 'node', key: 'author#2' }]);
+    expect(steps(again)).toEqual([{ kind: 'node', at: 1 }]);
     expect(steps(team)).toEqual([
-      { kind: 'node', key: 'author' },
-      { kind: 'node', key: 'team' },
+      { kind: 'node', at: 0 },
+      { kind: 'node', at: 0 },
     ]);
   });
 
   test('what a response does not have for a call is missing', async () => {
-    const steps: PipelineStep[] = [{ kind: 'node', key: 'author' }];
+    const steps: PipelineStep[] = [{ kind: 'node', at: 0 }];
     expect(await readPipelineCall(undefined, steps)).toEqual({
       kind: 'missing',
     });
-    expect(await readPipelineCall({ author: 'text' }, steps)).toEqual({
+    expect(await readPipelineCall(['text'], steps)).toEqual({
       kind: 'missing',
     });
-    expect(await readPipelineCall({ author: {} }, steps)).toEqual({
+    expect(await readPipelineCall([{}], steps)).toEqual({ kind: 'missing' });
+    expect(await readPipelineCall([], [])).toEqual({ kind: 'missing' });
+    expect(await readPipelineCall([[]], steps)).toEqual({ kind: 'missing' });
+    expect(await readPipelineCall([{ result: 'text' }], steps)).toEqual({
       kind: 'missing',
     });
-    expect(await readPipelineCall({}, [])).toEqual({ kind: 'missing' });
-    expect(await readPipelineCall({ author: [] }, steps)).toEqual({
-      kind: 'missing',
-    });
-    expect(
-      await readPipelineCall({ author: { result: 'text' } }, steps),
-    ).toEqual({ kind: 'missing' });
     // Nothing under a node that has neither children nor an error
     expect(
-      await readPipelineCall({ author: { result: { data: 1 } } }, [
-        ...steps,
-        { kind: 'node', key: 'team' },
-      ]),
+      await readPipelineCall(
+        [{ result: { data: 1 } }],
+        [...steps, { kind: 'node', at: 0 }],
+      ),
     ).toEqual({ kind: 'missing' });
     expect(
-      await readPipelineCall({ 'items[]': ['text', {}] }, [
-        { kind: 'list', key: 'items[]', depth: 1 },
-        ...steps,
-      ]),
+      await readPipelineCall(
+        [['text', {}]],
+        [{ kind: 'list', at: 0, depth: 1 }, ...steps],
+      ),
     ).toEqual({ kind: 'items', items: [undefined, undefined] });
     expect(
-      await readPipelineCall({ 'pages[].items[]': ['text'] }, [
-        { kind: 'list', key: 'pages[].items[]', depth: 2 },
-        ...steps,
-      ]),
+      await readPipelineCall(
+        [['text']],
+        [{ kind: 'list', at: 0, depth: 2 }, ...steps],
+      ),
     ).toEqual({ kind: 'items', items: [[]] });
-    // Streamed, the items of a list are by index
+    // Streamed, children and the items of a list are by position
     expect(
       await readPipelineCall(
-        { 'items[]': { 0: Promise.resolve({}), 2: Promise.resolve({}) } },
-        [{ kind: 'list', key: 'items[]', depth: 1 }, ...steps],
+        { 0: { 0: Promise.resolve({}), 2: Promise.resolve({}) } },
+        [{ kind: 'list', at: 0, depth: 1 }, ...steps],
       ),
     ).toEqual({ kind: 'items', items: [undefined, undefined] });
   });
@@ -2559,53 +2555,15 @@ describe('what a client puts in a request', () => {
 
   test('the URL of a batch with a tree', () => {
     expect(
-      pipelinedBatchUrl({ url: '/a,b?batch=1&input=x', tree: { 0: {} } }),
-    ).toBe(`/a,b?batch=tree&input=x&tree=${encodeURIComponent('{"0":{}}')}`);
+      pipelinedBatchUrl({ url: '/a,b?batch=1&input=x', tree: { 0: [] } }),
+    ).toBe(`/a,b?batch=tree&input=x&tree=${encodeURIComponent('{"0":[]}')}`);
     expect(pipelinedBatchUrl({ url: '/a?batch=1', tree: null })).toBe(
       '/a?batch=tree',
     );
   });
 });
 
-describe('keys', () => {
-  test.each<{ key: string; parsed: ReturnType<typeof parsePipelineKey> }>([
-    { key: 'author', parsed: { kind: 'node', name: 'author' } },
-    { key: 'author.byId', parsed: { kind: 'node', name: 'author.byId' } },
-    { key: 'items[]', parsed: { kind: 'list', levels: [['items']] } },
-    {
-      key: 'data.items[]',
-      parsed: { kind: 'list', levels: [['data', 'items']] },
-    },
-    {
-      key: 'pages[].items[]',
-      parsed: { kind: 'list', levels: [['pages'], ['items']] },
-    },
-    { key: 'a\\.b[]', parsed: { kind: 'list', levels: [['a.b']] } },
-    { key: 'a\\[\\]\\\\[]', parsed: { kind: 'list', levels: [['a[]\\']] } },
-    // A level with no segments: the value itself is the list
-    { key: '[]', parsed: { kind: 'list', levels: [[]] } },
-    { key: '[].items[]', parsed: { kind: 'list', levels: [[], ['items']] } },
-    { key: 'a[].[]', parsed: { kind: 'list', levels: [['a'], []] } },
-    { key: '', parsed: null },
-    { key: '.a[]', parsed: null },
-    { key: 'a..b[]', parsed: null },
-    { key: 'a.[]', parsed: null },
-    { key: 'a[]b[]', parsed: null },
-    { key: '.[]', parsed: null },
-    { key: 'a[x][]', parsed: null },
-    { key: 'a]b[]', parsed: null },
-    { key: 'a\\x[]', parsed: null },
-    { key: 'a\\[]', parsed: null },
-    { key: 'a[].b.[]', parsed: null },
-  ])('$key', ({ key, parsed }) => {
-    expect(parsePipelineKey(key)).toEqual(parsed);
-    if (parsed?.kind === 'list') {
-      expect(parsePipelineKey(formatPipelineListKey(parsed.levels))).toEqual(
-        parsed,
-      );
-    }
-  });
-
+describe('paths', () => {
   test('the path of one item, for a client that reads what the server read for one run', () => {
     expect(bindPipelinePath(['items', null, 'id', null], 2)).toEqual([
       'items',
@@ -2616,7 +2574,7 @@ describe('keys', () => {
     expect(bindPipelinePath(['id'], 2)).toEqual(['id']);
   });
 
-  test('the items of a list key, a list for each level', () => {
+  test('the items of a list, a list for each level', () => {
     expect(readPipelineList({ a: [1, 2] }, [['a']])).toEqual([1, 2]);
     // Without a level, the value is the list
     expect(readPipelineList([1], [])).toEqual([1]);
@@ -2624,11 +2582,19 @@ describe('keys', () => {
       readPipelineList({ a: [{ b: [1] }, { b: 'x' }] }, [['a'], ['b']]),
     ).toEqual([[1], []]);
     expect(readPipelineList({ a: 'x' }, [['a']])).toEqual([]);
+    // A segment is a property's name as it is, dots and brackets too
+    expect(readPipelineList({ 'a.b[]': [1] }, [['a.b[]']])).toEqual([1]);
   });
 });
 
 describe('a request the server refuses, before anything of it runs', () => {
-  const node = { path: 'author', reads: [{ to: ['id'], data: ['authorId'] }] };
+  const author = ['author', [[['id'], ['authorId']]]];
+  const node = (...rest: unknown[]) => ({ 0: [['author', ...rest]] });
+  const read = (value: unknown) => node([value]);
+  const childOrList =
+    'expected a node, [path, reads, children?, input?], or a list, [levels, nodes], at 0.0';
+  const notANode = 'expected a node, [path, reads, children?, input?], at 0.0';
+  const notARead = 'expected a read, [to, from, up?], at 0.0 read 0';
   test.each<{ name: string; tree: unknown; message: string }>([
     { name: 'a tree that is not JSON', tree: '{nope', message: 'not JSON' },
     {
@@ -2638,141 +2604,120 @@ describe('a request the server refuses, before anything of it runs', () => {
     },
     {
       name: 'an index of no call',
-      tree: { 2: {} },
+      tree: { 2: [] },
       message: 'no call at index 2',
     },
     {
       name: 'an index written another way',
-      tree: { '01': {} },
+      tree: { '01': [] },
       message: 'no call at index 01',
     },
     {
-      name: 'children that are no object',
-      tree: { 0: [] },
-      message: 'expected children at 0',
+      name: 'children that are no list',
+      tree: { 0: {} },
+      message: 'expected a list of children at 0',
     },
     {
-      name: 'a key that is no key',
-      tree: { 0: { 'a..b[]': {} } },
-      message: 'no such key: "a..b[]"',
+      name: 'a child that is neither a node nor a list',
+      tree: { 0: ['author'] },
+      message: childOrList,
     },
     {
-      name: 'a list key with no children',
-      tree: { 0: { 'a[]': [] } },
-      message: 'expected children at 0 "a[]"',
+      name: 'a list without levels',
+      tree: { 0: [[[], [author]]] },
+      message: childOrList,
     },
     {
-      name: 'a node without a path',
-      tree: { 0: { author: { reads: [] } } },
-      message: 'expected a node with "path" and "reads" at 0 "author"',
+      name: 'a list whose levels are no paths',
+      tree: { 0: [[[[1]], [author]]] },
+      message: childOrList,
+    },
+    {
+      name: 'a list whose nodes are no list',
+      tree: { 0: [[[['items']], {}]] },
+      message: childOrList,
+    },
+    {
+      name: 'a list with something else too',
+      tree: { 0: [[[['items']], [author], 'x']] },
+      message: childOrList,
+    },
+    {
+      name: 'a list right under a list',
+      tree: { 0: [[[['pages']], [[[['items']], [author]]]]] },
+      message: "a list's children are nodes: expected one at 0.0.0",
     },
     {
       name: 'a node with an empty path',
-      tree: { 0: { author: { path: '', reads: [] } } },
-      message: 'expected a node with "path" and "reads" at 0 "author"',
+      tree: { 0: [['', []]] },
+      message: notANode,
+    },
+    { name: 'a node without reads', tree: node(), message: notANode },
+    {
+      name: 'a node whose reads are no list',
+      tree: node({}),
+      message: notANode,
     },
     {
-      name: 'a node without reads',
-      tree: { 0: { author: { path: 'author' } } },
-      message: 'expected a node with "path" and "reads" at 0 "author"',
+      name: 'a node whose children are no list',
+      tree: node([], {}),
+      message: notANode,
     },
     {
-      name: 'a node with another key',
-      tree: { 0: { author: { ...node, each: true } } },
-      message: 'expected a node with "path" and "reads" at 0 "author"',
+      name: 'a node with something else too',
+      tree: node([], [], {}, 'x'),
+      message: notANode,
     },
     {
-      name: 'a node with children that are no object',
-      tree: { 0: { author: { ...node, children: [] } } },
-      message: 'expected a node with "path" and "reads" at 0 "author"',
+      name: 'a read that is no tuple',
+      tree: read({ to: [] }),
+      message: notARead,
+    },
+    { name: 'a read without `from`', tree: read([[]]), message: notARead },
+    {
+      name: 'a read with something else too',
+      tree: read([[], [], 1, 2]),
+      message: notARead,
     },
     {
-      name: 'a read without "to"',
-      tree: { 0: { author: { path: 'author', reads: [{ data: [] }] } } },
-      message: 'expected a read with "to" at 0 "author".reads.0',
+      name: 'a `to` that is no path',
+      tree: read([[1], []]),
+      message: notARead,
     },
     {
-      name: 'a read with another key',
-      tree: {
-        0: {
-          author: { path: 'author', reads: [{ to: [], data: [], from: 0 }] },
-        },
-      },
-      message: 'expected a read with "to" at 0 "author".reads.0',
-    },
-    {
-      name: 'a read of both an item and data',
-      tree: {
-        0: {
-          author: { path: 'author', reads: [{ to: [], data: [], item: [] }] },
-        },
-      },
-      message: 'expected "item" or "data" at 0 "author".reads.0',
-    },
-    {
-      name: 'a read of neither',
-      tree: { 0: { author: { path: 'author', reads: [{ to: [] }] } } },
-      message: 'expected "item" or "data" at 0 "author".reads.0',
-    },
-    {
-      name: 'a path that is no path',
-      tree: {
-        0: { author: { path: 'author', reads: [{ to: [], data: [1] }] } },
-      },
-      message: 'expected "item" or "data" at 0 "author".reads.0',
+      name: 'a `from` that is no path',
+      tree: read([[], [1]]),
+      message: notARead,
     },
     {
       name: 'an `up` that is no whole number',
-      tree: {
-        0: {
-          author: { path: 'author', reads: [{ to: [], data: [], up: 1.5 }] },
-        },
-      },
-      message: 'expected "up" to be a whole number at 0 "author".reads.0',
+      tree: read([[], [], 1.5]),
+      message: 'expected "up" to be a whole number at 0.0 read 0',
     },
     {
-      name: 'a negative `up`',
-      tree: {
-        0: {
-          author: { path: 'author', reads: [{ to: [], data: [], up: -1 }] },
-        },
-      },
-      message: 'expected "up" to be a whole number at 0 "author".reads.0',
-    },
-    {
-      name: 'a read of its own data',
-      tree: {
-        0: { author: { path: 'author', reads: [{ to: [], data: [], up: 0 }] } },
-      },
-      message: 'a read at 0 "author".reads.0 reaches no call above it',
+      name: 'an `up` that is no number',
+      tree: read([[], [], '1']),
+      message: 'expected "up" to be a whole number at 0.0 read 0',
     },
     {
       name: 'a read of data above the top-level call',
-      tree: {
-        0: { author: { path: 'author', reads: [{ to: [], data: [], up: 2 }] } },
-      },
-      message: 'a read at 0 "author".reads.0 reaches no call above it',
+      tree: read([[], [], 2]),
+      message: 'a read at 0.0 read 0 reaches no call above it',
     },
     {
       name: 'a read of an item outside a list',
-      tree: {
-        0: { author: { path: 'author', reads: [{ to: [], item: [] }] } },
-      },
-      message: 'a read at 0 "author".reads.0 reaches no item above it',
+      tree: read([[], [], 0]),
+      message: 'a read at 0.0 read 0 reaches no item above it',
     },
     {
       name: 'a read of the item of a call that runs once',
-      tree: {
-        0: {
-          author: {
-            ...node,
-            children: {
-              team: { path: 'team', reads: [{ to: [], item: [], up: 1 }] },
-            },
-          },
-        },
-      },
-      message: 'a read at 0 "author" "team".reads.0 reaches no item above it',
+      tree: { 0: [[...author, [['team', [[[], [], -1]]]]]] },
+      message: 'a read at 0.0.0 read 0 reaches no item above it',
+    },
+    {
+      name: 'a read of an item above the top-level call',
+      tree: { 0: [[[['items']], [['author', [[[], [], -3]]]]]] },
+      message: 'a read at 0.0.0 read 0 reaches no item above it',
     },
   ])('$name', async (scenario) => {
     const { fns, ran } = blog();
@@ -2798,7 +2743,7 @@ describe('a request the server refuses, before anything of it runs', () => {
 
   test('a node deeper than the server goes is not looked at', () => {
     const plan = parsePipelineTree({
-      tree: { 0: { a: { path: 'a', reads: [], children: { b: 'anything' } } } },
+      tree: { 0: [['a', [], ['anything']]] },
       calls: 1,
       maxDepth: 1,
       maxRuns: pipelineLimitDefaults.maxRuns,
@@ -2806,7 +2751,7 @@ describe('a request the server refuses, before anything of it runs', () => {
     expect(plan.get(0)).toMatchObject({
       ok: true,
       children: [
-        { kind: 'node', node: { key: 'a', childKeys: ['b'], children: null } },
+        { kind: 'node', node: { path: 'a', childCount: 1, children: null } },
       ],
     });
   });
@@ -2864,7 +2809,7 @@ describe('a place in an input that a read cannot write to', () => {
       parent: post,
       path: 'echo',
       input: scenario.input,
-      reads: [{ to: scenario.to, data: ['id'] }],
+      reads: [[scenario.to, ['id']]],
       list: null,
     });
 
@@ -2900,7 +2845,7 @@ describe('a place in an input that a read cannot write to', () => {
       parent: post,
       path: 'echo',
       input: scenario.input,
-      reads: [{ to: ['m', 'k'], data: ['id'] }],
+      reads: [[['m', 'k'], ['id']]],
       list: null,
     });
 
@@ -2941,7 +2886,7 @@ describe('a place in an input that a read cannot write to', () => {
       parent: post,
       path: 'echo',
       input: { at: new Point(1, '') },
-      reads: [{ to: ['at', 'label'], data: ['label'] }],
+      reads: [[['at', 'label'], ['label']]],
       list: null,
     });
 
@@ -2959,14 +2904,14 @@ describe('a place in an input that a read cannot write to', () => {
   });
 });
 
-describe('keys named `__proto__` or `constructor`', () => {
+describe('properties named `__proto__` or `constructor`', () => {
   const prototypes = () => [
     Object.prototype,
     Array.prototype,
     Object.getPrototypeOf({}),
   ];
 
-  test('in a tree, they are names and paths like any other, and change no prototype', async () => {
+  test('in a tree, they are paths like any other, and change no prototype', async () => {
     const before = prototypes().map((it) => Object.keys(it));
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
@@ -2976,36 +2921,27 @@ describe('keys named `__proto__` or `constructor`', () => {
         echo,
       },
     });
-    // As JSON, so `__proto__` is a key of its own
-    const node = (reads: string) =>
-      `{"path":"echo","input":{},"reads":${reads}}`;
-    const body = `{"tree":{"0":{${[
-      `"__proto__":${node('[{"to":["n"],"data":["__proto__","0","id"]}]')}`,
-      `"constructor":${node('[]')}`,
-      `"__proto__[]":{"echo":${node('[{"to":["id"],"item":["id"]}]')}}`,
-      `"constructor[]":{"echo":${node('[{"to":["id"],"item":["id"]}]')}}`,
-    ].join(',')}}}}`;
+    const ofItem = ['echo', [[['id'], ['id'], 0]], [], {}];
+    const tree = {
+      0: [
+        ['echo', [[['n'], ['__proto__', '0', 'id']]], [], {}],
+        [[['__proto__']], [ofItem]],
+        [[['constructor']], [ofItem]],
+      ],
+    };
 
     const response = await fetch(`${server.url}/post?batch=tree`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body,
+      body: JSON.stringify({ tree }),
     });
     const json = await response.json();
 
-    expect(Object.keys(json[0].children)).toEqual([
-      '__proto__',
-      'constructor',
-      '__proto__[]',
-      'constructor[]',
+    expect(json[0].children).toEqual([
+      { result: { data: { n: 'a' } } },
+      [[{ result: { data: { id: 'a' } } }]],
+      [],
     ]);
-    expect(json[0].children['__proto__']).toEqual({
-      result: { data: { n: 'a' } },
-    });
-    expect(json[0].children['__proto__[]']).toEqual([
-      { echo: { result: { data: { id: 'a' } } } },
-    ]);
-    expect(json[0].children['constructor[]']).toEqual([]);
     expect(prototypes().map((it) => Object.keys(it))).toEqual(before);
     expect(({} as Record<string, unknown>)['n']).toBeUndefined();
   });
@@ -3022,14 +2958,14 @@ describe('keys named `__proto__` or `constructor`', () => {
         parent: post,
         path: 'echo',
         input: JSON.parse('{"__proto__":{}}'),
-        reads: [{ to: ['__proto__', 'polluted'], data: ['id'] }],
+        reads: [[['__proto__', 'polluted'], ['id']]],
         list: null,
       }),
       call({
         parent: post,
         path: 'echo',
         input: {},
-        reads: [{ to: ['__proto__'], data: ['id'] }],
+        reads: [[['__proto__'], ['id']]],
         list: null,
       }),
     ];
@@ -3071,7 +3007,7 @@ describe('keys named `__proto__` or `constructor`', () => {
         parent: post,
         path: 'echo',
         input: {},
-        reads: [{ to: scenario.to, data: ['id'] }],
+        reads: [[scenario.to, ['id']]],
         list: null,
       });
 

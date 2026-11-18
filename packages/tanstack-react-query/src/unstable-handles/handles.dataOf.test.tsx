@@ -2080,21 +2080,23 @@ describe.each([
     );
     expect(url.pathname.endsWith('/post.bySlug')).toBe(true);
     expect(url.searchParams.get('batch')).toBe('tree');
+    // [path, reads, children, input], and a read is [to, from]
     expect(JSON.parse(url.searchParams.get('tree')!)).toEqual({
-      0: {
-        'author.byId': {
-          path: 'author.byId',
-          input: {},
-          reads: [{ to: ['id'], data: ['authorId'] }],
-          children: {
-            'post.byAuthor': {
-              path: 'post.byAuthor',
-              input: { direction: 'forward' },
-              reads: [{ to: ['authorId'], data: ['id'] }],
-            },
-          },
-        },
-      },
+      0: [
+        [
+          'author.byId',
+          [[['id'], ['authorId']]],
+          [
+            [
+              'post.byAuthor',
+              [[['authorId'], ['id']]],
+              [],
+              { direction: 'forward' },
+            ],
+          ],
+          {},
+        ],
+      ],
     });
     expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
       'author.byId',
@@ -2436,9 +2438,11 @@ describe.each([
       const url = new URL(req.url!, 'http://localhost');
       expect(url.pathname.endsWith('/post.paged')).toBe(true);
       // An author for every item of the page
-      expect(Object.keys(JSON.parse(url.searchParams.get('tree')!)[0])).toEqual(
-        ['items[]'],
-      );
+      const [list] = JSON.parse(url.searchParams.get('tree')!)[0];
+      expect(list[0]).toEqual([['items']]);
+      expect(list[1].map((node: unknown[]) => node[0])).toEqual([
+        'author.byId',
+      ]);
     }
     // A row reads its author from the cache
     const lastPost = data.data!.pages[2]!.items[0]!;

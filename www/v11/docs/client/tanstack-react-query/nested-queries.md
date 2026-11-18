@@ -369,12 +369,12 @@ export const client = createTRPCClient<AppRouter>({
 
 ### What goes over the wire {#wire}
 
-A request carries a **query tree** for each top-level call: the queries nested under it.
+A request carries a **query tree** for each top-level call: the queries nested under it. The format is for machines: tuples, by position, with nothing named that the position says.
 
-- **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, with its procedure's `path`, its `input` and its `reads`.
-- **A key** says where a follow-up is in its tree. A follow-up's own key is a name, such as `author.byId`.
-- **A list key** ends in `[]`, such as `items[]`. What is under it runs once for every item of that list, in the data it is under. `pages[].items[]` is a list of lists, and `[]` alone the data itself, for a query that returns a list. A `.`, `[` or `]` in a property's name is escaped with `\`.
-- **A read** fills in a part of a follow-up's input. `to` is where it goes, and `data` is where it comes from in the data of the query above, or `item` in the item a run is for. `up` reaches a query further up: 2 is the one above that.
+- **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, `[path, reads, children, input]`. A node without children or input leaves them out.
+- **Children** are a list: the nodes under a query, and lists.
+- **A list** is `[levels, nodes]`. Its nodes run once for every item of the list at `levels` in the data they are under: `[["items"]]` is every item of `items`, `[["pages"], ["items"]]` a list of lists, and `[[]]` the data itself, for a query that returns a list.
+- **A read** fills in a part of a follow-up's input: `[to, from, up]`. `to` is where it goes, and `from` where it comes from. `up` says from what: 1, the default, is the data of the query above, and 2 the one above that. 0 is the item a run is for.
 
 A chain, such as `post.bySlug` → `author.byId` → `post.list`, is a tree with one branch. A tree can also branch, and run once for every item of a list.
 
@@ -393,40 +393,29 @@ Content-Type: application/json
 {
   "0": { "slug": "hello" },
   "tree": {
-    "0": {
-      "author.byId": {
-        "path": "author.byId",
-        "input": {},
-        "reads": [{ "to": ["id"], "data": ["authorId"] }],
-        "children": {
-          "post.list": {
-            "path": "post.list",
-            "input": { "direction": "forward" },
-            "reads": [{ "to": ["teamId"], "data": ["teamId"] }]
-          }
-        }
-      }
-    }
+    "0": [
+      ["author.byId", [[["id"], ["authorId"]]], [
+        ["post.list", [[["teamId"], ["teamId"]]], [], { "direction": "forward" }]
+      ], {}]
+    ]
   }
 }
 ```
 
-The response has the result of each follow-up in the same place, under `children`:
+The response has the result of each follow-up at the same position, under `children`:
 
 ```json
 [
   {
     "result": { "data": { "slug": "hello", "authorId": "u1", "tags": [] } },
-    "children": {
-      "author.byId": {
+    "children": [
+      {
         "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } },
-        "children": {
-          "post.list": {
-            "result": { "data": { "items": [], "nextCursor": null } }
-          }
-        }
+        "children": [
+          { "result": { "data": { "items": [], "nextCursor": null } } }
+        ]
       }
-    }
+    ]
   }
 ]
 ```
@@ -434,7 +423,7 @@ The response has the result of each follow-up in the same place, under `children
 - **Every follow-up still validates its input** and runs its middleware, as if the browser had sent it.
 - **The server only reads what it sends back anyway**: the data of the queries a follow-up is nested under, as the client gets it.
 - **With `httpBatchStreamLink`, each follow-up arrives as soon as it is ready**, before the ones under it. Each part of the tree is a value of its own in the stream, a list's items too, so nothing waits for the slowest query in the tree.
-- **A follow-up whose query failed doesn't run.** Each key under that query gets an error with the code `PRECONDITION_FAILED`. A run for one item fails by itself.
+- **A follow-up whose query failed doesn't run.** Each child of that query gets an error with the code `PRECONDITION_FAILED`. A run for one item fails by itself.
 - **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the data above, as the server did.
 - **A follow-up reads only the queries it is nested under.** One that reads two queries, neither nested under the other, can't sit in one tree. See [When it isn't one request](#fallback).
 - **Only a request with a follow-up is sent this way**, as `batch=tree`. Every other request is sent as it always was, also with the options on.
@@ -537,7 +526,7 @@ A call that would go over a limit is refused, with a `BAD_REQUEST` that names th
 This call is nested 4 deep, more than `maxDepth` (3) allows
 ```
 
-- **The rest of the request runs.** Only that follow-up fails, and each key under it gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
+- **The rest of the request runs.** Only that follow-up fails, and each of its children gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
 - **The follow-up's query gets the error**, as it would get the procedure's own. A follow-up for every item runs for no item, and its items each ask by themselves.
 - **A follow-up that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Each limit applies to each follow-up**, and `maxFillSize` and `maxRuns` to the whole request.
@@ -551,7 +540,7 @@ A **value** is what one read fills in: `{ id: experimental_dataOf(post).authorId
 
 #### `maxDepth` {#limit-depth}
 
-`maxDepth` is how deep queries nest, 3 by default. A top-level query is 1, and a follow-up is 1 more than the query it is nested under. That chain is 3: `post.bySlug` → `author.byId` → `post.list`, the post page above. A list key adds no depth.
+`maxDepth` is how deep queries nest, 3 by default. A top-level query is 1, and a follow-up is 1 more than the query it is nested under. That chain is 3: `post.bySlug` → `author.byId` → `post.list`, the post page above. A list adds no depth.
 
 - **Why 3:** a page rarely needs more steps than that, and every step waits for the one before it.
 - **Raise it** for a page whose queries really nest deeper, and set the link's `maxDepth` to the same.
@@ -577,7 +566,7 @@ Whether a value can be an object or a list: `false` by default. Without it, a va
 
 - **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
 - **Set it** to read a list made with `.map()`, such as `ids: experimental_dataOf(post).tags.map((tag) => tag.id)`, or a whole result, such as `experimental_dataOf(post).author`. A value that a transformer makes, such as a `Date`, is an object too.
-- **Not needed for the list an entry for every item runs over.** That list is a list key in the tree, and the server reads only the values of each item, such as `post.authorId`.
+- **Not needed for the list an entry for every item runs over.** That list is a list in the tree, and the server reads only the values of each item, such as `post.authorId`.
 
 #### `maxFillSize` {#limit-fill-size}
 
@@ -815,15 +804,9 @@ Content-Type: application/json
 {
   "0": { "cursor": 10, "direction": "forward" },
   "tree": {
-    "0": {
-      "items[]": {
-        "author.byId": {
-          "path": "author.byId",
-          "input": {},
-          "reads": [{ "to": ["id"], "item": ["authorId"] }]
-        }
-      }
-    }
+    "0": [
+      [[["items"]], [["author.byId", [[["id"], ["authorId"], 0]], [], {}]]]
+    ]
   }
 }
 ```
@@ -836,15 +819,11 @@ The response has the page, and an author for every item of it:
     "result": {
       "data": { "items": [{ "slug": "next", "authorId": "u2" }], "nextCursor": 20 }
     },
-    "children": {
-      "items[]": [
-        {
-          "author.byId": {
-            "result": { "data": { "id": "u2", "name": "Sam", "teamId": "t1" } }
-          }
-        }
+    "children": [
+      [
+        [{ "result": { "data": { "id": "u2", "name": "Sam", "teamId": "t1" } } }]
       ]
-    }
+    ]
   }
 ]
 ```

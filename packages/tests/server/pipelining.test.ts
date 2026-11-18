@@ -983,7 +983,7 @@ describe('a server without `experimental_allowPipelining`', () => {
           author: {
             path: 'author',
             input: {},
-            reads: [{ to: ['id'], data: ['authorId'] }],
+            reads: [[['id'], ['authorId']]],
           },
         },
       }),
@@ -1073,24 +1073,26 @@ describe('the `tree` search param', () => {
     allowPipelining: true,
     maxBatchSize: undefined,
   } as const;
-  /** A follow-up of `path`, with an empty input */
-  const node = (path: string, reads: unknown[], more: object = {}) => ({
+  /** A follow-up of `path`, with an empty input: [path, reads, children, input] */
+  const node = (path: string, reads: unknown[], children: unknown[] = []) => [
     path,
-    input: {},
     reads,
-    ...more,
-  });
-  const author = node('author', [{ to: ['id'], data: ['authorId'] }]);
+    children,
+    {},
+  ];
+  /** The nodes under a list, which run for every item of it */
+  const list = (levels: string[][], ...nodes: unknown[]) => [levels, nodes];
+  const author = node('author', [[['id'], ['authorId']]]);
 
   test('fills in the input of a follow-up', async () => {
     const res = await get({
       ...defaults,
       path: 'post',
-      tree: { 0: { author } },
+      tree: { 0: [author] },
     });
-    expect(res.json[0].children).toEqual({
-      author: { result: { data: { id: 'u1', teamId: 'team-of-u1' } } },
-    });
+    expect(res.json[0].children).toEqual([
+      { result: { data: { id: 'u1', teamId: 'team-of-u1' } } },
+    ]);
   });
 
   test('`null` in a path reads every item of an array', async () => {
@@ -1098,73 +1100,62 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       allowPipelining: { allowWholeValues: true },
-      tree: { 0: { tags: node('tags', [{ to: ['ids'], data: path }]) } },
+      tree: { 0: [node('tags', [[['ids'], path]])] },
     });
     const res = await get(tags(['tags', null, 'id']));
-    expect(res.json[0].children.tags).toEqual({
+    expect(res.json[0].children[0]).toEqual({
       result: { data: ['t1', 't2'] },
     });
 
     // Not an array: nothing to read
     const notAnArray = await get(tags(['slug', null, 'id']));
-    expect(notAnArray.json[0].children.tags.error.data.code).toBe(
-      'BAD_REQUEST',
-    );
+    expect(notAnArray.json[0].children[0].error.data.code).toBe('BAD_REQUEST');
   });
 
-  test('a list key runs a follow-up for every item, each with a result or an error of its own', async () => {
-    const each = (item: unknown[], list = 'tags[]') =>
+  test('a list runs a follow-up for every item, each with a result or an error of its own', async () => {
+    const each = (item: unknown[], levels = [['tags']]) =>
       get({
         ...defaults,
         path: 'post',
         allowPipelining: { allowWholeValues: true },
         tree: {
-          0: {
-            [list]: {
-              tags: {
-                path: 'tags',
-                input: { ids: [null, 'extra'] },
-                reads: [{ to: ['ids', '0'], item }],
-              },
-            },
-          },
+          0: [
+            list(levels, [
+              'tags',
+              [[['ids', '0'], item, 0]],
+              [],
+              { ids: [null, 'extra'] },
+            ]),
+          ],
         },
       });
 
     const res = await each(['id']);
-    expect(res.json[0].children['tags[]']).toEqual([
-      { tags: { result: { data: ['t1', 'extra'] } } },
-      { tags: { result: { data: ['t2', 'extra'] } } },
+    expect(res.json[0].children[0]).toEqual([
+      [{ result: { data: ['t1', 'extra'] } }],
+      [{ result: { data: ['t2', 'extra'] } }],
     ]);
 
     // Every run validates its own input
     const invalid = await each([]);
     expect(
-      invalid.json[0].children['tags[]'].map(
-        (item: any) => item.tags.error.data.code,
-      ),
+      invalid.json[0].children[0].map(([tags]: any[]) => tags.error.data.code),
     ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
 
     // What is no list has no items
-    const noList = await each(['id'], 'slug[]');
-    expect(noList.json[0].children['slug[]']).toEqual([]);
+    const noList = await each(['id'], [['slug']]);
+    expect(noList.json[0].children[0]).toEqual([]);
   });
 
   test('a run for an item that returns a stream fails by itself', async () => {
     const res = await get({
       ...defaults,
       path: 'post',
-      tree: {
-        0: {
-          'tags[]': { ticks: node('ticks', [{ to: ['id'], item: ['id'] }]) },
-        },
-      },
+      tree: { 0: [list([['tags']], node('ticks', [[['id'], ['id'], 0]]))] },
     });
     // Not `{}`, which is what a stream inside a response that doesn't stream would be
     expect(
-      res.json[0].children['tags[]'].map(
-        (item: any) => item.ticks.error.data.code,
-      ),
+      res.json[0].children[0].map(([ticks]: any[]) => ticks.error.data.code),
     ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
   });
 
@@ -1173,12 +1164,10 @@ describe('the `tree` search param', () => {
       ...defaults,
       input: {},
       path: 'feed',
-      tree: { 0: { author } },
+      tree: { 0: [author] },
     });
     expect(res.json[0].error.data.code).toBe('UNSUPPORTED_MEDIA_TYPE');
-    expect(res.json[0].children.author.error.data.code).toBe(
-      'PRECONDITION_FAILED',
-    );
+    expect(res.json[0].children[0].error.data.code).toBe('PRECONDITION_FAILED');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
@@ -1187,16 +1176,10 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       tree: {
-        0: {
-          tags: {
-            path: 'tags',
-            input: { ids: ['a'] },
-            reads: [{ to: ['ids', 'length'], data: ['authorId'] }],
-          },
-        },
+        0: [['tags', [[['ids', 'length'], ['authorId']]], [], { ids: ['a'] }]],
       },
     });
-    expect(res.json[0].children.tags.error).toMatchObject({
+    expect(res.json[0].children[0].error).toMatchObject({
       message: 'Invalid "tree": the input has nothing at "ids.length"',
       data: { code: 'BAD_REQUEST' },
     });
@@ -1204,15 +1187,12 @@ describe('the `tree` search param', () => {
 
   /** An author that reads its id `count` times */
   const reading = (count: number) => ({
-    0: {
-      author: node(
+    0: [
+      node(
         'author',
-        Array.from({ length: count }, () => ({
-          to: ['id'],
-          data: ['authorId'],
-        })),
+        Array.from({ length: count }, () => [['id'], ['authorId']]),
       ),
-    },
+    ],
   });
 
   test('a follow-up can read so many values, and no more', async () => {
@@ -1221,7 +1201,7 @@ describe('the `tree` search param', () => {
       path: 'post',
       tree: reading(pipelineLimitDefaults.maxReadsPerCall),
     });
-    expect(within.json[0].children.author.result.data.id).toBe('u1');
+    expect(within.json[0].children[0].result.data.id).toBe('u1');
 
     const over = await get({
       ...defaults,
@@ -1232,7 +1212,7 @@ describe('the `tree` search param', () => {
     // the batch's calls'
     expect(over.status).toBe(200);
     expect(over.json[0].result.data.slug).toBe('hello');
-    expect(over.json[0].children.author.error).toMatchObject({
+    expect(over.json[0].children[0].error).toMatchObject({
       message: `This call reads ${pipelineLimitDefaults.maxReadsPerCall + 1} values, more than \`maxReadsPerCall\` (${pipelineLimitDefaults.maxReadsPerCall}) allows`,
       data: { code: 'BAD_REQUEST' },
     });
@@ -1243,18 +1223,18 @@ describe('the `tree` search param', () => {
     const unread = (count: number) =>
       node(
         'unread',
-        Array.from({ length: count }, (_it, index) => ({
-          to: [`k${index}`],
-          data: ['authorId'],
-        })),
+        Array.from({ length: count }, (_it, index) => [
+          [`k${index}`],
+          ['authorId'],
+        ]),
       );
     const over = await get({
       ...defaults,
       path: 'post',
-      tree: { 0: { unread: unread(2) } },
+      tree: { 0: [unread(2)] },
       allowPipelining: { maxReadsPerCall: 1 },
     });
-    expect(over.json[0].children.unread.error).toMatchObject({
+    expect(over.json[0].children[0].error).toMatchObject({
       message:
         'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
       data: { code: 'BAD_REQUEST' },
@@ -1265,9 +1245,9 @@ describe('the `tree` search param', () => {
       ...defaults,
       input: { 0: { slug: 'missing' } },
       path: 'post',
-      tree: { 0: { unread: unread(1) } },
+      tree: { 0: [unread(1)] },
     });
-    expect(afterFailed.json[0].children.unread.error).toMatchObject({
+    expect(afterFailed.json[0].children[0].error).toMatchObject({
       data: { code: 'PRECONDITION_FAILED' },
     });
     expect(afterFailed.calls).not.toHaveBeenCalled();
@@ -1279,30 +1259,29 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       tree: {
-        0: {
-          author: {
-            ...author,
-            children: {
-              team: {
-                path: 'team',
-                reads: [{ to: [], data: ['teamId'] }],
-                children: {
-                  author: node('author', [{ to: ['id'], data: ['id'] }]),
-                },
-              },
-            },
-          },
-          whole: node('author', [{ to: ['id'], data: ['tags'] }]),
-        },
+        0: [
+          node(
+            'author',
+            [[['id'], ['authorId']]],
+            [
+              [
+                'team',
+                [[[], ['teamId']]],
+                [node('author', [[['id'], ['id']]])],
+              ],
+            ],
+          ),
+          node('author', [[['id'], ['tags']]]),
+        ],
       },
     });
-    const { team } = res.json[0].children.author.children;
+    const [team] = res.json[0].children[0].children;
     expect(team.result.data).toEqual({ id: 'team-of-u1' });
-    expect(team.children.author.error).toMatchObject({
+    expect(team.children[0].error).toMatchObject({
       message: 'This call is nested 4 deep, more than `maxDepth` (3) allows',
       data: { code: 'BAD_REQUEST' },
     });
-    expect(res.json[0].children.whole.error).toMatchObject({
+    expect(res.json[0].children[1].error).toMatchObject({
       message:
         'A value this call reads is an object or an array, and `allowWholeValues` is false',
       data: { code: 'BAD_REQUEST' },
@@ -1325,7 +1304,7 @@ describe('the `tree` search param', () => {
           allowPipelining,
           tree: reading(count),
         })
-      ).json[0].children.author;
+      ).json[0].children[0];
     expect((await error(20, { maxReadsPerCall: 20 })).result.data.id).toBe(
       'u1',
     );
@@ -1344,7 +1323,7 @@ describe('the `tree` search param', () => {
 
   /** A tag for every tag of the post */
   const tagOfEach = {
-    0: { 'tags[]': { tag: node('tag', [{ to: ['id'], item: ['id'] }]) } },
+    0: [list([['tags']], node('tag', [[['id'], ['id'], 0]]))],
   };
 
   test('every run of a follow-up for every item counts towards `maxBatchSize`', async () => {
@@ -1355,7 +1334,7 @@ describe('the `tree` search param', () => {
       maxBatchSize: 3,
       tree: tagOfEach,
     });
-    expect(within.json[0].children['tags[]']).toHaveLength(2);
+    expect(within.json[0].children[0]).toHaveLength(2);
     expect(within.calls).toHaveBeenCalledTimes(2);
 
     const over = await get({
@@ -1370,25 +1349,25 @@ describe('the `tree` search param', () => {
       data: { code: 'BAD_REQUEST' },
     };
     // One error in place of the list's items
-    expect(over.json[0].children['tags[]']).toMatchObject({ error: refused });
+    expect(over.json[0].children[0]).toMatchObject({ error: refused });
     // It ran for no item
     expect(over.calls).not.toHaveBeenCalled();
   });
 
   test('a follow-up that is refused takes none of `maxBatchSize` from the next', async () => {
-    const tag = { tag: node('tag', [{ to: ['id'], item: ['id'] }]) };
+    const tag = node('tag', [[['id'], ['id'], 0]]);
     const res = await get({
       ...defaults,
       input: {},
       path: 'lists',
       maxBatchSize: 4,
-      tree: { 0: { 'long[]': tag, 'short[]': tag } },
+      tree: { 0: [list([['long']], tag), list([['short']], tag)] },
     });
     // The lists and four runs are over the limit. The lists and two are not
-    expect(res.json[0].children['long[]'].error.message).toBe(
+    expect(res.json[0].children[0].error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );
-    expect(res.json[0].children['short[]']).toHaveLength(2);
+    expect(res.json[0].children[1]).toHaveLength(2);
     expect(res.calls).toHaveBeenCalledTimes(2);
   });
 
@@ -1398,25 +1377,26 @@ describe('the `tree` search param', () => {
       path: 'post',
       allowPipelining: { allowWholeValues: true },
       tree: {
-        0: {
+        0: [
           // The whole post as the input, and then its slug replaced
-          first: {
-            path: 'post',
-            reads: [
-              { to: [], data: [] },
-              { to: ['slug'], data: ['authorId'] },
+          [
+            'post',
+            [
+              [[], []],
+              [['slug'], ['authorId']],
             ],
-          },
-          second: node('post', [
-            { to: ['other'], data: ['authorId'] },
-            { to: ['slug'], data: ['slug'] },
+          ],
+          node('post', [
+            [['other'], ['authorId']],
+            [['slug'], ['slug']],
           ]),
-        },
+        ],
       },
     });
-    expect(res.json[0].children.first.result.data.slug).toBe('u1');
+    const [first, second] = res.json[0].children;
+    expect(first.result.data.slug).toBe('u1');
     // Not `u1`: the post's data is as it was sent
-    expect(res.json[0].children.second.result.data.slug).toBe('hello');
+    expect(second.result.data.slug).toBe('hello');
   });
 
   test('a follow-up that changes its input does not change what the follow-ups under it read', async () => {
@@ -1425,22 +1405,24 @@ describe('the `tree` search param', () => {
       path: 'post',
       allowPipelining: { allowWholeValues: true },
       tree: {
-        0: {
-          stamp: node('stamp', [{ to: ['tags'], data: ['tags'] }], {
-            children: {
+        0: [
+          node(
+            'stamp',
+            [[['tags'], ['tags']]],
+            [
               // Reads the tags once the stamp has run
-              tags: node('tags', [
-                { to: ['after'], data: [] },
-                { to: ['ids'], data: ['tags', null, 'id'], up: 2 },
+              node('tags', [
+                [['after'], []],
+                [['ids'], ['tags', null, 'id'], 2],
               ]),
-            },
-          }),
-        },
+            ],
+          ),
+        ],
       },
     });
-    const { stamp } = res.json[0].children;
+    const [stamp] = res.json[0].children;
     expect(stamp.result.data).toBe(3);
-    expect(stamp.children.tags.result.data).toEqual(['t1', 't2']);
+    expect(stamp.children[0].result.data).toEqual(['t1', 't2']);
   });
 
   test('a run for an item that changes its input does not change what other runs and calls read', async () => {
@@ -1449,35 +1431,34 @@ describe('the `tree` search param', () => {
       path: 'post',
       allowPipelining: { allowWholeValues: true },
       tree: {
-        0: {
-          'tags[]': {
+        0: [
+          list(
+            [['tags']],
             // Every run gets the whole list too
-            stamp: node(
+            node(
               'stamp',
               [
-                { to: ['id'], item: ['id'] },
-                { to: ['tags'], data: ['tags'] },
+                [['id'], ['id'], 0],
+                [['tags'], ['tags']],
               ],
-              {
-                children: {
-                  tags: node('tags', [
-                    { to: ['after'], data: [] },
-                    { to: ['ids'], data: ['tags', null, 'id'], up: 2 },
-                  ]),
-                },
-              },
+              [
+                node('tags', [
+                  [['after'], []],
+                  [['ids'], ['tags', null, 'id'], 2],
+                ]),
+              ],
             ),
-          },
-        },
+          ),
+        ],
       },
     });
-    expect(res.json[0].children['tags[]']).toEqual(
-      Array.from({ length: 2 }, () => ({
-        stamp: {
+    expect(res.json[0].children[0]).toEqual(
+      Array.from({ length: 2 }, () => [
+        {
           result: { data: 3 },
-          children: { tags: { result: { data: ['t1', 't2'] } } },
+          children: [{ result: { data: ['t1', 't2'] } }],
         },
-      })),
+      ]),
     );
   });
 
@@ -1486,21 +1467,15 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       tree: {
-        0: {
-          'tags[]': {
-            stamp: {
-              path: 'stamp',
-              input: { tags: [] },
-              reads: [{ to: ['id'], item: ['id'] }],
-            },
-          },
-        },
+        0: [
+          list([['tags']], ['stamp', [[['id'], ['id'], 0]], [], { tags: [] }]),
+        ],
       },
     });
     // Every run adds a tag to its own list
-    expect(res.json[0].children['tags[]']).toEqual([
-      { stamp: { result: { data: 1 } } },
-      { stamp: { result: { data: 1 } } },
+    expect(res.json[0].children[0]).toEqual([
+      [{ result: { data: 1 } }],
+      [{ result: { data: 1 } }],
     ]);
   });
 
@@ -1537,17 +1512,11 @@ describe('the `tree` search param', () => {
     const res = await fetch(
       `${ctx.httpUrl}/start?batch=tree&tree=${encodeURIComponent(
         JSON.stringify({
-          0: {
-            span: {
-              path: 'span',
-              input: { from: null, to: 5 },
-              reads: [{ to: ['from'], data: ['at'] }],
-            },
-          },
+          0: [['span', [[['from'], ['at']]], [], { from: null, to: 5 }]],
         }),
       )}`,
     );
-    expect((await res.json())[0].children.span).toEqual({
+    expect((await res.json())[0].children[0]).toEqual({
       result: { data: [1, 5] },
     });
   });
@@ -1595,13 +1564,11 @@ describe('the `tree` search param', () => {
     const res = await fetch(
       `${ctx.httpUrl}/post?batch=tree&tree=${encodeURIComponent(
         JSON.stringify({
-          0: {
-            since: node('since', [{ to: ['since'], data: ['publishedAt'] }]),
-          },
+          0: [node('since', [[['since'], ['publishedAt']]])],
         }),
       )}`,
     );
-    expect((await res.json())[0].children.since).toEqual({
+    expect((await res.json())[0].children[0]).toEqual({
       result: { data: 2026 },
     });
   });
@@ -1622,7 +1589,7 @@ describe('the `tree` search param', () => {
     expect(json[0]).not.toHaveProperty('children');
   });
 
-  test('a list key under a failed call, or over what is no list, runs for none', async () => {
+  test('a list under a failed call, or over what is no list, runs for none', async () => {
     const failed = await get({
       ...defaults,
       input: { 0: { slug: 'missing' } },
@@ -1630,7 +1597,7 @@ describe('the `tree` search param', () => {
       tree: tagOfEach,
     });
     expect(failed.json[0].error.data.code).toBe('NOT_FOUND');
-    expect(failed.json[0].children['tags[]'].error.data.code).toBe(
+    expect(failed.json[0].children[0].error.data.code).toBe(
       'PRECONDITION_FAILED',
     );
     expect(failed.calls).not.toHaveBeenCalled();
@@ -1638,11 +1605,9 @@ describe('the `tree` search param', () => {
     const noList = await get({
       ...defaults,
       path: 'post',
-      tree: {
-        0: { 'slug[]': { tag: node('tag', [{ to: ['id'], item: ['id'] }]) } },
-      },
+      tree: { 0: [list([['slug']], node('tag', [[['id'], ['id'], 0]]))] },
     });
-    expect(noList.json[0].children['slug[]']).toEqual([]);
+    expect(noList.json[0].children[0]).toEqual([]);
     expect(noList.calls).not.toHaveBeenCalled();
   });
 
@@ -1651,10 +1616,10 @@ describe('the `tree` search param', () => {
       ...defaults,
       input: {},
       path: 'nothing',
-      tree: { 0: { author: node('author', [{ to: ['id'], data: [] }]) } },
+      tree: { 0: [node('author', [[['id'], []]])] },
     });
     // The author's input has no id, and fails to validate
-    expect(res.json[0].children.author.error.data.code).toBe('BAD_REQUEST');
+    expect(res.json[0].children[0].error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
@@ -1663,9 +1628,9 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       allowPipelining: { allowWholeValues: true },
-      tree: { 0: { author: node('author', [{ to: ['id'], data: ['tags'] }]) } },
+      tree: { 0: [node('author', [[['id'], ['tags']]])] },
     });
-    expect(res.json[0].children.author.error.data.code).toBe('BAD_REQUEST');
+    expect(res.json[0].children[0].error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
@@ -1674,16 +1639,16 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       tree: {
-        0: {
-          author: node('author', [
-            { to: ['id'], data: ['authorId'] },
-            { to: ['since'], data: ['secret', 'inherited'] },
-            { to: ['__proto__'], data: ['constructor'] },
+        0: [
+          node('author', [
+            [['id'], ['authorId']],
+            [['since'], ['secret', 'inherited']],
+            [['__proto__'], ['constructor']],
           ]),
-        },
+        ],
       },
     });
-    expect(res.json[0].children.author.result.data).toEqual({
+    expect(res.json[0].children[0].result.data).toEqual({
       id: 'u1',
       teamId: 'team-of-u1',
     });
@@ -1693,22 +1658,16 @@ describe('the `tree` search param', () => {
   test.each([
     [
       'a read of data above the top-level call',
-      { 0: { author: node('author', [{ to: ['id'], data: [], up: 2 }]) } },
+      { 0: [node('author', [[['id'], [], 2]])] },
     ],
     [
       'a read of an item outside a list',
-      { 0: { author: node('author', [{ to: ['id'], item: [] }]) } },
+      { 0: [node('author', [[['id'], [], 0]])] },
     ],
-    ['a call that is not in the batch', { 2: { author } }],
-    [
-      'paths that are not strings',
-      { 0: { author: node('author', [{ to: [1], data: [] }]) } },
-    ],
-    [
-      'reads that are no list',
-      { 0: { author: { path: 'author', reads: { to: [], data: [] } } } },
-    ],
-    ['a key that is no key', { 0: { 'a..b[]': {} } }],
+    ['a call that is not in the batch', { 2: [author] }],
+    ['paths that are not strings', { 0: [node('author', [[[1], []]])] }],
+    ['reads that are no reads', { 0: [['author', [[], []]]] }],
+    ['children that are no list', { 0: { author } }],
     ['something that is not an object', 'nope'],
   ])('rejects %s', async (_name, tree) => {
     const res = await get({ ...defaults, path: 'post', tree });
@@ -1736,13 +1695,13 @@ describe('the `tree` search param', () => {
         body: JSON.stringify(body),
       });
 
-    const res = await post({ 0: { slug: 'hello' }, tree: { 0: { author } } });
-    expect((await res.json())[0].children.author).toEqual({
+    const res = await post({ 0: { slug: 'hello' }, tree: { 0: [author] } });
+    expect((await res.json())[0].children[0]).toEqual({
       result: { data: { id: 'u1', teamId: 'team-of-u1' } },
     });
 
     calls.mockClear();
-    const invalid = await post({ 0: { slug: 'hello' }, tree: { 1: {} } });
+    const invalid = await post({ 0: { slug: 'hello' }, tree: { 1: [] } });
     expect(invalid.status).toBe(400);
     expect((await invalid.json()).error.message).toMatch(/^Invalid "tree"/);
     expect(calls).not.toHaveBeenCalled();
@@ -1774,9 +1733,7 @@ describe('the `tree` search param', () => {
       `${ctx.httpUrl}/post?batch=tree&input=${encodeURIComponent(
         JSON.stringify({ 0: { slug: 'hello' } }),
       )}&tree=${encodeURIComponent(
-        JSON.stringify({
-          0: { author: node('author', [{ to: ['id'], data: ['missing'] }]) },
-        }),
+        JSON.stringify({ 0: [node('author', [[['id'], ['missing']]])] }),
       )}`,
     );
     expect(responseMeta).toHaveBeenCalledWith(
@@ -1809,10 +1766,10 @@ describe('the `tree` search param', () => {
     });
     const res = await fetch(
       `${ctx.httpUrl}/post?batch=tree&tree=${encodeURIComponent(
-        JSON.stringify({ 0: { author } }),
+        JSON.stringify({ 0: [author] }),
       )}`,
     );
-    expect((await res.json())[0].children.author).toEqual({
+    expect((await res.json())[0].children[0]).toEqual({
       result: { data: ['post'] },
     });
   });
@@ -1942,15 +1899,7 @@ test('a follow-up does not start once the request is aborted', async () => {
       return { name: 'Ada' };
     }),
   });
-  const tree = {
-    0: {
-      author: {
-        path: 'author',
-        input: {},
-        reads: [{ to: ['id'], data: ['authorId'] }],
-      },
-    },
-  };
+  const tree = { 0: [['author', [[['id'], ['authorId']]], [], {}]] };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
@@ -1972,15 +1921,7 @@ test('a follow-up whose procedure fails to load fails by itself: the rest of the
     // A router that loads when it is first called, and fails to
     broken: lazy(() => Promise.reject(new Error('failed to load'))),
   });
-  const tree = {
-    0: {
-      author: {
-        path: 'broken.author',
-        input: {},
-        reads: [{ to: ['id'], data: ['authorId'] }],
-      },
-    },
-  };
+  const tree = { 0: [['broken.author', [[['id'], ['authorId']]], [], {}]] };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
@@ -1992,7 +1933,7 @@ test('a follow-up whose procedure fails to load fails by itself: the rest of the
   const json = await res.json();
 
   expect(json[0].result.data).toEqual({ authorId: 'u1' });
-  expect(json[0].children.author.error).toMatchObject({
+  expect(json[0].children[0].error).toMatchObject({
     message: 'failed to load',
     data: { code: 'INTERNAL_SERVER_ERROR' },
   });
@@ -2006,15 +1947,7 @@ test('a follow-up whose data JSON can not carry fails by itself: the rest of the
       .input(z.object({ id: z.string() }))
       .query(() => ({ followers: 1n })),
   });
-  const tree = {
-    0: {
-      author: {
-        path: 'author',
-        input: {},
-        reads: [{ to: ['id'], data: ['authorId'] }],
-      },
-    },
-  };
+  const tree = { 0: [['author', [[['id'], ['authorId']]], [], {}]] };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
@@ -2026,7 +1959,7 @@ test('a follow-up whose data JSON can not carry fails by itself: the rest of the
   const json = await res.json();
 
   expect(json[0].result.data).toEqual({ authorId: 'u1' });
-  expect(json[0].children.author.error).toMatchObject({
+  expect(json[0].children[0].error).toMatchObject({
     data: { code: 'INTERNAL_SERVER_ERROR' },
   });
 });

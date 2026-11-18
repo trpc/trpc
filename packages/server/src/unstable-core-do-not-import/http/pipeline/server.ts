@@ -4,14 +4,13 @@ import type { CombinedDataTransformer } from '../../transformer';
 import { emptyObject, isAsyncIterable, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
-  PipeChildrenResponse,
+  PipeChildResponse,
   PipelineLimits,
   PipelinePath,
   PipeListResponse,
   PipeOutcome,
 } from './wire';
 import {
-  parsePipelineKey,
   pipelineLimitDefaults,
   readPipelineList,
   readPipelinePath,
@@ -79,11 +78,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return isObject(value) && !Array.isArray(value);
 }
 
-/** Whether an object has only the keys it may have */
-function hasOnly(value: Record<string, unknown>, keys: readonly string[]) {
-  return Object.keys(value).every((key) => keys.includes(key));
-}
-
 // ---------- a request's tree, checked ----------
 
 /** A read, checked: where it comes from, as how many calls up */
@@ -98,7 +92,6 @@ export interface PipelinePlanRead {
 
 /** A node, checked */
 export interface PipelinePlanNode {
-  key: string;
   /** The procedure's path */
   path: string;
   /** The input as the client sent it */
@@ -113,8 +106,8 @@ export interface PipelinePlanNode {
    * node that does. Each of its runs then gets a copy of its input
    */
   repeated: boolean;
-  /** The keys of its children, in order, which the response has too */
-  childKeys: string[];
+  /** How many children it has: the response has a result for each */
+  childCount: number;
   /**
    * Its children, or `null` if it has none, or if it is deeper than the
    * server goes: it is refused then, and what it has under it doesn't matter
@@ -122,15 +115,10 @@ export interface PipelinePlanNode {
   children: PipelinePlanChildren | null;
 }
 
-/** Children, checked, in the order of their keys */
+/** Children, checked, in their order, which the response keeps */
 export type PipelinePlanChildren = (
   | { kind: 'node'; node: PipelinePlanNode }
-  | {
-      kind: 'list';
-      key: string;
-      levels: string[][];
-      children: PipelinePlanChildren;
-    }
+  | { kind: 'list'; levels: string[][]; nodes: PipelinePlanNode[] }
 )[];
 
 /**
@@ -139,14 +127,7 @@ export type PipelinePlanChildren = (
  */
 export type PipelinePlanTree =
   | { ok: true; children: PipelinePlanChildren }
-  | { ok: false; keys: string[]; error: TRPCError };
-
-/** The keys of children, in order */
-function keysOf(children: PipelinePlanChildren) {
-  return children.map((child) =>
-    child.kind === 'node' ? child.node.key : child.key,
-  );
-}
+  | { ok: false; count: number; error: TRPCError };
 
 /** What a call has above it, for what its reads can reach */
 interface PlanFrame {
@@ -158,7 +139,8 @@ interface PlanFrame {
  * Checks the `tree` of a request: the children of each top-level call, by
  * its index. A string is the search param's JSON. A request without one has
  * no children. Nothing after this checks it again: a read that comes out of
- * this reaches what it names.
+ * this reaches what it names. Errors name a child by its positions from the
+ * top-level call, as in `0.1.0`.
  */
 export function parsePipelineTree(opts: {
   tree: unknown;
@@ -175,7 +157,7 @@ export function parsePipelineTree(opts: {
   maxRuns: number;
 }): Map<number, PipelinePlanTree> {
   const { maxDepth } = opts;
-  /** The nodes of the tree being parsed, and the keys under too deep ones */
+  /** The nodes of the tree being parsed, and the children of too deep ones */
   let nodes = 0;
   let parsed = opts.tree;
   if (parsed === undefined) {
@@ -199,35 +181,29 @@ export function parsePipelineTree(opts: {
     where: string,
   ): PipelinePlanRead {
     if (
-      !isRecord(read) ||
-      !isKeys(read['to']) ||
-      !hasOnly(read, ['to', 'item', 'data', 'up'])
+      !Array.isArray(read) ||
+      (read.length !== 2 && read.length !== 3) ||
+      !isKeys(read[0]) ||
+      !isPath(read[1])
     ) {
-      throw invalidTree(`expected a read with "to" at ${where}`);
+      throw invalidTree(`expected a read, [to, from, up?], at ${where}`);
     }
-    const hasItem = read['item'] !== undefined;
-    const hasData = read['data'] !== undefined;
-    const path = hasItem ? read['item'] : read['data'];
-    if (hasItem === hasData || !isPath(path)) {
-      throw invalidTree(`expected "item" or "data" at ${where}`);
-    }
-    const from = hasItem ? 'item' : 'data';
-    const up = read['up'] ?? (from === 'item' ? 0 : 1);
-    if (typeof up !== 'number' || !Number.isInteger(up) || up < 0) {
+    const up: unknown = read.length === 3 ? read[2] : 1;
+    if (typeof up !== 'number' || !Number.isInteger(up)) {
       throw invalidTree(`expected "up" to be a whole number at ${where}`);
     }
-    const frame = frames[up];
-    // The node itself has no data yet, and only a run for an item has one
-    if (!frame || (from === 'data' ? up === 0 : !frame.hasItem)) {
+    // Up from the node's parent for data, from the node itself for an item
+    const from = up > 0 ? 'data' : 'item';
+    const frame = frames[Math.abs(up)];
+    if (!frame || (from === 'item' && !frame.hasItem)) {
       throw invalidTree(
         `a read at ${where} reaches no ${from === 'item' ? 'item' : 'call'} above it`,
       );
     }
-    return { to: read['to'], from, up, path };
+    return { to: read[0], from, up: Math.abs(up), path: read[1] };
   }
 
   function parseNode(opts: {
-    key: string;
     value: unknown;
     /** The calls above it, nearest first */
     above: readonly PlanFrame[];
@@ -238,96 +214,103 @@ export function parsePipelineTree(opts: {
   }): PipelinePlanNode {
     const { value, where } = opts;
     if (
-      !isRecord(value) ||
-      typeof value['path'] !== 'string' ||
-      value['path'] === '' ||
-      !Array.isArray(value['reads']) ||
-      !hasOnly(value, ['path', 'input', 'reads', 'children']) ||
-      (value['children'] !== undefined && !isRecord(value['children']))
+      !Array.isArray(value) ||
+      value.length < 2 ||
+      value.length > 4 ||
+      typeof value[0] !== 'string' ||
+      value[0] === '' ||
+      !Array.isArray(value[1]) ||
+      (value.length > 2 && !Array.isArray(value[2]))
     ) {
-      throw invalidTree(`expected a node with "path" and "reads" at ${where}`);
+      throw invalidTree(
+        `expected a node, [path, reads, children?, input?], at ${where}`,
+      );
     }
+    const [path, reads, children = [], input] = value as [
+      string,
+      unknown[],
+      unknown[]?,
+      unknown?,
+    ];
     const frames = [{ hasItem: opts.perItem }, ...opts.above];
     const depth = frames.length;
-    const children = value['children'];
-    const childKeys = children ? Object.keys(children) : [];
     const goesDeeper = depth <= maxDepth;
-    // What isn't parsed still gets a result for each of its keys
-    nodes += 1 + (goesDeeper ? 0 : childKeys.length);
+    // What isn't parsed still gets a result for each of its children
+    nodes += 1 + (goesDeeper ? 0 : children.length);
     const repeated = opts.perItem || opts.repeated;
     return {
-      key: opts.key,
-      path: value['path'],
-      input: value['input'],
-      reads: value['reads'].map((read, index) =>
-        parseRead(read, frames, `${where}.reads.${index}`),
+      path,
+      input,
+      reads: reads.map((read, index) =>
+        parseRead(read, frames, `${where} read ${index}`),
       ),
       depth,
       perItem: opts.perItem,
       repeated,
-      childKeys,
+      childCount: children.length,
       children:
-        children && goesDeeper
-          ? parseChildren({
-              value: children,
-              above: frames,
-              perItem: false,
-              repeated,
-              where,
-            })
+        children.length > 0 && goesDeeper
+          ? parseChildren({ value: children, above: frames, repeated, where })
           : null,
     };
   }
 
+  /** The children of a call: nodes, and lists of nodes that run per item */
   function parseChildren(opts: {
-    value: Record<string, unknown>;
+    value: unknown[];
     /** The call they are the children of, then the calls above it */
     above: readonly PlanFrame[];
-    /** Whether they are under a list */
-    perItem: boolean;
     /** Whether the call they are under runs at more than one place */
     repeated: boolean;
     where: string;
   }): PipelinePlanChildren {
-    return Object.entries(opts.value).map(([key, value]) => {
-      const where = `${opts.where} ${JSON.stringify(key)}`;
-      const parsedKey = parsePipelineKey(key);
-      if (!parsedKey) {
-        throw invalidTree(`no such key: ${JSON.stringify(key)}`);
-      }
-      if (parsedKey.kind === 'node') {
+    return opts.value.map((child, index) => {
+      const where = `${opts.where}.${index}`;
+      // A node's path is a string, where a list has its levels
+      if (Array.isArray(child) && typeof child[0] === 'string') {
         return {
           kind: 'node' as const,
           node: parseNode({
-            key,
-            value,
+            value: child,
             above: opts.above,
-            perItem: opts.perItem,
+            perItem: false,
             repeated: opts.repeated,
             where,
           }),
         };
       }
-      if (opts.perItem) {
-        // One way to write a list of lists, which also keeps how deep a tree
-        // can go to what `maxDepth` allows
+      if (
+        !Array.isArray(child) ||
+        child.length !== 2 ||
+        !Array.isArray(child[0]) ||
+        child[0].length === 0 ||
+        !child[0].every(isKeys) ||
+        !Array.isArray(child[1])
+      ) {
         throw invalidTree(
-          `a list at ${where} is right under another: write them as one key, such as "pages[].items[]"`,
+          `expected a node, [path, reads, children?, input?], or a list, [levels, nodes], at ${where}`,
         );
       }
-      if (!isRecord(value)) {
-        throw invalidTree(`expected children at ${where}`);
-      }
+      const [levels, listNodes] = child as [string[][], unknown[]];
       return {
         kind: 'list' as const,
-        key,
-        levels: parsedKey.levels,
-        children: parseChildren({
-          value,
-          above: opts.above,
-          perItem: true,
-          repeated: true,
-          where,
+        levels,
+        nodes: listNodes.map((node, at) => {
+          const nodeWhere = `${where}.${at}`;
+          // One way to write a list of lists: its levels. That also keeps
+          // how deep a tree can go to what `maxDepth` allows
+          if (!Array.isArray(node) || typeof node[0] !== 'string') {
+            throw invalidTree(
+              `a list's children are nodes: expected one at ${nodeWhere}`,
+            );
+          }
+          return parseNode({
+            value: node,
+            above: opts.above,
+            perItem: true,
+            repeated: true,
+            where: nodeWhere,
+          });
         }),
       };
     });
@@ -350,14 +333,13 @@ export function parsePipelineTree(opts: {
         ) {
           throw invalidTree(`no call at index ${key}`);
         }
-        if (!isRecord(children)) {
-          throw invalidTree(`expected children at ${key}`);
+        if (!Array.isArray(children)) {
+          throw invalidTree(`expected a list of children at ${key}`);
         }
         nodes = 0;
         const parsedChildren = parseChildren({
           value: children,
           above: [{ hasItem: false }],
-          perItem: false,
           repeated: false,
           where: key,
         });
@@ -366,7 +348,7 @@ export function parsePipelineTree(opts: {
             index,
             {
               ok: false,
-              keys: Object.keys(children),
+              count: children.length,
               error: overLimit(
                 `The follow-ups of this call would make the batch run at least ${taken + nodes} times, more than \`maxRuns\` (${opts.maxRuns}) allows`,
               ),
@@ -635,16 +617,16 @@ export type PipelineListResult<TError> = (
   | PipelineListResult<TError>
 )[];
 
-/** The children of a call, by their keys, in order */
+/** What a call's child has: a node's result, a list's items, or an error */
+export type PipelineChildResult<TError> =
+  | { kind: 'node'; result: Promise<PipelineNodeResult<TError>> }
+  | { kind: 'list'; items: PipelineListResult<TError> }
+  /** Its call failed, or the list can't run: it has no node or items */
+  | { kind: 'failed'; error: TError };
+
+/** The children of a call, at their positions */
 export interface PipelineChildrenResult<TError> {
-  entries: [
-    key: string,
-    value:
-      | { kind: 'node'; result: Promise<PipelineNodeResult<TError>> }
-      | { kind: 'list'; items: PipelineListResult<TError> }
-      /** Its call failed: it has no node or items */
-      | { kind: 'failed'; error: TError },
-  ][];
+  results: PipelineChildResult<TError>[];
 }
 
 /** What a call is to the calls under it */
@@ -783,16 +765,17 @@ export function pipelineTree(opts: {
         node: { path: string; input: unknown } | null,
       ) => TError;
     }) {
-      /** Children that don't run, with `cause` as each one's error */
-      const failed = (keys: readonly string[], cause: TRPCError) => {
+      /** `count` children that don't run, with `cause` as each one's error */
+      const failed = (
+        count: number,
+        cause: TRPCError,
+      ): PipelineChildrenResult<TError> => {
         const error = run.fail(cause, null);
         return {
-          entries: keys.map(
-            (key): PipelineChildrenResult<TError>['entries'][number] => [
-              key,
-              { kind: 'failed', error },
-            ],
-          ),
+          results: Array.from({ length: count }, () => ({
+            kind: 'failed' as const,
+            error,
+          })),
         };
       };
 
@@ -816,11 +799,11 @@ export function pipelineTree(opts: {
           for (const list of lists) {
             items += countItems(list.items, child.levels.length);
           }
-          const tooMany = overRuns(items * child.children.length, 'This list');
+          const tooMany = overRuns(items * child.nodes.length, 'This list');
           if (tooMany) {
             const error = run.fail(tooMany, null);
             for (const place of places) {
-              place.out.entries.push([child.key, { kind: 'failed', error }]);
+              place.out.results.push({ kind: 'failed', error });
             }
             continue;
           }
@@ -840,21 +823,20 @@ export function pipelineTree(opts: {
                 above: place.above,
                 value: item,
                 item,
-                out: { entries: [] },
+                out: { results: [] },
               };
               inner.push(itemPlace);
               return itemPlace.out;
             });
           for (const list of lists) {
-            list.place.out.entries.push([
-              child.key,
-              {
-                kind: 'list',
-                items: shape(list.items, child.levels.length, list.place),
-              },
-            ]);
+            list.place.out.results.push({
+              kind: 'list',
+              items: shape(list.items, child.levels.length, list.place),
+            });
           }
-          startChildren(child.children, inner);
+          for (const node of child.nodes) {
+            runNode(node, inner);
+          }
         }
       }
       /** The children of a call, once it has an outcome */
@@ -867,14 +849,14 @@ export function pipelineTree(opts: {
       }): PipelineChildrenResult<TError> {
         const { frame } = of;
         if (!frame.ok) {
-          return failed(keysOf(of.children), frame.error);
+          return failed(of.children.length, frame.error);
         }
         const place: Place<TError> = {
           index: of.index,
           above: [frame.frame, ...frame.above],
           value: frame.frame.data,
           item: undefined,
-          out: { entries: [] },
+          out: { results: [] },
         };
         startChildren(of.children, [place]);
         return place.out;
@@ -892,10 +874,7 @@ export function pipelineTree(opts: {
           ) => Promise<PipelineNodeResult<TError>>,
         ) => {
           for (const [at, place] of places.entries()) {
-            place.out.entries.push([
-              node.key,
-              { kind: 'node', result: run(place, at) },
-            ]);
+            place.out.results.push({ kind: 'node', result: run(place, at) });
           }
         };
         const refuse = (error: TRPCError) => {
@@ -906,9 +885,9 @@ export function pipelineTree(opts: {
           start(async () => ({
             outcome,
             children:
-              node.childKeys.length === 0
+              node.childCount === 0
                 ? null
-                : Promise.resolve(failed(node.childKeys, sourceFailed(error))),
+                : Promise.resolve(failed(node.childCount, sourceFailed(error))),
           }));
         };
         const refusal = refusalOf(node);
@@ -1023,17 +1002,16 @@ export function pipelineTree(opts: {
             return null;
           }
           if (!tree.ok) {
-            return Promise.resolve(failed(tree.keys, tree.error));
+            return Promise.resolve(failed(tree.count, tree.error));
           }
           const { children } = tree;
-          const keys = keysOf(children);
           return outcome.then((it) => {
             if (!it.ok) {
-              return failed(keys, sourceFailed(null));
+              return failed(children.length, sourceFailed(null));
             }
             const read = asRead(it.data);
             if (!read.ok) {
-              return failed(keys, read.error);
+              return failed(children.length, read.error);
             }
             return childrenOf({
               children,
@@ -1060,8 +1038,7 @@ export function pipelineTree(opts: {
 export async function pipelineChildrenJSON<TError>(
   children: Promise<PipelineChildrenResult<TError>>,
   serialize: (outcome: PipelineNodeOutcome<TError>) => PipeOutcome<TError>,
-): Promise<PipeChildrenResponse<TError>> {
-  const response: PipeChildrenResponse<TError> = emptyObject();
+): Promise<PipeChildResponse<TError>[]> {
   const listJSON = async (
     items: PipelineListResult<TError>,
   ): Promise<PipeListResponse<TError>> =>
@@ -1072,29 +1049,32 @@ export async function pipelineChildrenJSON<TError>(
           : pipelineChildrenJSON(Promise.resolve(item), serialize),
       ),
     );
-  for (const [key, value] of (await children).entries) {
-    switch (value.kind) {
-      case 'failed':
-        // Through the transformer, as every error the response has
-        response[key] = serialize({ ok: false, error: value.error });
-        break;
-      case 'list':
-        response[key] = await listJSON(value.items);
-        break;
-      case 'node': {
-        const result = await value.result;
-        const outcome = serialize(result.outcome);
-        response[key] = result.children
-          ? {
-              ...outcome,
-              children: await pipelineChildrenJSON(result.children, serialize),
-            }
-          : outcome;
-        break;
-      }
-    }
-  }
-  return response;
+  return Promise.all(
+    (await children).results.map(
+      async (value): Promise<PipeChildResponse<TError>> => {
+        switch (value.kind) {
+          case 'failed':
+            // Through the transformer, as every error the response has
+            return serialize({ ok: false, error: value.error });
+          case 'list':
+            return listJSON(value.items);
+          case 'node': {
+            const result = await value.result;
+            const outcome = serialize(result.outcome);
+            return result.children
+              ? {
+                  ...outcome,
+                  children: await pipelineChildrenJSON(
+                    result.children,
+                    serialize,
+                  ),
+                }
+              : outcome;
+          }
+        }
+      },
+    ),
+  );
 }
 
 /**
@@ -1117,18 +1097,19 @@ export function pipelineChildrenStream<TError>(
     }
     return byIndex;
   };
-  return children.then(({ entries }) => {
+  return children.then(({ results }) => {
+    // By position, as the stream has values of their own only in objects
     const stream: Record<string, Promise<unknown>> = emptyObject();
-    for (const [key, value] of entries) {
+    for (const [at, value] of results.entries()) {
       switch (value.kind) {
         case 'failed':
-          stream[key] = Promise.resolve({ error: value.error });
+          stream[at] = Promise.resolve({ error: value.error });
           break;
         case 'list':
-          stream[key] = Promise.resolve(listStream(value.items));
+          stream[at] = Promise.resolve(listStream(value.items));
           break;
         case 'node':
-          stream[key] = value.result.then((result) => ({
+          stream[at] = value.result.then((result) => ({
             ...envelope(result.outcome),
             ...(result.children && {
               children: pipelineChildrenStream(result.children, envelope),

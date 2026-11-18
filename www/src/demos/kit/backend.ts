@@ -453,20 +453,32 @@ export function createDemoClient(network: Network, origin?: string) {
   });
 }
 
-/** A follow-up call as it is in a request's tree. */
-interface TreeNode {
-  readonly path: string;
-  readonly input?: unknown;
-  readonly reads: ReadonlyArray<{
-    readonly to: ReadonlyArray<string>;
-    readonly item?: ReadonlyArray<string | null>;
-    readonly data?: ReadonlyArray<string | null>;
-    readonly up?: number;
-  }>;
-  readonly children?: TreeChildren;
-}
+/** A read as it is in a request's tree: `[to, from, up?]`. */
+type TreeRead = readonly [
+  to: ReadonlyArray<string>,
+  from: ReadonlyArray<string | null>,
+  up?: number,
+];
 
-type TreeChildren = Readonly<Record<string, unknown>>;
+/** A follow-up call as it is in a request's tree: `[path, reads, children?, input?]`. */
+type TreeNode = readonly [
+  path: string,
+  reads: ReadonlyArray<TreeRead>,
+  children?: TreeChildren,
+  input?: unknown,
+];
+
+/** A list as it is in a request's tree: `[levels, nodes]`. */
+type TreeList = readonly [
+  levels: ReadonlyArray<ReadonlyArray<string>>,
+  nodes: ReadonlyArray<TreeNode>,
+];
+
+type TreeChildren = ReadonlyArray<TreeNode | TreeList>;
+
+function isTreeNode(child: TreeNode | TreeList): child is TreeNode {
+  return typeof child[0] === 'string';
+}
 
 /** `input` with `value` at `to`, on copies of what is on the way there. */
 function withValueAt(
@@ -536,33 +548,36 @@ function callsOf(url: URL) {
       list: string;
     },
   ) => {
-    for (const [key, value] of Object.entries(children)) {
-      if (key.endsWith('[]')) {
-        walk(value as TreeChildren, { ...at, list: `${at.list}.${key}` });
+    for (const child of children) {
+      if (!isTreeNode(child)) {
+        const [levels, nodes] = child;
+        const list = levels
+          .map((level) => `${level.map((key) => `.${key}`).join('')}[]`)
+          .join('');
+        walk(nodes, { ...at, list: `${at.list}${list}` });
         continue;
       }
-      const node = value as TreeNode;
-      const input = node.reads.reduce((filled, read) => {
-        const up = read.up ?? (read.item ? 0 : 1);
-        const where = read.item
-          ? `‹${sourceOf(at.above[0] ?? '')}›${at.list}${pathOf(read.item)}`
-          : `‹${sourceOf(at.above[up - 1] ?? '')}›${pathOf(read.data ?? [])}`;
-        return withValueAt(filled, read.to, new Unfilled(where));
-      }, node.input);
+      const [path, reads, kids = [], nodeInput] = child;
+      const input = reads.reduce((filled, [to, from, up = 1]) => {
+        // Up from the parent for data, and 0 for the item it runs for
+        const where =
+          up <= 0
+            ? `‹${sourceOf(at.above[0] ?? '')}›${at.list}${pathOf(from)}`
+            : `‹${sourceOf(at.above[up - 1] ?? '')}›${pathOf(from)}`;
+        return withValueAt(filled, to, new Unfilled(where));
+      }, nodeInput);
       calls.push({
-        label: formatCall(node.path, input),
-        path: node.path,
+        label: formatCall(path, input),
+        path,
         root: at.root,
         parent: at.parent,
       });
-      if (node.children) {
-        walk(node.children, {
-          root: at.root,
-          parent: calls.length - 1,
-          above: [node.path, ...at.above],
-          list: '',
-        });
-      }
+      walk(kids, {
+        root: at.root,
+        parent: calls.length - 1,
+        above: [path, ...at.above],
+        list: '',
+      });
     }
   };
   for (const [index, path] of paths.entries()) {

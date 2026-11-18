@@ -201,8 +201,9 @@ export function pipeCall(opts: {
   const reads: PipeRead[] = [];
   for (const read of opts.reads) {
     if (!read.each) {
+      // The data of a call above it: 1, the default, is its parent
       const up = chain.indexOf(read.from) + 1;
-      reads.push({ to: read.to, data: read.path, ...(up !== 1 && { up }) });
+      reads.push(up === 1 ? [read.to, read.path] : [read.to, read.path, up]);
       continue;
     }
     // The list is what is before the first `null`, in the parent's data
@@ -217,7 +218,8 @@ export function pipeCall(opts: {
       return null;
     }
     list = [listPath as string[]];
-    reads.push({ to: read.to, item: read.path.slice(at + 1) });
+    // The item it runs for
+    reads.push([read.to, read.path.slice(at + 1), 0]);
   }
   const depth = chain.length + 1;
   if (

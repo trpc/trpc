@@ -8,6 +8,10 @@
  * soon as the data it reads is there, so queries that nest cost one round
  * trip.
  *
+ * The format is positional, for machines rather than people: a node is a
+ * tuple, children are a list, and a response has its results at the
+ * positions the request had its children at.
+ *
  * The client's half is in `./client`, the server's in `./server`. Both are
  * tested against each other, over HTTP, in `./pipeline.test.ts`.
  *
@@ -15,79 +19,66 @@
  *
  * The paths and inputs are those of the top-level calls, as in any batch.
  * The tree is in the `tree` search param of a request without a body, and
- * beside the inputs in the body of one with a body:
+ * beside the inputs in the body of one with a body. Here, the author of
+ * every item of call 0's data, and the posts of each author's team:
  *
  * ```json
  * {
  *   "0": { "cursor": 10 },
  *   "tree": {
- *     "0": {
- *       "items[]": {
- *         "author.byId": {
- *           "path": "author.byId",
- *           "input": {},
- *           "reads": [{ "to": ["id"], "item": ["authorId"] }]
- *         }
- *       }
- *     }
+ *     "0": [
+ *       [[["items"]], [
+ *         ["author.byId", [[["id"], ["authorId"], 0]], [
+ *           ["post.byTeam", [[["teamId"], ["teamId"]]]]
+ *         ]]
+ *       ]]
+ *     ]
  *   }
  * }
  * ```
  *
  * - The tree has the children of each top-level call that has any, by the
  *   call's index.
- * - **Children** are an object. A key that ends in `[]` is a list: a path
- *   into the data of the parent, with nodes of its own that run once for
- *   every item of the list. Any other key names a node. A list's children
- *   are nodes: a list of lists is one key, such as `pages[].items[]`.
- * - A **node** is a follow-up call: `path`, `input` (as a top-level call's
- *   input, through the transformer), `reads`, and `children` if it has any.
- * - A **read** fills a part of the node's input: `to` is where it goes in
- *   the input, and `item` or `data` is where it comes from. See
+ * - **Children** are a list of nodes and lists, in an order the response
+ *   keeps.
+ * - A **node** is a follow-up call: `[path, reads, children?, input?]`.
+ *   `input` is as a top-level call's input, through the transformer, with
+ *   what the server fills in left out. No children is `[]`.
+ * - A **list** is `[levels, nodes]`: its nodes run once for every item of a
+ *   list in the data of the call they are under. `levels` has the path to
+ *   each level of lists, so `[["pages"], ["items"]]` is every item of every
+ *   page, and `[[]]` every item of data that is a list. A list's children
+ *   are nodes.
+ * - A **read** fills a part of a node's input: `[to, from, up?]`. See
  *   {@link PipeRead}.
- *
- * ### Keys
- *
- * A list key is a path of segments separated by `.`, and `[]` after a
- * segment means every item of the list there: `items[]`, `data.items[]`,
- * `pages[].items[]`. `[]` alone is every item of the data itself, for a call
- * that returns a list. In a segment, `\` escapes `.`, `[`, `]` and `\`, so a
- * property named `a.b` is `a\.b`. The key is resolved in the data of the
- * call the children belong to.
- *
- * A node's key is a name the client picks, taken as it is, such as
- * `author.byId`. It can be anything that doesn't end in `[]`.
- *
- * Keys are strings, not arrays of segments, because children are an object:
- * the response has the same keys in the same places, so a node's result is
- * found by the same path it was sent at.
  *
  * ## The response
  *
  * A list of the top-level calls' outcomes, as in any batch. A call that had
- * children has `children` next to its outcome, with the same keys:
+ * children has `children` next to its outcome, a list with a result at the
+ * position of each of its children:
  *
  * ```json
  * [
  *   {
  *     "result": { "data": { "items": [{ "authorId": "ada" }] } },
- *     "children": {
- *       "items[]": [
- *         { "author.byId": { "result": { "data": { "id": "ada" } } } }
+ *     "children": [
+ *       [
+ *         [{ "result": { "data": { "teamId": 1 } }, "children": [...] }]
  *       ]
- *     }
+ *     ]
  *   }
  * ]
  * ```
  *
- * - A list key has a list with the children of every item, in the order of
- *   the items, one level of lists for each `[]`. What isn't a list has no
- *   items: `[]`.
- * - A node key has the node's outcome, `{ result }` or `{ error }`, as a
- *   top-level call's, with its own `children` if it had any.
- * - A node that fails, or doesn't run, gives each key of its children an
+ * - A list has the children of every item, in the order of the items, one
+ *   level of lists for each level. What isn't a list has no items: `[]`.
+ * - A node has its outcome, `{ result }` or `{ error }`, as a top-level
+ *   call's, with its own `children` if it had any.
+ * - A node that fails, or doesn't run, gives each of its children an
  *   `{ error }` with the code `PRECONDITION_FAILED`, and runs none of them.
- *   A run for one item fails by itself.
+ *   A run for one item fails by itself. A list that can't run has an
+ *   `{ error }` in place of its items.
  *
  * ## The response, streamed
  *
@@ -96,9 +87,9 @@
  * that isn't ready yet is a placeholder, and a line for each one as it gets
  * ready. A node's outcome is a placeholder of its own, so each node arrives
  * as soon as it is ready, and a node's children are one more, ready as soon
- * as the node's data is there. A list's items are an object by index there,
- * not an array, as the stream only has placeholders in objects. A subtree
- * is complete once every placeholder in it is.
+ * as the node's data is there. Children and a list's items are objects by
+ * position there, not lists, as the stream only has placeholders in
+ * objects. A subtree is complete once every placeholder in it is.
  */
 
 /**
@@ -114,57 +105,63 @@ export const pipelineBatch = 'tree';
 export type PipelinePath = (string | null)[];
 
 /**
- * A read as it is in a request: it fills the part of a node's input at `to`,
- * which is empty for the whole input. It reads from one of the calls on the
- * node's way to the root, by how many calls up it is, so it can't read a
- * sibling, a sibling's descendants or a later call.
+ * A read as it is in a request, `[to, from, up?]`: it fills the part of a
+ * node's input at `to`, which is empty for the whole input, with the value
+ * at `from`. It reads from one of the calls on the node's way to the root,
+ * so it can't read a sibling, a sibling's descendants or a later call. `up`
+ * says which:
  *
- * - `item` is a path into the item that a run is for. `up` counts from the
- *   node itself, 0, which is the default.
- * - `data` is a path into the data of a call above. `up` counts from the
- *   node's parent, 1, which is the default.
+ * - 1, the default, is the data of the call the node is under, 2 the data
+ *   of the call above that, and so on.
+ * - 0 is the item the node runs for, under a list, -1 the item the call it
+ *   is under runs for, and so on.
  */
 export type PipeRead =
-  | { to: string[]; item: PipelinePath; up?: number }
-  | { to: string[]; data: PipelinePath; up?: number };
+  | [to: string[], from: PipelinePath]
+  | [to: string[], from: PipelinePath, up: number];
 
-/** A follow-up call as it is in a request */
-export interface PipeNode {
-  /** The procedure's path */
-  path: string;
-  /** The input as the client sent it, with what the server fills in left out */
-  input?: unknown;
-  reads: PipeRead[];
-  children?: PipeChildren;
-}
+/**
+ * A follow-up call as it is in a request: `[path, reads, children?,
+ * input?]`. No children is `[]`, and no input is left out.
+ */
+export type PipeNode =
+  | [path: string, reads: PipeRead[]]
+  | [path: string, reads: PipeRead[], children: PipeChild[]]
+  | [path: string, reads: PipeRead[], children: PipeChild[], input: unknown];
 
-/** The children of a call: nodes, and lists of children for every item */
-export interface PipeChildren {
-  [key: string]: PipeNode | PipeChildren;
-}
+/**
+ * A list as it is in a request, `[levels, nodes]`: the nodes run once for
+ * every item of the list, which is at `levels` in the data of the call they
+ * are under, one path for each level of lists
+ */
+export type PipeList = [levels: string[][], nodes: PipeNode[]];
+
+/** A call's child: a node, whose path is a string, or a list */
+export type PipeChild = PipeNode | PipeList;
 
 /** A request's tree: the children of each top-level call, by its index */
-export type PipeTree = Record<string, PipeChildren>;
+export type PipeTree = Record<string, PipeChild[]>;
 
 /** The outcome of a call, as it is in a response */
 export type PipeOutcome<TError> =
-  | { result: { data: unknown }; children?: PipeChildrenResponse<TError> }
-  | { error: TError; children?: PipeChildrenResponse<TError> };
+  | { result: { data: unknown }; children?: PipeChildResponse<TError>[] }
+  | { error: TError; children?: PipeChildResponse<TError>[] };
 
 /**
- * The children of a call, as they are in a response: the outcome of each
- * node, and the children of every item of each list
+ * What a response has for a child: a node's outcome, a list's items, or an
+ * error in place of either
  */
-export interface PipeChildrenResponse<TError> {
-  [key: string]:
-    | PipeOutcome<TError>
-    | PipeListResponse<TError>
-    | { error: TError };
-}
+export type PipeChildResponse<TError> =
+  | PipeOutcome<TError>
+  | PipeListResponse<TError>
+  | { error: TError };
 
-/** A list's items in a response, one level of lists for each `[]` */
+/**
+ * A list's items in a response, one level of lists for each level: the
+ * children of each item, at the positions of the list's nodes
+ */
 export type PipeListResponse<TError> = (
-  | PipeChildrenResponse<TError>
+  | PipeChildResponse<TError>[]
   | PipeListResponse<TError>
 )[];
 
@@ -208,91 +205,6 @@ export const pipelineLimitDefaults: PipelineLimits = {
   maxRuns: 100,
 };
 
-/** A key that names a list: the path to follow for each level of lists */
-export interface PipelineListKey {
-  kind: 'list';
-  /** For each `[]`, the segments before it */
-  levels: string[][];
-}
-
-/** A key of children: a list, or a node's name */
-export type PipelineKey = PipelineListKey | { kind: 'node'; name: string };
-
-const escapable = new Set(['\\', '.', '[', ']']);
-
-/** The key of children that `key` is, or `null` if it is none */
-export function parsePipelineKey(key: string): PipelineKey | null {
-  if (!key.endsWith('[]')) {
-    return key === '' ? null : { kind: 'node', name: key };
-  }
-  const levels: string[][] = [];
-  let segments: string[] = [];
-  let segment = '';
-  let at = 0;
-  while (at < key.length) {
-    const char = key.charAt(at);
-    if (char === '\\') {
-      const next = key.charAt(at + 1);
-      if (!escapable.has(next)) {
-        return null;
-      }
-      segment += next;
-      at += 2;
-      continue;
-    }
-    if (char === '.' || char === '[') {
-      // No empty segment, `a..b`, `.a` or `a.[]`, but a level can have no
-      // segments: in `[]` or `a[].[]`, the value itself is the list
-      const noSegments =
-        char === '[' && segment === '' && segments.length === 0;
-      if (segment === '' && !noSegments) {
-        return null;
-      }
-      if (!noSegments) {
-        segments.push(segment);
-      }
-      segment = '';
-      at += 1;
-      if (char === '.') {
-        continue;
-      }
-      if (key.charAt(at) !== ']') {
-        return null;
-      }
-      levels.push(segments);
-      segments = [];
-      at += 1;
-      // After `[]`, the end, or a `.` and more
-      if (
-        at < key.length &&
-        (key.charAt(at) !== '.' || at + 1 === key.length)
-      ) {
-        return null;
-      }
-      at += 1;
-      continue;
-    }
-    if (char === ']') {
-      return null;
-    }
-    segment += char;
-    at += 1;
-  }
-  return { kind: 'list', levels };
-}
-
-/** The key of a list, with what needs it escaped */
-export function formatPipelineListKey(levels: readonly string[][]): string {
-  return levels
-    .map(
-      (segments) =>
-        `${segments
-          .map((segment) => segment.replace(/[\\.[\]]/g, (char) => `\\${char}`))
-          .join('.')}[]`,
-    )
-    .join('.');
-}
-
 /** Whether `value` is an object or an array with `key` as its own property */
 export function hasOwn(value: unknown, key: string) {
   return (
@@ -327,7 +239,7 @@ export function readPipelinePath(
 }
 
 /**
- * The items of a list key in `value`, a list for each level. What isn't a
+ * The items of a list in `value`, at `levels`, a list for each level. What isn't a
  * list has no items.
  */
 export function readPipelineList(

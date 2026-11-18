@@ -1,11 +1,11 @@
 import { emptyObject, isObject } from '../../utils';
-import type { PipeChildren, PipeNode, PipeRead, PipeTree } from './wire';
-import { formatPipelineListKey, hasOwn, pipelineBatch } from './wire';
+import type { PipeChild, PipeNode, PipeRead, PipeTree } from './wire';
+import { hasOwn, pipelineBatch } from './wire';
 
-/** A step on the way from a top-level call to a node */
+/** A step on the way from a top-level call to a node: a child's position */
 export type PipelineStep =
-  /** `depth` is how many levels of lists it has: one for each `[]` */
-  { kind: 'list'; key: string; depth: number } | { kind: 'node'; key: string };
+  /** `depth` is how many levels of lists it has */
+  { kind: 'list'; at: number; depth: number } | { kind: 'node'; at: number };
 
 /** A call that a client puts under another, for the server to run */
 export interface PipelineTreeCall {
@@ -41,23 +41,61 @@ export interface PipelineTreePlan<TCall> {
   left: TCall[];
 }
 
+/** A node as the client builds it, before it is written as a tuple */
+interface PlannedNode {
+  path: string;
+  reads: PipeRead[];
+  /** Its input, serialized, or `undefined` if it has none */
+  input: unknown;
+  children: PlannedChild[];
+}
+
+type PlannedChild =
+  | { kind: 'node'; node: PlannedNode }
+  | { kind: 'list'; levels: string[][]; nodes: PlannedNode[] };
+
+/** Children as a request has them: tuples, with what is empty left out */
+function wireChildren(children: readonly PlannedChild[]): PipeChild[] {
+  const wireNode = (node: PlannedNode): PipeNode => {
+    const kids = wireChildren(node.children);
+    if (node.input !== undefined) {
+      return [node.path, node.reads, kids, node.input];
+    }
+    return kids.length > 0
+      ? [node.path, node.reads, kids]
+      : [node.path, node.reads];
+  };
+  return children.map((child) =>
+    child.kind === 'node'
+      ? wireNode(child.node)
+      : [child.levels, child.nodes.map(wireNode)],
+  );
+}
+
 /** The tree of a request with these calls, each after its parent */
 function treeOf<TCall extends PipelineTreeCall>(opts: {
   sent: readonly (object | null)[];
   calls: readonly TCall[];
   serialize: (input: unknown) => unknown;
 }) {
-  const tree: PipeTree = emptyObject();
+  const roots = new Map<number, PlannedChild[]>();
   interface Where {
     place: PipelinePlace;
-    children: () => PipeChildren;
+    children: () => PlannedChild[];
   }
   const where = new Map<object, Where>();
   for (const [index, sent] of opts.sent.entries()) {
     if (sent) {
       where.set(sent, {
         place: { index, steps: [] },
-        children: () => (tree[index] ??= emptyObject()),
+        children: () => {
+          let children = roots.get(index);
+          if (!children) {
+            children = [];
+            roots.set(index, children);
+          }
+          return children;
+        },
       });
     }
   }
@@ -67,31 +105,40 @@ function treeOf<TCall extends PipelineTreeCall>(opts: {
     if (!parent) {
       continue;
     }
-    let children = parent.children();
+    const children = parent.children();
     const steps = [...parent.place.steps];
-    if (call.list !== null) {
-      const key = formatPipelineListKey(call.list);
-      children = (children[key] ??= emptyObject()) as PipeChildren;
-      steps.push({ kind: 'list', key, depth: call.list.length });
-    }
-    // Its name is its path, and another number for each call there before it
-    let name = call.path;
-    for (let count = 2; name in children; count++) {
-      name = `${call.path}#${count}`;
-    }
-    const node: PipeNode = {
+    const node: PlannedNode = {
       path: call.path,
-      ...(call.input !== undefined && { input: opts.serialize(call.input) }),
       reads: call.reads,
+      input: call.input === undefined ? undefined : opts.serialize(call.input),
+      children: [],
     };
-    children[name] = node;
-    steps.push({ kind: 'node', key: name });
+    if (call.list === null) {
+      steps.push({ kind: 'node', at: children.length });
+      children.push({ kind: 'node', node });
+    } else {
+      // The calls for every item of the same list share it
+      const levels = JSON.stringify(call.list);
+      let at = children.findIndex(
+        (child) =>
+          child.kind === 'list' && JSON.stringify(child.levels) === levels,
+      );
+      if (at === -1) {
+        at = children.length;
+        children.push({ kind: 'list', levels: call.list, nodes: [] });
+      }
+      const list = children[at] as Extract<PlannedChild, { kind: 'list' }>;
+      steps.push({ kind: 'list', at, depth: call.list.length });
+      steps.push({ kind: 'node', at: list.nodes.length });
+      list.nodes.push(node);
+    }
     const place = { index: parent.place.index, steps };
     places.set(call, place);
-    where.set(call, {
-      place,
-      children: () => (node.children ??= emptyObject()),
-    });
+    where.set(call, { place, children: () => node.children });
+  }
+  const tree: PipeTree = emptyObject();
+  for (const [index, children] of roots) {
+    tree[index] = wireChildren(children);
   }
   return { tree, places };
 }
@@ -218,10 +265,12 @@ export async function readPipelineCall(
 ): Promise<PipelineCallOutcome> {
   const [step, ...rest] = steps;
   const container: unknown = await children;
-  if (!step || !isObject(container) || !hasOwn(container, step.key)) {
+  // Children are a list, or an object by position in a stream
+  const key = step ? String(step.at) : '';
+  if (!step || !isContainer(container) || !hasOwn(container, key)) {
     return { kind: 'missing' };
   }
-  const value: unknown = await container[step.key];
+  const value: unknown = await container[key];
   if (!isContainer(value)) {
     return { kind: 'missing' };
   }
