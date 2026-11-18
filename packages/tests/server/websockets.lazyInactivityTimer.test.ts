@@ -1,6 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { initTRPC } from '@trpc/server';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
+import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { WebSocket } from 'ws';
 
