@@ -112,6 +112,13 @@ const createAppRouter = () => {
           calls('post.byAuthor', opts.input);
           return { items: [opts.input.authorId], nextCursor: null };
         }),
+      /** Data that looks like the results of a call for every item */
+      likeResults: t.procedure
+        .input(z.object({ authorId: z.string() }))
+        .query((opts) => {
+          calls('post.likeResults', opts.input);
+          return [{ result: { data: 'inner' } }];
+        }),
     }),
     author: t.router({
       byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
@@ -1561,6 +1568,59 @@ describe.each([
   { name: 'httpBatchLink', link: httpBatchLink },
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
 ])('pipelining with $name', (scenario) => {
+  test('a cursor that `initialCursor` replaces is not read', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const first = ensureEntry(trpc.post.paged, {});
+    const [, data] = await loadHandles(trpc, {
+      first,
+      later: ensureInfiniteEntry(
+        trpc.post.paged,
+        { cursor: experimental_dataOf(first).nextCursor },
+        { initialCursor: 2 },
+      ),
+    });
+
+    expect(data.later.pageParams).toEqual([2]);
+    expect(data.later.pages).toEqual([
+      { items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null },
+    ]);
+  });
+
+  test('an entry per item that reads nothing of its item is an ordinary query', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      sameForEvery: experimental_entryPerItem(
+        experimental_dataOf(post).tags,
+        () =>
+          ensureEntry(trpc.post.likeResults, {
+            authorId: experimental_dataOf(post).authorId,
+          }),
+      ),
+    });
+
+    // Its whole data, not what an item's result would be in it
+    expect(data.sameForEvery).toEqual([
+      [{ result: { data: 'inner' } }],
+      [{ result: { data: 'inner' } }],
+    ]);
+  });
+
   test('entries that read each other load in one request', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,

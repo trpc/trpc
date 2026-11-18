@@ -578,7 +578,15 @@ interface EntryState {
    * value in the input: the server fills them in. For an infinite query, it is
    * the request of the first page.
    */
-  request: () => { path: string; input: unknown };
+  request: () => {
+    path: string;
+    input: unknown;
+    /**
+     * Whether the first page's cursor is `initialCursor`, which takes the place
+     * of a cursor in the input
+     */
+    cursorFromOptions: boolean;
+  };
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -1294,7 +1302,12 @@ function beginEntries(opts: {
     readsItem: (ref: EntryDataRef) => boolean;
   }) {
     const { state } = pipelined;
-    const reads = pipelined.reads.flatMap(({ ref, source }) => {
+    const { cursorFromOptions, ...request } = state.request();
+    // What `initialCursor` takes the place of isn't read: the page would be another
+    const read = pipelined.reads.filter(
+      ({ ref }) => !(cursorFromOptions && ref.to[0] === 'cursor'),
+    );
+    const reads = read.flatMap(({ ref, source }) => {
       const each = pipelined.readsItem(ref);
       const path = requestPath({
         type: source.leaf.state.type,
@@ -1309,14 +1322,14 @@ function beginEntries(opts: {
         : [];
     });
     if (
-      reads.length !== pipelined.reads.length ||
+      reads.length !== read.length ||
       // An infinite query's request adds the cursor to its input, an object
       (state.type === 'infinite' &&
         state.refs.some((ref) => ref.to.length === 0))
     ) {
       return null;
     }
-    return pipeCall({ ...state.request(), reads });
+    return pipeCall({ ...request, reads });
   }
 
   /** The prefetch entries whose data another entry reads, by their query's hash */
@@ -1584,8 +1597,11 @@ function beginEntries(opts: {
       });
 
     // One call, which the server runs once for every item. Its result is a
-    // `{ result }` or an `{ error }` for every item
-    const call = sendPipelined({ state, reads: perItem.reads, readsItem });
+    // `{ result }` or an `{ error }` for every item. An entry that reads
+    // nothing of its item has no call for every item: its query is an ordinary one
+    const call = perItem.reads.some(({ ref }) => readsItem(ref))
+      ? sendPipelined({ state, reads: perItem.reads, readsItem })
+      : null;
 
     /** The input without the item's parts, and where they go */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
@@ -2075,18 +2091,22 @@ function entry(opts: {
           ),
     request: () => {
       let input = replaceEntryDataRefs(opts.input, [], nothing);
+      let cursorFromOptions = false;
       if (opts.type === 'infinite') {
         // The first page's request, as `infiniteQueryOptions()` makes it
+        const initialCursor = (
+          opts.opts as { initialCursor?: unknown } | undefined
+        )?.initialCursor;
+        cursorFromOptions = initialCursor != null;
         const cursor =
-          (opts.opts as { initialCursor?: unknown } | undefined)
-            ?.initialCursor ?? (input as { cursor?: unknown } | null)?.cursor;
+          initialCursor ?? (input as { cursor?: unknown } | null)?.cursor;
         input = {
           ...(input as object),
           ...(cursor !== undefined ? { cursor } : {}),
           direction: 'forward',
         };
       }
-      return { path: ctx.path.join('.'), input };
+      return { path: ctx.path.join('.'), input, cursorFromOptions };
     },
     queryClient: queryClientOf(ctx),
   });
