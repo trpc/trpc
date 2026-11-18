@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { expect, test, vi } from 'vitest';
 
 import {
   closeDelay,
@@ -16,21 +17,36 @@ const block = `
 <p id="outside">After the block</p>
 `;
 
-let cleanup: () => void = () => {};
-
-beforeEach(() => {
+/**
+ * Fake timers and `html` in the page, with hovers installed on its `#root`,
+ * until disposed. `uninstall` stops the hovers early.
+ */
+function hoversOn(html: string, loadPopups: LoadPopups) {
   vi.useFakeTimers();
-  document.body.innerHTML = `<div id="root">${block}</div><p id="page">Page</p>`;
-  cleanup = installTwoslashHovers(
+  document.body.innerHTML = html;
+  let installed: (() => void) | null = installTwoslashHovers(
     element('root'),
+    loadPopups,
+  );
+  const hovers = {
+    uninstall: () => {
+      installed?.();
+      installed = null;
+    },
+  };
+  return makeResource(hovers, () => {
+    hovers.uninstall();
+    vi.useRealTimers();
+  });
+}
+
+/** Hovers on `block`, whose popups are inline. */
+function installHovers() {
+  return hoversOn(
+    `<div id="root">${block}</div><p id="page">Page</p>`,
     inlinePopups({ popups: [] }),
   );
-});
-
-afterEach(() => {
-  cleanup();
-  vi.useRealTimers();
-});
+}
 
 function element(id: string) {
   const found = document.getElementById(id);
@@ -57,6 +73,7 @@ function openName() {
 }
 
 test('a popup opens once the pointer rests on its name', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay - 1);
   expect(openName()).toBe(null);
@@ -65,6 +82,7 @@ test('a popup opens once the pointer rests on its name', () => {
 });
 
 test('sweeping across a name opens nothing', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay / 2);
   move('router', 'outside');
@@ -73,6 +91,7 @@ test('sweeping across a name opens nothing', () => {
 });
 
 test('a popup stays open while the pointer moves into it', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay);
   // Across the gap between the name and its popup, which isn't the name.
@@ -84,6 +103,7 @@ test('a popup stays open while the pointer moves into it', () => {
 });
 
 test('crossing another name on the way into a popup keeps the popup', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay);
   move('router', 't');
@@ -94,6 +114,7 @@ test('crossing another name on the way into a popup keeps the popup', () => {
 });
 
 test('a popup closes a moment after the pointer leaves it', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay);
   move('router', 'outside');
@@ -104,6 +125,7 @@ test('a popup closes a moment after the pointer leaves it', () => {
 });
 
 test('resting on another name switches to its popup sooner', () => {
+  using _hovers = installHovers();
   move(null, 'router');
   vi.advanceTimersByTime(openDelay);
   move('router', 't');
@@ -112,6 +134,7 @@ test('resting on another name switches to its popup sooner', () => {
 });
 
 test('a click pins a popup until Escape', () => {
+  using _hovers = installHovers();
   element('router').click();
   expect(openName()).toBe('router');
   expect(element('router').hasAttribute('data-pinned')).toBe(true);
@@ -123,6 +146,7 @@ test('a click pins a popup until Escape', () => {
 });
 
 test('a pinned popup closes on a click elsewhere, or on its name', () => {
+  using _hovers = installHovers();
   element('router').click();
   element('page').click();
   expect(openName()).toBe(null);
@@ -132,12 +156,14 @@ test('a pinned popup closes on a click elsewhere, or on its name', () => {
 });
 
 test('a click inside a popup keeps it open', () => {
+  using _hovers = installHovers();
   element('router').click();
   element('router-popup').click();
   expect(openName()).toBe('router');
 });
 
 test("scrolling inside a popup doesn't place it again", () => {
+  using _hovers = installHovers();
   element('router').click();
   const popup = element('router-popup');
   // Placing a popup clears its max height to measure it, which scrolls a
@@ -150,20 +176,21 @@ test("scrolling inside a popup doesn't place it again", () => {
 });
 
 test('cleanup closes the popup and stops listening', () => {
+  using hovers = installHovers();
   element('router').click();
-  cleanup();
+  hovers.uninstall();
   expect(openName()).toBe(null);
   expect(element('root').hasAttribute('data-twoslash-hovers')).toBe(false);
   element('t').click();
   expect(openName()).toBe(null);
-  cleanup = () => {};
 });
 
 /** A block whose popups' content the page loads (`data-popup`). */
 function installLazyBlock(loadPopups: LoadPopups) {
-  cleanup();
-  document.body.innerHTML = `<div id="root"><pre class="twoslash"><code><span class="line"><span class="twoslash-hover" data-popup="1" id="lazy">lazy</span><span id="lazy-plain"> = 1</span></span></code></pre></div>`;
-  cleanup = installTwoslashHovers(element('root'), loadPopups);
+  return hoversOn(
+    `<div id="root"><pre class="twoslash"><code><span class="line"><span class="twoslash-hover" data-popup="1" id="lazy">lazy</span><span id="lazy-plain"> = 1</span></span></code></pre></div>`,
+    loadPopups,
+  );
 }
 
 /** The lazy name's popup's content, once it has one. */
@@ -180,7 +207,7 @@ const lazyPopups = [
 
 test('the popups load once the pointer enters a block, before it rests on a name', async () => {
   const loadPopups = vi.fn<LoadPopups>(() => Promise.resolve(lazyPopups));
-  installLazyBlock(loadPopups);
+  using _hovers = installLazyBlock(loadPopups);
   move(null, 'lazy-plain');
   move('lazy-plain', 'lazy');
   expect(loadPopups).toHaveBeenCalledTimes(1);
@@ -192,7 +219,7 @@ test('the popups load once the pointer enters a block, before it rests on a name
 
 test('a popup that opens before the popups load is filled once they do', async () => {
   const { promise, resolve } = Promise.withResolvers<ReadonlyArray<string>>();
-  installLazyBlock(() => promise);
+  using _hovers = installLazyBlock(() => promise);
   // A tap: no pointer events before the click.
   element('lazy').click();
   expect(openName()).toBe('lazy');
@@ -208,7 +235,7 @@ test('a failed load of the popups is tried again when a popup opens', async () =
     .mockRejectedValueOnce(new Error('offline'))
     .mockResolvedValue(lazyPopups);
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-  installLazyBlock(loadPopups);
+  using _hovers = installLazyBlock(loadPopups);
   // Entering the block starts a load, which fails.
   move(null, 'lazy');
   await vi.advanceTimersByTimeAsync(0);
@@ -229,7 +256,7 @@ test('a tapped name whose popup fails to load closes, so the next tap tries agai
     .mockRejectedValueOnce(new Error('offline'))
     .mockResolvedValue(lazyPopups);
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-  installLazyBlock(loadPopups);
+  using _hovers = installLazyBlock(loadPopups);
   element('lazy').click();
   await vi.advanceTimersByTimeAsync(0);
   expect(openName()).toBe(null);

@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { describe, expect, it, vi } from 'vitest';
 
 import type * as Live from './live.ts';
 
@@ -144,23 +145,26 @@ describe('versionRedirect', () => {
   });
 });
 
-describe('serveOgImage', () => {
-  beforeEach(() => {
-    vi.stubEnv('OG_CARDS_VERSION', 'abcdef0123');
-    vi.stubEnv('SPONSOR_CLOUD_VERSION', 'c10dc10dc1');
-  });
-
-  afterEach(() => {
+/**
+ * The cards' and sponsor cloud's versions, and the date faked at `now` unless
+ * it's null, until disposed.
+ */
+function serving(now: Date | null) {
+  vi.stubEnv('OG_CARDS_VERSION', 'abcdef0123');
+  vi.stubEnv('SPONSOR_CLOUD_VERSION', 'c10dc10dc1');
+  if (now !== null) {
+    vi.useFakeTimers({ now, toFake: ['Date'] });
+  }
+  return makeResource({}, () => {
     drawing.cloud = false;
     vi.unstubAllEnvs();
     vi.useRealTimers();
   });
+}
 
+describe('serveOgImage', () => {
   it("redirects any card at no version, another version or another day, as yesterday's, or with a query, to today's until tomorrow, before drawing it", async () => {
-    vi.useFakeTimers({
-      now: new Date('2026-11-05T23:00:00Z'),
-      toFake: ['Date'],
-    });
+    using _serving = serving(new Date('2026-11-05T23:00:00Z'));
     for (const path of [
       '/og/docs/server/procedures',
       '/og/docs/server/procedures.png',
@@ -184,10 +188,7 @@ describe('serveOgImage', () => {
   });
 
   it('dates the home card the same way, so its numbers refresh daily', async () => {
-    vi.useFakeTimers({
-      now: new Date('2026-11-05T23:00:00Z'),
-      toFake: ['Date'],
-    });
+    using _serving = serving(new Date('2026-11-05T23:00:00Z'));
     for (const path of [
       '/og/index',
       '/og/index.png',
@@ -213,6 +214,7 @@ describe('serveOgImage', () => {
   });
 
   it("draws the READMEs' sponsor cloud at its URL, and redirects a query to it", async () => {
+    using _serving = serving(null);
     const response = await get('/og/_/sponsor-cloud.png?x=1');
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('/og/_/sponsor-cloud.png');
@@ -222,10 +224,7 @@ describe('serveOgImage', () => {
   });
 
   it("tags the READMEs' sponsor cloud with its version that day, until that day ends, so a cache checking it gets that day's avatars", async () => {
-    vi.useFakeTimers({
-      now: new Date('2026-11-05T12:00:00Z'),
-      toFake: ['Date'],
-    });
+    using _serving = serving(new Date('2026-11-05T12:00:00Z'));
     drawing.cloud = true;
     const response = await get('/og/_/sponsor-cloud.png');
     expect(response.status).toBe(200);
@@ -240,10 +239,7 @@ describe('serveOgImage', () => {
   });
 
   it("redirects the sponsor cloud at another version or day to today's, in _", async () => {
-    vi.useFakeTimers({
-      now: new Date('2026-11-05T12:00:00Z'),
-      toFake: ['Date'],
-    });
+    using _serving = serving(new Date('2026-11-05T12:00:00Z'));
     for (const path of [
       '/og/_/sponsor-cloud',
       '/og/_/sponsor-cloud/0000000000-20261105.png',
@@ -259,6 +255,7 @@ describe('serveOgImage', () => {
   });
 
   it('answers a path without an image with a 404, whatever its version or query', async () => {
+    using _serving = serving(null);
     for (const path of [
       '/og/nothing.png?v=abc',
       '/og/nothing/abcdef0123-20261105.png',

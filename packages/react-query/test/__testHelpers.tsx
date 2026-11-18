@@ -14,6 +14,8 @@ import type { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Observable, Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import type { Simplify } from '@trpc/server/unstable-core-do-not-import';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import hash from 'hash-sum';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -336,7 +338,7 @@ export function createAppRouter() {
       </trpc.Provider>
     );
   }
-  return {
+  const ctx = {
     App,
     appRouter,
     trpc,
@@ -354,4 +356,15 @@ export function createAppRouter() {
     createContext,
     linkSpy,
   };
+  // `Simplify` flattens `& AsyncDisposable` into a plain object type, so the
+  // resource still fits `konn()` contexts, which need an index signature.
+  const resource: Simplify<typeof ctx & AsyncDisposable> = makeAsyncResource(
+    ctx,
+    async () => {
+      // A client left open keeps reconnecting after the server closes.
+      void wsClient.close().catch(() => null);
+      await close();
+    },
+  );
+  return resource;
 }

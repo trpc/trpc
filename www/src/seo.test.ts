@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { describe, expect, it, vi } from 'vitest';
 
 import { deploymentOrigin, ogImageUrl, pageHead } from './seo.ts';
 import { site } from './site.ts';
@@ -33,14 +34,26 @@ describe('deploymentOrigin', () => {
   });
 });
 
-describe('ogImageUrl', () => {
-  afterEach(() => {
+/** `env` stubbed, and the date faked at `now` unless it's null, until disposed. */
+function buildAt(env: Record<string, string>, now: Date | null) {
+  for (const [name, value] of Object.entries(env)) {
+    vi.stubEnv(name, value);
+  }
+  if (now !== null) {
+    vi.useFakeTimers({ now, toFake: ['Date'] });
+  }
+  return makeResource({}, () => {
     vi.unstubAllEnvs();
     vi.useRealTimers();
   });
+}
 
+describe('ogImageUrl', () => {
   it("is the card's path on the build's host, and the page's URL stays site.url", () => {
-    vi.stubEnv('DEPLOYMENT_ORIGIN', 'https://www-git-a-trpc.vercel.app');
+    using _build = buildAt(
+      { DEPLOYMENT_ORIGIN: 'https://www-git-a-trpc.vercel.app' },
+      null,
+    );
     expect(ogImageUrl('/docs/v10/client/react')).toBe(
       'https://www-git-a-trpc.vercel.app/og/docs/v10/client/react.png',
     );
@@ -68,11 +81,10 @@ describe('ogImageUrl', () => {
   });
 
   it("carries the cards' version and the UTC day the page is rendered on, so social sites fetch a changed card again, and its sponsors daily", () => {
-    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    vi.useFakeTimers({
-      now: new Date('2026-11-05T23:59:59Z'),
-      toFake: ['Date'],
-    });
+    using _build = buildAt(
+      { OG_CARDS_VERSION: '0123abcdef' },
+      new Date('2026-11-05T23:59:59Z'),
+    );
     expect(ogImageUrl('/docs/server/procedures')).toBe(
       `${site.url}/og/docs/server/procedures/0123abcdef-20261105.png`,
     );
@@ -95,11 +107,10 @@ describe('ogImageUrl', () => {
     vi.resetModules();
     const { hydrateCardDay } = await import('./card-day.ts');
     const { ogImageUrl } = await import('./seo.ts');
-    vi.stubEnv('OG_CARDS_VERSION', '0123abcdef');
-    vi.useFakeTimers({
-      now: new Date('2026-11-07T00:00:00Z'),
-      toFake: ['Date'],
-    });
+    using _build = buildAt(
+      { OG_CARDS_VERSION: '0123abcdef' },
+      new Date('2026-11-07T00:00:00Z'),
+    );
     hydrateCardDay({ cardDay: '20261105' });
     expect(ogImageUrl('/')).toBe(
       `${site.url}/og/index/0123abcdef-20261105.png`,

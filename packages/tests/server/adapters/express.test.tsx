@@ -6,6 +6,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
 import type { TRPCRequestInfo } from '@trpc/server/http';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import express from 'express';
 import fetch from 'node-fetch';
 import { z } from 'zod';
@@ -57,7 +58,7 @@ export const router = t.router({
 });
 
 async function startServer(
-  opts?: Partial<CreateExpressContextOptions<typeof router>>,
+  opts: Partial<CreateExpressContextOptions<typeof router>>,
 ) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
@@ -121,28 +122,19 @@ async function startServer(
     ],
   });
 
-  return {
-    close: () =>
+  return makeAsyncResource(
+    { router, client, url },
+    () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),
-    router,
-    client,
-    url,
-  };
+  );
 }
 
-let $: Awaited<ReturnType<typeof startServer>>;
-beforeAll(async () => {
-  $ = await startServer();
-});
-afterAll(async () => {
-  await $.close();
-});
-
 test('simple query', async () => {
+  await using $ = await startServer({});
   expect(
     await $.client.hello.query({
       who: 'test',
@@ -161,6 +153,7 @@ test('simple query', async () => {
 });
 
 test('batched requests in body work correctly', async () => {
+  await using $ = await startServer({});
   const res = await Promise.all([
     $.client.helloMutation.mutate('world'),
     $.client.helloMutation.mutate('KATT'),
@@ -169,6 +162,7 @@ test('batched requests in body work correctly', async () => {
 });
 
 test('request info from context should include both calls', async () => {
+  await using $ = await startServer({});
   const res = await Promise.all([
     $.client.hello.query({
       who: 'test',
@@ -209,6 +203,7 @@ test('request info from context should include both calls', async () => {
 });
 
 test('error query', async () => {
+  await using $ = await startServer({});
   try {
     await $.client.exampleError.query();
   } catch (e) {
@@ -218,7 +213,7 @@ test('error query', async () => {
 });
 
 test('payload too large', async () => {
-  const t = await startServer({
+  await using t = await startServer({
     maxBodySize: 100,
   });
 
@@ -231,12 +226,10 @@ test('payload too large', async () => {
 
   // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
   await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
-
-  t.close();
 });
 
 test('bad url does not crash server', async () => {
-  const t = await startServer({
+  await using t = await startServer({
     router,
   });
 

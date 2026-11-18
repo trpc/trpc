@@ -4,6 +4,7 @@ import { createTRPCClient, httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import { octetInputParser } from '@trpc/server/http';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import express from 'express';
 import { z } from 'zod';
 
@@ -40,26 +41,19 @@ async function startServer() {
   }
   const url = `http://localhost:${address.port}`;
 
-  return {
-    url,
-    close: () =>
+  return makeAsyncResource(
+    { url },
+    () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),
-  };
+  );
 }
 
-let $: Awaited<ReturnType<typeof startServer>>;
-beforeAll(async () => {
-  $ = await startServer();
-});
-afterAll(async () => {
-  await $.close();
-});
-
 test('a JSON body pre-read into a Buffer reaches the procedure', async () => {
+  await using $ = await startServer();
   const client = createTRPCClient<typeof router>({
     links: [httpBatchLink({ url: $.url })],
   });
@@ -68,6 +62,7 @@ test('a JSON body pre-read into a Buffer reaches the procedure', async () => {
 });
 
 test('a binary body pre-read into a Buffer reaches the procedure', async () => {
+  await using $ = await startServer();
   const client = createTRPCClient<typeof router>({
     links: [httpLink({ url: $.url })],
   });

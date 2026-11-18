@@ -1,19 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, expect, it } from 'vitest';
+import { tempDirResource } from './__tempDir';
+import { expect, it } from 'vitest';
 import { isolatedGitEnv, projectFiles } from '../src/lib/git';
 
-let dir: string | null = null;
-afterEach(() => {
-  if (dir) rmSync(dir, { recursive: true, force: true });
-  dir = null;
-});
-
 it('lists every project file, more than 1 MiB of paths, as written', async () => {
-  const repo = mkdtempSync(join(tmpdir(), 'trpc-upgrade-git-'));
-  dir = repo;
+  using fixture = tempDirResource('trpc-upgrade-git-');
+  const repo = fixture.dir;
   const git = (args: string[]) =>
     execFileSync('git', args, { cwd: repo, env: isolatedGitEnv() });
   git(['init', '-q']);
