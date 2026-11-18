@@ -149,6 +149,9 @@ function serve(opts: {
         calls,
         pipe: hasBody ? pipeOfBody(body) : pipeOfSearchParams(url.searchParams),
         transformer: opts.transformer,
+        // As the client sent it, before the transformer read it
+        sentInputOf: async (index) =>
+          isObject(inputs) ? inputs[index] : undefined,
         maxRuns: opts.maxRuns,
         limits: opts.limits,
       });
@@ -2195,6 +2198,7 @@ describe('a call for every item', () => {
         },
       }),
       transformer: transformers.none,
+      sentInputOf: async () => ({}),
       maxRuns: null,
       limits: pipelineLimitDefaults,
     });
@@ -2376,6 +2380,7 @@ describe('the limits of a server', () => {
           1: { reads: Array.from({ length: 200_000 }, () => read) },
         }),
         transformer: transformers.none,
+        sentInputOf: async () => ({}),
         maxRuns: null,
         limits: pipelineLimitDefaults,
       });
@@ -2864,6 +2869,7 @@ describe('the limits of a server', () => {
           1: { reads: [{ to: ['ids'], from: 0, path: [null, 'id'] }] },
         }),
         transformer,
+        sentInputOf: async () => ({}),
         maxRuns: null,
         limits,
       });
@@ -4451,5 +4457,111 @@ describe('a place in an input that a read cannot write to', () => {
     assert(isObject(input) && isObject(input['filter']));
     expect(input).toEqual({ filter: { id: 'ada', kind: 'author' }, n: 1 });
     expect(Object.keys(input['filter'])).toEqual(['id', 'kind']);
+  });
+});
+
+describe('an input its transformer would send other than as the client sent it', () => {
+  /** What the server's input transformer makes of the string at `at` */
+  class Stamp {
+    constructor(public iso: string) {}
+  }
+  // It reads a string at `at` as a `Stamp`, and writes what it is given: the
+  // client sends a string there, so it never writes a `Stamp` for it
+  const stamps: CombinedDataTransformer = {
+    input: {
+      serialize: (it: unknown) => it,
+      deserialize: (it: unknown) => {
+        if (!isObject(it) || !('at' in it)) {
+          return it;
+        }
+        if (typeof it['at'] !== 'string') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '"at" is not a string',
+          });
+        }
+        return { ...it, at: new Stamp(it['at']) };
+      },
+    },
+    output: transformers.none.output,
+  };
+
+  test.each([false, true])(
+    'is refused before it runs, so the client can send it by itself (for every item: %s)',
+    async (perItem) => {
+      const echo = vi.fn((input: unknown) => input);
+      await using server = serve({
+        ...defaults,
+        transformer: stamps,
+        fns: { post: () => ({ ids: ['ada'], authorId: 'ada' }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call(
+        'echo',
+        { at: '2020-01-01', id: null },
+        perItem
+          ? reads({ from: post, path: ['ids'] }, { to: ['id'], path: [] })
+          : reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+      );
+
+      const res = await send({
+        ...defaults,
+        transformer: stamps,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message:
+            "This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in",
+          data: { pipeline: 'not-run' },
+        },
+      });
+      expect(echo).not.toHaveBeenCalled();
+    },
+  );
+
+  test('is refused before it runs when what the transformer reads of it is what JSON cannot carry', async () => {
+    // It reads the string at `n` as a `BigInt`, which it writes as it is
+    const bigints: CombinedDataTransformer = {
+      input: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) =>
+          isObject(it) && typeof it['n'] === 'string'
+            ? { ...it, n: BigInt(it['n']) }
+            : it,
+      },
+      output: transformers.none.output,
+    };
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      transformer: bigints,
+      fns: { post: () => ({ authorId: 'ada' }), echo },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      { n: '1', id: null },
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: bigints,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toMatchObject({
+      error: { code: 'BAD_REQUEST', data: { pipeline: 'not-run' } },
+    });
+    expect(echo).not.toHaveBeenCalled();
   });
 });

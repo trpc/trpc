@@ -1,0 +1,183 @@
+import { initTRPC, TRPCError } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
+import { z } from 'zod';
+
+/**
+ * Error shapes that JSON can't carry, in a pipelined batch: the call or run
+ * whose error it is fails as an `INTERNAL_SERVER_ERROR`, and the rest of the
+ * response is as it would be
+ */
+
+/** A pipelined batch as a request, with an empty input for calls 1 and 2 */
+function pipelined(opts: {
+  paths: string;
+  pipe: unknown;
+  /** Whether the response streams, as `httpBatchStreamLink` asks */
+  streams: boolean;
+}) {
+  return new Request(
+    `http://localhost/trpc/${opts.paths}?batch=pipeline&input=${encodeURIComponent(
+      JSON.stringify({ 1: {}, 2: {} }),
+    )}&pipe=${encodeURIComponent(JSON.stringify(opts.pipe))}`,
+    { headers: opts.streams ? { 'trpc-accept': 'application/jsonl' } : {} },
+  );
+}
+
+function createRouter(opts: {
+  /** Which errors the formatter gives a `BigInt` */
+  big: (code: TRPCError['code']) => boolean;
+}) {
+  const t = initTRPC.create({
+    errorFormatter: ({ shape, error }) =>
+      opts.big(error.code)
+        ? { ...shape, data: { ...shape.data, big: BigInt(1) } }
+        : shape,
+  });
+  return t.router({
+    post: t.procedure.query(() => ({
+      authorId: 'missing',
+      tags: [{ id: 'missing' }, { id: 't1' }],
+    })),
+    author: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async (opts) => {
+        if (opts.input.id === 'missing') {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
+        // Arrives after the one that fails
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return { id: opts.input.id };
+      }),
+  });
+}
+
+/** Every error but an `INTERNAL_SERVER_ERROR` has a `BigInt` */
+const allButInternal = (code: TRPCError['code']) =>
+  code !== 'INTERNAL_SERVER_ERROR';
+
+async function send(opts: {
+  router: ReturnType<typeof createRouter>;
+  paths: string;
+  pipe: unknown;
+  streams: boolean;
+  allowPipelining: true | experimental_PipeliningOptions;
+}) {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: pipelined(opts),
+    router: opts.router,
+    experimental_allowPipelining: opts.allowPipelining,
+  });
+}
+
+const authorOfPost = { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] };
+const authorOfEachTag = {
+  each: { from: 0, path: ['tags'] },
+  reads: [{ to: ['id'], path: ['id'] }],
+};
+
+test('a run whose error JSON cannot carry fails by itself in a stream: the runs after it still arrive', async () => {
+  const res = await send({
+    router: createRouter({ big: allButInternal }),
+    paths: 'post,author',
+    pipe: { 1: authorOfEachTag },
+    streams: true,
+    allowPipelining: true,
+  });
+  const text = await res.text();
+
+  // The first run's error, and the second run's result after it
+  expect(text).toContain('INTERNAL_SERVER_ERROR');
+  expect(text).toContain('"data":{"id":"t1"}');
+  expect(text.indexOf('INTERNAL_SERVER_ERROR')).toBeLessThan(
+    text.indexOf('"data":{"id":"t1"}'),
+  );
+});
+
+test('a call whose error JSON cannot carry fails as `INTERNAL_SERVER_ERROR` by itself, not the response', async () => {
+  const res = await send({
+    router: createRouter({ big: allButInternal }),
+    paths: 'post,author,author',
+    pipe: { 1: authorOfPost, 2: authorOfEachTag },
+    streams: false,
+    allowPipelining: true,
+  });
+  const json = await res.json();
+
+  expect(json[0]).toMatchObject({ result: { data: { authorId: 'missing' } } });
+  expect(json[1]).toMatchObject({
+    error: { data: { code: 'INTERNAL_SERVER_ERROR', path: 'author' } },
+  });
+  expect(json[2]).toMatchObject({
+    items: {
+      0: { error: { data: { code: 'INTERNAL_SERVER_ERROR' } } },
+      1: { result: { data: { id: 't1' } } },
+    },
+  });
+});
+
+test('a call whose error JSON cannot carry fails by itself in a stream: the calls after it still arrive', async () => {
+  const res = await send({
+    router: createRouter({ big: allButInternal }),
+    paths: 'post,author,author',
+    pipe: { 1: authorOfPost, 2: authorOfEachTag },
+    streams: true,
+    allowPipelining: true,
+  });
+  const text = await res.text();
+
+  expect(text.match(/INTERNAL_SERVER_ERROR/g)).toHaveLength(2);
+  expect(text).toContain('"data":{"id":"t1"}');
+});
+
+test.each([
+  {
+    name: 'a call that runs once',
+    pipe: { 1: authorOfPost },
+    allowPipelining: { maxReadsPerCall: 0 },
+  },
+  {
+    name: 'a call for every item',
+    pipe: { 1: authorOfEachTag },
+    allowPipelining: { maxRuns: 2 },
+  },
+])(
+  "keeps `pipeline: 'not-run'` when the error of $name the server refused is one JSON cannot carry",
+  async ({ pipe, allowPipelining }) => {
+    const res = await send({
+      router: createRouter({ big: allButInternal }),
+      paths: 'post,author',
+      pipe,
+      streams: false,
+      allowPipelining,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toMatchObject({
+      result: { data: { authorId: 'missing' } },
+    });
+    expect(json[1]).toMatchObject({
+      error: {
+        data: { code: 'INTERNAL_SERVER_ERROR', pipeline: 'not-run' },
+      },
+    });
+  },
+);
+
+test("is the default shape when the formatter's `INTERNAL_SERVER_ERROR` cannot be carried either", async () => {
+  const res = await send({
+    router: createRouter({ big: () => true }),
+    paths: 'post,author',
+    pipe: { 1: authorOfPost },
+    streams: false,
+    allowPipelining: true,
+  });
+  const json = await res.json();
+
+  expect(json[0]).toMatchObject({ result: { data: { authorId: 'missing' } } });
+  expect(json[1]).toMatchObject({
+    error: { data: { code: 'INTERNAL_SERVER_ERROR', path: 'author' } },
+  });
+  expect(json[1].error.data).not.toHaveProperty('big');
+});

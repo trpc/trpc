@@ -307,16 +307,54 @@ function readableData(
 }
 
 /**
- * The errors of the server's limits. A call refused with one before any of
- * its runs ran can be asked for by itself: the limits are on what the server
- * fills in, not on what a client sends
+ * The errors of what the server won't fill in: over its limits, or into an
+ * input it can't send as the client would. A call refused with one before
+ * any of its runs ran can be asked for by itself: they are about what the
+ * server fills in, not about what a client sends
  */
-const overLimitErrors = new WeakSet<TRPCError>();
+const refusalErrors = new WeakSet<TRPCError>();
+
+/**
+ * A call refused as its input doesn't come back through the transformer of
+ * inputs as the client sent it: see `checkSentInput`
+ */
+function cannotSendAsTheClient() {
+  const error = new TRPCError({
+    code: 'BAD_REQUEST',
+    message: `This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in`,
+  });
+  refusalErrors.add(error);
+  return error;
+}
+
+/**
+ * Whether `input`, as the server read it, goes back through the transformer
+ * of inputs to what the client sent. Only then is it, with values written in,
+ * what the client would send: a transformer can read a string as an instance
+ * that it doesn't write back as that string
+ */
+function comesBackAsSent(opts: {
+  transformer: CombinedDataTransformer['input'];
+  input: unknown;
+  /** The input as the client sent it, as JSON, before it was read */
+  sent: unknown;
+}) {
+  try {
+    const back = opts.transformer.serialize(opts.input);
+    return (
+      Object.is(back, opts.sent) ||
+      JSON.stringify(back) === JSON.stringify(opts.sent)
+    );
+  } catch {
+    // What JSON can't carry, such as a `BigInt`, the client didn't send
+    return false;
+  }
+}
 
 /** A call refused for going over one of the server's limits */
 function overLimit(message: string) {
   const error = new TRPCError({ code: 'BAD_REQUEST', message });
-  overLimitErrors.add(error);
+  refusalErrors.add(error);
   return error;
 }
 
@@ -326,7 +364,7 @@ function overBatchSize() {
     code: 'BAD_REQUEST',
     message: `A call for every item exceeds the maximum batch size`,
   });
-  overLimitErrors.add(error);
+  refusalErrors.add(error);
   return error;
 }
 
@@ -622,6 +660,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   pipe: unknown;
   transformer: CombinedDataTransformer;
   /**
+   * A call's input as the client sent it, by the call's index: its JSON,
+   * before the transformer read it
+   */
+  sentInputOf: (index: number) => Promise<unknown>;
+  /**
    * The most runs of a call the batch may have, or `null` for any number. A
    * call for every item runs once for each item. Of two such calls that are
    * over it together, the one whose list is ready first runs.
@@ -663,7 +706,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   const refusedBeforeRunning = new WeakSet<TRPCError>();
   /** Notes why a call doesn't run, before any of its runs ran */
   const notRunBecause = (cause: unknown) => {
-    if (cause instanceof TRPCError && overLimitErrors.has(cause)) {
+    if (cause instanceof TRPCError && refusalErrors.has(cause)) {
       refusedBeforeRunning.add(cause);
     }
   };
@@ -946,6 +989,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }
 
   /**
+   * Refuses a call whose input, as the server read it, isn't what the client
+   * would send: what is filled in is written into it, and it goes to the
+   * call as the client would send it filled in
+   */
+  async function checkSentInput(source: Source, input: unknown) {
+    const sent = await opts.sentInputOf(source.index);
+    if (
+      !comesBackAsSent({ transformer: opts.transformer.input, input, sent })
+    ) {
+      throw cannotSendAsTheClient();
+    }
+  }
+  /**
    * A filled-in input as a call gets it when a client fills it in and sends
    * it: through the transformer of inputs, all of it, so what is not there
    * is `null` in a list and left out of an object where JSON makes it so. It
@@ -1074,6 +1130,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           throw refusal;
         }
         base = await call.getRawInput();
+        await checkSentInput(source, base);
       } catch (cause) {
         // Refused, or its own input can't be read: it runs for no item, and
         // gives back the place it holds
@@ -1169,7 +1226,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               // Refused as a whole, for a limit, so none of its runs ran
               return {
                 error:
-                  whole && overLimitErrors.has(node.error)
+                  whole && refusalErrors.has(node.error)
                     ? markPipelineNotRun(shape)
                     : shape,
               };
@@ -1205,8 +1262,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         if (refusal) {
           throw refusal;
         }
+        const base = await call.getRawInput();
+        await checkSentInput(source, base);
         const input = await fill({
-          base: await call.getRawInput(),
+          base,
           reads,
           place: { indexes: [], item: null },
           perItem: false,
