@@ -309,6 +309,7 @@ export function createPipelineSizeOf() {
   /** An object's length, or how long it is at least if `exact` is false */
   const objects = new WeakMap<object, { size: number; exact: boolean }>();
   const strings = new Map<string, number>();
+  /** How long `value` is, its `toJSON` already called, as JSON calls it once */
   const sizeOf = (value: unknown, room: number): number => {
     if (typeof value === 'string') {
       // Its length, with its quotes, is as long as it can be at least
@@ -333,10 +334,6 @@ export function createPipelineSizeOf() {
       typeof value === 'boolean'
     ) {
       return String(value).length;
-    }
-    if (hasToJSON(value)) {
-      // As JSON has it, such as a `Date`'s string. A function can have one too
-      return sizeOf(value.toJSON(), room);
     }
     if (typeof value !== 'object' || value === null) {
       return 4;
@@ -364,7 +361,7 @@ export function createPipelineSizeOf() {
     objects.set(value, { size, exact: !over });
     return size;
   };
-  return sizeOf;
+  return (value: unknown, room: number) => sizeOf(asJSON(value, ''), room);
 }
 
 /**
@@ -382,8 +379,8 @@ function addParts(
     let index = 0;
     for (const part of value as Iterable<unknown>) {
       // A `,` before each but the first
-      addSeparators(index++ === 0 ? 0 : 1);
-      if ((over = add(part))) {
+      addSeparators(index === 0 ? 0 : 1);
+      if ((over = add(asJSON(part, String(index++))))) {
         break;
       }
     }
@@ -393,7 +390,7 @@ function addParts(
     // leaves out is read, and counts for nothing
     let first = true;
     for (const key of Object.keys(value)) {
-      const part = (value as Record<string, unknown>)[key];
+      const part = asJSON((value as Record<string, unknown>)[key], key);
       if (leftOut(part)) {
         // JSON writes neither it nor its key
         continue;
@@ -409,21 +406,32 @@ function addParts(
   return over;
 }
 
-/** Whether JSON writes this value as what its `toJSON` gives */
-function hasToJSON(value: unknown): value is { toJSON: () => unknown } {
-  return (
+/**
+ * What JSON writes for `value` at `key`: what its `toJSON` gives, such as a
+ * `Date`'s string, if it has one. A function can have one too. JSON calls it
+ * with the property's key, the item's index, or `''` at the top, and once:
+ * what it gives is written as it is, even if it has a `toJSON` of its own
+ */
+function asJSON(value: unknown, key: string): unknown {
+  if (
     ((typeof value === 'object' && value !== null) ||
       typeof value === 'function') &&
     'toJSON' in value &&
     typeof value.toJSON === 'function'
-  );
+  ) {
+    return value.toJSON(key);
+  }
+  return value;
 }
 
-/** Whether JSON leaves a property with this value out of an object */
+/**
+ * Whether JSON leaves a property with this value out of an object, its
+ * `toJSON` already called
+ */
 function leftOut(value: unknown) {
   return (
     value === undefined ||
-    (typeof value === 'function' && !hasToJSON(value)) ||
+    typeof value === 'function' ||
     typeof value === 'symbol'
   );
 }

@@ -2924,6 +2924,31 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('a property whose `toJSON` gives nothing counts for nothing', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = { a: 1, gone: { toJSON: () => undefined } };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
+  test('`toJSON` gets the key JSON gives it: the property, the index, or empty at the top', () => {
+    const sizeOf = createPipelineSizeOf();
+    const keyed = { toJSON: (key: string) => `key "${key}"` };
+    const value = { name: keyed, list: [keyed] };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+    expect(sizeOf(keyed, Infinity)).toBe(JSON.stringify(keyed).length);
+  });
+
+  test('what `toJSON` gives is not given to its own `toJSON` again', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = {
+      toJSON: () => ({ a: 1, toJSON: () => 'x'.repeat(100) }),
+    };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
   test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {
     const sizeOf = createPipelineSizeOf();
     const value = { at: new Date('2026-01-01T00:00:00Z') };
