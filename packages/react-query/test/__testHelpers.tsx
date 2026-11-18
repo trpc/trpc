@@ -355,5 +355,9 @@ export function createAppRouter() {
     createContext,
     linkSpy,
   };
-  return makeAsyncResource(ctx, close);
+  return makeAsyncResource(ctx, async () => {
+    // A client left open keeps reconnecting after the server closes.
+    void wsClient.close().catch(() => null);
+    await close();
+  });
 }
