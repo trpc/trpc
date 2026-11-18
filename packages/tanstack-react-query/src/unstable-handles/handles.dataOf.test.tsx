@@ -4958,7 +4958,7 @@ describe('experimental_useHandles', () => {
   test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const seen: unknown[] = [];
     function Page(props: { fail: boolean }) {
@@ -5000,12 +5000,12 @@ describe('experimental_useHandles', () => {
     // Until 30 seconds after its queries settled, it has the same load, as
     // when a Suspense boundary above it shows it again. `vi.waitFor()` moved
     // the clock by one of its 50 ms steps at most
-    await vi.advanceTimersByTimeAsync(29_900);
+    await timers.advanceTimersByTimeAsync(29_900);
     expect(renderOffPage()).toBe(first);
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
     // Then nothing is kept: it loads again
-    await vi.advanceTimersByTimeAsync(200);
+    await timers.advanceTimersByTimeAsync(200);
     const second = renderOffPage();
     expect(second).not.toBe(first);
     await vi.waitFor(() => {
@@ -5016,7 +5016,7 @@ describe('experimental_useHandles', () => {
     seen.length = 0;
     const onPage = resource.renderApp(<Page fail={false} />);
     expect(seen[0]).toBe(second);
-    await vi.advanceTimersByTimeAsync(120_000);
+    await timers.advanceTimersByTimeAsync(120_000);
     resource.rerenderApp(onPage, <Page fail={false} />);
     expect(seen.at(-1)).toBe(second);
     expect(resource.calls).toHaveBeenCalledTimes(2);
