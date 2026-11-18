@@ -79,7 +79,6 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "event-source-polyfill": "catalog:",
-    "konn": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "react": "catalog:",
