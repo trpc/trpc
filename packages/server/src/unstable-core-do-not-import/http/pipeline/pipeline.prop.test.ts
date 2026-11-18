@@ -2,8 +2,7 @@
  * Properties of a pipelined batch, checked with fast-check on the code itself:
  * the budgets hold in whatever order the calls' data arrives, what a client
  * encodes the server reads back the same, and a response's runs are each
- * where their indexes say. `PipelineBudget.tla` checks the budgets of a model
- * of every order; this checks the code, for random batches and orders.
+ * where their indexes say.
  */
 import { fc, test } from '@fast-check/vitest';
 import { isObject } from '../../utils';
