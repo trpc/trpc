@@ -198,7 +198,13 @@ function serve(opts: {
     const answers = results.map(async (result) => {
       const [cause, data, items] = await result;
       if (cause !== undefined) {
-        return { error: wireError(cause) };
+        // Marked, as a request handler marks it, if refused before it ran
+        return {
+          error:
+            cause instanceof TRPCError
+              ? pipeline.errorShape(cause, wireError(cause))
+              : wireError(cause),
+        };
       }
       if (items) {
         return settle(items, opts.transformer);
@@ -1249,6 +1255,7 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A call for every item exceeds the maximum batch size',
+        data: { pipeline: 'not-run' },
       },
     });
     // It ran for none of them
@@ -1281,6 +1288,7 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A call for every item exceeds the maximum batch size',
+        data: { pipeline: 'not-run' },
       },
     });
     expect(ran.map(([path]) => path)).toEqual(['posts']);
@@ -2127,6 +2135,7 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A list has 4 items, more than `maxRuns` (3) allows',
+        data: { pipeline: 'not-run' },
       },
     });
     expect(echo).not.toHaveBeenCalled();
@@ -2300,7 +2309,15 @@ describe('the limits of a server', () => {
     return { res, ran };
   }
 
+  /**
+   * A call refused for a limit, before any of its runs ran: marked, so a
+   * client asks for it by itself
+   */
   const refused = (message: string) => ({
+    error: { code: 'BAD_REQUEST', message, data: { pipeline: 'not-run' } },
+  });
+  /** A run refused for a limit: other runs of its call can run, so no mark */
+  const refusedRun = (message: string) => ({
     error: { code: 'BAD_REQUEST', message },
   });
 
@@ -2369,7 +2386,10 @@ describe('the limits of a server', () => {
               data: run?.kind === 'once' ? await run.input() : { id: 'a' },
             };
           } catch (cause) {
-            return { error: wireError(cause) };
+            // Marked, as a request handler marks it
+            return {
+              error: pipeline.errorShape(cause as TRPCError, wireError(cause)),
+            };
           }
         },
         data: (outcome) => {
@@ -2689,7 +2709,7 @@ describe('the limits of a server', () => {
       expect(res.of(each)).toEqual({
         items: {
           0: { result: { data: 1 } },
-          1: refused(
+          1: refusedRun(
             'A value this call reads is longer than `maxValueLength` (10 characters of JSON) allows',
           ),
         },
@@ -2800,7 +2820,13 @@ describe('the limits of a server', () => {
         calls: [items, ids],
       });
 
-      expect(res.of(items)).toEqual({ items: { 0: whole } });
+      expect(res.of(items)).toEqual({
+        items: {
+          0: refusedRun(
+            'A value this call reads is an object or an array, and `allowWholeValues` is false',
+          ),
+        },
+      });
       expect(res.of(ids)).toEqual({ items: { 0: { result: { data: 'a' } } } });
     });
   });
@@ -2853,7 +2879,10 @@ describe('the limits of a server', () => {
           try {
             return { data: await run.input() };
           } catch (cause) {
-            return { error: wireError(cause) };
+            // Marked, as a request handler marks it
+            return {
+              error: pipeline.errorShape(cause as TRPCError, wireError(cause)),
+            };
           }
         },
         data: (outcome) => ('data' in outcome ? outcome.data : null),
@@ -2902,11 +2931,16 @@ describe('`maxFillSize`: what a request fills in', () => {
     maxValueLength: maxFillSize,
   };
   const big = 'x'.repeat(Math.ceil(maxFillSize * 0.4));
-  const refused = {
+  /** A run refused for the limit: other runs of its call can run */
+  const refusedRun = {
     error: {
       code: 'BAD_REQUEST',
       message: `What this call fills in goes over \`maxFillSize\` (${maxFillSize} characters of JSON for the batch)`,
     },
+  };
+  /** A call refused for the limit before it ran: marked */
+  const refused = {
+    error: { ...refusedRun.error, data: { pipeline: 'not-run' } },
   };
 
   test('a call that would go over `maxFillSize` is refused, and takes none of it', async () => {
@@ -3071,10 +3105,10 @@ describe('`maxFillSize`: what a request fills in', () => {
       items: {
         0: { result: { data: 1 } },
         1: { result: { data: 2 } },
-        2: refused,
+        2: refusedRun,
       },
     });
-    expect(res.of(ofTwo)).toEqual({ items: { 0: refused, 1: refused } });
+    expect(res.of(ofTwo)).toEqual({ items: { 0: refusedRun, 1: refusedRun } });
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
@@ -3112,7 +3146,7 @@ describe('`maxFillSize`: what a request fills in', () => {
       items: {
         0: { result: { data: null } },
         1: { result: { data: null } },
-        2: refused,
+        2: refusedRun,
       },
     });
   });

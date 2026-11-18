@@ -866,15 +866,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const call = info.calls[index];
 
           if (error) {
+            const shape = getErrorShape({
+              config,
+              ctx: ctxManager.valueOrUndefined(),
+              error,
+              input: call!.result(),
+              path: call!.path,
+              type: call!.procedure?._def.type ?? 'unknown',
+            });
             return {
-              error: getErrorShape({
-                config,
-                ctx: ctxManager.valueOrUndefined(),
-                error,
-                input: call!.result(),
-                path: call!.path,
-                type: call!.procedure?._def.type ?? 'unknown',
-              }),
+              error: pipeline ? pipeline.errorShape(error, shape) : shape,
             };
           }
           if (result.items) {
@@ -1039,15 +1040,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           return { result: { data: items.json } };
         }
         if (error) {
+          const shape = getErrorShape({
+            config,
+            ctx: ctxManager.valueOrUndefined(),
+            error,
+            input: call.result(),
+            path: call.path,
+            type: call.procedure?._def.type ?? 'unknown',
+          });
           return {
-            error: getErrorShape({
-              config,
-              ctx: ctxManager.valueOrUndefined(),
-              error,
-              input: call.result(),
-              path: call.path,
-              type: call.procedure?._def.type ?? 'unknown',
-            }),
+            error: pipeline ? pipeline.errorShape(error, shape) : shape,
           };
         }
         return {

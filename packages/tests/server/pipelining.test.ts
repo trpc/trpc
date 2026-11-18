@@ -2900,3 +2900,235 @@ describe('a call for every item', () => {
     });
   });
 });
+
+describe('a call the server refuses before any of its runs ran', () => {
+  const t = initTRPC.create({
+    // A formatter that makes its own `data` doesn't drop the mark
+    errorFormatter: ({ shape }) => ({
+      message: shape.message,
+      code: shape.code,
+      data: { custom: true },
+    }),
+  });
+  const router = t.router({
+    list: t.procedure.query(() => ({
+      items: [{ id: 'ada' }, { id: 'missing' }],
+    })),
+    author: t.procedure.input(z.unknown()).query((opts) => {
+      if (isObject(opts.input) && opts.input['id'] === 'missing') {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+      return opts.input;
+    }),
+  });
+  async function send(opts: {
+    pipe: unknown;
+    allowPipelining: experimental_PipeliningOptions;
+  }) {
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({ paths: 'list,author', pipe: opts.pipe }),
+      router,
+      experimental_allowPipelining: opts.allowPipelining,
+    });
+    return (await res.json()) as unknown[];
+  }
+  const eachAuthor = {
+    1: {
+      each: { from: 0, path: ['items'] },
+      reads: [{ to: ['id'], path: ['id'] }],
+    },
+  };
+
+  test("is marked `pipeline: 'not-run'` in its error's `data`, for a limit: a list with more runs than `maxRuns`", async () => {
+    const json = await send({
+      pipe: eachAuthor,
+      allowPipelining: { maxRuns: 2 },
+    });
+
+    expect(json[1]).toEqual({
+      error: {
+        message:
+          'This call would make the batch run 3 times, more than `maxRuns` (2) allows',
+        code: -32600,
+        data: { custom: true, pipeline: 'not-run' },
+      },
+    });
+  });
+
+  test('is marked for a value it reads that a limit refuses', async () => {
+    const json = await send({
+      pipe: { 1: { reads: [{ to: [], from: 0, path: ['items'] }] } },
+      allowPipelining: { allowWholeValues: false },
+    });
+
+    expect(json[1]).toMatchObject({
+      error: { data: { custom: true, pipeline: 'not-run' } },
+    });
+  });
+
+  test('is marked for more reads than `maxReadsPerCall`, in a call for every item too', async () => {
+    const json = await send({
+      pipe: {
+        1: {
+          each: { from: 0, path: ['items'] },
+          reads: [
+            { to: ['a'], path: ['id'] },
+            { to: ['b'], path: ['id'] },
+          ],
+        },
+      },
+      allowPipelining: { maxReadsPerCall: 1 },
+    });
+
+    expect(json[1]).toMatchObject({
+      error: { data: { custom: true, pipeline: 'not-run' } },
+    });
+  });
+
+  test('the error of a run that ran, or of a list inside the call, has no mark', async () => {
+    const json = await send({
+      pipe: eachAuthor,
+      allowPipelining: { maxRuns: 4 },
+    });
+
+    expect(json[1]).toEqual({
+      items: {
+        0: { result: { data: { id: 'ada' } } },
+        1: {
+          error: {
+            message: 'NOT_FOUND',
+            code: -32004,
+            data: { custom: true },
+          },
+        },
+      },
+    });
+  });
+
+  test('a list of lists whose inner list goes over `maxRuns` has no mark: other lists of the call can run', async () => {
+    const lists = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'pages,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: ['pages', null, 'items'] },
+            reads: [{ to: [], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        pages: lists.procedure.query(() => ({
+          pages: [{ items: ['a'] }, { items: ['b', 'c'] }],
+        })),
+        author: lists.procedure.input(z.unknown()).query((opts) => opts.input),
+      }),
+      experimental_allowPipelining: { maxRuns: 3 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toMatchObject({
+      items: {
+        0: { items: { 0: { result: { data: 'a' } } } },
+        1: { error: { data: { code: 'BAD_REQUEST' } } },
+      },
+    });
+    expect(JSON.stringify(json[1])).not.toContain('not-run');
+  });
+
+  test('a call whose `pipe` writes where its input has nothing has no mark: asking by itself would not help', async () => {
+    const json = await send({
+      pipe: {
+        1: { reads: [{ to: ['a', 'b'], from: 0, path: ['items'] }] },
+      },
+      allowPipelining: { allowWholeValues: true },
+    });
+
+    expect(json[1]).toEqual({
+      error: {
+        message: 'Invalid "pipe": the input has nothing at "a.b"',
+        code: -32600,
+        data: { custom: true },
+      },
+    });
+  });
+});
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+] as const)(
+  '$name, for a call the server refuses before it runs',
+  (scenario) => {
+    function setup() {
+      const t = initTRPC.create();
+      const router = t.router({
+        post: t.procedure.query(() => ({ authorId: 'missing', tags: ['t1'] })),
+        author: t.procedure
+          .input(z.object({ id: z.unknown() }))
+          .query((opts) => {
+            if (opts.input.id === 'missing') {
+              throw new TRPCError({ code: 'NOT_FOUND' });
+            }
+            return opts.input;
+          }),
+      });
+      const ctx = testServerAndClientResource(router, {
+        server: { experimental_allowPipelining: { allowWholeValues: false } },
+        client: (clientOpts) => ({
+          links: [
+            scenario.link({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          ],
+        }),
+      });
+      return Object.assign(ctx, { untyped: getUntypedClient(ctx.client) });
+    }
+
+    test('the call is unresolved, so what wants it asks for it by itself', async () => {
+      await using ctx = setup();
+
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query('post', undefined, {
+        context: pipelineContext(post),
+      });
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['tags'] }),
+      });
+      assert(author);
+
+      await postResult;
+      await expect(author.result).rejects.toMatchObject({
+        data: { code: 'BAD_REQUEST', pipeline: 'not-run' },
+      });
+      expect(author.status).toBe('unresolved');
+    });
+
+    test('a call whose run failed stays sent: its error is its result', async () => {
+      await using ctx = setup();
+
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query('post', undefined, {
+        context: pipelineContext(post),
+      });
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+
+      await postResult;
+      const error = await author.result.catch((cause: unknown) => cause);
+      expect(error).toMatchObject({ data: { code: 'NOT_FOUND' } });
+      expect((error as { data: object }).data).not.toHaveProperty('pipeline');
+      expect(author.status).toBe('sent');
+    });
+  },
+);

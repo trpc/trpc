@@ -377,19 +377,25 @@ describe.each([
     ]);
   });
 
-  test("a list whose runs would go over the server's `maxRuns` loads, and its items' queries get the `BAD_REQUEST`", async () => {
-    const { appRouter } = createRouter();
-    await using ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: { maxRuns: 2 } },
+  /** A client and server whose `maxRuns` is `maxRuns` */
+  function setupMaxRuns(maxRuns: number) {
+    const { appRouter, calls } = createRouter();
+    const ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: { maxRuns } },
       client: (clientOpts) => ({
         links: [
           scenario.link({
             url: clientOpts.httpUrl,
-            experimental_pipelining: experimental_pipelining({ maxRuns: 2 }),
+            experimental_pipelining: experimental_pipelining({ maxRuns }),
           }),
         ],
       }),
     });
+    return Object.assign(ctx, { calls });
+  }
+
+  test("a list whose runs would go over the server's `maxRuns` loads, and its items' queries are asked for by themselves", async () => {
+    await using ctx = setupMaxRuns(2);
 
     const list = await experimental_nested(ctx.client, (q) =>
       q.post.list.query({ limit: 2 }).items.map((it) => ({
@@ -398,16 +404,41 @@ describe.each([
     );
 
     // The link counts the list and its call as two runs. The server counts
-    // three once the list has arrived, and runs the call for none of its items
+    // three once the list has arrived, and refuses the call before it runs
+    // for any item: each item's query asks by itself
     expect(list.map((it) => it.node)).toEqual(posts.slice(0, 2));
-    for (const it of list) {
-      await expect(it.edges.author).rejects.toMatchObject({
-        message:
-          'This call would make the batch run 3 times, more than `maxRuns` (2) allows',
-        data: { code: 'BAD_REQUEST' },
-      });
-    }
+    expect(await Promise.all(list.map((it) => it.edges.author))).toEqual([
+      { id: 'ada', teamId: 'team-ada' },
+      { id: 'bob', teamId: 'team-bob' },
+    ]);
+    expect(
+      ctx.onRequestSpy.mock.calls.map(([req]) => req.url?.split('?')[0]),
+    ).toEqual(['/post.list,author.byId', '/author.byId,author.byId']);
+    expect(ctx.calls.mock.calls).toEqual([
+      ['author', 'ada'],
+      ['author', 'bob'],
+    ]);
+  });
+
+  test('the error of a run that ran rejects its edge: its query is not asked for again', async () => {
+    await using ctx = setupMaxRuns(4);
+
+    const list = await experimental_nested(ctx.client, (q) =>
+      q.post.list.query({ limit: 3 }).items.map((it) => ({
+        author: q.author.byId.query({ id: it.authorId }),
+      })),
+    );
+
+    expect(await list[0]!.edges.author).toEqual({
+      id: 'ada',
+      teamId: 'team-ada',
+    });
+    await expect(list[2]!.edges.author).rejects.toMatchObject({
+      message: 'no author',
+      data: { code: 'NOT_FOUND' },
+    });
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(ctx.calls).toHaveBeenCalledTimes(3);
   });
 
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
