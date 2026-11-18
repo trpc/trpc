@@ -99,7 +99,18 @@ function serve(opts: {
           ? undefined
           : opts.transformer.input.deserialize(input);
       };
-      return { path, getRawInput: async () => read(), result: read };
+      return {
+        path,
+        getRawInput: async () => read(),
+        // As a request's: what of the input was read, nothing if it can't be
+        result: () => {
+          try {
+            return read();
+          } catch {
+            return undefined;
+          }
+        },
+      };
     });
     let pipeline;
     try {
@@ -719,6 +730,28 @@ describe('what a call reads', () => {
     });
   });
 
+  test('a call whose data is `undefined` has nothing to read: the value is left out', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: { nothing: () => undefined, echo },
+    });
+    const nothing = sent('nothing', undefined);
+    const reader = call('echo', { keep: 1 }, [
+      { to: ['id'], from: nothing, path: [], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [nothing],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toEqual({ data: { keep: 1 } });
+  });
+
   test('what is not there is in the input as in one a client fills in: `null` in a list, and left out of an object', async () => {
     const seen: Record<'once' | 'whole' | 'each', unknown[]> = {
       once: [],
@@ -1083,6 +1116,100 @@ describe('a call for every item', () => {
     expect(res.of(ofLong)).toMatchObject({ data: { length: 3 } });
   });
 
+  test('a call for every item whose list is from a failed call has no run: its place goes to one that needs it', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      // Four calls, and two runs for the items of the list
+      maxRuns: 4,
+      fns: {
+        broken: () => {
+          throw new Error('broken');
+        },
+        // Ready after the call for the items of `broken` has failed
+        list: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return [1, 2];
+        },
+        echo,
+      },
+    });
+    const broken = sent('broken', undefined);
+    const list = sent('list', undefined);
+    const ofBroken = call('echo', {}, [
+      { to: ['n'], from: broken, path: [null], each: true },
+    ]);
+    const ofList = call('echo', {}, [
+      { to: ['n'], from: list, path: [null], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [broken, list],
+      calls: [ofBroken, ofList],
+    });
+
+    expect(res.of(ofBroken)).toMatchObject({
+      error: { code: 'PRECONDITION_FAILED' },
+    });
+    expect(res.of(ofList)).toEqual({
+      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+    });
+  });
+
+  test('a call whose own input can not be read has no run: its place goes to one that needs it', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      // A transformer that can't read the input `'unreadable'`
+      transformer: {
+        ...transformers.none,
+        input: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) => {
+            if (it === 'unreadable') {
+              throw new Error('unreadable');
+            }
+            return it;
+          },
+        },
+      },
+      // Three calls, and two runs for the items of the list
+      maxRuns: 3,
+      fns: {
+        list: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return [1, 2];
+        },
+        echo,
+      },
+    });
+    const list = sent('list', undefined);
+    const unreadable = call('echo', 'unreadable', [
+      { to: ['n'], from: list, path: ['0'], each: false },
+    ]);
+    const ofList = call('echo', {}, [
+      { to: ['n'], from: list, path: [null], each: true },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [unreadable, ofList],
+    });
+
+    expect(res.of(unreadable)).toMatchObject({
+      error: { message: 'unreadable' },
+    });
+    expect(res.of(ofList)).toEqual({
+      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+    });
+  });
+
   test('does not run when the call its list is from failed', async () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
@@ -1118,6 +1245,7 @@ describe('the limits of a server', () => {
       maxFillSize: 100_000,
       maxDepth: 3,
       allowWholeValues: false,
+      maxRuns: 100,
     });
     expect(pipelineLimitsOf({ maxDepth: 5, allowWholeValues: true })).toEqual({
       ...pipelineLimitDefaults,
@@ -1131,6 +1259,7 @@ describe('the limits of a server', () => {
         maxFillSize: 3,
         maxDepth: 4,
         allowWholeValues: true,
+        maxRuns: 5,
       }),
     ).toEqual({
       maxValueLength: 1,
@@ -1138,6 +1267,7 @@ describe('the limits of a server', () => {
       maxFillSize: 3,
       maxDepth: 4,
       allowWholeValues: true,
+      maxRuns: 5,
     });
     expect(pipelineLimitsOf({})).toEqual(pipelineLimitDefaults);
     expect(pipelineLimitsOf(false)).toBeNull();
@@ -1220,6 +1350,46 @@ describe('the limits of a server', () => {
         expect(ran).toEqual(['post', 'within']);
       },
     );
+
+    test('a call with more reads than a stack has room for is refused by itself', async () => {
+      const read = { to: ['id'], from: 0, path: ['id'] };
+      const pipeline = pipelineCalls({
+        calls: [0, 1].map(() => ({
+          getRawInput: async () => ({}),
+          result: () => undefined,
+        })),
+        pipe: JSON.stringify({
+          1: Array.from({ length: 200_000 }, () => read),
+        }),
+        transformer: transformers.none,
+        maxRuns: null,
+        limits: pipelineLimitDefaults,
+      });
+      const [first, second] = pipeline.run<Outcome>({
+        call: async (_call, run) => {
+          try {
+            return {
+              data: run?.kind === 'once' ? await run.input() : { id: 'a' },
+            };
+          } catch (cause) {
+            return { error: wireError(cause) };
+          }
+        },
+        data: (outcome) => {
+          if ('error' in outcome) {
+            throw new Error(outcome.error.message);
+          }
+          return outcome.data;
+        },
+      });
+
+      expect(await first).toEqual({ data: { id: 'a' } });
+      expect(await second).toEqual(
+        refused(
+          'This call reads 200000 values, more than `maxReadsPerCall` (16) allows',
+        ),
+      );
+    });
 
     test('a call for every item counts its reads too, and runs for no item', async () => {
       const list = sent('list', undefined);
@@ -1362,6 +1532,74 @@ describe('the limits of a server', () => {
       expect(res.of(third)).toEqual({ data: { id: 'c' } });
       expect(res.of(fourth)).toEqual(deep(4, 3));
       expect(ran).toEqual(['none', 'second', 'third']);
+    });
+  });
+
+  describe('`maxRuns`', () => {
+    const list = sent('list', undefined);
+    const ofList = call('echo', {}, [
+      { to: ['n'], from: list, path: [null], each: true },
+    ]);
+    const fns = (length: number) => ({
+      list: () => Array.from({ length }, (_it, index) => index),
+      echo: () => null,
+    });
+
+    test.each([
+      { limits: pipelineLimitDefaults, max: 100 },
+      { limits: { ...pipelineLimitDefaults, maxRuns: 10 }, max: 10 },
+    ])(
+      'a call for every item that would make the batch run more than $max times is refused, without `maxBatchSize`',
+      async ({ limits, max }) => {
+        // `list` is a run, and one more item would be one too many
+        const within = await sendWith({
+          limits,
+          fns: fns(max - 1),
+          sent: [list],
+          calls: [ofList],
+        });
+        expect(within.res.of(ofList)).toMatchObject({
+          data: { length: max - 1 },
+        });
+
+        const over = await sendWith({
+          limits,
+          fns: fns(max),
+          sent: [list],
+          calls: [ofList],
+        });
+        expect(over.res.of(ofList)).toEqual(
+          refused(
+            `This call would make the batch run ${max + 1} times, more than \`maxRuns\` (${max}) allows`,
+          ),
+        );
+        expect(over.ran).toEqual(['list']);
+      },
+    );
+
+    test('a refused call for every item gives its place back: a later one that fits runs', async () => {
+      const short = sent('short', undefined);
+      const ofShort = call('echo', {}, [
+        { to: ['n'], from: short, path: [null], each: true },
+      ]);
+      const { res } = await sendWith({
+        // Four calls, and two runs for the items of `short`
+        limits: { ...pipelineLimitDefaults, maxRuns: 4 },
+        fns: {
+          list: () => [1, 2, 3],
+          // Ready after the call for the items of `list` is refused
+          short: async () => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            return [1, 2];
+          },
+          echo: () => null,
+        },
+        sent: [list, short],
+        calls: [ofList, ofShort],
+      });
+
+      expect(res.of(ofList)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+      expect(res.of(ofShort)).toMatchObject({ data: { length: 2 } });
     });
   });
 
@@ -1733,6 +1971,13 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = { at: new Date('2026-01-01T00:00:00Z') };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
   test('a string longer than the room is too long without being measured', () => {
     const sizeOf = createPipelineSizeOf();
     const stringify = vi.spyOn(JSON, 'stringify');
@@ -1772,6 +2017,40 @@ describe('how long a value is, for what a request fills in', () => {
         100,
       ),
     ).toBe(101);
+  });
+});
+
+describe('data that is still to come', () => {
+  test('can not be read: what JSON makes of it is not what the client gets', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        // As a stream sends it: its `later` arrives after the rest
+        post: () => ({ id: 'ada', later: Promise.resolve('soon') }),
+        echo,
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call('echo', {}, [
+      { to: ['id'], from: post, path: ['id'], each: false },
+    ]);
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toEqual({
+      error: {
+        code: 'UNSUPPORTED_MEDIA_TYPE',
+        message: 'Cannot read the data of a stream-like response',
+      },
+    });
+    expect(echo).not.toHaveBeenCalled();
   });
 });
 

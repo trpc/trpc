@@ -1,7 +1,8 @@
 import { TRPCError } from '../../error/TRPCError';
+import { isPromise } from '../../stream/jsonl';
 import { createDeferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
-import { isObject } from '../../utils';
+import { isAsyncIterable, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipelineCallReads,
@@ -39,6 +40,7 @@ export function pipelineLimitsOf(
     maxDepth: option.maxDepth ?? pipelineLimitDefaults.maxDepth,
     allowWholeValues:
       option.allowWholeValues ?? pipelineLimitDefaults.allowWholeValues,
+    maxRuns: option.maxRuns ?? pipelineLimitDefaults.maxRuns,
   };
 }
 
@@ -233,6 +235,52 @@ function overTheWire(
     : transformer.deserialize(JSON.parse(json));
 }
 
+/** What a call that reads a failed call gets */
+function sourceFailed() {
+  return new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: `The call this call reads its input from failed`,
+  });
+}
+
+/** Thrown inside `readableData` for a part of the data that is still to come */
+class StillToCome extends Error {}
+
+/**
+ * A call's data as the client gets it, for the calls that read it. Throws if
+ * some of it is still to come, as a stream sends it: what JSON makes of that
+ * is `{}`, which isn't what the client gets. Data that can't go over the wire
+ * at all fails the call itself, so what reads it gets what it gets for a
+ * failed call.
+ */
+function readableData(
+  transformer: CombinedDataTransformer['output'],
+  data: unknown,
+) {
+  try {
+    const json = JSON.stringify(
+      transformer.serialize(data),
+      (_key, value: unknown) => {
+        if (isPromise(value) || isAsyncIterable(value)) {
+          throw new StillToCome();
+        }
+        return value;
+      },
+    );
+    return json === undefined
+      ? undefined
+      : transformer.deserialize(JSON.parse(json));
+  } catch (cause) {
+    if (cause instanceof StillToCome) {
+      throw new TRPCError({
+        code: 'UNSUPPORTED_MEDIA_TYPE',
+        message: 'Cannot read the data of a stream-like response',
+      });
+    }
+    throw sourceFailed();
+  }
+}
+
 /** A call refused for going over one of the server's limits */
 function overLimit(message: string) {
   return new TRPCError({ code: 'BAD_REQUEST', message });
@@ -275,6 +323,10 @@ export function createPipelineSizeOf() {
     }
     if (typeof value !== 'object' || value === null) {
       return 4;
+    }
+    if ('toJSON' in value && typeof value.toJSON === 'function') {
+      // As JSON has it, such as a `Date`'s string
+      return sizeOf(value.toJSON(), room);
     }
     const known = objects.get(value);
     if (known && (known.exact || known.size > room)) {
@@ -396,8 +448,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       if (reads.kind === 'each') {
         from.push(reads.list.from);
       }
-      // 1 for a call whose reads are empty, as for one that has none
-      source.depth = 1 + Math.max(0, ...from.map((it) => it.depth));
+      // 1 for a call whose reads are empty, as for one that has none. A loop,
+      // as a spread of a long list of reads would overflow the stack
+      let deepest = 0;
+      for (const it of from) {
+        deepest = Math.max(deepest, it.depth);
+      }
+      source.depth = 1 + deepest;
     }
   }
   /** Why a call is refused before it reads anything, if it is */
@@ -432,17 +489,18 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }
   }
 
-  /** The data of a call that another reads. Rejects if that call failed */
+  /**
+   * The data of a call that another reads. Rejects if that call failed, or if
+   * some of its data is still to come, as a stream sends it
+   */
   function dataOf(source: Source) {
-    source.clientData ??= source.outcome.promise.then((data) =>
-      overTheWire(opts.transformer.output, data),
+    source.clientData ??= source.outcome.promise.then(
+      (data) => readableData(opts.transformer.output, data),
+      () => {
+        throw sourceFailed();
+      },
     );
-    return source.clientData.catch(() => {
-      throw new TRPCError({
-        code: 'PRECONDITION_FAILED',
-        message: `The call this call reads its input from failed`,
-      });
-    });
+    return source.clientData;
   }
   /**
    * A filled-in input as a call gets it when a client fills it in and sends
@@ -454,20 +512,32 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   function asSent(input: unknown) {
     return overTheWire(opts.transformer.input, input);
   }
+  /**
+   * The runs of the batch. Each call holds a place from the start; a call for
+   * every item changes its own to one for each item, and a call that doesn't
+   * run gives its places back.
+   */
   let runs = opts.calls.length;
-  /** Counts the runs of a call for `count` items. Throws if they are too many */
-  function takeRuns(count: number) {
-    const taken = runs + count - 1;
+  /**
+   * Changes the places a call holds from `held` to `count`, and gives
+   * `count`. Throws if the batch would then have too many runs, and changes
+   * nothing then. Nothing waits in it, so calls can't go over together.
+   */
+  function holdRuns(held: number, count: number) {
+    const taken = runs - held + count;
     if (opts.maxRuns !== null && taken > opts.maxRuns) {
-      // A call that is refused runs for no item: it takes none of the limit,
-      // not its own place either
-      runs -= 1;
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `A call for every item exceeds the maximum batch size`,
       });
     }
+    if (taken > limits.maxRuns) {
+      throw overLimit(
+        `This call would make the batch run ${taken} times, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+      );
+    }
     runs = taken;
+    return count;
   }
 
   let filledSize = 0;
@@ -501,24 +571,24 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     reads: Extract<PipelineCallReads<Source>, { kind: 'each' }>,
     refusal: TRPCError | null,
   ) {
-    if (refusal) {
-      // It runs for no item: it takes no place among the runs
-      runs -= 1;
-      throw refusal;
-    }
-    const base = await call.getRawInput();
-    const found = readPipelinePath(
-      await dataOf(reads.list.from),
-      reads.list.path,
-    );
-    // What is no list has no items
-    const items: unknown[] = Array.isArray(found) ? found : [];
-    takeRuns(items.length);
-    /** What a value that is the same for every run is */
-    const wholes = new Map<PipelineWholeRead<Source>, unknown>();
-    const counter = fillCounter();
-    const inputs: unknown[] = [];
+    // The places it holds among the runs: its own, then one for every item
+    let held = 1;
     try {
+      if (refusal) {
+        throw refusal;
+      }
+      const base = await call.getRawInput();
+      const found = readPipelinePath(
+        await dataOf(reads.list.from),
+        reads.list.path,
+      );
+      // What is no list has no items
+      const items: unknown[] = Array.isArray(found) ? found : [];
+      held = holdRuns(held, items.length);
+      /** What a value that is the same for every run is */
+      const wholes = new Map<PipelineWholeRead<Source>, unknown>();
+      const counter = fillCounter();
+      const inputs: unknown[] = [];
       // By index: a list with holes has a run for each of them too
       for (const index of items.keys()) {
         let input = base;
@@ -547,8 +617,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       counter.take();
       return inputs;
     } catch (cause) {
-      // It runs for no item: it takes none of the runs, not its place either
-      runs -= items.length;
+      // Refused, or its inputs can't be made: it runs for no item, and gives
+      // back the places it holds
+      runs -= held;
       throw cause;
     }
   }
@@ -586,29 +657,29 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
     const fill = async () => {
-      if (refusal) {
-        // It doesn't run: it takes no place among the runs
-        runs -= 1;
-        throw refusal;
-      }
-      let input = await call.getRawInput();
-      const counter = fillCounter();
       try {
+        if (refusal) {
+          throw refusal;
+        }
+        let input = await call.getRawInput();
+        const counter = fillCounter();
         for (const read of reads.reads) {
           const value = readPipelinePath(await dataOf(read.from), read.path);
           checkValue(value);
+          // Only the values: the rest of its input is what the client sent
           counter.add(value);
           input = writePipelinePath({ input, to: read.to, value });
         }
         input = asSent(input);
+        counter.take();
+        read = [input];
+        return input;
       } catch (cause) {
-        // It doesn't run: it takes no place among the runs
+        // Refused, or its input can't be made: it doesn't run, and gives back
+        // its place among the runs
         runs -= 1;
         throw cause;
       }
-      counter.take();
-      read = [input];
-      return input;
     };
     const getRawInput = () => (reading ??= fill());
     return {

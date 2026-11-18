@@ -61,6 +61,11 @@ export interface PipelineLimits {
   maxDepth: number;
   /** Whether a value a call reads can be an object or an array */
   allowWholeValues: boolean;
+  /**
+   * The most runs a batch has: each of its calls, and a call for every item
+   * once for each item. `maxBatchSize` caps them too, if it is lower
+   */
+  maxRuns: number;
 }
 
 /**
@@ -73,6 +78,7 @@ export const pipelineLimitDefaults: PipelineLimits = {
   maxFillSize: 100_000,
   maxDepth: 3,
   allowWholeValues: false,
+  maxRuns: 100,
 };
 
 /**
