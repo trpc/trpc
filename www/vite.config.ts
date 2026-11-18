@@ -21,6 +21,10 @@ import { siteFiles } from './build/site-files.ts';
 import { samplesDir, twoslashCache } from './build/paths.ts';
 import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
+import {
+  kitchenSink,
+  showcases,
+} from './src/routes/kitchen-sink/-showcases.ts';
 import { absoluteUrl, copyPageUrl, deploymentOrigin } from './src/seo.ts';
 import {
   atTrpcIo,
@@ -186,7 +190,7 @@ export default defineConfig({
         absoluteUrl('/blog'),
       ),
       sponsorCard,
-      ...[mediaPage, searchPage].map((page) =>
+      ...[mediaPage, searchPage, kitchenSink, ...showcases].map((page) =>
         docCard(page, absoluteUrl(page.path)),
       ),
       ...posts.map((post) => ({

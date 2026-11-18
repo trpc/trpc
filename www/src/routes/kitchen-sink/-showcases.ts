@@ -1,4 +1,5 @@
-import { kitchenSinkPath } from '~/site.ts';
+// Relative, so `vite.config.ts` can import it for the social cards.
+import { kitchenSinkPath } from '../../site.ts';
 
 /** The kitchen sink's own page. */
 export const kitchenSink = {
