@@ -92,7 +92,17 @@ export function nextAppDirCaller<TContext, TMeta>(
          */
         let input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
         if (normalizeFormData && input instanceof FormData) {
-          input = formDataToObject(input);
+          try {
+            input = formDataToObject(input);
+          } catch (cause) {
+            return handleError(input)(
+              new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to convert FormData to an object',
+                cause,
+              }),
+            );
+          }
         }
 
         return await opts
