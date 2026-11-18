@@ -605,7 +605,7 @@ describe.each([
     // The server's `maxDepth` is 3, so it refuses it
     expect(await chain({ maxDepth: 4 })).toMatchObject({
       message:
-        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
+        'This call is nested 4 deep, more than `maxDepth` (3) allows',
     });
   });
 
@@ -1261,7 +1261,7 @@ describe('the `tree` search param', () => {
     expect(team.result.data).toEqual({ id: 'team-of-u1' });
     expect(team.children.author.error).toMatchObject({
       message:
-        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
+        'This call is nested 4 deep, more than `maxDepth` (3) allows',
       data: { code: 'BAD_REQUEST' },
     });
     expect(res.json[0].children.whole.error).toMatchObject({

@@ -177,7 +177,7 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
  * and the rest of the batch runs.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
  */
 export interface experimental_PipeliningOptions {
   /**
@@ -199,7 +199,7 @@ export interface experimental_PipeliningOptions {
    */
   maxFillSize?: number;
   /**
-   * The most calls in a chain: a query that reads none is 1, so
+   * How deep queries nest: a top-level query is 1, so a chain such as
    * `post.bySlug` → `author.byId` → `post.list` is 3. Set the client's
    * `experimental_pipelining({ maxDepth })` to the same or a lower number.
    * @default 3
@@ -256,8 +256,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * runs.
    *
    * Experimental: it may change in a minor release.
-   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
-   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
    * @default false
    */
   experimental_allowPipelining?: boolean | experimental_PipeliningOptions;

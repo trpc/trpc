@@ -1544,7 +1544,7 @@ describe('the limits of a server', () => {
     };
     const deep = (depth: number, max: number) =>
       refused(
-        `This call is ${depth} calls deep in a chain, more than \`maxDepth\` (${max}) allows`,
+        `This call is nested ${depth} deep, more than \`maxDepth\` (${max}) allows`,
       );
 
     test('a node more than 3 calls deep is refused, what is under it gets an error, and the rest runs', async () => {

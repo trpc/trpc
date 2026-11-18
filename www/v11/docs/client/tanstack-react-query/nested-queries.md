@@ -1,8 +1,8 @@
 ---
-id: chained-queries
-title: Chained queries in one request
-sidebar_label: Chained queries
-slug: /client/tanstack-react-query/chained-queries
+id: nested-queries
+title: Nested queries in one request
+sidebar_label: Nested queries
+slug: /client/tanstack-react-query/nested-queries
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 54
@@ -26,7 +26,7 @@ With [handles](/docs/client/tanstack-react-query/handles) and the functions on t
 
 An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment. It sits next to its component. A page puts several together. All of it loads in one request. But it is plain TypeScript and plain tRPC procedures: there is no schema, no resolver and no build step.
 
-```demo chained-queries
+```demo nested-queries
 ```
 
 :::tip See it in an app
@@ -489,7 +489,7 @@ export const client = createTRPCClient<AppRouter>({
 A call that would go over a limit is refused, with a `BAD_REQUEST` that names the limit and its value:
 
 ```
-This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
+This call is nested 4 deep, more than `maxDepth` (3) allows
 ```
 
 - **The rest of the request runs.** Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
@@ -642,7 +642,7 @@ A list often needs a query for every row: the author of every post. Without help
 
 `experimental_entryPerItem(list, (item) => entry)` loads an entry for every item of a list in another entry's data. With [one request](#one-request), the server runs it for every item it finds.
 
-```demo chained-queries start=list
+```demo nested-queries start=list
 ```
 
 ```ts twoslash title='post-list.entries.ts'

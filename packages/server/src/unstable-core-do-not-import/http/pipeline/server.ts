@@ -588,7 +588,7 @@ export function pipelineTree(opts: {
     }
     if (node.depth > limits.maxDepth) {
       return overLimit(
-        `This call is ${node.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
+        `This call is nested ${node.depth} deep, more than \`maxDepth\` (${limits.maxDepth}) allows`,
       );
     }
     return null;

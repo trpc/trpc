@@ -5,7 +5,7 @@
  * where each call can carry a tree of follow-up calls that read its data. A
  * follow-up call sits under the data it reads, and one that runs once per
  * item sits under the list it runs over. The server runs a follow-up call as
- * soon as the data it reads is there, so a chain of calls costs one round
+ * soon as the data it reads is there, so queries that nest cost one round
  * trip.
  *
  * The client's half is in `./client`, the server's in `./server`. Both are
@@ -182,7 +182,7 @@ export interface PipelineLimits {
    * into an input, and the whole input of every run of a call for every item
    */
   maxFillSize: number;
-  /** The most calls in a chain. A top-level call is 1 */
+  /** How deep queries nest: a top-level call is 1 */
   maxDepth: number;
   /** Whether a value a call reads can be an object or an array */
   allowWholeValues: boolean;
