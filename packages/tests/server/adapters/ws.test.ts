@@ -157,6 +157,18 @@ test('the default types keep `ws` members in context and on the server', async (
   };
   applyWSSHandler(defaultParameters);
 
+  // Compile-time: explicit router generics also retain concrete `ws` context.
+  const explicitRouterHandler = () =>
+    applyWSSHandler<typeof router>({
+      router,
+      wss,
+      createContext: (opts) => {
+        opts.res.ping();
+        return {};
+      },
+    });
+  void explicitRouterHandler;
+
   // Compile-time: the default option still exposes `ws` members and clients.
   for (const client of options.wss.clients) client.ping();
 
