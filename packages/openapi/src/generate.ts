@@ -377,6 +377,10 @@ function convertPrimitiveOrLiteral(
   if (flags & TypeFlags.String) {
     return { type: 'string' };
   }
+  if (flags & TypeFlags.TemplateLiteral) {
+    // `user_${string}` and friends serialise as plain strings
+    return { type: 'string' };
+  }
   if (flags & TypeFlags.Number) {
     return { type: 'number' };
   }
