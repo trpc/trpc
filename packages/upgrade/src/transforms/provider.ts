@@ -433,11 +433,6 @@ export default function transform(
             ...(fn.comments ?? []),
           ];
           statements.push(fn);
-          statements.push(
-            ...exported(
-              `export function makeTRPCClient() {\n  return ${value('@trpc/client', 'createTRPCClient')}${routerGeneric}({ links: ${configCall}.links });\n}`,
-            ),
-          );
           j(configFunction)
             .find(j.ObjectProperty, { key: { name: 'abortOnUnmount' } })
             .forEach((p) =>
@@ -472,44 +467,71 @@ export default function transform(
             );
           configCall = `${j(config).toSource()}(${takesNothing ? '' : '{}'})`;
           queryClientConfig = 'unknown';
-          statements.push(
-            ...exported(
-              `export function makeTRPCClient() {\n  return ${value('@trpc/client', 'createTRPCClient')}${routerGeneric}({ links: ${configCall}.links });\n}`,
-            ),
-          );
         }
-      } else {
-        statements.push(
-          ...exported(
-            `// TODO(@trpc/upgrade): add your links\nexport function makeTRPCClient() {\n  return ${value('@trpc/client', 'createTRPCClient')}${routerGeneric}({ links: [] });\n}`,
-          ),
-        );
       }
+
+      const queryClient = value(rq, 'QueryClient');
+      const createTRPCClient = value('@trpc/client', 'createTRPCClient');
+      const useStateName = value('react', 'useState');
+      // Both clients need the config. Make it once per mount, like classic
+      // `withTRPC`: it may open a WebSocket.
+      const shareConfig = config !== null && queryClientConfig !== 'no';
+      // Not a name the generated code uses, e.g. `QueryClient as config`
+      // or `config: config`
+      const taken = new Set([
+        queryClient,
+        createTRPCClient,
+        useStateName,
+        'makeQueryClient',
+        'makeTRPCClient',
+        'queryClient',
+        'trpcClient',
+        ...(configCall.match(/[A-Za-z_$][\w$]*/g) ?? []),
+      ]);
+      let local = 'config';
+      for (let i = 2; taken.has(local); i++) {
+        local = `config${i}`;
+      }
+      const configParam = shareConfig ? `${local} = ${configCall}` : '';
+      const configValue = shareConfig ? local : configCall;
+
+      statements.push(
+        ...exported(
+          config
+            ? `export function makeTRPCClient(${configParam}) {\n  return ${createTRPCClient}${routerGeneric}({ links: ${configValue}.links });\n}`
+            : `// TODO(@trpc/upgrade): add your links\nexport function makeTRPCClient() {\n  return ${createTRPCClient}${routerGeneric}({ links: [] });\n}`,
+        ),
+      );
 
       statements.push(
         ...exported(
           queryClientConfig === 'yes'
-            ? `export function makeQueryClient() {\n  return new ${value(rq, 'QueryClient')}(${configCall}.queryClientConfig);\n}`
+            ? `export function makeQueryClient(${configParam}) {\n  return new ${queryClient}(${local}.queryClientConfig);\n}`
             : queryClientConfig === 'unknown'
-              ? (() => {
-                  const queryClient = value(rq, 'QueryClient');
-                  const queryClientConfig = type(rq, 'QueryClientConfig');
-                  // Not a name the line uses, e.g. \`QueryClient as config\`
-                  // or \`config: config\`
-                  const taken = new Set([
-                    queryClient,
-                    queryClientConfig,
-                    ...(configCall.match(/[A-Za-z_$][\w$]*/g) ?? []),
-                  ]);
-                  let local = 'config';
-                  for (let i = 2; taken.has(local); i++) {
-                    local = `config${i}`;
-                  }
-                  return `export function makeQueryClient() {\n  const ${local} = ${configCall};\n  return new ${queryClient}(\n    'queryClientConfig' in ${local}\n      ? (${local}.queryClientConfig as ${queryClientConfig})\n      : undefined,\n  );\n}`;
-                })()
-              : `export function makeQueryClient() {\n  return new ${value(rq, 'QueryClient')}();\n}`,
+              ? `export function makeQueryClient(${configParam}) {\n  return new ${queryClient}(\n    'queryClientConfig' in ${local}\n      ? (${local}.queryClientConfig as ${type(rq, 'QueryClientConfig')})\n      : undefined,\n  );\n}`
+              : `export function makeQueryClient() {\n  return new ${queryClient}();\n}`,
         ),
       );
+
+      // At module scope, so the config call can't hit a `withTRPC` local,
+      // e.g. `config: queryClient`
+      let makeClients = 'makeClients';
+      if (shareConfig) {
+        const used = new Set(
+          root
+            .find(j.Identifier)
+            .nodes()
+            .map((node) => node.name),
+        );
+        for (let i = 2; used.has(makeClients); i++) {
+          makeClients = `makeClients${i}`;
+        }
+        statements.push(
+          ...exported(
+            `function ${makeClients}() {\n  const ${local} = ${configCall};\n  return {\n    queryClient: makeQueryClient(${local}),\n    trpcClient: makeTRPCClient(${local}),\n  };\n}`,
+          ),
+        );
+      }
 
       // Classic `withTRPC` ran `trpcState` through the transformer.
       let transformerSource = transformer ? j(transformer).toSource() : null;
@@ -555,8 +577,11 @@ export default function transform(
             pageProps.trpcState as Parameters<typeof ${transformerSource}.deserialize>[0],
           );`
         : `const state = pageProps?.trpcState as ${dehydratedState} | undefined;`;
+      const clientsState = shareConfig
+        ? `const [{ queryClient, trpcClient }] = ${useStateName}(${makeClients});`
+        : `const [queryClient] = ${useStateName}(makeQueryClient);
+    const [trpcClient] = ${useStateName}(makeTRPCClient);`;
       const appTypeName = type('next/app', 'AppType');
-      const useStateName = value('react', 'useState');
       const createElementName = value('react', 'createElement');
       statements.push(
         ...exported(
@@ -569,8 +594,7 @@ export function withTRPC<TInitialProps extends object>(
   App: ${appTypeName}<TInitialProps>,
 ): ${appTypeName}<TInitialProps> {
   const WithTRPC: ${appTypeName}<TInitialProps> = (props) => {
-    const [queryClient] = ${useStateName}(makeQueryClient);
-    const [trpcClient] = ${useStateName}(makeTRPCClient);
+    ${clientsState}
     const pageProps = props.pageProps as { trpcState?: unknown } | undefined;
     ${hydrationState}
     return ${createElementName}(${value(rq, 'QueryClientProvider')}, {
