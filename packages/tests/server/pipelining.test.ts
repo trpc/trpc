@@ -3219,6 +3219,69 @@ describe('a value a call reads, with a getter that gives something else each tim
   });
 });
 
+describe('a value a call reads, with a `toJSON` of its own', () => {
+  /** Sends a batch whose second call reads `v`, which has `toJSON` */
+  async function readV(toJSON: () => unknown) {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({
+      transformer: {
+        input: identity,
+        output: {
+          serialize: (value: unknown) => value,
+          // Reads the data of `post` back with `toJSON` on its `v`
+          deserialize: (value: unknown) =>
+            isObject(value) && isObject(value['v']) ? { v: { toJSON } } : value,
+        },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,author',
+        pipe: { 1: { reads: [{ to: ['v'], from: 0, path: ['v'] }] } },
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ v: {} })),
+        author: t.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return 'ran';
+        }),
+      }),
+      experimental_allowPipelining: { allowWholeValues: true },
+    });
+    return { json: (await res.json()) as unknown[], author };
+  }
+
+  test('that gives something else each time is called once: the input has what was measured', async () => {
+    let calls = 0;
+    const { json, author } = await readV(() => {
+      calls += 1;
+      return calls <= 2 ? 'x' : 'x'.repeat(2048);
+    });
+
+    expect(json[1]).toEqual({ result: { data: 'ran' } });
+    expect(author).toHaveBeenCalledExactlyOnceWith({ v: 'x' });
+    expect(calls).toBe(1);
+  });
+
+  test('that gives more parts than `maxValueLength` allows is refused, and the call can be sent by itself', async () => {
+    const { json, author } = await readV(() => Array.from({ length: 2000 }));
+
+    expect(json[1]).toMatchObject({
+      error: {
+        message:
+          'A value this call reads is longer than `maxValueLength` (1024 characters of JSON) allows',
+        data: { code: 'BAD_REQUEST', pipeline: 'not-run' },
+      },
+    });
+    expect(author).not.toHaveBeenCalled();
+  });
+});
+
 describe('the calls that read the same failed call or refused value', () => {
   const t = initTRPC.create();
   const router = t.router({
