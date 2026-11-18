@@ -3,6 +3,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC, type inferRouterOutputs } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import type { TRPCSuccessResponse } from '@trpc/server/rpc';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import express from 'express';
 import { z } from 'zod';
 
@@ -60,27 +61,19 @@ async function startServer() {
     ],
   });
 
-  return {
-    close: () =>
+  return makeAsyncResource(
+    { client, url },
+    () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),
-    client,
-    url,
-  };
+  );
 }
 
-let $: Awaited<ReturnType<typeof startServer>>;
-beforeAll(async () => {
-  $ = await startServer();
-});
-afterAll(async () => {
-  await $.close();
-});
-
 test('multipart/form-data body reaches the procedure', async () => {
+  await using $ = await startServer();
   // the multipart body is built by hand so the test does not depend on the
   // environment's FormData/fetch pairing
   const boundary = 'trpc-issue-boundary';
@@ -109,5 +102,6 @@ test('multipart/form-data body reaches the procedure', async () => {
 });
 
 test('json bodies keep working through the pre-parsed path', async () => {
+  await using $ = await startServer();
   expect(await $.client.helloMutation.mutate('world')).toBe('hello world');
 });

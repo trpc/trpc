@@ -1,5 +1,6 @@
 import { createTRPCUntypedClient } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag, unstable_cache } from 'next/cache';
 import { vi } from 'vitest';
 import { z } from 'zod';
@@ -19,6 +20,16 @@ vi.mock('next/cache', () => ({
     },
   ),
 }));
+
+/**
+ * `next/cache` is module-mocked, so its mock can't be created per test: clear
+ * it on entry instead, and reset it (dropping any unused `mockImplementationOnce`) on exit
+ */
+function nextCacheMocks() {
+  const mocks = { revalidateTag: vi.mocked(revalidateTag) };
+  mocks.revalidateTag.mockClear();
+  return makeResource(mocks, () => mocks.revalidateTag.mockReset());
+}
 
 describe('cache tags generation', () => {
   test('generateCacheTag', () => {
@@ -65,10 +76,6 @@ describe('cache tags generation', () => {
 });
 
 describe('app-dir server proxy revalidation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   const t = initTRPC.create();
   const appRouter = t.router({
     page: t.router({
@@ -91,36 +98,43 @@ describe('app-dir server proxy revalidation', () => {
   >;
 
   test('revalidates leaf query with input', async () => {
+    using mocks = nextCacheMocks();
     const res = await trpc.page.home.header.revalidate({ size: 'medium' });
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith(
+    expect(mocks.revalidateTag).toHaveBeenCalledWith(
       'page.home.header?input={"size":"medium"}',
       { expire: 0 },
     );
   });
 
   test('revalidates leaf query without input', async () => {
+    using mocks = nextCacheMocks();
     const res = await trpc.page.home.header.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page.home.header', {
+    expect(mocks.revalidateTag).toHaveBeenCalledWith('page.home.header', {
       expire: 0,
     });
   });
 
   test('revalidates subrouter under home', async () => {
+    using mocks = nextCacheMocks();
     const res = await trpc.page.home.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page.home', { expire: 0 });
+    expect(mocks.revalidateTag).toHaveBeenCalledWith('page.home', {
+      expire: 0,
+    });
   });
 
   test('revalidates top-level router under page', async () => {
+    using mocks = nextCacheMocks();
     const res = await trpc.page.revalidate();
     expect(res).toEqual({ revalidated: true });
-    expect(revalidateTag).toHaveBeenCalledWith('page', { expire: 0 });
+    expect(mocks.revalidateTag).toHaveBeenCalledWith('page', { expire: 0 });
   });
 
   test('returns error when revalidation fails', async () => {
-    vi.mocked(revalidateTag).mockImplementationOnce(() => {
+    using mocks = nextCacheMocks();
+    mocks.revalidateTag.mockImplementationOnce(() => {
       throw new Error('Revalidation failed');
     });
     const res = await trpc.page.revalidate();
@@ -142,13 +156,10 @@ describe('app-dir server proxy revalidation', () => {
 });
 
 describe('experimental_revalidateEndpoint', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   // Next 16 warns about `revalidateTag(tag)` and wants a cache-life profile;
   // `{ expire: 0 }` keeps the immediate expiry that one argument gave
   test('expires the tag immediately', async () => {
+    using mocks = nextCacheMocks();
     const res = await experimental_revalidateEndpoint(
       new Request('http://localhost/api/revalidate', {
         method: 'POST',
@@ -156,7 +167,7 @@ describe('experimental_revalidateEndpoint', () => {
       }),
     );
     expect(res.status).toBe(200);
-    expect(revalidateTag).toHaveBeenCalledWith('posts', { expire: 0 });
+    expect(mocks.revalidateTag).toHaveBeenCalledWith('posts', { expire: 0 });
   });
 });
 
