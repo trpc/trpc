@@ -3408,13 +3408,15 @@ describe('the order things happen in', () => {
         resolve();
       };
     });
-    // So that a response that waits for every call still ends
-    const timeout = setTimeout(() => release('timeout'), 1000);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     await using server = serve({
       ...defaults,
       stream: true,
       fns: {
         slow: async () => {
+          // So that a response that waits for every call still ends. From
+          // when `slow` starts, so a slow start can't release it early
+          timeout = setTimeout(() => release('timeout'), 1000);
           await held;
           return notFound('slow');
         },
