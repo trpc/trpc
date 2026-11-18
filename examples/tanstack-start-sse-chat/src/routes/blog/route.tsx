@@ -8,6 +8,9 @@ import { BlogPreloadProvider, BlogSettingsBar } from './-components/settings';
 
 export const Route = createFileRoute('/blog')({
   loader: () => readBlogSettings(),
+  // Read the cookies again each time the blog opens: the router keeps no
+  // older settings to show once you leave it
+  gcTime: 0,
   component: BlogLayout,
 });
 
@@ -16,7 +19,7 @@ function BlogLayout() {
   const queryClient = useQueryClient();
   const router = useRouter();
   // From the cookies, then kept here as you change them. Each load of the
-  // cookies replaces it, also of a page shown from the router's cache first
+  // cookies replaces it
   const loaded = Route.useLoaderData();
   const [settings, setSettings] = useState<BlogSettings>(loaded);
   const [seen, setSeen] = useState(loaded);
@@ -37,12 +40,6 @@ function BlogLayout() {
               // the new speed: its loader starts its queries, in one request
               queryClient.removeQueries(trpc.blog.pathFilter());
               void router.invalidate();
-            } else {
-              // Only this route reads the cookies again, so the router keeps
-              // no older settings to show
-              void router.invalidate({
-                filter: (match) => match.routeId === Route.id,
-              });
             }
           }}
         />

@@ -2720,11 +2720,14 @@ describe.each([
       before: [],
     });
     const trpc = resource.optionsProxyClient;
-    // The cache has the pages from cursor 2, from an entry made before
+    // The cache has the pages from cursor 2, from an entry made before, with
+    // other data than the server has now
     resource.queryClient.setQueryData(
       trpc.post.paged.infiniteQueryKey({}),
       {
-        pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
+        pages: [
+          { items: [{ id: 'cached', authorId: 'u2' }], nextCursor: null },
+        ],
         pageParams: [2],
       },
       { updatedAt: 1 },

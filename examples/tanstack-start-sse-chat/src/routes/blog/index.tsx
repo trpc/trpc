@@ -73,10 +73,11 @@ function BlogIndex() {
           Notes on databases, frontends and keeping things running.
         </p>
         <OneRequestHint>
-          With “Preload links” off, open your browser’s Network tab, then open a
-          post you haven’t opened yet: a link that preloads may have loaded it
-          before you look. The post, its author and the posts of the author’s
-          team each need the one before. They still load in one request:{' '}
+          Turn “Preload links” off and reload this page: a link that preloads
+          may have loaded a post already. Then open your browser’s Network tab,
+          and open a post you haven’t opened yet. The post, its author and the
+          posts of the author’s team each need the one before. They still load
+          in one request:{' '}
           <code>blog.postBySlug,blog.authorById,blog.posts</code>. So does this
           list, with an author for every post.
         </OneRequestHint>

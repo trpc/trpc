@@ -107,10 +107,10 @@ function PostPage() {
         <AuthorCard handles={handles} />
       </Suspense>
       <OneRequestHint>
-        With “Preload links” off and the Network tab open, go to a post you
-        haven’t opened yet. Its author’s id is in the post, and the id of the
-        author’s team is in the author. All three are one request:{' '}
-        <code>blog.postBySlug,blog.authorById,blog.posts</code>.
+        Turn “Preload links” off and reload the page, then, with the Network tab
+        open, go to a post you haven’t opened yet. Its author’s id is in the
+        post, and the id of the author’s team is in the author. All three are
+        one request: <code>blog.postBySlug,blog.authorById,blog.posts</code>.
       </OneRequestHint>
     </>
   );
