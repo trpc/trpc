@@ -177,7 +177,7 @@ type WSConnectionOptionsForServer<
 
 export type WSSHandlerOptions<
   TRouter extends AnyRouter,
-  TServer extends WSServer<WSClient> = WSServer<WSClient>,
+  TServer extends WSServer<WSClient> = WebSocketServer,
 > = WSConnectionOptionsForServer<TRouter, TServer> & {
   /** The WebSocket server to serve the router on. */
   wss: TServer;
@@ -248,24 +248,15 @@ function nextUnlessStopped<TValue, TReturn>(
  * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
  * uses it; call it to attach tRPC to your own WebSocket server.
  */
-export function getWSConnectionHandler<
-  TRouter extends AnyRouter,
-  TServer extends WSServer<WSClient>,
->(
-  opts: WSSHandlerOptions<TRouter, TServer>,
-): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
-export function getWSConnectionHandler<
-  TRouter extends AnyRouter,
-  TServer extends WSServer<WSClient> = WebSocketServer,
->(
-  opts: WSSHandlerOptions<TRouter, TServer>,
-): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
-export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-): (client: WSClient, req: IncomingMessage) => void;
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter, WebSocketServer>,
 ): (client: WebSocket, req: IncomingMessage) => void;
+export function getWSConnectionHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WSServer,
+>(
+  opts: WSSHandlerOptions<TRouter, TServer>,
+): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter, WSServer<any>>,
 ): (client: WSClient, req: IncomingMessage) => void {
@@ -1005,11 +996,8 @@ export interface WSSHandler {
 
 export function applyWSSHandler<
   TRouter extends AnyRouter,
-  TServer extends WSServer<WSClient>,
+  TServer extends WSServer<WSClient> = WSServer,
 >(opts: WSSHandlerOptions<TRouter, TServer>): WSSHandler;
-export function applyWSSHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-): WSSHandler;
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter, WebSocketServer>,
 ): WSSHandler;

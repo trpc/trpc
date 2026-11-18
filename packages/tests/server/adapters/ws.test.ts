@@ -112,7 +112,10 @@ test('router-only generic forms accept a structural server', () => {
   const wss = new WebSocketServer({ noServer: true });
   const server: WSServer = wrapServer(wss);
 
-  const options: WSSHandlerOptions<typeof router> = { router, wss: server };
+  const options: WSSHandlerOptions<typeof router, WSServer> = {
+    router,
+    wss: server,
+  };
   const handler = applyWSSHandler<typeof router>(options);
   const onConnection = getWSConnectionHandler<typeof router>(options);
 
@@ -142,12 +145,17 @@ test('the default types keep `ws` members in context and on the server', async (
     opts.res.on('pong', () => undefined);
     return { protocol };
   });
-  const options: Parameters<typeof applyWSSHandler>[0] = {
+  const options: WSSHandlerOptions<typeof router> = {
     router,
     wss,
     createContext,
   };
-  applyWSSHandler(options);
+  const defaultParameters: Parameters<typeof applyWSSHandler>[0] = {
+    router,
+    wss,
+    createContext,
+  };
+  applyWSSHandler(defaultParameters);
 
   // Compile-time: the default option still exposes `ws` members and clients.
   for (const client of options.wss.clients) client.ping();
