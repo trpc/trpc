@@ -125,10 +125,14 @@ export type ContentOptions = {
 };
 
 export const getUrl: GetUrl = (opts) => {
+  // A fragment never reaches the server, and neither would query parts added after it.
+  const fragmentStart = opts.url.indexOf('#');
+  const endpoint =
+    fragmentStart === -1 ? opts.url : opts.url.slice(0, fragmentStart);
   // Only the first `?` starts the query. A later one is part of a value.
-  const queryStart = opts.url.indexOf('?');
-  const path = queryStart === -1 ? opts.url : opts.url.slice(0, queryStart);
-  const query = queryStart === -1 ? '' : opts.url.slice(queryStart + 1);
+  const queryStart = endpoint.indexOf('?');
+  const path = queryStart === -1 ? endpoint : endpoint.slice(0, queryStart);
+  const query = queryStart === -1 ? '' : endpoint.slice(queryStart + 1);
   const base = path.replace(/\/$/, ''); // Remove any trailing slashes
 
   let url = base + '/' + procedurePathToURLPath(opts.path, opts.pathSeparator);
