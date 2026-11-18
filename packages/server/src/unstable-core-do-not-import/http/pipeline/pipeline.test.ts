@@ -105,22 +105,41 @@ function serve(opts: {
       ? body
       : JSON.parse(url.searchParams.get('input') ?? '{}');
     const calls = paths.map((path, index) => {
-      const read = () => {
-        const input = isObject(inputs) ? inputs[index] : undefined;
-        return input === undefined
-          ? undefined
-          : opts.transformer.input.deserialize(input);
+      // Read once, as a request's input is: one that failed to read stays failed
+      let read:
+        | { ok: true; input: unknown }
+        | { ok: false; cause: unknown }
+        | null = null;
+      const readOnce = () => {
+        if (!read) {
+          try {
+            const input = isObject(inputs) ? inputs[index] : undefined;
+            read = {
+              ok: true,
+              input:
+                input === undefined
+                  ? undefined
+                  : opts.transformer.input.deserialize(input),
+            };
+          } catch (cause) {
+            read = { ok: false, cause };
+          }
+        }
+        return read;
       };
       return {
         path,
-        getRawInput: async () => read(),
-        // As a request's: what of the input was read, nothing if it can't be
-        result: () => {
-          try {
-            return read();
-          } catch {
-            return undefined;
+        getRawInput: async () => {
+          const it = readOnce();
+          if (!it.ok) {
+            throw it.cause;
           }
+          return it.input;
+        },
+        // As a request's: the input as it was read, nothing if it couldn't be
+        result: () => {
+          const it = readOnce();
+          return it.ok ? it.input : undefined;
         },
       };
     });
@@ -149,7 +168,12 @@ function serve(opts: {
           }
           if (run?.kind === 'each') {
             const items = await run.each({
-              item: async (input) => fn(input),
+              item: async (input) => {
+                const data = await fn(input);
+                // What can't go in the response is that run's error
+                JSON.stringify(opts.transformer.output.serialize(data));
+                return data;
+              },
               error: (cause, input) => {
                 opts.onError(call.path, input);
                 return wireError(cause);
@@ -221,8 +245,9 @@ async function settle(
   transformer: CombinedDataTransformer,
 ): Promise<object> {
   if (!('items' in node)) {
+    // Both through the transformer, as the client reads both through it
     return 'error' in node
-      ? node
+      ? { error: transformer.output.serialize(node.error) }
       : { result: { data: transformer.output.serialize(node.result.data) } };
   }
   const items: Record<string, object> = {};
@@ -318,6 +343,8 @@ async function send(opts: {
   calls: Call[];
   fits: (plan: Pick<PipelinedBatchPlan<Call>, 'calls' | 'pipe'>) => boolean;
   stream: boolean;
+  /** Told of each result as the client reads it, by its index */
+  onArrive: (index: number) => void;
 }) {
   const plan = planPipelinedBatch({
     sent: opts.sent,
@@ -366,6 +393,7 @@ async function send(opts: {
   });
   const take = (index: number, answer: unknown) => {
     arrived.push(index);
+    opts.onArrive(index);
     const result = isObject(answer) ? answer['result'] : undefined;
     outcomes[index]?.resolve(
       isObject(answer) && 'items' in answer
@@ -501,6 +529,7 @@ const defaults = {
   stream: false,
   fits: () => true,
   onError: () => undefined,
+  onArrive: () => undefined,
 } as const;
 
 /** For reads of objects and arrays, which a server takes only with `allowWholeValues` */
@@ -661,7 +690,12 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
 
   test('a call that reads a failed one does not run, and neither does what reads it', async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
+    await using server = serve({
+      ...defaults,
+      // A chain of four: the post, its author, the team's posts, the first of them
+      limits: { ...pipelineLimitDefaults, maxDepth: 4 },
+      fns,
+    });
     const post = sent('post', { slug: 'orphan' });
     const author = call(
       'author',
@@ -673,6 +707,11 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
       {},
       reads(null, { to: ['teamId'], from: author, path: ['teamId'] }),
     );
+    const firstTeamPost = call(
+      'post',
+      {},
+      reads(null, { to: ['slug'], from: teamPosts, path: ['0'] }),
+    );
     const other = sent('post', { slug: 'hello' });
 
     const res = await send({
@@ -680,7 +719,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
       url: server.url,
       method,
       sent: [post, other],
-      calls: [author, teamPosts],
+      calls: [author, teamPosts, firstTeamPost],
     });
 
     // The author isn't there. The call for it ran, and failed
@@ -696,6 +735,9 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
       },
     });
     expect(res.ran(teamPosts)).toBe(false);
+    // Nor what reads that, two calls after the one that failed
+    expect(res.of(firstTeamPost)).toEqual(res.of(teamPosts));
+    expect(res.ran(firstTeamPost)).toBe(false);
     expect(ran.map(([path]) => path).sort()).toEqual([
       'author',
       'post',
@@ -1370,6 +1412,9 @@ describe('a call for every item', () => {
   });
 
   test('a call whose own input can not be read has no run: its place goes to one that needs it', async () => {
+    // About how `pipelineCalls` counts runs. This server reads each input by
+    // itself; the HTTP adapter reads all of a request's inputs at once, so
+    // there one that can't be read fails every call of the request
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -1426,6 +1471,81 @@ describe('a call for every item', () => {
       },
     });
   });
+
+  test("a run's error reaches the client through the transformer, as its data does", async () => {
+    const { fns } = blog();
+    await using server = serve({
+      ...defaults,
+      transformer: transformers.superjson,
+      fns,
+    });
+    const list = sent('posts', undefined);
+    const authorOfEach = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: transformers.superjson,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [authorOfEach],
+    });
+
+    const outcome = res.of(authorOfEach);
+    assert(outcome && 'items' in outcome);
+    expect(await readPipelinedItem(outcome, [2])).toEqual({
+      kind: 'error',
+      error: { code: 'NOT_FOUND', message: 'No author' },
+    });
+  });
+
+  test.each([false, true])(
+    "a run whose data can't go in the response is that run's error, and its siblings still arrive (streamed: %s)",
+    async (stream) => {
+      await using server = serve({
+        ...defaults,
+        stream,
+        fns: {
+          list: () => [1, 2],
+          // JSON can't write a bigint
+          echo: (input: { n: number }) => (input.n === 2 ? 2n : input.n),
+        },
+      });
+      const list = sent('list', undefined);
+      const each = call(
+        'echo',
+        {},
+        reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+      );
+
+      const res = await send({
+        ...defaults,
+        stream,
+        url: server.url,
+        method: 'GET',
+        sent: [list],
+        calls: [each],
+      });
+
+      const outcome = res.of(each);
+      assert(outcome && 'items' in outcome);
+      expect(await readPipelinedItem(outcome, [0])).toEqual({
+        kind: 'data',
+        data: 1,
+      });
+      expect(await readPipelinedItem(outcome, [1])).toMatchObject({
+        kind: 'error',
+        error: { code: 'INTERNAL_SERVER_ERROR' },
+      });
+    },
+  );
 
   test('does not run when the call its list is from failed', async () => {
     const { fns, ran } = blog();
@@ -2659,10 +2779,12 @@ describe('`maxFillSize`: what a request fills in', () => {
         { to: ['again'], from: post, path: ['big'] },
       ),
     );
-    const small = call(
+    // As much as `fits`: there is room for it only if `tooMuch` kept none of
+    // what it counted before it was refused
+    const after = call(
       'echo',
       { n: 3 },
-      reads(null, { to: ['id'], from: post, path: ['id'] }),
+      reads(null, { to: ['big'], from: post, path: ['big'] }),
     );
 
     const res = await send({
@@ -2670,12 +2792,12 @@ describe('`maxFillSize`: what a request fills in', () => {
       url: server.url,
       method: 'POST',
       sent: [post],
-      calls: [fits, tooMuch, small],
+      calls: [fits, tooMuch, after],
     });
 
     expect(res.of(fits)).toEqual({ data: 1 });
     expect(res.of(tooMuch)).toEqual(refused);
-    expect(res.of(small)).toEqual({ data: 3 });
+    expect(res.of(after)).toEqual({ data: 3 });
     expect(
       echo.mock.calls.map(([input]) => (input as { n: number }).n),
     ).toEqual([1, 3]);
@@ -3178,6 +3300,43 @@ describe('a call that failed', () => {
       ['teamPosts', { limit: 5 }],
     ]);
   });
+
+  test('is reported with no input when its input could not be read, and the input is not read again', async () => {
+    const failed: [path: string, input: unknown][] = [];
+    let reads = 0;
+    await using server = serve({
+      ...defaults,
+      // A transformer that can read the input only on its second try
+      transformer: {
+        ...transformers.none,
+        input: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) => {
+            reads += 1;
+            if (reads === 1) {
+              throw new Error('unreadable');
+            }
+            return it;
+          },
+        },
+      },
+      fns: { echo: (input) => input },
+      onError: (path, input) => failed.push([path, input]),
+    });
+    const echo = sent('echo', { id: 'ada' });
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [echo],
+      calls: [],
+    });
+
+    expect(res.of(echo)).toMatchObject({ error: { message: 'unreadable' } });
+    expect(failed).toEqual([['echo', undefined]]);
+    expect(reads).toBe(1);
+  });
 });
 
 describe('the order things happen in', () => {
@@ -3241,10 +3400,16 @@ describe('the order things happen in', () => {
   });
 
   test('with a response that streams, each result arrives when it is ready', async () => {
-    let release: () => void = () => undefined;
+    let releasedBy: 'client' | 'timeout' | null = null;
+    let release: (by: 'client' | 'timeout') => void = () => undefined;
     const held = new Promise<void>((resolve) => {
-      release = resolve;
+      release = (by) => {
+        releasedBy ??= by;
+        resolve();
+      };
     });
+    // So that a response that waits for every call still ends
+    const timeout = setTimeout(() => release('timeout'), 1000);
     await using server = serve({
       ...defaults,
       stream: true,
@@ -3254,13 +3419,7 @@ describe('the order things happen in', () => {
           return notFound('slow');
         },
         fast: () => ({ id: 'fast' }),
-        echo: (input) => {
-          if (input.id === 'fast') {
-            // What reads the fast one has run: the slow one can end
-            release();
-          }
-          return input;
-        },
+        echo: (input) => input,
       },
     });
     const slow = sent('slow', undefined);
@@ -3283,8 +3442,16 @@ describe('the order things happen in', () => {
       method: 'GET',
       sent: [slow, fast],
       calls: [ofSlow, ofFast],
-    });
+      onArrive: (index) => {
+        // The client has what reads the fast one: the slow one can end
+        if (index === 3) {
+          release('client');
+        }
+      },
+    }).finally(() => clearTimeout(timeout));
 
+    // The slow one was still running when the client read the fast ones
+    expect(releasedBy).toBe('client');
     // In the request: slow, fast, of slow, of fast
     expect(res.arrived).toEqual([1, 3, 0, 2]);
     expect(res.ran(ofFast)).toBe(true);
