@@ -1,6 +1,7 @@
 import { makeResource } from '../unstable-core-do-not-import';
 
 export function fakeTimersResource() {
+  // oxlint-disable-next-line trpc/no-direct-fake-timers
   vi.useFakeTimers();
 
   return makeResource(
@@ -10,6 +11,7 @@ export function fakeTimersResource() {
       runAllTimers: vi.runAllTimers,
     },
     () => {
+      // oxlint-disable-next-line trpc/no-direct-fake-timers
       vi.useRealTimers();
     },
   );

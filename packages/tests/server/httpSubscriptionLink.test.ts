@@ -28,11 +28,7 @@ import type {
   Serialize,
   TrackedData,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  createDeferred,
-  makeAsyncResource,
-  run,
-} from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
@@ -1064,8 +1060,6 @@ describe('timeouts', async () => {
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
 
-    const fakeTimers = fakeTimersResource();
-
     const onConnection = vi.fn<() => void>();
 
     const t = initTRPC.create({
@@ -1142,18 +1136,13 @@ describe('timeouts', async () => {
         };
       },
     });
-    return makeAsyncResource(
-      {
-        ...opts,
-        deferred: () => deferred,
-        results: results,
-        operations: operations,
-        onConnection,
-      },
-      async () => {
-        vi.useRealTimers();
-      },
-    );
+    return {
+      ...opts,
+      deferred: () => deferred,
+      results: results,
+      operations: operations,
+      onConnection,
+    };
   };
 
   test('works', async () => {
@@ -1165,6 +1154,7 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
+    using _timers = fakeTimersResource();
     await using ctx = getCtx(opts);
     const ac = new AbortController();
     ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
@@ -1217,6 +1207,7 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
+    using _timers = fakeTimersResource();
     await using ctx = getCtx(opts);
     const ac = new AbortController();
     ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
