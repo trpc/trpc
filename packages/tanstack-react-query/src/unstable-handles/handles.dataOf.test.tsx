@@ -2258,12 +2258,14 @@ describe.each([
     expect(paths.some((path) => path.endsWith('/group.list,author.byId'))).toBe(
       true,
     );
-    expect(
+    const runsOf = (id: string) =>
       resource.calls.mock.calls.filter(
         ([path, input]) =>
-          path === 'author.byId' && (input as { id: string }).id === 'u2',
-      ),
-    ).toHaveLength(2);
+          path === 'author.byId' && (input as { id: string }).id === id,
+      );
+    expect(runsOf('u2')).toHaveLength(2);
+    // `u1`, at the same place in both, kept what the server ran
+    expect(runsOf('u1')).toHaveLength(1);
   });
 
   test("an entry per page of an infinite entry does not break the entry's request", async () => {
