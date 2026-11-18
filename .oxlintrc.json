@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "unicorn"],
+  "plugins": ["react", "typescript", "unicorn", "vitest"],
   "jsPlugins": ["./tooling/oxlint-plugin/index.ts"],
   // Only the rules below run, as they did with ESLint (no `eslint:recommended`).
   "categories": {
@@ -25,7 +25,11 @@
 
     // A plugin rule, not `no-restricted-imports` options, so that an override
     // setting `no-restricted-imports` can't drop it.
-    "trpc/no-testing-library-wait-for": "error"
+    "trpc/no-testing-library-wait-for": "error",
+
+    // Set up in the test with `using`: a helper returns a Disposable that
+    // undoes its setup, and the test's scope disposes it.
+    "vitest/no-hooks": ["error", { "allow": ["afterEach", "afterAll"] }]
   },
   "overrides": [
     {
