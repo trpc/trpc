@@ -7,7 +7,12 @@
 import { fc, test } from '@fast-check/vitest';
 import { isObject } from '../../utils';
 import { encodePipelineReads, readPipelinedItem } from './client';
-import { parsePipelineReads, pipelineCalls } from './server';
+import {
+  parsePipelineReads,
+  pipelineCalls,
+  pipelineDecodedInput,
+  pipelineSentInput,
+} from './server';
 import type { PipelineCallReads, PipelineLimits, PipelinePipe } from './wire';
 import { pipelineLimitDefaults } from './wire';
 
@@ -104,9 +109,13 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
       })),
       pipe,
       transformer: { input: none, output: none },
-      sentInputOf: async (index) => ({
-        pad: 'p'.repeat(batch.calls[index]?.pad ?? 0),
-      }),
+      inputOf: async (index) => {
+        const input = { pad: 'p'.repeat(batch.calls[index]?.pad ?? 0) };
+        return {
+          sent: pipelineSentInput(input),
+          decoded: pipelineDecodedInput(input),
+        };
+      },
       maxRuns: null,
       limits,
     });
