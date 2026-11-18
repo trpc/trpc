@@ -122,7 +122,7 @@ export interface WSClient {
  * them.
  * @public
  */
-export interface WSServer<TClient extends WSClient = WebSocket> {
+export interface WSServer<TClient extends WSClient = WSClient> {
   clients: ReadonlySet<TClient>;
   on(
     event: 'connection',
@@ -177,7 +177,7 @@ type WSConnectionOptionsForServer<
 
 export type WSSHandlerOptions<
   TRouter extends AnyRouter,
-  TServer extends WSServer<WSClient> = WebSocketServer,
+  TServer extends WSServer<WSClient> = WSServer<WSClient>,
 > = WSConnectionOptionsForServer<TRouter, TServer> & {
   /** The WebSocket server to serve the router on. */
   wss: TServer;
@@ -250,13 +250,30 @@ function nextUnlessStopped<TValue, TReturn>(
  */
 export function getWSConnectionHandler<
   TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient>,
+>(
+  opts: WSSHandlerOptions<TRouter, TServer>,
+): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
+export function getWSConnectionHandler<
+  TRouter extends AnyRouter,
   TServer extends WSServer<WSClient> = WebSocketServer,
->(opts: WSSHandlerOptions<TRouter, TServer>) {
+>(
+  opts: WSSHandlerOptions<TRouter, TServer>,
+): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter>,
+): (client: WSClient, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
+): (client: WebSocket, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WSServer<any>>,
+): (client: WSClient, req: IncomingMessage) => void {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: InferWSServerClient<TServer>, req: IncomingMessage) => {
+  return (client: WSClient, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -992,6 +1009,9 @@ export function applyWSSHandler<
 >(opts: WSSHandlerOptions<TRouter, TServer>): WSSHandler;
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
+): WSSHandler;
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
 ): WSSHandler;
 export function applyWSSHandler(
   opts: WSSHandlerOptions<AnyRouter, WSServer<any>>,

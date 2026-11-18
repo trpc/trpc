@@ -4,9 +4,13 @@ import { initTRPC } from '@trpc/server';
 import type {
   CreateWSSContextFnOptions,
   WSClient,
+  WSSHandlerOptions,
   WSServer,
 } from '@trpc/server/adapters/ws';
-import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import {
+  applyWSSHandler,
+  getWSConnectionHandler,
+} from '@trpc/server/adapters/ws';
 import type { TRPCResponseMessage } from '@trpc/server/rpc';
 import type { RawData } from 'ws';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -32,7 +36,7 @@ function wrapSocket(socket: WebSocket): WSClient {
   };
 }
 
-interface WrappedServer extends WSServer<WSClient> {
+interface WrappedServer extends WSServer {
   close: () => void;
 }
 
@@ -100,6 +104,21 @@ test('a server that is not a `ws` server serves the router and broadcasts', asyn
 
   client.terminate();
   await new Promise<void>((resolve) => wss.close(() => resolve()));
+});
+
+test('router-only generic forms accept a structural server', () => {
+  const t = initTRPC.create();
+  const router = t.router({ ping: t.procedure.query(() => 'pong') });
+  const wss = new WebSocketServer({ noServer: true });
+  const server: WSServer = wrapServer(wss);
+
+  const options: WSSHandlerOptions<typeof router> = { router, wss: server };
+  const handler = applyWSSHandler<typeof router>(options);
+  const onConnection = getWSConnectionHandler<typeof router>(options);
+
+  expect(handler.broadcastReconnectNotification).toBeTypeOf('function');
+  expect(onConnection).toBeTypeOf('function');
+  wss.close();
 });
 
 test('a real `ws` server still satisfies the option', () => {
