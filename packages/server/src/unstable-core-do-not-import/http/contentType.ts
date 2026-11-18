@@ -135,6 +135,18 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         message: `Batch call exceeds maximum size`,
       });
     }
+    // Each top-level call is a run, so a pipelined batch with more of them
+    // than `maxRuns` would go over it before anything is filled in
+    if (
+      pipelineLimits &&
+      isPipelined &&
+      paths.length > pipelineLimits.maxRuns
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `The batch has ${paths.length} calls, more than \`maxRuns\` (${pipelineLimits.maxRuns}) allows`,
+      });
+    }
 
     type InputRecord = Record<number, unknown>;
     /** The `tree` in the body of a pipelined batch, once the body is read */

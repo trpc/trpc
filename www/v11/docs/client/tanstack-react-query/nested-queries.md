@@ -364,7 +364,7 @@ export const client = createTRPCClient<AppRouter>({
 - **Use `httpBatchStreamLink`.** It sends each result when it is ready. `httpBatchLink` works too, but its response waits for the slowest call, so the post arrives with the author.
 - **The loader and the components don't change.**
 - **It saves round trips where there are any**: in a load that goes over HTTP, such as a loader that runs in the browser. A proxy that [calls the router directly](#fallback), on the server, makes no request.
-- **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
+- **Turn it on the server first.** A server that has the option but doesn't turn it on [runs nothing](#not-allowed) of such a request. One older than the option [may run a query of it](#not-allowed).
 - **`true` sets the default [limits](#limits).** They take ids, slugs and cursors. To read objects and lists, such as a list made with `.map()`, set `allowWholeValues`.
 
 ### What goes over the wire {#wire}
@@ -457,7 +457,7 @@ An entry that is sent this way always asks the server, also when the cache has i
 
 ### If the server doesn't allow it {#not-allowed}
 
-A server without `experimental_allowPipelining` runs nothing of such a request. It answers with a `BAD_REQUEST`, and every query in the request fails with it:
+A server that has `experimental_allowPipelining` but doesn't turn it on runs nothing of such a request. It answers with a `BAD_REQUEST`, and every query in the request fails with it:
 
 ```
 Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
@@ -582,6 +582,7 @@ The most times a request runs a procedure: 100 by default. Each top-level call i
 - **Why 100:** a follow-up under a list runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load an entry for every item of long lists.
 - **`maxBatchSize` caps it too**, if it is lower.
+- **A request with more top-level calls than it allows** fails as a whole, with a `BAD_REQUEST`, as one over `maxBatchSize` does. Set the link's `maxItems` to it, or lower.
 
 #### How they add up {#limits-together}
 
@@ -1127,7 +1128,7 @@ Use this page's way when you'd rather keep the procedures small.
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A follow-up for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of every query in a request. Without it, there is no limit.
+- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A follow-up for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of every query in a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
 - **Set the link's `maxItems` to it, or lower.** A request with more calls than `maxBatchSize` fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
 - **Keep the [limits](#limits) low.** By default a follow-up reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, queries nest 3 deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a follow-up that would go over one is refused: it fails, or its items each ask by themselves.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.

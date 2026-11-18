@@ -1362,6 +1362,28 @@ describe('the `tree` search param', () => {
     expect(over.calls).not.toHaveBeenCalled();
   });
 
+  test('a batch with more top-level calls than `maxRuns` is a bad request, and none of it runs', async () => {
+    const batch = async (paths: string[]) =>
+      await get({
+        ...defaults,
+        input: {},
+        path: paths.join(','),
+        allowPipelining: { maxRuns: 2 },
+        tree: {},
+      });
+    const within = await batch(['lists', 'lists']);
+    expect(within.status).toBe(200);
+    expect(within.json).toHaveLength(2);
+
+    const over = await batch(['lists', 'lists', 'lists']);
+    expect(over.status).toBe(400);
+    expect(over.json).toMatchObject({
+      error: {
+        message: 'The batch has 3 calls, more than `maxRuns` (2) allows',
+      },
+    });
+  });
+
   test('a follow-up that is refused takes none of `maxBatchSize` from the next', async () => {
     const tag = node('tag', [[['id'], ['id'], 0]]);
     const res = await get({
@@ -1913,6 +1935,40 @@ test('a follow-up does not start once the request is aborted', async () => {
     }),
   });
   const tree = { 0: [{ p: 'author', r: [[['id'], ['authorId']]], i: {} }] };
+  const res = await fetchRequestHandler({
+    endpoint: '/trpc',
+    req: new Request(
+      `http://localhost/trpc/post?batch=tree&input=${encodeURIComponent('{}')}&tree=${encodeURIComponent(JSON.stringify(tree))}`,
+      { signal: controller.signal },
+    ),
+    router,
+    experimental_allowPipelining: true,
+  });
+  await res.text().catch(() => undefined);
+
+  expect(ran).not.toHaveBeenCalled();
+});
+
+test('a follow-up does not start if the request is aborted while its router loads', async () => {
+  const t = initTRPC.create();
+  const controller = new AbortController();
+  const ran = vi.fn();
+  const router = t.router({
+    post: t.procedure.query(() => ({ authorId: 'u1' })),
+    // The client goes away while the router loads
+    slow: lazy(async () => {
+      controller.abort();
+      return t.router({
+        author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+          ran();
+          return { name: 'Ada' };
+        }),
+      });
+    }),
+  });
+  const tree = {
+    0: [{ p: 'slow.author', r: [[['id'], ['authorId']]], i: {} }],
+  };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
