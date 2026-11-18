@@ -1498,7 +1498,7 @@ function beginEntries(opts: {
       const fill = (dataOfEntry: Map<object, unknown>) =>
         state.options({
           dataOfRef: (ref) =>
-            readPipelinePath(dataOfEntry.get(ref.entry), ref.path),
+            readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
           pipeline: null,
         });
       // The query starts in the step in which the last of the entries it reads
@@ -1588,7 +1588,7 @@ function beginEntries(opts: {
           dataOfRef: (ref) =>
             ref.entry === from
               ? blankInput
-              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path),
+              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
           pipeline: null,
         }),
         state.type,
@@ -1640,7 +1640,7 @@ function beginEntries(opts: {
     /** The items of the list in an entry's data */
     const itemsOf = (dataOfEntry: Map<object, unknown>) =>
       itemsOfList(
-        readPipelinePath(dataOfEntry.get(list.entry), list.path),
+        readPipelinePath(dataOfEntry.get(list.entry), list.path, null),
         depth,
       );
     /** Where a value read from the item's stand-in is, for one item */
@@ -1663,6 +1663,7 @@ function beginEntries(opts: {
           readPipelinePath(
             dataOfEntry.get(ref.entry),
             readsItem(ref) ? pathOfItem(ref.path, listItem) : ref.path,
+            null,
           ),
         pipeline: null,
       });
@@ -1713,7 +1714,7 @@ function beginEntries(opts: {
           dataOfRef: (ref) =>
             readsItem(ref)
               ? blankInput
-              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path),
+              : readPipelinePath(dataOfEntry.get(ref.entry), ref.path, null),
           pipeline: null,
         }),
         state.type,
@@ -2443,7 +2444,11 @@ export function experimental_handleOfItem(
   }
   const filled = perItem.itemInputs.reduce(
     (input, itemInput) =>
-      withInputAt(input, itemInput.to, readPipelinePath(item, itemInput.path)),
+      withInputAt(
+        input,
+        itemInput.to,
+        readPipelinePath(item, itemInput.path, null),
+      ),
     perItem.input,
   );
   const args = perItem.queryKey[perItem.queryKey.length - 1] as {
@@ -2975,7 +2980,7 @@ function withItemQueries(opts: {
         }
         // Before the list's data reaches the components that read the items
         void list.then((data) => {
-          const listData = readPipelinePath(data, queries.list);
+          const listData = readPipelinePath(data, queries.list, null);
           for (const [index, item] of Array.isArray(listData)
             ? listData.entries()
             : []) {
