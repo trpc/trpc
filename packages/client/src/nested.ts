@@ -13,19 +13,26 @@ import {
   hasOwn,
   isObject,
   makeResource,
-  readPipelinedItem,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from './createTRPCClient';
 import { getUntypedClient } from './createTRPCClient';
 import type { TRPCRequestOptions } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
-import type { PipelineSource } from './links/internals/pipeline';
+import type {
+  Outcome,
+  PipelinedData,
+  PipelineSource,
+  Settles,
+} from './links/internals/pipeline';
 import {
   createOperationPipeline,
+  failed,
+  outcomeOf,
   pipeCall,
   pipelineContext,
+  readPipelinedRun,
+  settles,
 } from './links/internals/pipeline';
-import { TRPCClientError } from './TRPCClientError';
 
 /**
  * `experimental_nested()` records the queries its callback makes, then sends
@@ -225,20 +232,30 @@ interface Call {
   /** The lists of `source`'s runs */
   frame: Scope[];
   /** The request of a call that reads nothing */
-  sent: Promise<unknown> | null;
+  sent: Settles<Outcome<unknown>> | null;
   /** What the inputs of other calls read of its data */
   reads: Segment[][];
   /** The lists in its data that a `.map()` runs for */
   lists: Segment[][];
-  /** The data of each run, by its indexes */
-  runs: Map<string, Promise<Run>>;
+  /** The outcome of each run, by its indexes */
+  runs: Map<string, Settles<Outcome<Run>>>;
 }
 
+/**
+ * A run's data as it arrived: the one place data enters, and all that is read
+ * of it. A change the caller makes to the data changes neither what an input
+ * reads nor which item a run is for.
+ */
 interface Run {
   /** As the caller gets it, and can change it */
   data: unknown;
-  /** A copy of what other calls' inputs read, as it arrived */
+  /** A copy of what other calls' inputs read */
   read: unknown;
+  /**
+   * The items of each list a `.map()` runs for, by where the list is: see
+   * `listKey()`. The items are the caller's
+   */
+  lists: ReadonlyMap<string, readonly unknown[]>;
 }
 
 type Shape =
@@ -375,48 +392,131 @@ function copyReads(value: unknown, paths: readonly Segment[][]): unknown {
   return copy;
 }
 
-/**
- * The error a response has in place of the items of a list that the run at
- * `indexes` is in, outer first. `null` if each of those lists has items
- */
-async function listErrorOf(data: unknown, indexes: readonly number[]) {
-  for (let depth = 0; depth < indexes.length; depth++) {
-    const level = await readPipelinedItem(data, indexes.slice(0, depth));
-    if (level.kind === 'error') {
-      return level;
-    }
-  }
-  return null;
+/** Where a list is in a run's data: its keys, and the index of each item */
+function listKey(at: readonly (string | number)[]) {
+  return JSON.stringify(at);
 }
 
 /**
- * The arrays at the places `paths` take as lists, each with a copy of its
- * items as they are now, into `orders`
+ * The items of every list at the places `paths` take as lists, each as it is
+ * now, into `lists`. `at` is where `value` is
  */
-function recordLists(
-  value: unknown,
-  paths: readonly Segment[][],
-  orders: WeakMap<object, readonly unknown[]>,
-) {
-  for (const [segment, ...rest] of paths) {
+function recordLists(opts: {
+  value: unknown;
+  paths: readonly Segment[][];
+  at: readonly (string | number)[];
+  lists: Map<string, readonly unknown[]>;
+}) {
+  const { value, at } = opts;
+  for (const [segment, ...rest] of opts.paths) {
     if (segment === undefined) {
-      if (Array.isArray(value) && !orders.has(value)) {
-        orders.set(value, [...value]);
+      if (Array.isArray(value)) {
+        opts.lists.set(listKey(at), [...value]);
       }
     } else if (!isScope(segment)) {
       if (hasOwn(value, segment)) {
-        recordLists(
-          (value as Record<string, unknown>)[segment],
-          [rest],
-          orders,
-        );
+        recordLists({
+          ...opts,
+          value: (value as Record<string, unknown>)[segment],
+          paths: [rest],
+          at: [...at, segment],
+        });
       }
     } else if (Array.isArray(value)) {
-      for (const item of value) {
-        recordLists(item, [rest], orders);
+      for (const [index, item] of value.entries()) {
+        recordLists({
+          ...opts,
+          value: item,
+          paths: [rest],
+          at: [...at, index],
+        });
       }
     }
   }
+}
+
+/** A run's data as it arrives, before the caller can change it */
+function snapshotOf(call: Call, data: unknown): Run {
+  const lists = new Map<string, readonly unknown[]>();
+  recordLists({ value: data, paths: call.lists, at: [], lists });
+  return { data, read: copyReads(data, call.reads), lists };
+}
+
+/**
+ * What `path` leads to in a run, through the items of its lists as they
+ * arrived: `read` for what an input reads, `data` for what the caller gets.
+ * `list` has the items of what it leads to, if that is a list
+ */
+function walk(opts: {
+  run: Run;
+  path: readonly Segment[];
+  items: Items;
+  as: 'data' | 'read';
+}) {
+  let value = opts.run[opts.as];
+  const at: (string | number)[] = [];
+  for (const segment of opts.path) {
+    let key: string | number;
+    if (isScope(segment)) {
+      // What an input reads is a copy as it arrived already, items and all
+      if (opts.as === 'data') {
+        value = opts.run.lists.get(listKey(at)) ?? value;
+      }
+      key = opts.items.get(segment) ?? -1;
+    } else {
+      key = segment;
+    }
+    at.push(key);
+    value = hasOwn(value, String(key))
+      ? (value as Record<string, unknown>)[key]
+      : undefined;
+  }
+  return {
+    value,
+    list:
+      opts.run.lists.get(listKey(at)) ?? (Array.isArray(value) ? value : []),
+  };
+}
+
+/**
+ * The public end of an outcome: a promise that rejects if its unit failed.
+ * Nothing inside awaits one
+ */
+function rejecting<TData>(outcome: Settles<Outcome<TData>>): Promise<TData> {
+  return outcome.then((it) => (it.ok ? it.data : Promise.reject(it.error)));
+}
+
+/**
+ * The data of every outcome, or the first failure as it arrives: a failure
+ * doesn't wait for the others
+ */
+function allOk<TData>(
+  outcomes: readonly Settles<Outcome<TData>>[],
+): Settles<Outcome<TData[]>> {
+  return settles(
+    () =>
+      new Promise<Outcome<TData[]>>((resolve) => {
+        const data: TData[] = [];
+        let left = outcomes.length;
+        if (left === 0) {
+          resolve({ ok: true, data });
+        }
+        for (const [index, outcome] of outcomes.entries()) {
+          void outcome.then((it) => {
+            if (!it.ok) {
+              resolve(it);
+              return;
+            }
+            data[index] = it.data;
+            left--;
+            if (left === 0) {
+              resolve({ ok: true, data });
+            }
+          });
+        }
+      }),
+    failed,
+  );
 }
 
 /**
@@ -524,11 +624,6 @@ export function experimental_nested<
     context: { ...opts?.context, ...pipeline },
   });
   const calls: Call[] = [];
-  /**
-   * The items of each list a `.map()` runs for, in the order they arrived: a
-   * change the caller makes to the list doesn't change which item a run is for
-   */
-  const listOrders = new WeakMap<object, readonly unknown[]>();
   /** The lists whose callback runs, outer first */
   const scopes: Scope[] = [];
 
@@ -760,121 +855,148 @@ export function experimental_nested<
     const key = call.scopes.map((scope) => items.get(scope)).join();
     let run = call.runs.get(key);
     if (!run) {
-      // Copied as it arrives, before the caller can change it
-      run = startRun(call, items).then((data) => {
-        recordLists(data, call.lists, listOrders);
-        return { data, read: copyReads(data, call.reads) };
-      });
-      run.catch(nothing);
+      run = settles(async (): Promise<Outcome<Run>> => {
+        const outcome = await startRun(call, items);
+        return outcome.ok
+          ? { ok: true, data: snapshotOf(call, outcome.data) }
+          : outcome;
+      }, failed);
       call.runs.set(key, run);
     }
     return run;
   }
 
-  async function startRun(call: Call, items: Items): Promise<unknown> {
+  /**
+   * A run's data, from the outcome of what gets it: its own request, or the
+   * call the server made. One the server didn't make, or made for no such
+   * item, asks by itself, once the data it reads is there
+   */
+  function startRun(call: Call, items: Items): Settles<Outcome<unknown>> {
     if (call.sent) {
       return call.sent;
     }
     const { source } = call;
-    if (source && 'owner' in source) {
-      try {
-        const { data } = await source.result;
-        if (call.frame.length === 0) {
-          return data;
-        }
-        const indexes = call.frame.map((scope) => items.get(scope) ?? -1);
-        const item = await readPipelinedItem(data, indexes);
-        if (item.kind === 'data') {
-          return item.data;
-        }
-        // A run's error, or the error of a list it is in, sent in place of
-        // the list's items: such a list didn't run for any of them
-        const error =
-          item.kind === 'error' ? item : await listErrorOf(data, indexes);
-        if (error) {
-          throw TRPCClientError.from({ error: error.error } as any);
-        }
-      } catch (error) {
-        if (source.status !== 'unresolved') {
-          throw error;
+    return settles(async (): Promise<Outcome<unknown>> => {
+      if (source && 'owner' in source) {
+        const settled = await source.settled;
+        if (settled.status === 'ran') {
+          if (!settled.outcome.ok) {
+            return settled.outcome;
+          }
+          const run = await readRun(
+            settled.outcome.data,
+            call.frame.map((scope) => items.get(scope) ?? -1),
+          );
+          if (run.kind === 'data') {
+            return { ok: true, data: run.data };
+          }
+          if (run.kind === 'error') {
+            return failed(run.error);
+          }
         }
       }
-    }
-    // The server didn't run it: it asks by itself, with what it reads
-    return untyped.query(
-      call.path,
-      await fill(call.input, items),
-      request(undefined),
-    );
+      const input = await fill(call.input, items);
+      return input.ok
+        ? outcomeOf(untyped.query(call.path, input.data, request(undefined)))
+        : input;
+    }, failed);
   }
 
-  /** `read` for what an input reads, `data` for what the caller gets */
-  async function valueOf(ref: Ref, items: Items, as: keyof Run) {
-    let value = (await runOf(ref.call, items))[as];
-    for (const segment of ref.path) {
-      if (isScope(segment) && Array.isArray(value)) {
-        value = listOrders.get(value) ?? value;
+  /** The run at `indexes` of a call's data */
+  async function readRun(data: PipelinedData, indexes: readonly number[]) {
+    return data.kind === 'each'
+      ? readPipelinedRun(data.runs, indexes)
+      : ({ kind: 'data', data: data.data } as const);
+  }
+
+  function valueOf(
+    ref: Ref,
+    items: Items,
+    as: 'data' | 'read',
+  ): Settles<Outcome<unknown>> {
+    return settles(async (): Promise<Outcome<unknown>> => {
+      const run = await runOf(ref.call, items);
+      return run.ok
+        ? {
+            ok: true,
+            data: walk({ run: run.data, path: ref.path, items, as }).value,
+          }
+        : run;
+    }, failed);
+  }
+
+  function fill(value: unknown, items: Items): Settles<Outcome<unknown>> {
+    return settles(async (): Promise<Outcome<unknown>> => {
+      const shape = shapeOf(value);
+      if (shape?.kind === 'value') {
+        return valueOf(shape.ref, items, 'read');
       }
-      const key = isScope(segment) ? String(items.get(segment)) : segment;
-      value = hasOwn(value, key)
-        ? (value as Record<string, unknown>)[key]
-        : undefined;
-    }
-    return value;
-  }
-
-  async function fill(value: unknown, items: Items): Promise<unknown> {
-    const shape = shapeOf(value);
-    if (shape?.kind === 'value') {
-      return valueOf(shape.ref, items, 'read');
-    }
-    if (Array.isArray(value)) {
-      return Promise.all(value.map((item) => fill(item, items)));
-    }
-    if (isPlainObject(value)) {
-      const keys = Object.keys(value);
-      const values = await Promise.all(
-        keys.map((key) => fill(value[key], items)),
-      );
-      const filled: Record<string, unknown> = {};
-      keys.forEach((key, index) => {
-        setOwn(filled, key, values[index]);
-      });
-      return filled;
-    }
-    return value;
-  }
-
-  async function resolve(shape: Shape, items: Items): Promise<unknown> {
-    switch (shape.kind) {
-      case 'value':
-        return valueOf(shape.ref, items, 'data');
-      case 'node': {
-        const node = {
-          node: await valueOf(shape.ref, items, 'data'),
-          edges: {} as Record<string, Promise<unknown>>,
-        };
-        for (const [key, edgeShape] of Object.entries(shape.edges)) {
-          const edge = resolve(edgeShape, items);
-          // An edge that nobody reads can fail
-          edge.catch(nothing);
-          setOwn(node.edges, key, edge);
+      if (Array.isArray(value)) {
+        return allOk(value.map((item) => fill(item, items)));
+      }
+      if (isPlainObject(value)) {
+        const keys = Object.keys(value);
+        const values = await allOk(keys.map((key) => fill(value[key], items)));
+        if (!values.ok) {
+          return values;
         }
-        nodes.add(node);
-        return node;
+        const filled: Record<string, unknown> = {};
+        keys.forEach((key, index) => {
+          setOwn(filled, key, values.data[index]);
+        });
+        return { ok: true, data: filled };
       }
-      case 'list': {
-        const list = await valueOf(shape.scope.list, items, 'data');
-        const resolved = await Promise.all(
-          (Array.isArray(list) ? (listOrders.get(list) ?? list) : []).map(
-            (_item, index) =>
+      return { ok: true, data: value };
+    }, failed);
+  }
+
+  function resolve(shape: Shape, items: Items): Settles<Outcome<unknown>> {
+    return settles(async (): Promise<Outcome<unknown>> => {
+      switch (shape.kind) {
+        case 'value':
+          return valueOf(shape.ref, items, 'data');
+        case 'node': {
+          const value = await valueOf(shape.ref, items, 'data');
+          if (!value.ok) {
+            return value;
+          }
+          const node = {
+            node: value.data,
+            edges: {} as Record<string, Promise<unknown>>,
+          };
+          for (const [key, edgeShape] of Object.entries(shape.edges)) {
+            const edge = rejecting(resolve(edgeShape, items));
+            // An edge that nobody reads can fail
+            edge.catch(nothing);
+            setOwn(node.edges, key, edge);
+          }
+          nodes.add(node);
+          return { ok: true, data: node };
+        }
+        case 'list': {
+          const { list } = shape.scope;
+          const run = await runOf(list.call, items);
+          if (!run.ok) {
+            return run;
+          }
+          const { list: listItems } = walk({
+            run: run.data,
+            path: list.path,
+            items,
+            as: 'data',
+          });
+          const resolved = await allOk(
+            listItems.map((_item, index) =>
               resolve(shape.item, new Map(items).set(shape.scope, index)),
-          ),
-        );
-        lists.add(resolved);
-        return resolved;
+            ),
+          );
+          if (resolved.ok) {
+            lists.add(resolved.data);
+          }
+          return resolved;
+        }
       }
-    }
+    }, failed);
   }
 
   const root = shapeOf(build(q));
@@ -889,12 +1011,13 @@ export function experimental_nested<
   for (const call of calls) {
     if (call.holes.length === 0 && call.scopes.length === 0) {
       const pipeline = createOperationPipeline();
-      call.sent = untyped.query(
-        call.path,
-        call.blanked,
-        request(pipelineContext(pipeline)),
+      call.sent = outcomeOf(
+        untyped.query(
+          call.path,
+          call.blanked,
+          request(pipelineContext(pipeline)),
+        ),
       );
-      call.sent.catch(nothing);
       call.source = pipeline;
     } else {
       pipe(call);
@@ -917,7 +1040,7 @@ export function experimental_nested<
       "experimental_nested(): the link doesn't stream its responses, so the edges in a request settle together, with the whole response. Use `httpBatchStreamLink` for each edge to settle when its query is done",
     );
   }
-  return resolve(root, new Map()) as Promise<ResultOf<TShape>>;
+  return rejecting(resolve(root, new Map())) as Promise<ResultOf<TShape>>;
 }
 
 async function settle(value: unknown): Promise<unknown> {

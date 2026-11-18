@@ -24,7 +24,9 @@ import {
   createPipelineSizeOf,
   parsePipelineReads,
   pipelineCalls,
+  pipelineDecodedInput,
   pipelineLimitsOf,
+  pipelineSentInput,
   pipeOfBody,
   pipeOfSearchParams,
 } from './server';
@@ -39,6 +41,7 @@ import type {
 import type * as Wire from './wire';
 import {
   bindPipelinePath,
+  markPipelineNotRun,
   pipelineBatch,
   pipelineFrameOf,
   pipelineLimitDefaults,
@@ -70,6 +73,19 @@ const transformers = {
 interface WireError {
   message: string;
   code: string;
+}
+
+/** `shape`, marked as a request handler marks a call refused before it ran */
+function markedIf<TShape>(notRun: boolean, shape: TShape) {
+  return notRun ? markPipelineNotRun(shape) : shape;
+}
+
+/** The input of a call that sent `{}` */
+async function emptyInput() {
+  return {
+    sent: pipelineSentInput({}),
+    decoded: pipelineDecodedInput({}),
+  };
 }
 
 function wireError(cause: unknown): WireError {
@@ -104,6 +120,10 @@ function serve(opts: {
     const inputs: unknown = hasBody
       ? body
       : JSON.parse(url.searchParams.get('input') ?? '{}');
+    // As a request is read: before the transformer reads any input
+    const sentInputs = paths.map((_path, index) =>
+      pipelineSentInput(isObject(inputs) ? inputs[index] : undefined),
+    );
     const calls = paths.map((path, index) => {
       // Read once, as a request's input is: one that failed to read stays failed
       let read:
@@ -129,6 +149,7 @@ function serve(opts: {
       };
       return {
         path,
+        readOnce,
         getRawInput: async () => {
           const it = readOnce();
           if (!it.ok) {
@@ -149,9 +170,18 @@ function serve(opts: {
         calls,
         pipe: hasBody ? pipeOfBody(body) : pipeOfSearchParams(url.searchParams),
         transformer: opts.transformer,
-        // As the client sent it, before the transformer read it
-        sentInputOf: async (index) =>
-          isObject(inputs) ? inputs[index] : undefined,
+        // As the client sent it, taken before the transformer read it, and as
+        // the transformer read it
+        inputOf: async (index) => {
+          const it = calls[index]?.readOnce();
+          if (!it?.ok) {
+            throw it?.cause;
+          }
+          return {
+            sent: sentInputs[index] ?? pipelineSentInput(undefined),
+            decoded: pipelineDecodedInput(it.input),
+          };
+        },
         maxRuns: opts.maxRuns,
         limits: opts.limits,
       });
@@ -177,9 +207,9 @@ function serve(opts: {
                 JSON.stringify(opts.transformer.output.serialize(data));
                 return data;
               },
-              error: (cause, input) => {
+              error: ({ cause, input, notRun }) => {
                 opts.onError(call.path, input);
-                return wireError(cause);
+                return markedIf(notRun, wireError(cause));
               },
             });
             return [undefined, undefined, items];
@@ -205,7 +235,7 @@ function serve(opts: {
         return {
           error:
             cause instanceof TRPCError
-              ? pipeline.errorShape(cause, wireError(cause))
+              ? markedIf(pipeline.isNotRun(cause), wireError(cause))
               : wireError(cause),
         };
       }
@@ -2260,7 +2290,7 @@ describe('a call for every item', () => {
         },
       }),
       transformer: transformers.none,
-      sentInputOf: async () => ({}),
+      inputOf: emptyInput,
       maxRuns: null,
       limits: pipelineLimitDefaults,
     });
@@ -2274,7 +2304,7 @@ describe('a call for every item', () => {
                 ran(input);
                 return input;
               },
-              error: wireError,
+              error: ({ cause }) => wireError(cause),
             });
             return { items: 'items' in runs ? runs.items : runs };
           }
@@ -2442,7 +2472,7 @@ describe('the limits of a server', () => {
           1: { reads: Array.from({ length: 200_000 }, () => read) },
         }),
         transformer: transformers.none,
-        sentInputOf: async () => ({}),
+        inputOf: emptyInput,
         maxRuns: null,
         limits: pipelineLimitDefaults,
       });
@@ -2455,7 +2485,10 @@ describe('the limits of a server', () => {
           } catch (cause) {
             // Marked, as a request handler marks it
             return {
-              error: pipeline.errorShape(cause as TRPCError, wireError(cause)),
+              error: markedIf(
+                pipeline.isNotRun(cause as TRPCError),
+                wireError(cause),
+              ),
             };
           }
         },
@@ -2954,7 +2987,7 @@ describe('the limits of a server', () => {
           1: { reads: [{ to: ['ids'], from: 0, path: [null, 'id'] }] },
         }),
         transformer,
-        sentInputOf: async () => ({}),
+        inputOf: emptyInput,
         maxRuns: null,
         limits,
       });
@@ -2972,7 +3005,10 @@ describe('the limits of a server', () => {
           } catch (cause) {
             // Marked, as a request handler marks it
             return {
-              error: pipeline.errorShape(cause as TRPCError, wireError(cause)),
+              error: markedIf(
+                pipeline.isNotRun(cause as TRPCError),
+                wireError(cause),
+              ),
             };
           }
         },

@@ -14,7 +14,6 @@ import type {
   PipelinePath,
 } from './wire';
 import {
-  markPipelineNotRun,
   pipelineFrameOf,
   pipelineLimitDefaults,
   readPipelinePath,
@@ -268,11 +267,28 @@ function sourceFailed() {
   });
 }
 
+/** What a call that reads data that is still to come gets */
+function stillToComeUnreadable() {
+  return new TRPCError({
+    code: 'UNSUPPORTED_MEDIA_TYPE',
+    message: 'Cannot read the data of a stream-like response',
+  });
+}
+
+/**
+ * How a read that many runs or calls share went, settled once. A failure is
+ * how to make its error, so each run or call that read it fails with an error
+ * of its own, not one that another one shares
+ */
+type Read<TValue> =
+  | { ok: true; value: TValue }
+  | { ok: false; error: () => TRPCError };
+
 /** Thrown inside `readableData` for a part of the data that is still to come */
 class StillToCome extends Error {}
 
 /**
- * A call's data as the client gets it, for the calls that read it. Throws if
+ * A call's data as the client gets it, for the calls that read it. Not if
  * some of it is still to come, as a stream sends it: what JSON makes of that
  * is `{}`, which isn't what the client gets. Data that can't go over the wire
  * at all fails the call itself, so what reads it gets what it gets for a
@@ -281,7 +297,7 @@ class StillToCome extends Error {}
 function readableData(
   transformer: CombinedDataTransformer['output'],
   data: unknown,
-) {
+): Read<unknown> {
   try {
     const json = JSON.stringify(
       transformer.serialize(data),
@@ -292,18 +308,56 @@ function readableData(
         return value;
       },
     );
-    return json === undefined
-      ? undefined
-      : transformer.deserialize(JSON.parse(json));
+    return {
+      ok: true,
+      value:
+        json === undefined
+          ? undefined
+          : transformer.deserialize(JSON.parse(json)),
+    };
   } catch (cause) {
-    if (cause instanceof StillToCome) {
-      throw new TRPCError({
-        code: 'UNSUPPORTED_MEDIA_TYPE',
-        message: 'Cannot read the data of a stream-like response',
-      });
-    }
-    throw sourceFailed();
+    return {
+      ok: false,
+      error:
+        cause instanceof StillToCome ? stillToComeUnreadable : sourceFailed,
+    };
   }
+}
+
+/**
+ * A call's input as the client sent it: the JSON text of it, taken where the
+ * request is read, before the transformer of inputs reads any of it. Text, so
+ * nothing that reads or decodes the input can change it.
+ */
+export interface PipelineSentInput {
+  readonly kind: 'sent';
+  readonly json: string | undefined;
+}
+
+/** A call's input as the transformer of inputs read it, once */
+export interface PipelineDecodedInput {
+  readonly kind: 'decoded';
+  readonly value: unknown;
+}
+
+/** A call's input, as a pipelined batch's request is read: both, apart */
+export interface PipelineCallInput {
+  readonly sent: PipelineSentInput;
+  readonly decoded: PipelineDecodedInput;
+}
+
+/**
+ * A call's input as the client sent it, from the request's JSON. Only where
+ * the request is read, before anything decodes it: a transformer can decode
+ * an input in place
+ */
+export function pipelineSentInput(json: unknown): PipelineSentInput {
+  return Object.freeze({ kind: 'sent', json: JSON.stringify(json) });
+}
+
+/** A call's input as the transformer of inputs read it */
+export function pipelineDecodedInput(value: unknown): PipelineDecodedInput {
+  return Object.freeze({ kind: 'decoded', value });
 }
 
 /**
@@ -316,7 +370,7 @@ const refusalErrors = new WeakSet<TRPCError>();
 
 /**
  * A call refused as its input doesn't come back through the transformer of
- * inputs as the client sent it: see `checkSentInput`
+ * inputs as the client sent it: see `comesBackAsSent`
  */
 function cannotSendAsTheClient() {
   const error = new TRPCError({
@@ -328,27 +382,87 @@ function cannotSendAsTheClient() {
 }
 
 /**
- * Whether `input`, as the server read it, goes back through the transformer
- * of inputs to what the client sent. Only then is it, with values written in,
- * what the client would send: a transformer can read a string as an instance
- * that it doesn't write back as that string
+ * Whether a call's input as the server read it goes back through the
+ * transformer of inputs to what the client sent. Only then is it, with values
+ * written in, what the client would send: a transformer can read a string as
+ * an instance that it doesn't write back as that string
  */
 function comesBackAsSent(opts: {
   transformer: CombinedDataTransformer['input'];
-  input: unknown;
-  /** The input as the client sent it, as JSON, before it was read */
-  sent: unknown;
+  input: PipelineCallInput;
 }) {
   try {
-    const back = opts.transformer.serialize(opts.input);
     return (
-      Object.is(back, opts.sent) ||
-      JSON.stringify(back) === JSON.stringify(opts.sent)
+      JSON.stringify(opts.transformer.serialize(opts.input.decoded.value)) ===
+      opts.input.sent.json
     );
   } catch {
     // What JSON can't carry, such as a `BigInt`, the client didn't send
     return false;
   }
+}
+
+/** What is held of a budget, or why taking from it was refused */
+type PipelineTake =
+  | { ok: true; lease: PipelineLease }
+  | { ok: false; error: TRPCError };
+
+/** What one taking of a budget holds */
+interface PipelineLease {
+  /** Gives back `count` of what it holds, or what it still holds if less */
+  giveBack: (count: number) => void;
+  /** Keeps what it holds for good: nothing of it is given back after this */
+  keep: () => void;
+}
+
+/**
+ * What a batch may spend of one of its limits. `take` is the only way to
+ * spend it, and a lease the only way to give some back: what is spent is
+ * private to it, so a path that doesn't take can't spend, and none gives
+ * back more than it took. Nothing waits in it, so what takes at the same
+ * time can't go over together.
+ */
+function createPipelineBudget(opts: {
+  limit: number;
+  /** The error for taking so much that `total` would be spent */
+  refuse: (total: number) => TRPCError;
+}) {
+  let spent = 0;
+  return {
+    /** How much is left to take */
+    room: () => opts.limit - spent,
+    take: (count: number): PipelineTake => {
+      const total = spent + count;
+      if (total > opts.limit) {
+        return { ok: false, error: opts.refuse(total) };
+      }
+      spent = total;
+      let held = count;
+      return {
+        ok: true,
+        lease: {
+          giveBack: (back) => {
+            const given = Math.min(back, held);
+            held -= given;
+            spent -= given;
+          },
+          keep: () => {
+            held = 0;
+          },
+        },
+      };
+    },
+  };
+}
+type PipelineBudget = ReturnType<typeof createPipelineBudget>;
+
+/** Takes `count` of `budget`, or throws why it can't */
+function spend(budget: PipelineBudget, count: number) {
+  const taken = budget.take(count);
+  if (!taken.ok) {
+    throw taken.error;
+  }
+  return taken.lease;
 }
 
 /** A call refused for going over one of the server's limits */
@@ -544,7 +658,7 @@ function leftOut(value: unknown) {
 
 /** What the server needs of a batch's call to fill in its input */
 export interface PipelineServerCall {
-  /** The input as the client sent it */
+  /** The input as the request has it */
   getRawInput: () => Promise<unknown>;
   /** The input, once it has been read */
   result: () => unknown;
@@ -562,12 +676,22 @@ export type PipelineRuns<TError> = Promise<
 
 /**
  * Runs a call once for every item of its frame, and gives every run's
- * outcome: what `item` returned, or what `error` made of what it threw. A
+ * outcome: what `item` returned, or what `error` made of why it failed. A
  * list that can't run gets what `error` makes of why.
  */
 export type PipelineEach = <TError>(run: {
   item: (input: unknown) => Promise<unknown>;
-  error: (cause: unknown, input: unknown) => TError;
+  /**
+   * What the response has for a run that failed, or for a list that can't
+   * run. `notRun` is whether the server refused the whole call before any of
+   * its runs ran: what it makes is then to be marked so, as
+   * `markPipelineNotRun` marks it
+   */
+  error: (failure: {
+    cause: unknown;
+    input: unknown;
+    notRun: boolean;
+  }) => TError;
 }) => PipelineRuns<TError>;
 
 /**
@@ -584,7 +708,7 @@ export type PipelineCallRun =
 /**
  * The places of a frame: one level of items for each level of lists, down to
  * a value for each run. A list that can't run has failed in place of its
- * items. Each is ready when it is.
+ * items. Each is ready when it is, and none rejects.
  */
 type Places<TValue> = Promise<PlacesNode<TValue>>;
 type PlacesNode<TValue> =
@@ -650,6 +774,15 @@ function itemsOf(opts: {
   };
 }
 
+/** Thrown inside a read of a value to stop reading one that is refused */
+class Refused extends Error {
+  readonly refusal: () => TRPCError;
+  constructor(refusal: () => TRPCError) {
+    super();
+    this.refusal = refusal;
+  }
+}
+
 /**
  * Makes the calls of a batch read parts of their input from the data of
  * earlier calls, as its `pipe` says. Throws if the `pipe` is invalid.
@@ -660,10 +793,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   pipe: unknown;
   transformer: CombinedDataTransformer;
   /**
-   * A call's input as the client sent it, by the call's index: its JSON,
-   * before the transformer read it
+   * A call's input by the call's index, as the request was read: as the
+   * client sent it, and as the transformer read it
    */
-  sentInputOf: (index: number) => Promise<unknown>;
+  inputOf: (index: number) => Promise<PipelineCallInput>;
   /**
    * The most runs of a call the batch may have, or `null` for any number. A
    * call for every item runs once for each item. Of two such calls that are
@@ -675,12 +808,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
 }) {
   const { limits } = opts;
   const sizeOf = createPipelineSizeOf();
+  /** How a run went, settled once: its data, or that it has none to read */
+  type RunOutcome = { ok: true; data: unknown } | { ok: false };
   /** A run of a call, as the calls that read it see it */
   interface Run {
-    /** How it went: its data, or a rejection if it has none to read */
-    outcome: Deferred<unknown>;
+    outcome: Deferred<RunOutcome>;
     /** Its data as the client gets it, which is what a path refers to */
-    clientData: Promise<unknown> | null;
+    clientData: Promise<Read<unknown>> | null;
   }
   /** A call, as the calls that read its data see it */
   interface Source {
@@ -694,14 +828,37 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     /** Whether what it reads runs for the items of different lists */
     framesDiffer: boolean;
     /**
-     * Whether it has begun to read: from then on, it gives back its own
-     * place if it doesn't run
+     * The place it holds among the batch's runs from the start. A call that
+     * doesn't run gives it back; a call for every item gives it back for one
+     * for each item
      */
-    started: boolean;
+    seat: PipelineLease;
   }
   /**
+   * The runs of the batch: each call holds a place from the start, and a
+   * call for every item one for each of its items. A call that doesn't run
+   * gives its places back.
+   */
+  const runs = createPipelineBudget({
+    limit: Math.min(limits.maxRuns, opts.maxRuns ?? Infinity),
+    refuse: (total) =>
+      opts.maxRuns !== null && total > opts.maxRuns
+        ? overBatchSize()
+        : overLimit(
+            `This call would make the batch run ${total} times, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+          ),
+  });
+  /** What the batch fills in: see `fill` */
+  const fills = createPipelineBudget({
+    limit: limits.maxFillSize,
+    refuse: () =>
+      overLimit(
+        `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
+      ),
+  });
+  /**
    * The errors of calls refused for going over a limit before any of their
-   * runs ran, as the call's outcome: see `errorShape`
+   * runs ran, as the call's outcome: see `isNotRun`
    */
   const refusedBeforeRunning = new WeakSet<TRPCError>();
   /** Notes why a call doesn't run, before any of its runs ran */
@@ -710,12 +867,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       refusedBeforeRunning.add(cause);
     }
   };
-  const newRun = (): Run => {
-    const outcome = createDeferred<unknown>();
-    // A failed run that nothing reads from isn't an unhandled rejection
-    outcome.promise.catch(() => undefined);
-    return { outcome, clientData: null };
-  };
+  const newRun = (): Run => ({
+    outcome: createDeferred<RunOutcome>(),
+    clientData: null,
+  });
   const sent = opts.calls.map((call, index) => {
     const source: Source = {
       index,
@@ -723,7 +878,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       frame: null,
       runs: createDeferred<PlacesNode<Run>>(),
       framesDiffer: false,
-      started: false,
+      // A request with more calls than this allows is refused as it is read
+      seat: spend(runs, 1),
     };
     return { call, source };
   });
@@ -794,43 +950,56 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }
   }
   /**
-   * The value at `path` in `data`, for a call to read. Throws before it makes
-   * a list of items that `checkValue` would refuse: the list is as long as
-   * the one it is of, which can be long
+   * The value at `path` in `data`, for a call to read. Refused before it
+   * makes a list of items that `checkValue` would refuse: the list is as long
+   * as the one it is of, which can be long
    */
-  function readValue(data: unknown, path: PipelinePath) {
+  function readValue(data: unknown, path: PipelinePath): Read<unknown> {
     let room = limits.maxValueLength;
-    return readPipelinePath(data, path, (length) => {
-      if (!limits.allowWholeValues) {
-        throw wholeValueRefused();
-      }
-      // At least its brackets, and a `,` between each two of its items. An
-      // item that is a list counts for itself as it is made
-      room -= Math.max(length + 1, 2);
-      if (room < 0) {
-        throw valueTooLong();
-      }
-    });
+    try {
+      return {
+        ok: true,
+        value: readPipelinePath(data, path, (length) => {
+          if (!limits.allowWholeValues) {
+            throw new Refused(wholeValueRefused);
+          }
+          // At least its brackets, and a `,` between each two of its items.
+          // An item that is a list counts for itself as it is made
+          room -= Math.max(length + 1, 2);
+          if (room < 0) {
+            throw new Refused(valueTooLong);
+          }
+        }),
+      };
+    } catch (cause) {
+      return {
+        ok: false,
+        // What else throws, such as a getter, fails each run that reads it
+        error:
+          cause instanceof Refused
+            ? cause.refusal
+            : () => getTRPCErrorFromUnknown(cause),
+      };
+    }
   }
 
   /**
-   * The data of a run that another call reads. Rejects if it failed, or if
-   * some of it is still to come, as a stream sends it
+   * The data of a run that another call reads. Not if it failed, or if some
+   * of it is still to come, as a stream sends it
    */
   function dataOfRun(run: Run) {
-    run.clientData ??= run.outcome.promise.then(
-      (data) => readableData(opts.transformer.output, data),
-      () => {
-        throw sourceFailed();
-      },
+    run.clientData ??= run.outcome.promise.then((outcome): Read<unknown> =>
+      outcome.ok
+        ? readableData(opts.transformer.output, outcome.data)
+        : { ok: false, error: sourceFailed },
     );
     return run.clientData;
   }
   /** What runs read of each run, by path: each value is read once */
-  const valuesOfRuns = new WeakMap<Run, Map<string, Promise<unknown>>>();
+  const valuesOfRuns = new WeakMap<Run, Map<string, Promise<Read<unknown>>>>();
   /**
    * The value at `path` of the run at `indexes` of a call that `source` is
-   * read by. Rejects as `dataOf` does
+   * read by. Rejects as `runOf` does
    */
   async function valueOf(read: {
     source: Source;
@@ -846,9 +1015,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const key = JSON.stringify(read.path);
     let value = values.get(key);
     if (!value) {
-      value = dataOfRun(run).then((data) => readValue(data, read.path));
-      // Read only by the runs that ask for it
-      value.catch(() => undefined);
+      value = dataOfRun(run).then((data) =>
+        data.ok ? readValue(data.value, read.path) : data,
+      );
       values.set(key, value);
     }
     return value;
@@ -860,7 +1029,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   async function dataOf(source: Source, indexes: readonly number[]) {
     return dataOfRun(await runOf(source, indexes));
   }
-  /** The run of `source` at the start of `indexes` */
+  /**
+   * The run of `source` at the start of `indexes`. Rejects, for each that
+   * asks, if it has none to read
+   */
   async function runOf(source: Source, indexes: readonly number[]) {
     let node = await source.runs.promise;
     for (const index of indexes) {
@@ -920,37 +1092,41 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   ): Places<Place> {
     const { list, inItem } = frame;
     /**
-     * How many items the lists of this level have together, so far. A place
-     * is made for each, for a level of a list of lists too, which no call may
-     * run for: they count against `maxRuns` all the same
+     * The items the lists of this level have together. A place is made for
+     * each, for a level of a list of lists too, which no call may run for:
+     * they count against `maxRuns` all the same
      */
-    let placed = 0;
+    const placed = createPipelineBudget({
+      limit: limits.maxRuns,
+      refuse: (total) =>
+        overLimit(
+          `The lists at one level have ${total} items together, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+        ),
+    });
     const tooMany = (length: number) => {
       const error = tooLong(length);
       if (error) {
         return error;
       }
-      if (placed + length > limits.maxRuns) {
-        return overLimit(
-          `The lists at one level have ${placed + length} items together, more than \`maxRuns\` (${limits.maxRuns}) allows`,
-        );
+      const taken = placed.take(length);
+      return taken.ok ? null : taken.error;
+    };
+    /** The list in a place: in its item, or in the data of `list.from` */
+    const listIn = async (place: Place) => {
+      if (inItem) {
+        // A level after the first: its list is in the item of the one before
+        return readPipelinePath(place.item, inItem, null);
       }
-      placed += length;
-      return null;
+      const data = await dataOf(list.from, place.indexes);
+      if (!data.ok) {
+        throw data.error();
+      }
+      return readPipelinePath(data.value, list.path, null);
     };
     return mapPlaces(before, async (place): Promise<PlacesNode<Place>> => {
       try {
-        const items = inItem
-          ? // A level after the first: its list is in the item of the one
-            // before
-            readPipelinePath(place.item, inItem, null)
-          : readPipelinePath(
-              await dataOf(list.from, place.indexes),
-              list.path,
-              null,
-            );
         return itemsOf({
-          list: items,
+          list: await listIn(place),
           indexes: place.indexes,
           tooLong: tooMany,
         });
@@ -989,17 +1165,17 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }
 
   /**
-   * Refuses a call whose input, as the server read it, isn't what the client
-   * would send: what is filled in is written into it, and it goes to the
-   * call as the client would send it filled in
+   * A call's input as the request was read, for the server to fill in.
+   * Refused if what the server read isn't what the client would send: what
+   * is filled in is written into it, and it goes to the call as the client
+   * would send it filled in
    */
-  async function checkSentInput(source: Source, input: unknown) {
-    const sent = await opts.sentInputOf(source.index);
-    if (
-      !comesBackAsSent({ transformer: opts.transformer.input, input, sent })
-    ) {
+  async function inputToFill(source: Source) {
+    const input = await opts.inputOf(source.index);
+    if (!comesBackAsSent({ transformer: opts.transformer.input, input })) {
       throw cannotSendAsTheClient();
     }
+    return input.decoded;
   }
   /**
    * A filled-in input as a call gets it when a client fills it in and sends
@@ -1010,29 +1186,6 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    */
   function asSent(input: unknown, measure: (length: number) => void) {
     return overTheWire(opts.transformer.input, input, measure);
-  }
-  /**
-   * The runs of the batch. Each call holds a place from the start; a call for
-   * every item changes its own to one for each item, and a call that doesn't
-   * run gives its places back.
-   */
-  let runs = opts.calls.length;
-  /**
-   * Changes the places a call holds from `held` to `count`. Throws if the
-   * batch would then have too many runs, and changes nothing then. Nothing
-   * waits in it, so calls can't go over together.
-   */
-  function holdRuns(held: number, count: number) {
-    const taken = runs - held + count;
-    if (opts.maxRuns !== null && taken > opts.maxRuns) {
-      throw overBatchSize();
-    }
-    if (taken > limits.maxRuns) {
-      throw overLimit(
-        `This call would make the batch run ${taken} times, more than \`maxRuns\` (${limits.maxRuns}) allows`,
-      );
-    }
-    runs = taken;
   }
 
   /**
@@ -1050,17 +1203,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       : null;
   }
 
-  let filledSize = 0;
   /**
    * The input of a run: the call's own, with what it reads written in. It
    * takes what it fills in from what the batch may fill in only once the
-   * input is made: a run whose input can't be made takes none. Nothing waits
-   * between counting and taking, so runs that fill in at the same time can't
-   * go over together.
+   * input is made: a run whose input can't be made takes none.
    */
   async function fill(run: {
-    /** The call's input as the client sent it */
-    base: unknown;
+    /** The call's input as the transformer read it */
+    base: PipelineDecodedInput;
     reads: PipelineCallReads<Source>;
     place: Place;
     /**
@@ -1071,29 +1221,39 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     perItem: boolean;
   }) {
     const values = await Promise.all(
-      // Async: a read that throws is a rejection, so every read is waited for
-      run.reads.reads.map(async (read) =>
-        read.kind === 'whole'
-          ? valueOf({
-              source: read.from,
-              indexes: run.place.indexes,
-              path: read.path,
-            })
-          : readValue(run.place.item, read.path),
-      ),
+      // Each read fails this run by itself, with an error of its own
+      run.reads.reads.map(async (read) => {
+        const value =
+          read.kind === 'whole'
+            ? await valueOf({
+                source: read.from,
+                indexes: run.place.indexes,
+                path: read.path,
+              })
+            : readValue(run.place.item, read.path);
+        if (!value.ok) {
+          throw value.error();
+        }
+        return value.value;
+      }),
     );
+    // Nothing waits from here to where it takes, so nothing else takes from
+    // what the batch may fill in in between
+    const room = fills.room();
     let size = 0;
+    /**
+     * Counts a part of what it fills in. Throws once that is more than there
+     * is room for: the rest isn't measured
+     */
     const charge = (length: number) => {
       size += length;
-      if (filledSize + size > limits.maxFillSize) {
-        throw overLimit(
-          `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
-        );
+      if (size > room) {
+        // More than is left, so this throws
+        spend(fills, size);
       }
     };
-    const count = (value: unknown) =>
-      charge(sizeOf(value, limits.maxFillSize - filledSize - size));
-    let input = run.base;
+    const count = (value: unknown) => charge(sizeOf(value, room - size));
+    let input = run.base.value;
     for (const [at, read] of run.reads.reads.entries()) {
       const value = values[at];
       checkValue(value);
@@ -1105,52 +1265,46 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     // All of a run's input for every item, with the keys its values are
     // written under, as the transformer writes it: before it is read back
     input = asSent(input, run.perItem ? charge : () => undefined);
-    filledSize += size;
+    spend(fills, size);
     return input;
   }
 
   /** A call that runs once for every item of its frame */
   function perItem(each: {
-    call: TCall;
     source: Source;
     frame: PipelineFrame<Source>;
     reads: PipelineCallReads<Source>;
   }): PipelineEach {
-    const { call, source, frame, reads } = each;
+    const { source, frame, reads } = each;
     const refusal = refusalOf(source, reads);
     return async function runEach<TError>(run: {
       item: (input: unknown) => Promise<unknown>;
-      error: (cause: unknown, input: unknown) => TError;
+      error: (failure: {
+        cause: unknown;
+        input: unknown;
+        notRun: boolean;
+      }) => TError;
     }): PipelineRuns<TError> {
       const { error } = run;
-      source.started = true;
-      let base: unknown;
+      let base: PipelineDecodedInput;
       try {
         if (refusal) {
           throw refusal;
         }
-        base = await call.getRawInput();
-        await checkSentInput(source, base);
+        base = await inputToFill(source);
       } catch (cause) {
         // Refused, or its own input can't be read: it runs for no item, and
         // gives back the place it holds
-        runs -= 1;
+        source.seat.giveBack(1);
         notRunBecause(cause);
         throw cause;
       }
-      /** Whether it still holds the place it held from the start */
-      let placeholder = true;
-      const release = () => {
-        if (placeholder) {
-          placeholder = false;
-          runs -= 1;
-        }
-      };
       interface Ran {
         run: Run;
         envelope: Promise<PipelineItemEnvelope<TError>>;
       }
-      const start = (place: Place): Ran => {
+      /** A run, which holds a place of `lease` */
+      const start = (place: Place, lease: PipelineLease): Ran => {
         const ran = newRun();
         const envelope = (async (): Promise<PipelineItemEnvelope<TError>> => {
           let input: unknown;
@@ -1158,52 +1312,63 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             input = await fill({ base, reads, place, perItem: true });
           } catch (cause) {
             // It doesn't run, and gives back its place
-            runs -= 1;
-            ran.outcome.reject(cause);
-            return { error: error(cause, base) };
+            lease.giveBack(1);
+            ran.outcome.resolve({ ok: false });
+            return {
+              error: error({ cause, input: base.value, notRun: false }),
+            };
           }
           try {
             const data = await run.item(input);
-            ran.outcome.resolve(data);
+            ran.outcome.resolve({ ok: true, data });
             return { result: { data } };
           } catch (cause) {
-            ran.outcome.reject(cause);
-            return { error: error(cause, input) };
+            ran.outcome.resolve({ ok: false });
+            return { error: error({ cause, input, notRun: false }) };
           }
         })();
         return { run: ran, envelope };
       };
-      const walk = (places: Places<Place>, level: number): Places<Ran> =>
+      /**
+       * Its runs, level by level. `lease` is what the runs below hold: the
+       * places it takes for the items of a list at its last level
+       */
+      const walk = (
+        places: Places<Place>,
+        level: number,
+        lease: PipelineLease,
+      ): Places<Ran> =>
         places.then((node): PlacesNode<Ran> => {
           switch (node.kind) {
             case 'failed':
-              release();
+              source.seat.giveBack(1);
               return node;
-            case 'items':
+            case 'items': {
+              // What it held from the start is for its runs, or for none
+              source.seat.giveBack(1);
+              if (level + 1 < frame.depth) {
+                return {
+                  kind: 'items',
+                  items: node.items.map((item) => walk(item, level + 1, lease)),
+                };
+              }
               // Its items are its runs: it holds a place for each
-              if (level + 1 === frame.depth) {
-                try {
-                  holdRuns(placeholder ? 1 : 0, node.items.length);
-                  placeholder = false;
-                } catch (cause) {
-                  release();
-                  return {
-                    kind: 'failed',
-                    error: getTRPCErrorFromUnknown(cause),
-                  };
-                }
-              } else {
-                release();
+              const taken = runs.take(node.items.length);
+              if (!taken.ok) {
+                return { kind: 'failed', error: taken.error };
               }
               return {
                 kind: 'items',
-                items: node.items.map((item) => walk(item, level + 1)),
+                items: node.items.map((item) =>
+                  walk(item, level + 1, taken.lease),
+                ),
               };
+            }
             case 'run':
-              return { kind: 'run', value: start(node.value) };
+              return { kind: 'run', value: start(node.value, lease) };
           }
         });
-      const ran = walk(placesOf(frame), 0);
+      const ran = walk(placesOf(frame), 0, source.seat);
       void mapPlaces(ran, (it) => ({ kind: 'run', value: it.run })).then(
         source.runs.resolve,
       );
@@ -1221,16 +1386,15 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               return {
                 items: node.items.map((item) => response(item, false)),
               };
-            case 'failed': {
-              const shape = error(node.error, base);
-              // Refused as a whole, for a limit, so none of its runs ran
+            case 'failed':
               return {
-                error:
-                  whole && refusalErrors.has(node.error)
-                    ? markPipelineNotRun(shape)
-                    : shape,
+                error: error({
+                  cause: node.error,
+                  input: base.value,
+                  // Refused as a whole, for a limit, so none of its runs ran
+                  notRun: whole && refusalErrors.has(node.error),
+                }),
               };
-            }
           }
         });
       return response(ran, true);
@@ -1244,38 +1408,39 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     reads: PipelineCallReads<Source> | undefined,
   ): { call: TCall; run: PipelineCallRun | null } {
     if (!reads) {
+      // It runs as in any batch, so the place it holds is its own for good
+      source.seat.keep();
       return { call, run: null };
     }
     const { frame } = source;
     if (frame) {
       return {
         call,
-        run: { kind: 'each', each: perItem({ call, source, frame, reads }) },
+        run: { kind: 'each', each: perItem({ source, frame, reads }) },
       };
     }
     const refusal = refusalOf(source, reads);
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
     const fillOnce = async () => {
-      source.started = true;
       try {
         if (refusal) {
           throw refusal;
         }
-        const base = await call.getRawInput();
-        await checkSentInput(source, base);
         const input = await fill({
-          base,
+          base: await inputToFill(source),
           reads,
           place: { indexes: [], item: null },
           perItem: false,
         });
+        // It runs, so the place it holds is its own for good
+        source.seat.keep();
         read = [input];
         return input;
       } catch (cause) {
         // Refused, or its input can't be made: it doesn't run, and gives back
         // its place among the runs
-        runs -= 1;
+        source.seat.giveBack(1);
         notRunBecause(cause);
         throw cause;
       }
@@ -1307,12 +1472,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     /** The calls, with inputs that are filled in when they are read */
     calls: calls.map((it) => it.call),
     /**
-     * The shape of a call's error as the response has it: marked if the
-     * server refused the call, for going over a limit, before any of its runs
-     * ran. A client can then ask for it by itself
+     * Whether the server refused the call whose error this is, for going over
+     * a limit, before any of its runs ran. The response marks its error so,
+     * as `markPipelineNotRun` does: a client can then ask for it by itself
      */
-    errorShape: <TShape>(error: TRPCError, shape: TShape) =>
-      refusedBeforeRunning.has(error) ? markPipelineNotRun(shape) : shape,
+    isNotRun: (error: TRPCError) => refusedBeforeRunning.has(error),
     /**
      * Runs every call, and tells the calls that read a call's data how it
      * went. A call that reads values gets how it runs, which is `null` for
@@ -1325,17 +1489,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }): Promise<TResult>[] =>
       calls.map((it) => {
         const result = run.call(it.call, it.run);
-        result.then(run.data).then(
-          (data) => it.once?.outcome.resolve(data),
-          (cause: unknown) => {
-            it.once?.outcome.reject(cause);
+        void result.then(run.data).then(
+          (data) => it.once?.outcome.resolve({ ok: true, data }),
+          () => {
+            it.once?.outcome.resolve({ ok: false });
             // A call for every item that failed as a whole has no runs
             it.source.runs.resolve({ kind: 'failed', error: sourceFailed() });
-            // It failed before it began to read, such as for a procedure that
-            // isn't there: its procedure didn't run
-            if (it.run && !it.source.started) {
-              runs -= 1;
-            }
+            // One that failed before it began to read, such as for a
+            // procedure that isn't there, didn't run: it gives back its place.
+            // One that began has given it back, or kept it, already
+            it.source.seat.giveBack(1);
           },
         );
         return result;

@@ -3,7 +3,13 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
-import { pipeOfBody, pipeOfSearchParams } from './pipeline/server';
+import {
+  pipelineDecodedInput,
+  pipelineSentInput,
+  pipeOfBody,
+  pipeOfSearchParams,
+} from './pipeline/server';
+import type { PipelineSentInput } from './pipeline/server';
 import { pipelineBatch } from './pipeline/wire';
 import type { PipelineLimits } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
@@ -150,26 +156,38 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     type InputRecord = Record<number, unknown>;
     /**
-     * The inputs as JSON, before the transformer reads them, and the `pipe`
-     * that the body of a pipelined batch has beside them
+     * The inputs as JSON, before the transformer reads them. For a pipelined
+     * batch, the `pipe` that its body has beside them, and each call's input
+     * as the client sent it, taken here: the transformer can decode an input
+     * in place once it reads it
      */
     const getJSON = memo(
-      async (): Promise<{ inputs: unknown; bodyPipe: unknown }> => {
+      async (): Promise<{
+        inputs: unknown;
+        bodyPipe: unknown;
+        sent: PipelineSentInput[];
+      }> => {
+        const read = (inputs: unknown, bodyPipe: unknown) => ({
+          inputs,
+          bodyPipe,
+          sent: isPipelined
+            ? paths.map((_path, index) =>
+                pipelineSentInput(isObject(inputs) ? inputs[index] : undefined),
+              )
+            : [],
+        });
         if (req.method === 'GET') {
           const queryInput = opts.searchParams.get('input');
-          return {
-            inputs: queryInput ? JSON.parse(queryInput) : undefined,
-            bodyPipe: undefined,
-          };
+          return read(
+            queryInput ? JSON.parse(queryInput) : undefined,
+            undefined,
+          );
         }
         // `httpLink` sends no body when the input is `undefined`, so treat an
         // empty body like a GET without `?input=`
         const body = await req.text();
         const inputs: unknown = body ? JSON.parse(body) : undefined;
-        return {
-          inputs,
-          bodyPipe: isPipelined ? pipeOfBody(inputs) : undefined,
-        };
+        return read(inputs, isPipelined ? pipeOfBody(inputs) : undefined);
       },
     );
     const getInputs = memo(async (): Promise<InputRecord> => {
@@ -284,9 +302,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
               }
               return (await getJSON.read()).bodyPipe;
             },
-            getSentInput: async (index) => {
-              const { inputs } = await getJSON.read();
-              return isObject(inputs) ? inputs[index] : undefined;
+            getInput: async (index) => {
+              const { sent } = await getJSON.read();
+              const decoded = (await getInputs.read())[index];
+              return {
+                // One for every call, as the request was read
+                sent: sent[index] ?? pipelineSentInput(undefined),
+                decoded: pipelineDecodedInput(decoded),
+              };
             },
           },
         }),

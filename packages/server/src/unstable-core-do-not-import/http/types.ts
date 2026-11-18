@@ -11,6 +11,7 @@ import type {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
+import type { PipelineCallInput } from './pipeline/server';
 import type { PipelineLimits } from './pipeline/wire';
 
 /**
@@ -125,10 +126,10 @@ export interface TRPCRequestInfo {
      */
     getPipe: () => Promise<unknown>;
     /**
-     * Reads a call's input as the client sent it, by the call's index: its
-     * JSON, before the transformer reads it
+     * Reads a call's input by the call's index: as the client sent it, taken
+     * before the transformer reads any input, and as the transformer read it
      */
-    getSentInput: (index: number) => Promise<unknown>;
+    getInput: (index: number) => Promise<PipelineCallInput>;
   };
   /**
    * The procedure calls in the request.

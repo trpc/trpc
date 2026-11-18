@@ -27,12 +27,31 @@ function pipelined(opts: {
 function createRouter(opts: {
   /** Which errors the formatter gives a `BigInt` */
   big: (code: TRPCError['code']) => boolean;
+  /**
+   * Whether the formatter gives a `NOT_FOUND` a value that is a string the
+   * first time it is read, and a `BigInt` each time after
+   */
+  changing: boolean;
 }) {
   const t = initTRPC.create({
-    errorFormatter: ({ shape, error }) =>
-      opts.big(error.code)
+    errorFormatter: ({ shape, error }) => {
+      if (opts.changing && error.code === 'NOT_FOUND') {
+        let reads = 0;
+        return {
+          ...shape,
+          data: {
+            ...shape.data,
+            get changing() {
+              reads += 1;
+              return reads === 1 ? 'first' : BigInt(reads);
+            },
+          },
+        };
+      }
+      return opts.big(error.code)
         ? { ...shape, data: { ...shape.data, big: BigInt(1) } }
-        : shape,
+        : shape;
+    },
   });
   return t.router({
     post: t.procedure.query(() => ({
@@ -79,7 +98,7 @@ const authorOfEachTag = {
 
 test('a run whose error JSON cannot carry fails by itself in a stream: the runs after it still arrive', async () => {
   const res = await send({
-    router: createRouter({ big: allButInternal }),
+    router: createRouter({ big: allButInternal, changing: false }),
     paths: 'post,author',
     pipe: { 1: authorOfEachTag },
     streams: true,
@@ -97,7 +116,7 @@ test('a run whose error JSON cannot carry fails by itself in a stream: the runs 
 
 test('a call whose error JSON cannot carry fails as `INTERNAL_SERVER_ERROR` by itself, not the response', async () => {
   const res = await send({
-    router: createRouter({ big: allButInternal }),
+    router: createRouter({ big: allButInternal, changing: false }),
     paths: 'post,author,author',
     pipe: { 1: authorOfPost, 2: authorOfEachTag },
     streams: false,
@@ -119,7 +138,7 @@ test('a call whose error JSON cannot carry fails as `INTERNAL_SERVER_ERROR` by i
 
 test('a call whose error JSON cannot carry fails by itself in a stream: the calls after it still arrive', async () => {
   const res = await send({
-    router: createRouter({ big: allButInternal }),
+    router: createRouter({ big: allButInternal, changing: false }),
     paths: 'post,author,author',
     pipe: { 1: authorOfPost, 2: authorOfEachTag },
     streams: true,
@@ -146,7 +165,7 @@ test.each([
   "keeps `pipeline: 'not-run'` when the error of $name the server refused is one JSON cannot carry",
   async ({ pipe, allowPipelining }) => {
     const res = await send({
-      router: createRouter({ big: allButInternal }),
+      router: createRouter({ big: allButInternal, changing: false }),
       paths: 'post,author',
       pipe,
       streams: false,
@@ -167,7 +186,7 @@ test.each([
 
 test("is the default shape when the formatter's `INTERNAL_SERVER_ERROR` cannot be carried either", async () => {
   const res = await send({
-    router: createRouter({ big: () => true }),
+    router: createRouter({ big: () => true, changing: false }),
     paths: 'post,author',
     pipe: { 1: authorOfPost },
     streams: false,
@@ -180,4 +199,46 @@ test("is the default shape when the formatter's `INTERNAL_SERVER_ERROR` cannot b
     error: { data: { code: 'INTERNAL_SERVER_ERROR', path: 'author' } },
   });
   expect(json[1].error.data).not.toHaveProperty('big');
+});
+
+describe('an error shape that serializes differently each time it is read', () => {
+  const router = createRouter({ big: () => false, changing: true });
+
+  test('is sent as it was checked, and fails no other call', async () => {
+    const res = await send({
+      router,
+      paths: 'post,author,author',
+      pipe: { 1: authorOfPost, 2: authorOfEachTag },
+      streams: false,
+      allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toMatchObject({
+      result: { data: { authorId: 'missing' } },
+    });
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'NOT_FOUND', changing: 'first' } },
+    });
+    expect(json[2]).toMatchObject({
+      items: {
+        0: { error: { data: { code: 'NOT_FOUND', changing: 'first' } } },
+        1: { result: { data: { id: 't1' } } },
+      },
+    });
+  });
+
+  test('is sent as it was checked in a stream, and the calls after it still arrive', async () => {
+    const res = await send({
+      router,
+      paths: 'post,author,author',
+      pipe: { 1: authorOfPost, 2: authorOfEachTag },
+      streams: true,
+      allowPipelining: true,
+    });
+    const text = await res.text();
+
+    expect(text.match(/"changing":"first"/g)).toHaveLength(2);
+    expect(text).toContain('"data":{"id":"t1"}');
+  });
 });

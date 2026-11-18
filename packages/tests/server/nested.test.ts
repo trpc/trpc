@@ -539,6 +539,26 @@ describe.each([
     expect(await author.edges.team).toMatchObject({ id: 'ada' });
   });
 
+  test('a query that asks by itself reads an item of a list as it arrived, not as the caller changed it', async () => {
+    await using ctx = setup({ pipelining: false });
+    const gate = createDeferred();
+    ctx.gates.set('ada', gate.promise);
+
+    const list = await experimental_nested(ctx.client, (q) =>
+      q.post.list.query({ limit: 1 }).items.map((it) => ({
+        // The post's query asks once the author has arrived, after the change
+        author: q.author.byId.query({ id: it.authorId }).with(() => ({
+          post: q.post.bySlug.query({ slug: it.slug }),
+        })),
+      })),
+    );
+    list[0]!.node.slug = 'b';
+    gate.resolve();
+
+    const author = await list[0]!.edges.author;
+    expect(await author.edges.post).toEqual(posts[0]);
+  });
+
   test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
     await using ctx = setup({ pipelining: true });
     class AuthorInput {
@@ -851,6 +871,63 @@ describe('httpBatchStreamLink', () => {
     ]);
     // The caller's items are the ones it gets
     expect(items[0]!.node).toBe(root.node.items[1]);
+  });
+
+  test('the items of a list are the ones that arrived, also when the caller replaces or removes the list before a slow edge maps it', async () => {
+    const { appRouter, gates } = createRouter();
+    const gate = createDeferred<void>();
+    gates.set('slow', gate.promise);
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    // Also when the test fails: the server's slow call must end
+    using _release = makeResource({}, () => gate.resolve());
+    const root = await experimental_nested(ctx.client, (q) =>
+      q.post.pages.query().with((data) => ({
+        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+          pages: data.pages.map((page) =>
+            page.items.map((it) => ({
+              author: q.author.byId.query({ id: it.authorId }),
+            })),
+          ),
+        })),
+      })),
+    );
+    const [first, second] = root.node.pages;
+    root.node.pages = [second!, first!];
+    first!.items = [];
+    gate.resolve();
+
+    const slow = await root.edges.slow;
+    const pages = await slow.edges.pages;
+    expect(
+      await Promise.all(
+        pages.map((page) =>
+          Promise.all(
+            page.map(async (it) => [
+              it.node.authorId,
+              (await it.edges.author).id,
+            ]),
+          ),
+        ),
+      ),
+    ).toEqual([
+      [
+        ['ada', 'ada'],
+        ['bob', 'bob'],
+      ],
+      [['bob', 'bob']],
+    ]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 });
 

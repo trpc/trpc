@@ -16,6 +16,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
+import type { CombinedDataTransformer } from '../transformer';
 import {
   abortSignalsAnyPonyfill,
   isAsyncIterable,
@@ -27,7 +28,7 @@ import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
 import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
-import { isPipelineNotRun, markPipelineNotRun } from './pipeline/wire';
+import { markPipelineNotRun } from './pipeline/wire';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -274,16 +275,56 @@ function isDataStream(v: unknown) {
 type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 
 /**
- * Handles a Fetch API `Request` for a router and returns its `Response`.
- * Every adapter uses it; call it to write your own.
+ * A value of a pipelined batch's response, serialized once: what is checked
+ * is what is sent, so what serializes differently each time, such as a
+ * getter that changes, can't pass and then fail the response
  */
-/** Throws what `JSON.stringify` throws for `value`, such as for a `BigInt` */
-function assertJSON(value: unknown) {
-  JSON.stringify(value);
+interface SentValue {
+  /**
+   * The JSON of what the transformer made of it, parsed: for a response that
+   * doesn't stream, which sends it as it is
+   */
+  sent: unknown;
+  /**
+   * That, read back through the transformer: for a stream, which serializes
+   * what it sends itself, and for `responseMeta`. The transformer's own
+   * making, so it serializes as `sent` again
+   */
+  value: unknown;
+}
+
+/**
+ * `value` serialized once, for a pipelined batch's response. Throws what
+ * serializing it throws, such as for a `BigInt`
+ */
+function sendable(
+  transformer: CombinedDataTransformer['output'],
+  value: unknown,
+): SentValue {
+  const json = JSON.stringify(transformer.serialize(value));
+  if (json === undefined) {
+    return { sent: undefined, value: undefined };
+  }
+  return {
+    sent: JSON.parse(json),
+    value: transformer.deserialize(JSON.parse(json)),
+  };
+}
+
+/** `value` serialized once, or `null` if it can't be */
+function trySendable(
+  transformer: CombinedDataTransformer['output'],
+  value: unknown,
+) {
+  try {
+    return sendable(transformer, value);
+  } catch {
+    return null;
+  }
 }
 
 /** The runs of a call that runs for every item, as far as they are ready */
-type PipelineItemsNode = Awaited<PipelineRuns<unknown>>;
+type PipelineItemsNode = Awaited<PipelineRuns<SentValue>>;
 
 /**
  * The runs of a call for every item, for a response that streams: the items
@@ -327,6 +368,10 @@ async function settledItems(
   return { items };
 }
 
+/**
+ * Handles a Fetch API `Request` for a router and returns its `Response`.
+ * Every adapter uses it; call it to write your own.
+ */
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -456,7 +501,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             calls: info.calls,
             pipe: await pipelined.getPipe(),
             transformer: config.transformer,
-            sentInputOf: pipelined.getSentInput,
+            inputOf: pipelined.getInput,
             limits: pipelined.limits,
             // Every run of a procedure counts towards `maxBatchSize`
             maxRuns:
@@ -468,49 +513,54 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       // After `createContext`, which can't wait for an input that a call fills in
       info.calls = pipeline.calls;
     }
-    /** Whether the response can carry `value`, through the transformer */
-    const canSend = (value: unknown) => {
-      try {
-        assertJSON(config.transformer.output.serialize(value));
-        return true;
-      } catch {
-        return false;
-      }
-    };
     /**
-     * In a pipelined batch, the shape of a call's or a run's error as the
-     * response can carry it. One that JSON can't, such as one an
-     * `errorFormatter` gave a `BigInt`, fails only that call or run, as an
-     * `INTERNAL_SERVER_ERROR`: in the formatter's shape, or in the default one
-     * if JSON can't carry that either. What the server refused before it ran
-     * is still marked so.
+     * In a pipelined batch, a call's or a run's error shape as the response
+     * sends it: serialized once, and that is what is checked and sent. One
+     * that JSON can't carry, such as one an `errorFormatter` gave a `BigInt`,
+     * fails only that call or run, as an `INTERNAL_SERVER_ERROR`: in the
+     * formatter's shape, or in the default one if JSON can't carry that
+     * either. What the server refused before it ran is marked so, in each.
      */
-    const sendableErrorShape = (sending: {
-      shape: unknown;
+    const pipelinedErrorShape = (sending: {
+      error: TRPCError;
+      input: unknown;
       call: TRPCRequestInfo['calls'][number] | undefined;
-    }): unknown => {
-      if (canSend(sending.shape)) {
-        return sending.shape;
+      /** Whether the server refused the call before any of its runs ran */
+      notRun: boolean;
+    }): SentValue => {
+      const path = sending.call?.path;
+      const shapeOf = (error: TRPCError, input: unknown): unknown => {
+        const shape = getErrorShape({
+          config,
+          ctx: ctxManager.valueOrUndefined(),
+          error,
+          input,
+          path,
+          type: sending.call?.procedure?._def.type ?? 'unknown',
+        });
+        return sending.notRun ? markPipelineNotRun(shape) : shape;
+      };
+      const output = config.transformer.output;
+      const sent = trySendable(output, shapeOf(sending.error, sending.input));
+      if (sent) {
+        return sent;
       }
       const error = new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'The error of this call cannot be sent',
       });
-      const path = sending.call?.path;
-      const formatted: unknown = getErrorShape({
-        config,
-        ctx: ctxManager.valueOrUndefined(),
+      const fallback = getDefaultErrorShape({
         error,
-        input: undefined,
         path,
-        type: sending.call?.procedure?._def.type ?? 'unknown',
+        isDev: config.isDev,
       });
-      const fallback = canSend(formatted)
-        ? formatted
-        : getDefaultErrorShape({ error, path, isDev: config.isDev });
-      return isObject(sending.shape) && isPipelineNotRun(sending.shape['data'])
-        ? markPipelineNotRun(fallback)
-        : fallback;
+      return (
+        trySendable(output, shapeOf(error, undefined)) ??
+        sendable(
+          output,
+          sending.notRun ? markPipelineNotRun(fallback) : fallback,
+        )
+      );
     };
 
     interface RPCResultOk {
@@ -614,27 +664,24 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                     });
                   }
                   // What JSON can't carry fails the run, not the response or
-                  // the stream
-                  assertJSON(config.transformer.output.serialize(itemData));
-                  return itemData;
+                  // the stream. Serialized once: what was checked is sent
+                  return sendable(config.transformer.output, itemData).value;
                 },
-                error: (cause, input) => {
-                  const error = getTRPCErrorFromUnknown(cause);
+                error: (failure) => {
+                  const error = getTRPCErrorFromUnknown(failure.cause);
                   opts.onError?.({
                     error,
                     path: call.path,
-                    input,
+                    input: failure.input,
                     ctx: ctxManager.valueOrUndefined(),
                     type: proc._def.type,
                     req: opts.req,
                   });
-                  return getErrorShape({
-                    config,
-                    ctx: ctxManager.valueOrUndefined(),
+                  return pipelinedErrorShape({
                     error,
-                    input,
-                    path: call.path,
-                    type: proc._def.type,
+                    input: failure.input,
+                    call,
+                    notRun: failure.notRun,
                   });
                 },
               })
@@ -918,28 +965,27 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const call = info.calls[index];
 
           if (error) {
-            const shape = getErrorShape({
-              config,
-              ctx: ctxManager.valueOrUndefined(),
-              error,
-              input: call!.result(),
-              path: call!.path,
-              type: call!.procedure?._def.type ?? 'unknown',
-            });
             return {
               error: pipeline
-                ? sendableErrorShape({
-                    shape: pipeline.errorShape(error, shape),
+                ? pipelinedErrorShape({
+                    error,
+                    input: call!.result(),
                     call,
-                  })
-                : shape,
+                    notRun: pipeline.isNotRun(error),
+                  }).value
+                : getErrorShape({
+                    config,
+                    ctx: ctxManager.valueOrUndefined(),
+                    error,
+                    input: call!.result(),
+                    path: call!.path,
+                    type: call!.procedure?._def.type ?? 'unknown',
+                  }),
             };
           }
           if (result.items) {
             return streamedItems(result.items, (outcome) =>
-              'error' in outcome
-                ? { error: sendableErrorShape({ shape: outcome.error, call }) }
-                : outcome,
+              'error' in outcome ? { error: outcome.error.value } : outcome,
             );
           }
 
@@ -1006,7 +1052,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
-      (res, index): RPCResult => {
+      (res): RPCResult => {
         const [error, result] = res;
         if (error) {
           return res;
@@ -1022,81 +1068,102 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             undefined,
           ];
         }
-        if (pipeline && !result.items) {
-          // In a pipelined batch, what JSON can't carry fails the call, not
-          // the response. A call for every item has no data of its own: each
-          // run's was checked as it ran
-          try {
-            assertJSON(config.transformer.output.serialize(result.data));
-          } catch (cause) {
-            const error = getTRPCErrorFromUnknown(cause);
-            const call = info.calls[index]!;
-            opts.onError?.({
-              error,
-              path: call.path,
-              input: call.result(),
-              ctx: ctxManager.valueOrUndefined(),
-              type: call.procedure?._def.type ?? 'unknown',
-              req: opts.req,
-            });
-            return [error, undefined];
-          }
-        }
         return res;
       },
     );
-    // The runs of each call for every item, once all of them are done: as
-    // they are, and with the transformer's output of each run's outcome
-    const settled = await Promise.all(
-      results.map(async ([error, result], index) => {
-        if (error || !result.items) {
-          return null;
-        }
-        const serialize = (value: unknown) =>
-          config.transformer.output.serialize(value);
-        const call = info.calls[index];
-        return {
-          json: await settledItems(result.items, (outcome) => outcome),
-          sent: await settledItems(result.items, (outcome) =>
-            'error' in outcome
-              ? {
-                  error: serialize(
-                    sendableErrorShape({ shape: outcome.error, call }),
-                  ),
-                }
-              : { result: { data: serialize(outcome.result.data) } },
-          ),
-        };
-      }),
-    );
+    /**
+     * In a pipelined batch, each call's response as it is sent, serialized
+     * once, and as `responseMeta` gets it. What JSON can't carry fails the
+     * call, not the response
+     */
+    const pipelinedResponses = pipeline
+      ? await Promise.all(
+          results.map(async (res, index) => {
+            const call = info.calls[index]!;
+            const errorOf = (error: TRPCError) => {
+              const shape = pipelinedErrorShape({
+                error,
+                input: call.result(),
+                call,
+                notRun: pipeline.isNotRun(error),
+              });
+              return {
+                error,
+                meta: { error: shape.value },
+                sent: { error: shape.sent },
+              };
+            };
+            const [error, result] = res;
+            if (error) {
+              return errorOf(error);
+            }
+            if (result.items) {
+              // A call for every item has no data of its own: each run's was
+              // serialized as it ran. `responseMeta` gets a result, with the
+              // runs as its data, and the response has them in place of it
+              const serialize = (value: unknown) =>
+                config.transformer.output.serialize(value);
+              return {
+                error: undefined,
+                meta: {
+                  result: {
+                    data: await settledItems(result.items, (outcome) =>
+                      'error' in outcome
+                        ? { error: outcome.error.value }
+                        : outcome,
+                    ),
+                  },
+                },
+                sent: await settledItems(result.items, (outcome) =>
+                  'error' in outcome
+                    ? { error: outcome.error.sent }
+                    : { result: { data: serialize(outcome.result.data) } },
+                ),
+              };
+            }
+            let data: SentValue;
+            try {
+              data = sendable(config.transformer.output, result.data);
+            } catch (cause) {
+              const error = getTRPCErrorFromUnknown(cause);
+              opts.onError?.({
+                error,
+                path: call.path,
+                input: call.result(),
+                ctx: ctxManager.valueOrUndefined(),
+                type: call.procedure?._def.type ?? 'unknown',
+                req: opts.req,
+              });
+              return errorOf(error);
+            }
+            return {
+              error: undefined,
+              meta: { result: { data: data.value } },
+              sent: { result: { data: data.sent } },
+            };
+          }),
+        )
+      : null;
     const resultAsRPCResponse = results.map(
       (
         [error, result],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
-        const call = info.calls[index]!;
-        const items = settled[index];
-        if (items) {
-          // What `responseMeta` gets: a result, with the runs as its data.
-          // The response has the runs in place of it, as `{ items }`
-          return { result: { data: items.json } };
+        const piped = pipelinedResponses?.[index];
+        if (piped) {
+          return piped.meta;
         }
+        const call = info.calls[index]!;
         if (error) {
-          const shape = getErrorShape({
-            config,
-            ctx: ctxManager.valueOrUndefined(),
-            error,
-            input: call.result(),
-            path: call.path,
-            type: call.procedure?._def.type ?? 'unknown',
-          });
           return {
-            error: pipeline
-              ? sendableErrorShape({
-                  shape: pipeline.errorShape(error, shape),
-                  call,
-                })
-              : shape,
+            error: getErrorShape({
+              config,
+              ctx: ctxManager.valueOrUndefined(),
+              error,
+              input: call.result(),
+              path: call.path,
+              type: call.procedure?._def.type ?? 'unknown',
+            }),
           };
         }
         return {
@@ -1105,7 +1172,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
 
-    const errors = results.map(([error]) => error);
+    const errors = pipelinedResponses
+      ? pipelinedResponses.map((it) => it.error)
+      : results.map(([error]) => error);
 
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
@@ -1120,7 +1189,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       JSON.stringify(
         resultAsRPCResponse.map(
           (response, index) =>
-            settled[index]?.sent ?? transformTRPCResponse(config, response),
+            pipelinedResponses?.[index]?.sent ??
+            transformTRPCResponse(config, response),
         ),
       ),
       {

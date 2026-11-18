@@ -3073,6 +3073,105 @@ describe('a call the server refuses before any of its runs ran', () => {
       },
     });
   });
+
+  test('is marked when the input transformer decodes its input in place: the server checks what the client sent, not what was decoded from it', async () => {
+    const decodesInPlace = initTRPC.create({
+      transformer: {
+        serialize: (value: unknown) => value,
+        // Makes a `BigInt` of `big`, in the input the request has
+        deserialize: (value: unknown) => {
+          if (isObject(value) && typeof value['big'] === 'string') {
+            value['big'] = BigInt(value['big']);
+          }
+          return value;
+        },
+      },
+    });
+    const ran = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request(
+        `http://localhost/trpc/list,author?batch=pipeline&input=${encodeURIComponent(
+          JSON.stringify({ 1: { big: '1' } }),
+        )}&pipe=${encodeURIComponent(
+          JSON.stringify({
+            1: { reads: [{ to: ['id'], from: 0, path: ['items', '0', 'id'] }] },
+          }),
+        )}`,
+      ),
+      router: decodesInPlace.router({
+        list: decodesInPlace.procedure.query(() => ({
+          items: [{ id: 'ada' }],
+        })),
+        author: decodesInPlace.procedure
+          .input((value) => value)
+          .query((opts) => {
+            ran(opts.input);
+            return 'ran';
+          }),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toEqual({
+      result: { data: { items: [{ id: 'ada' }] } },
+    });
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+    expect(ran).not.toHaveBeenCalled();
+  });
+});
+
+describe('the calls that read the same failed call or refused value', () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    list: t.procedure.query(() => ({ items: [{ id: 'ada' }] })),
+    failing: t.procedure.query(() => {
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }),
+    echo: t.procedure.input(z.unknown()).query((opts) => opts.input),
+  });
+
+  test.each([
+    {
+      name: 'a failed call',
+      paths: 'failing,echo,echo',
+      path: ['id'],
+      code: 'PRECONDITION_FAILED',
+    },
+    {
+      name: 'a value `allowWholeValues` refuses',
+      paths: 'list,echo,echo',
+      path: ['items', null, 'id'],
+      code: 'BAD_REQUEST',
+    },
+  ])(
+    'each fail with an error of their own, for $name',
+    async ({ paths, path, code }) => {
+      const errors: unknown[] = [];
+      const read = { reads: [{ to: ['id'], from: 0, path }] };
+      const res = await fetchRequestHandler({
+        endpoint: '/trpc',
+        req: pipelinedGet({ paths, pipe: { 1: read, 2: read } }),
+        router,
+        experimental_allowPipelining: true,
+        onError: (opts) => {
+          if (opts.path === 'echo') {
+            errors.push(opts.error);
+          }
+        },
+      });
+      const json = await res.json();
+
+      expect(json[1]).toMatchObject({ error: { data: { code } } });
+      expect(json[2]).toMatchObject({ error: { data: { code } } });
+      expect(errors).toHaveLength(2);
+      // One call's error is not the other's, for what `onError` does with it
+      expect(errors[0]).not.toBe(errors[1]);
+    },
+  );
 });
 
 describe.each([
