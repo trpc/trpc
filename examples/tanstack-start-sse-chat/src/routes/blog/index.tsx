@@ -34,6 +34,7 @@ import { ChevronRightIcon } from 'lucide-react';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
 import { useTRPC, type TRPC } from '~/lib/trpc';
+import { DevNote, DevNoteText } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
 
 /** Every query the list needs. The loader waits for none of them */
@@ -86,6 +87,11 @@ function BlogIndex() {
       <Suspense
         fallback={
           <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted-foreground [&_code]:font-mono">
+              <span className="font-medium">Suspense: </span>
+              waiting for <code>blog.posts</code>. The loader started it, and an
+              author for every post it has, in one request.
+            </p>
             {Array.from({ length: 10 }, (_, index) => (
               <Skeleton key={index} className="h-14 w-full" />
             ))}
@@ -164,6 +170,24 @@ function PostList(
 
   return (
     <>
+      <DevNote label="1 request · an author for every post">
+        <p>
+          The list’s first page and an author for every post on it are one
+          request: <code>blog.posts,blog.authorById</code>.
+        </p>
+        <p>
+          <code>blog.authorById</code> is one call, with{' '}
+          <code>
+            each: {'{'} from: 0, path: ["items"] {'}'}
+          </code>
+          : the server runs it for every post it found, as soon as the page is
+          there.
+        </p>
+        <p>
+          Scrolling loads the next page and its authors in one request too.
+          Hover an author for theirs.
+        </p>
+      </DevNote>
       <ItemGroup>
         {posts.map((post) => (
           <Item
@@ -174,7 +198,17 @@ function PostList(
             <ItemContent>
               <ItemTitle>{post.title}</ItemTitle>
               <ItemDescription>
-                <Suspense fallback="…">
+                <Suspense
+                  fallback={
+                    <DevNoteText text="…">
+                      <p>
+                        <span className="font-medium">Suspense:</span> waiting
+                        for this post’s run of <code>blog.authorById</code>, in
+                        the list’s request.
+                      </p>
+                    </DevNoteText>
+                  }
+                >
                   {/* The post gives the handle of its author's query, also for
                       a post on a page that loaded after the loader ran */}
                   <AuthorName
@@ -206,5 +240,20 @@ function AuthorName(
 ) {
   const trpc = useTRPC();
   const authorQuery = useSuspenseQuery(fromHandle(trpc, props.author));
-  return authorQuery.data.name;
+  return (
+    <DevNoteText text={authorQuery.data.name}>
+      <p>
+        <code>
+          blog.authorById({'{'} id: post.authorId {'}'})
+        </code>
+        , for this post. Its id is in the post, so it waits for the list: a
+        waterfall, which ran on the server.
+      </p>
+      <p>
+        It is one run of a call for every post, in the list’s request: no
+        request for each row. With <code>httpBatchStreamLink</code>, each run
+        arrives by itself, as soon as it is ready.
+      </p>
+    </DevNoteText>
+  );
 }

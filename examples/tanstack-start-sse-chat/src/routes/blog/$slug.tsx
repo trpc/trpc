@@ -5,7 +5,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@shared/ui/components/empty';
-import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
@@ -27,6 +26,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { AuthorCard } from './-components/author-card';
+import { DevFallback, DevNote } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
 
 /**
@@ -84,10 +84,25 @@ function PostPage() {
   return (
     <>
       <AllPostsLink />
-      <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+      <Suspense
+        fallback={
+          <DevFallback className="h-40 w-full">
+            waiting for <code>blog.postBySlug</code>. The loader started it from
+            the URL, and didn’t wait for it.
+          </DevFallback>
+        }
+      >
         <Post post={handles.post} />
       </Suspense>
-      <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+      <Suspense
+        fallback={
+          <DevFallback className="h-48 w-full">
+            waiting for the post, then <code>blog.authorById</code>. The
+            author’s id is in the post: the server reads it there, in the same
+            request.
+          </DevFallback>
+        }
+      >
         <AuthorCard handles={handles} />
       </Suspense>
       <OneRequestHint>
@@ -143,6 +158,20 @@ function Post(
   const post = postQuery.data;
   return (
     <article className="flex flex-col gap-4">
+      <DevNote label="step 1 · blog.postBySlug">
+        <p>
+          <code>
+            blog.postBySlug({'{'} slug {'}'})
+          </code>
+          . Its input is in the URL, so the loader starts it at once, without
+          waiting for it.
+        </p>
+        <p>
+          It is the first call of the page’s one request:{' '}
+          <code>blog.postBySlug,blog.authorById,blog.posts</code>. The other two
+          need its data, and the server runs them as soon as it has it.
+        </p>
+      </DevNote>
       <h1 className="text-3xl font-bold tracking-tight">{post.title}</h1>
       <p className="text-sm text-muted-foreground">
         {format(post.publishedAt, 'd MMMM yyyy')}
