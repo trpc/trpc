@@ -1,5 +1,3 @@
-import type * as trpcNext from '@trpc/server/adapters/next';
-
 interface CreateContextOptions {
   // session: Session | null
 }
@@ -15,11 +13,12 @@ export async function createContextInner(_opts: CreateContextOptions) {
 export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
- * Creates context for an incoming request
+ * Creates context for an incoming request, from the route handler or a
+ * server component
  * @see https://trpc.io/docs/v11/context
  */
-export async function createContext(
-  opts: trpcNext.CreateNextContextOptions,
-): Promise<Context> {
+export async function createContext(_opts: {
+  headers: Headers;
+}): Promise<Context> {
   return await createContextInner({});
 }
