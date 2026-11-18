@@ -1302,6 +1302,28 @@ describe('the `pipe` search param', () => {
     );
   });
 
+  test('a batch with more calls than `maxRuns` is a bad request, and none of it runs', async () => {
+    const batch = async (count: number) =>
+      await get(
+        `input=${encodeURIComponent('{}')}&pipe=${encodeURIComponent('{}')}`,
+        {
+          path: Array.from({ length: count }, () => 'lists').join(','),
+          allowPipelining: { maxRuns: 2 },
+        },
+      );
+    const within = await batch(2);
+    expect(within.status).toBe(200);
+    expect(within.json).toHaveLength(2);
+
+    const over = await batch(3);
+    expect(over.status).toBe(400);
+    expect(over.json).toMatchObject({
+      error: {
+        message: 'The batch has 3 calls, more than `maxRuns` (2) allows',
+      },
+    });
+  });
+
   test('a call for every item counts each item towards `maxBatchSize`', async () => {
     async function each(maxBatchSize: number) {
       const { appRouter, calls } = createRouter('none');

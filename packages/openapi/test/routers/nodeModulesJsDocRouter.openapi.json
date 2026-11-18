@@ -250,6 +250,10 @@
           "allowWholeValues": {
             "type": "boolean",
             "description": "Whether a value a call reads can be an object or an array"
+          },
+          "maxRuns": {
+            "type": "number",
+            "description": "The most runs a batch has: each of its calls, and a call for every item\nonce for each item. `maxBatchSize` caps them too, if it is lower"
           }
         },
         "required": [
@@ -257,7 +261,8 @@
           "maxReadsPerCall",
           "maxFillSize",
           "maxDepth",
-          "allowWholeValues"
+          "allowWholeValues",
+          "maxRuns"
         ],
         "additionalProperties": false
       },

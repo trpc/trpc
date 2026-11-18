@@ -548,6 +548,7 @@ The most times a request runs a procedure: 100 by default. Each call is a run, a
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load an entry for every item of long lists.
 - **`maxBatchSize` caps it too**, if it is lower.
+- **A request with more calls than it allows** fails as a whole, with a `BAD_REQUEST`, as one over `maxBatchSize` does. Set the link's `maxItems` to it, or lower.
 
 #### How they add up {#limits-together}
 
@@ -1080,7 +1081,7 @@ Use this page's way when you'd rather keep the procedures small.
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
+- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
 - **Set the link's `maxItems` to it, or lower.** A request with more calls than `maxBatchSize` fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
 - **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call that would go over one is refused: it fails, or its items each ask by themselves.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.

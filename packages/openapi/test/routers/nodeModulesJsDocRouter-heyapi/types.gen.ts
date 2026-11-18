@@ -69,6 +69,11 @@ export type PipelineLimits = {
    * Whether a value a call reads can be an object or an array
    */
   allowWholeValues: boolean;
+  /**
+   * The most runs a batch has: each of its calls, and a call for every item
+   * once for each item. `maxBatchSize` caps them too, if it is lower
+   */
+  maxRuns: number;
 };
 
 export type TrpcRequestInfoProcedureCall = {
