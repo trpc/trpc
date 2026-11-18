@@ -14,7 +14,7 @@ A page often needs one answer before it can ask the next question.
 - The post has an `authorId`. The page needs the **author**.
 - The author has a `teamId`. The page needs **more posts from the author's team**.
 
-Each query waits for the one before it: they form a chain. TanStack Query calls these [dependent queries](https://tanstack.com/query/latest/docs/framework/react/guides/dependent-queries). That is three round trips, one after another. This is a waterfall, and it makes pages slow.
+Each query waits for the one before it. TanStack Query calls these [dependent queries](https://tanstack.com/query/latest/docs/framework/react/guides/dependent-queries). Here they are **nested queries**: the author is nested under the post's data, and the team's posts under the author's. Loaded one by one, that is three round trips, one after another. This is a waterfall, and it makes pages slow.
 
 The trips are what cost. The server's work takes the same time on any connection. The trip there and back does not: on a slow connection it is most of the wait, and this page makes three.
 
@@ -305,7 +305,7 @@ Then [turn on one request](#turn-on). Without it, the same code works, with one 
 
 The browser can't ask for the author before it has the post. It doesn't know the id.
 
-It doesn't have to. It can send every call at once, and leave a blank where each id goes:
+It doesn't have to. It can send the post's query with the others nested under it, each with a blank where its id goes:
 
 - "Get the post with this slug."
 - "Get the author. Take the `id` from the post's `authorId`."
@@ -318,7 +318,7 @@ The server does the rest.
 3. It runs the second call, and so on.
 4. It sends each result back as soon as it is ready.
 
-No result has to travel to the browser and back before the next call can start. The server still does the same work. The page just stops paying for a trip between each step. This is called **pipelining**, and the two options below turn it on.
+No result has to travel to the browser and back before the next call can start. The server still does the same work. The page just stops paying for a trip between each step. The server option that makes nested queries one request is **pipelining**, and the two options below turn it on.
 
 ### Turn it on {#turn-on}
 
@@ -369,32 +369,75 @@ export const client = createTRPCClient<AppRouter>({
 
 ### What goes over the wire {#wire}
 
-The post page above makes this request:
+A request carries a **query tree** for each top-level call: the queries nested under it.
+
+- **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, with its procedure's `path`, its `input` and its `reads`.
+- **A key** says where a follow-up is in its tree. A follow-up's own key is a name, such as `author.byId`.
+- **A list key** ends in `[]`, such as `items[]`. What is under it runs once for every item of that list, in the data it is under. `pages[].items[]` is a list of lists. A `.`, `[` or `]` in a property's name is escaped with `\`.
+- **A read** fills in a part of a follow-up's input. `to` is where it goes, and `data` is where it comes from in the data of the query above, or `item` in the item a run is for. `up` reaches a query further up: 2 is the one above that.
+
+A chain, such as `post.bySlug` → `author.byId` → `post.list`, is a tree with one branch. A tree can also branch, and run once for every item of a list.
+
+The post page above makes this request. Its path and inputs are those of the top-level calls, as in any batch, and its `tree` has the follow-ups:
 
 ```http
-GET /post.bySlug,author.byId,post.list?batch=pipeline&input=…&pipe=…
+GET /post.bySlug?batch=tree&input={"0":{"slug":"hello"}}&tree=…
 ```
 
-Its `input`, decoded, has an input for every call, by index:
+With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), the tree is in the body, beside the inputs:
 
-```json
-{ "0": { "slug": "hello" }, "1": {}, "2": { "direction": "forward" } }
-```
+```http
+POST /post.bySlug?batch=tree
+Content-Type: application/json
 
-Its `pipe`, decoded, has the blanks of every call that has any:
-
-```json
 {
-  "1": [{ "to": ["id"], "from": 0, "path": ["authorId"] }],
-  "2": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }]
+  "0": { "slug": "hello" },
+  "tree": {
+    "0": {
+      "author.byId": {
+        "path": "author.byId",
+        "input": {},
+        "reads": [{ "to": ["id"], "data": ["authorId"] }],
+        "children": {
+          "post.list": {
+            "path": "post.list",
+            "input": { "direction": "forward" },
+            "reads": [{ "to": ["teamId"], "data": ["teamId"] }]
+          }
+        }
+      }
+    }
+  }
 }
 ```
 
-- **`pipe`** lists the blanks: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
-- **Every call still validates its input** and runs its middleware, as if the browser had sent it.
-- **The server only reads what it sends back anyway**: the data of a call in the same request, as the client gets it.
-- **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the first call's data, as the server did.
-- **Only a request with a blank is sent this way**, as `batch=pipeline`. Every other request is sent as it always was, also with the options on.
+The response has the result of each follow-up in the same place, under `children`:
+
+```json
+[
+  {
+    "result": { "data": { "slug": "hello", "authorId": "u1", "tags": [] } },
+    "children": {
+      "author.byId": {
+        "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } },
+        "children": {
+          "post.list": {
+            "result": { "data": { "items": [], "nextCursor": null } }
+          }
+        }
+      }
+    }
+  }
+]
+```
+
+- **Every follow-up still validates its input** and runs its middleware, as if the browser had sent it.
+- **The server only reads what it sends back anyway**: the data of the queries a follow-up is nested under, as the client gets it.
+- **With `httpBatchStreamLink`, each follow-up arrives as soon as it is ready**, before the ones under it. Each part of the tree is a value of its own in the stream, a list's items too, so nothing waits for the slowest query in the tree.
+- **A follow-up whose query failed doesn't run.** Each key under that query gets an error with the code `PRECONDITION_FAILED`. A run for one item fails by itself.
+- **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the data above, as the server did.
+- **A follow-up reads only the queries it is nested under.** One that reads two queries, neither nested under the other, can't sit in one tree. See [When it isn't one request](#fallback).
+- **Only a request with a follow-up is sent this way**, as `batch=tree`. Every other request is sent as it always was, also with the options on.
 
 ### What your links see {#links}
 
@@ -415,7 +458,8 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **The entry it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **The proxy calls the router directly**, as in a server component. There is no request to save.
 - **It doesn't fit in the request** of the entry it reads, within `maxURLLength` and `maxItems`.
-- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, or is more than `maxDepth` calls deep in its chain, 3 by default.
+- **It reads two queries, neither nested under the other**, such as two top-level queries. A follow-up sits under one query, so it goes in a request of its own once their data is there.
+- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, or would nest more than `maxDepth` deep, 3 by default.
 - **The request failed as a whole**, such as on a network error. If a link sends it again, the entry asks by itself.
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
@@ -438,7 +482,7 @@ Pipelining is not enabled on the server. Set `experimental_allowPipelining: true
 
 ### Limits {#limits}
 
-A call that reads another's data makes the server copy that data into its input. `true` turns pipelining on with limits that keep that small. An object sets them, and any you leave out keep their default:
+A follow-up makes the server copy the data it reads into its input. `true` turns pipelining on with limits that keep that small. An object sets them, and any you leave out keep their default:
 
 ```ts twoslash title='server.ts'
 // @include: dq-router
@@ -492,36 +536,37 @@ A call that would go over a limit is refused, with a `BAD_REQUEST` that names th
 This call is nested 4 deep, more than `maxDepth` (3) allows
 ```
 
-- **The rest of the request runs.** Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
-- **The query of that call gets the error**, as it would get the procedure's own. A call for every item runs for no item, and its items each ask by themselves.
-- **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
+- **The rest of the request runs.** Only that follow-up fails, and each key under it gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
+- **The follow-up's query gets the error**, as it would get the procedure's own. A follow-up for every item runs for no item, and its items each ask by themselves.
+- **A follow-up that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
+- **Each limit applies to each follow-up**, and `maxFillSize` to the whole request.
 
 #### What a value is {#limit-terms}
 
-A **value** is one place in an input that the server fills in from another call's data: `{ id: experimental_dataOf(post).authorId }` reads one. A call for every item reads its values again for every item.
+A **value** is what one read fills in: `{ id: experimental_dataOf(post).authorId }` reads one. A follow-up for every item reads its values again for every item.
 
 **Characters of JSON** are how long a value is as JSON, as JavaScript counts a string: `"abc"` is 5, with its quotes, `1024` is 4 and `null` is 4. Escapes count, so a line break in a string is 2. A character is up to 3 bytes in UTF-8, and an emoji counts as 2.
 
 #### `maxDepth` {#limit-depth}
 
-The most calls in a chain, 3 by default. A query that reads nothing is 1, and a call is 1 more than the deepest call it reads. `post.bySlug` → `author.byId` → `post.list` is 3: the post page above.
+`maxDepth` is how deep queries nest, 3 by default. A top-level query is 1, and a follow-up is 1 more than the query it is nested under. That chain is 3: `post.bySlug` → `author.byId` → `post.list`, the post page above. A list key adds no depth.
 
 - **Why 3:** a page rarely needs more steps than that, and every step waits for the one before it.
-- **Raise it** for a page that really chains more, and set the link's `maxDepth` to the same.
+- **Raise it** for a page whose queries really nest deeper, and set the link's `maxDepth` to the same.
 - **Lower it to 2** to allow one step: the author of a post, but not the author's team.
 
 #### `maxReadsPerCall` {#limit-reads}
 
-The most values one call reads, 16 by default.
+The most values one follow-up reads, 16 by default.
 
 - **Why 16:** an input usually reads one or two values, such as an id and a cursor.
 - **Raise it** for an input that is built from many parts of other data, and set the link's `maxReadsPerCall` to the same.
 
 #### `maxValueLength` {#limit-value-length}
 
-The longest value a call reads, in characters of JSON: 1,024 by default. Every value is measured before it is written into an input, the value of each item too.
+The longest value a follow-up reads, in characters of JSON: 1,024 by default. Every value is measured before it is written into an input, the value of each item too.
 
-- **Why 1,024:** what a call reads is normally an id, a slug or a cursor, which are much shorter.
+- **Why 1,024:** what a follow-up reads is normally an id, a slug or a cursor, which are much shorter.
 - **Raise it** to read longer text or, with `allowWholeValues`, objects and lists.
 
 #### `allowWholeValues` {#limit-whole-values}
@@ -530,24 +575,24 @@ Whether a value can be an object or a list: `false` by default. Without it, a va
 
 - **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
 - **Set it** to read a list made with `.map()`, such as `ids: experimental_dataOf(post).tags.map((tag) => tag.id)`, or a whole result, such as `experimental_dataOf(post).author`. A value that a transformer makes, such as a `Date`, is an object too.
-- **Not needed for a list that an entry for every item reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
+- **Not needed for the list an entry for every item runs over.** That list is a list key in the tree, and the server reads only the values of each item, such as `post.authorId`.
 
 #### `maxFillSize` {#limit-fill-size}
 
-The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call for every item, it counts the whole input of every run too, as each run gets its own copy.
+The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a follow-up for every item, it counts the whole input of every run too, as each run gets its own copy.
 
-- **Why 100,000:** the other limits keep a call small. This one keeps the whole request small, as it can have many calls, and a call can run for many items.
+- **Why 100,000:** the other limits keep a follow-up small. This one keeps the whole request small, as its trees can have many follow-ups, and a follow-up can run for many items.
 - **Raise it** with `maxValueLength` or `allowWholeValues`, if a request of yours fills in more.
 
 #### How they add up {#limits-together}
 
-At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
+At most, a follow-up for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
 
-Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) too. It caps how many calls a request has, and how many times they run. These limits cap how much each one carries.
+Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) too. In a query tree, it counts every run: each top-level call, and each follow-up once for every item it runs for. A follow-up whose runs would go over it is refused. These limits cap how much each run carries.
 
 #### Like a GraphQL query cost limit {#limits-graphql}
 
-A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxBatchSize` caps the calls and runs, and the others cap what each call carries. Each is a plain count, with no cost to give to every procedure. A call over one is refused by itself, not the whole request.
+A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxBatchSize` caps the calls and runs, and the others cap what each follow-up carries. Each is a plain count, with no cost to give to every procedure. A follow-up over one is refused by itself, not the whole request.
 
 ## The load doesn't wait {#without-waiting}
 
@@ -752,23 +797,44 @@ For a fetch or ensure entry, `data` has a list with every item's data.
 The list's handle knows what its items load. So the options that `fromHandle(trpc, handles.posts)` gives load the items' queries with every fetch of the list: the next page, or a refetch after an invalidation.
 
 ```http
-POST /post.list,author.byId?batch=pipeline
+POST /post.list?batch=tree
 Content-Type: application/json
 
 {
   "0": { "cursor": 10, "direction": "forward" },
-  "1": {},
-  "pipe": {
-    "1": [
-      {
-        "to": ["id"],
-        "from": 0,
-        "path": ["items", null, "authorId"],
-        "each": true
+  "tree": {
+    "0": {
+      "items[]": {
+        "author.byId": {
+          "path": "author.byId",
+          "input": {},
+          "reads": [{ "to": ["id"], "item": ["authorId"] }]
+        }
       }
-    ]
+    }
   }
 }
+```
+
+The response has the page, and an author for every item of it:
+
+```json
+[
+  {
+    "result": {
+      "data": { "items": [{ "slug": "next", "authorId": "u2" }], "nextCursor": 20 }
+    },
+    "children": {
+      "items[]": [
+        {
+          "author.byId": {
+            "result": { "data": { "id": "u2", "name": "Sam", "teamId": "t1" } }
+          }
+        }
+      ]
+    }
+  }
+]
 ```
 
 - **The component doesn't change.** `fetchNextPage()` of the query above makes this request, and each new row finds its author in the cache.
@@ -1068,9 +1134,9 @@ Use this page's way when you'd rather keep the procedures small.
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
+- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A follow-up for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of every query in a request. Without it, there is no limit.
 - **Set the link's `maxItems` to it, or lower.** A request with more calls than `maxBatchSize` fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
-- **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call that would go over one is refused: it fails, or its items each ask by themselves.
+- **Keep the [limits](#limits) low.** By default a follow-up reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, queries nest 3 deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a follow-up that would go over one is refused: it fails, or its items each ask by themselves.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
@@ -1084,4 +1150,4 @@ Yes, if the component reads the list through its handle. See [When the list is f
 
 #### What does `createContext` see? {#create-context}
 
-While `createContext` runs, `info.calls[i].getRawInput()` of a call that reads from another has the input as the client sent it, without the parts the server fills in. The procedure gets the filled-in input.
+`info.calls` has the top-level calls, as in any batch. A follow-up isn't in it: it runs later, with the same context. In a follow-up's middleware, `getRawInput()` gives its filled-in input, as if the client had sent it, and its `batchIndex` is that of the top-level call it is under.

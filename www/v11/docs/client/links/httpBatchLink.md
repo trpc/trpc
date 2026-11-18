@@ -222,7 +222,7 @@ const client = createTRPCClient<AppRouter>({
 
 ## Pipelining (experimental) {#pipelining}
 
-Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
+Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query nested under the one it needs, in that query's request, and the server fills in its input. A request then carries a [query tree](/docs/client/tanstack-react-query/nested-queries#wire) for each of its calls. It costs no extra round trip. `loadHandles()` uses it for entries built with `experimental_dataOf()`.
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
@@ -253,7 +253,9 @@ const client = createTRPCClient<AppRouter>({
 - You pass it in, so only an app that uses it has its code in its bundle.
 
 - The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
-- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to the server's, 16 and 3 by default, and a call that would go over them waits for the data it reads and goes in a request of its own.
+- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep queries nest, how many values a follow-up reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to the server's, 16 and 3 by default, and a follow-up that would go over them waits for the data it reads and goes in a request of its own.
+- `maxBatchSize` counts every run in a query tree: each call, and each follow-up once for every item it runs for.
+- A query that reads two queries, neither nested under the other, can't sit in one tree. It goes in a request of its own once their data is there.
 - Other requests are sent as they are without the option.
 - A query that is sent this way isn't an operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/nested-queries#links).
 - `httpBatchStreamLink` takes the same option, and sends each result back when it is ready.
