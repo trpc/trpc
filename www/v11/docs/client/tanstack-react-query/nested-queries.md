@@ -463,7 +463,7 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **The entry it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **The proxy calls the router directly**, as in a server component. There is no request to save.
 - **It doesn't fit in the request** of the entry it reads, within `maxURLLength` and `maxItems`.
-- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, or is more than `maxDepth` calls deep in its chain, 3 by default.
+- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, is more than `maxDepth` calls deep in its chain, 3 by default, or would make the request more than `maxRuns` calls, 100 by default.
 - **The request failed as a whole**, such as on a network error. If a link sends it again, the entry asks by itself.
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
@@ -495,7 +495,7 @@ createHTTPServer({
 }).listen(3000);
 ```
 
-The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall` and `maxDepth`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower:
+The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower:
 
 ```ts twoslash title='client.ts'
 // @include: dq-router
@@ -515,6 +515,7 @@ export const client = createTRPCClient<AppRouter>({
       experimental_pipelining: experimental_pipelining({
         maxReadsPerCall: 16,
         maxDepth: 4,
+        maxRuns: 100,
       }),
     }),
   ],
@@ -584,7 +585,7 @@ The most times a request runs a procedure: 100 by default. Each call is a run, a
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load an entry for every item of long lists.
 - **`maxBatchSize` caps it too**, if it is lower.
-- **A request with more calls than it allows** fails as a whole, with a `BAD_REQUEST`, as one over `maxBatchSize` does. Set the link's `maxItems` to it or lower, and to `maxBatchSize` or lower if that is set too.
+- **A request with more calls than it allows** fails as a whole, with a `BAD_REQUEST`, as one over `maxBatchSize` does. The link adds no call that would go over its own `maxRuns`, 100 by default: set it to the server's or lower, and the link's `maxItems` to `maxBatchSize` or lower if that is set.
 
 #### How they add up {#limits-together}
 
@@ -1114,7 +1115,7 @@ Use this page's way when you'd rather keep the procedures small.
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
-- **Set the link's `maxItems` to it, or lower**, and to `maxRuns` or lower: 100 by default. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items each ask by themselves.
+- **Set the link's `maxItems` to it, or lower**, and the link's `maxRuns` to the server's, if you change it. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items each ask by themselves.
 - **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain of reads is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call or a run that would go over one is refused, and fails by itself.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.

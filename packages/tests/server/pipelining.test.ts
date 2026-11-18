@@ -6,6 +6,7 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
   loggerLink,
+  retryLink,
 } from '@trpc/client';
 import type { experimental_PipeliningLinkOptions } from '@trpc/client';
 import type { PipelineSource } from '@trpc/client/unstable-internals';
@@ -17,6 +18,7 @@ import {
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { observable } from '@trpc/server/observable';
 import type {
   experimental_PipeliningOptions,
   PipelineCallReads,
@@ -543,6 +545,41 @@ describe.each([
     expect(
       ctx.onRequestSpy.mock.calls.map(([req]) => req.url?.split('?')[0]).sort(),
     ).toEqual(['/post,author', '/team']);
+  });
+
+  test("a call that would make the request go over the link's `maxRuns` is not made: the server would refuse the whole request", async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: { maxRuns: 2 },
+    });
+
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+    });
+    assert(author);
+    const team = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: whole({ to: [], from: author, path: ['teamId'] }),
+    });
+    assert(team);
+
+    await postResult;
+    expect(await author.result).toEqual({
+      data: { id: 'u1', teamId: 'team-of-u1' },
+    });
+    await expect(team.result).rejects.toThrow(
+      'The call did not fit in the request of what it reads',
+    );
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('a call that fits in no request does not split the batch', async () => {
@@ -1079,6 +1116,142 @@ describe.each([
     });
   },
 );
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+] as const)('$name, when an operation is sent again', (scenario) => {
+  test("a call added for the new attempt goes in its request: the old attempt doesn't end it", async () => {
+    const t = initTRPC.create();
+    let postRuns = 0;
+    const appRouter = t.router({
+      post: t.procedure.query(() => {
+        postRuns += 1;
+        if (postRuns === 1) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }
+        return { authorId: 'u1' };
+      }),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+    });
+    const post = createOperationPipeline();
+    let attempts = 0;
+    let author: ReturnType<typeof pipeCall> = null;
+    /** Adds the call once the operation is sent again, as it is sent */
+    const addOnRetry: TRPCLink<AnyRouter> = () => (linkOpts) =>
+      observable((observer) => {
+        const subscription = linkOpts.next(linkOpts.op).subscribe(observer);
+        attempts += 1;
+        if (attempts === 2) {
+          author = pipeCall({
+            path: 'author',
+            input: { id: undefined },
+            reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+          });
+        }
+        return subscription;
+      });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          // Sent again at once, while the first attempt ends
+          retryLink({ retry: (opts) => opts.attempts <= 1 }),
+          addOnRetry,
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    const postResult = await getUntypedClient(ctx.client).query(
+      'post',
+      undefined,
+      { context: pipelineContext(post) },
+    );
+
+    expect(postResult).toEqual({ authorId: 'u1' });
+    assert(author);
+    expect(await author.result).toEqual({
+      data: { id: 'u1' },
+    });
+  });
+});
+
+describe('httpBatchStreamLink, when an operation fails', () => {
+  test('the response is read on for the calls that read it: each gets its own error, not the end of the response', async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      post: t.procedure.query((): { authorId: string } => {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+    });
+    /** The server's response, a line at a time, as a slow network has it */
+    const lineByLine: typeof fetch = async (url, init) => {
+      const res = await fetch(url, init);
+      const lines = (await res.text()).split('\n');
+      const encoder = new TextEncoder();
+      const signal = init?.signal;
+      const body = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          signal?.addEventListener('abort', () => {
+            controller.error(signal.reason);
+          });
+          for (const [index, line] of lines.entries()) {
+            if (signal?.aborted) {
+              return;
+            }
+            controller.enqueue(
+              encoder.encode(index < lines.length - 1 ? `${line}\n` : line),
+            );
+            await new Promise((resolve) => setTimeout(resolve, 20));
+          }
+          controller.close();
+        },
+      });
+      return new Response(body, { status: res.status, headers: res.headers });
+    };
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            fetch: lineByLine,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const post = createOperationPipeline();
+    const postResult = getUntypedClient(ctx.client).query('post', undefined, {
+      context: pipelineContext(post),
+    });
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+    });
+    assert(author);
+
+    expect(await Promise.allSettled([postResult, author.result])).toMatchObject(
+      [
+        { status: 'rejected', reason: { data: { code: 'NOT_FOUND' } } },
+        {
+          status: 'rejected',
+          reason: { data: { code: 'PRECONDITION_FAILED' } },
+        },
+      ],
+    );
+  });
+});
 
 describe('a server without `experimental_allowPipelining`, whose error formatter changes `data`', () => {
   test.each([
@@ -2268,6 +2441,50 @@ describe('a call of a pipelined batch, on its own', () => {
     expect((await res.json())[2]).toEqual({
       items: { 0: { result: { data: { id: 't1' } } } },
     });
+  });
+
+  test("an input the transformer can't read fails its call, as in any batch, not the request: the pipe in a body is read without it", async () => {
+    const t = initTRPC.create({
+      transformer: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) => {
+          if (value === 'unreadable') {
+            throw new Error('Can not read it');
+          }
+          return value;
+        },
+      },
+    });
+    const router = t.router({
+      post: t.procedure.query(() => ({ authorId: 'u1' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request('http://localhost/trpc/post,author?batch=pipeline', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          0: 'unreadable',
+          1: {},
+          pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } },
+        }),
+      }),
+      router,
+      experimental_allowPipelining: true,
+      // Queries as POST, as `methodOverride: 'POST'` sends them
+      allowMethodOverride: true,
+    });
+    const json = await res.json();
+
+    // `post` reads no input, so it runs. `author` reads the inputs, which
+    // the transformer reads all at once, as in an ordinary batch
+    expect(json).toMatchObject([
+      { result: { data: { authorId: 'u1' } } },
+      { error: { message: 'Can not read it', data: { code: 'BAD_REQUEST' } } },
+    ]);
   });
 
   test('`responseMeta` gets a result for a call for every item, with its runs as the data', async () => {

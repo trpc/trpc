@@ -252,13 +252,28 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
         let isDone = false;
         let _res = undefined as HTTPResult | undefined;
+        /**
+         * Before the observer hears of it: an error handler can send the
+         * operation again, and its calls are then the new attempt's
+         */
+        const finish = () => {
+          if (!isDone) {
+            isDone = true;
+            pipelining?.close(op);
+          }
+        };
         void promise
           .then((res) => {
-            isDone = true;
+            finish();
             _res = res;
             if ('error' in res.json) {
-              // A failed op has nothing left to stream, so it must not hold the batch open.
-              ac.abort();
+              // A failed op has nothing left to stream, so it must not hold
+              // the batch open: once the calls that read it have their results
+              if (pipelining) {
+                void pipelining.settled(op).then(() => ac.abort());
+              } else {
+                ac.abort();
+              }
               observer.error(
                 TRPCClientError.from(res.json, {
                   meta: res.meta,
@@ -277,15 +292,14 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
-            isDone = true;
+            finish();
             ac.abort();
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
               }),
             );
-          })
-          .then(() => pipelining?.close(op));
+          });
 
         return () => {
           if (!isDone) {

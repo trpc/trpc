@@ -149,26 +149,31 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     }
 
     type InputRecord = Record<number, unknown>;
-    /** The `pipe` in the body of a pipelined batch, once the body is read */
-    let bodyPipe: unknown = undefined;
-    const getInputs = memo(async (): Promise<InputRecord> => {
-      let inputs: unknown = undefined;
-      if (req.method === 'GET') {
-        const queryInput = opts.searchParams.get('input');
-        if (queryInput) {
-          inputs = JSON.parse(queryInput);
+    /**
+     * The inputs as JSON, before the transformer reads them, and the `pipe`
+     * that the body of a pipelined batch has beside them
+     */
+    const getJSON = memo(
+      async (): Promise<{ inputs: unknown; bodyPipe: unknown }> => {
+        if (req.method === 'GET') {
+          const queryInput = opts.searchParams.get('input');
+          return {
+            inputs: queryInput ? JSON.parse(queryInput) : undefined,
+            bodyPipe: undefined,
+          };
         }
-      } else {
         // `httpLink` sends no body when the input is `undefined`, so treat an
         // empty body like a GET without `?input=`
         const body = await req.text();
-        if (body) {
-          inputs = JSON.parse(body);
-        }
-        if (isPipelined) {
-          bodyPipe = pipeOfBody(inputs);
-        }
-      }
+        const inputs: unknown = body ? JSON.parse(body) : undefined;
+        return {
+          inputs,
+          bodyPipe: isPipelined ? pipeOfBody(inputs) : undefined,
+        };
+      },
+    );
+    const getInputs = memo(async (): Promise<InputRecord> => {
+      const { inputs } = await getJSON.read();
       if (inputs === undefined) {
         return emptyObject();
       }
@@ -272,11 +277,12 @@ const jsonContentTypeHandler: ContentTypeHandler = {
             getPipe: async () => {
               // A GET has it in the URL. Any other request has it in its body,
               // beside the inputs
+              // Without the transformer: an input it can't read fails its own
+              // call, not the batch
               if (req.method === 'GET') {
                 return pipeOfSearchParams(opts.searchParams);
               }
-              await getInputs.read();
-              return bodyPipe;
+              return (await getJSON.read()).bodyPipe;
             },
           },
         }),

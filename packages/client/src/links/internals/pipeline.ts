@@ -69,7 +69,7 @@ export interface OperationPipeline {
 /** What a client keeps to of a server's limits, so the server takes its calls */
 type ClientPipelineLimits = Pick<
   PipelineLimits,
-  'maxReadsPerCall' | 'maxDepth'
+  'maxReadsPerCall' | 'maxDepth' | 'maxRuns'
 >;
 
 /** What a call reads the data of: an operation, or another call */
@@ -293,6 +293,11 @@ export interface BatchPipelining {
   /** Ends what an operation's calls wait for, once it has a result */
   close: (op: Pick<Operation, 'context'>) => void;
   /**
+   * Once every call of an operation has its result: a link that streams
+   * keeps reading the response for them, also when the operation failed
+   */
+  settled: (op: Pick<Operation, 'context'>) => Promise<unknown>;
+  /**
    * Whether the last operation of a batch has to go in the next request: more
    * calls fit in the two requests than in one with it
    */
@@ -328,6 +333,13 @@ export interface experimental_PipeliningLinkOptions {
    * @default 3
    */
   maxDepth?: number;
+  /**
+   * The server's `maxRuns`, or a lower number: the most calls a pipelined
+   * request has. A server refuses a request with more as a whole, so the
+   * link adds no call that would go over it
+   * @default 100
+   */
+  maxRuns?: number;
 }
 
 /**
@@ -431,6 +443,7 @@ export function experimental_pipelining(
     maxReadsPerCall:
       opts?.maxReadsPerCall ?? pipelineLimitDefaults.maxReadsPerCall,
     maxDepth: opts?.maxDepth ?? pipelineLimitDefaults.maxDepth,
+    maxRuns: opts?.maxRuns ?? pipelineLimitDefaults.maxRuns,
   };
   return (link) => {
     /** The calls that go in the request of a batch, within the link's limits */
@@ -443,7 +456,7 @@ export function experimental_pipelining(
           .filter((call) => call.status === 'waiting'),
         fits: (next) => {
           const sent = [...ops, ...next.calls];
-          if (sent.length > link.maxItems) {
+          if (sent.length > Math.min(link.maxItems, limits.maxRuns)) {
             return false;
           }
           // An input the transformer can't take before the server fills it
@@ -479,6 +492,10 @@ export function experimental_pipelining(
         }
       },
       close: closePipeline,
+      settled: (op) =>
+        Promise.allSettled(
+          pipelineOf(op)?.calls.map((call) => call.result) ?? [],
+        ),
       splits(ops) {
         if (ops.length < 2) {
           return false;
