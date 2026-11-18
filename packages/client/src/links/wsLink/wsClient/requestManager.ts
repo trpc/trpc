@@ -56,6 +56,15 @@ interface Request {
  *   For subscriptions, multiple responses may be received until the subscription is closed.
  */
 export class RequestManager {
+  constructor(
+    private readonly opts: {
+      /**
+       * Called when a deletion leaves no outgoing or pending request.
+       */
+      onIdle: () => void;
+    },
+  ) {}
+
   /**
    * Stores requests that are outgoing, meaning they are registered but not yet sent over the WebSocket.
    */
@@ -123,6 +132,7 @@ export class RequestManager {
    * registers its request before the failed request with that id is deleted.
    */
   public delete(message: TRPCClientOutgoingMessage) {
+    const wasInFlight = this.hasRequestsInFlight();
     this.outgoingRequests = this.outgoingRequests.filter(
       (request) => request.message !== message,
     );
@@ -134,6 +144,9 @@ export class RequestManager {
       if (request.message === message) {
         delete this.drainingRequests[drainingId];
       }
+    }
+    if (wasInFlight && !this.hasRequestsInFlight()) {
+      this.opts.onIdle();
     }
   }
 
@@ -286,5 +299,12 @@ export class RequestManager {
    */
   public hasOutgoingRequests() {
     return this.outgoingRequests.length > 0;
+  }
+
+  /**
+   * Checks if any request is outgoing or pending, including subscriptions.
+   */
+  public hasRequestsInFlight() {
+    return this.hasOutgoingRequests() || this.hasPendingRequests();
   }
 }
