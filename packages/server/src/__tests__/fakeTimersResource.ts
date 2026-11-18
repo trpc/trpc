@@ -1,16 +1,26 @@
 import { makeResource } from '../unstable-core-do-not-import';
 
-export function fakeTimersResource() {
+/** The fake timer controls a test drives through its resource, not `vi`. */
+type FakeTimerControls = Pick<
+  typeof vi,
+  | 'advanceTimersByTimeAsync'
+  | 'advanceTimersToNextTimer'
+  | 'getTimerCount'
+  | 'runAllTimers'
+  | 'runAllTimersAsync'
+>;
+
+export function fakeTimersResource(): FakeTimerControls & Disposable {
   // oxlint-disable-next-line trpc/no-direct-fake-timers
   vi.useFakeTimers();
 
-  return makeResource(
+  return makeResource<FakeTimerControls>(
     {
       advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
       advanceTimersToNextTimer: vi.advanceTimersToNextTimer,
       getTimerCount: vi.getTimerCount,
-      runAllTimersAsync: vi.runAllTimersAsync,
       runAllTimers: vi.runAllTimers,
+      runAllTimersAsync: vi.runAllTimersAsync,
     },
     () => {
       // oxlint-disable-next-line trpc/no-direct-fake-timers
