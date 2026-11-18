@@ -1593,6 +1593,43 @@ describe.each([
     ]);
   });
 
+  test('a cursor that `initialCursor` replaces, from an entry the cache has, keeps nothing waiting', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // In the cache already: its entry needs no request
+    resource.queryClient.setQueryData(trpc.post.paged.queryKey({}), {
+      items: [],
+      nextCursor: 1,
+    });
+
+    const first = ensureEntry(trpc.post.paged, {}, { staleTime: Infinity });
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      first,
+      post,
+      later: ensureInfiniteEntry(
+        trpc.post.pagedByAuthor,
+        {
+          authorId: experimental_dataOf(post).authorId,
+          cursor: experimental_dataOf(first).nextCursor,
+        },
+        { initialCursor: 2 },
+      ),
+    });
+
+    expect(data.later.pageParams).toEqual([2]);
+    expect(data.later.pages[0]!.items).toHaveLength(3);
+    expect(resource.calls.mock.calls).toContainEqual([
+      'post.pagedByAuthor',
+      { authorId: 'u1', cursor: 2 },
+    ]);
+  });
+
   test('an entry per item that reads nothing of its item is an ordinary query', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,

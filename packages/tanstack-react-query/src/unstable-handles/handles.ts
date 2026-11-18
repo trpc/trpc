@@ -1281,13 +1281,21 @@ function beginEntries(opts: {
   /** The data of the entries an entry reads, by entry */
   const dataOfSources = (
     sources: Map<object, EntryLoad>,
-    read: (source: EntryLoad) => Promise<unknown> | null,
+    read: (source: EntryLoad, entry: object) => Promise<unknown> | null,
   ) =>
     Promise.all(
       [...sources].map(async ([entry, source]) => {
-        return [entry, await read(source)] as const;
+        return [entry, await read(source, entry)] as const;
       }),
     ).then((resolved) => new Map(resolved));
+
+  /**
+   * Whether the server fills in what a `experimental_dataOf()` value in an
+   * entry's input reads. Not a cursor that `initialCursor` takes the place of:
+   * the page would be another
+   */
+  const filledByServer = (state: EntryState, ref: EntryInputRef) =>
+    !(ref.to[0] === 'cursor' && state.request().cursorFromOptions);
 
   /**
    * Has the server make an entry's request in the request of the entries it
@@ -1302,10 +1310,9 @@ function beginEntries(opts: {
     readsItem: (ref: EntryDataRef) => boolean;
   }) {
     const { state } = pipelined;
-    const { cursorFromOptions, ...request } = state.request();
-    // What `initialCursor` takes the place of isn't read: the page would be another
-    const read = pipelined.reads.filter(
-      ({ ref }) => !(cursorFromOptions && ref.to[0] === 'cursor'),
+    const { cursorFromOptions: _, ...request } = state.request();
+    const read = pipelined.reads.filter(({ ref }) =>
+      filledByServer(state, ref),
     );
     const reads = read.flatMap(({ ref, source }) => {
       const each = pipelined.readsItem(ref);
@@ -1466,10 +1473,18 @@ function beginEntries(opts: {
                       ) {
                         return false;
                       }
+                      // What the server read. What it didn't fill in is the
+                      // client's, and an entry the cache had made no request
+                      const serverRead = new Set(
+                        reads
+                          .filter(({ ref }) => filledByServer(state, ref))
+                          .map(({ ref }) => ref.entry),
+                      );
                       const sent = fill(
-                        await dataOfSources(
-                          sources,
-                          (source) => source.requestData,
+                        await dataOfSources(sources, (source, entry) =>
+                          serverRead.has(entry)
+                            ? source.requestData
+                            : Promise.resolve(result.data.get(entry)),
                         ),
                       );
                       return (
