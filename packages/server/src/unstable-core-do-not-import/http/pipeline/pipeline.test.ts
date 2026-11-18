@@ -2422,6 +2422,45 @@ describe('`maxFillSize`: what a request fills in', () => {
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
+  test("a call that runs in the frame of a call for every item counts each run's whole input too", async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      limits,
+      fns: { list: () => [1, 2, 3], echo },
+    });
+    const list = sent('list', undefined);
+    const ofList = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
+    // Reads a small value of each run above, and is a copy of the big input
+    // the client sent for each
+    const copies = call(
+      'echo',
+      { big },
+      reads(null, { to: ['after'], from: ofList, path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [list],
+      calls: [ofList, copies],
+    });
+
+    // Two copies fit, and the third is too much
+    expect(res.of(copies)).toEqual({
+      items: {
+        0: { result: { data: null } },
+        1: { result: { data: null } },
+        2: refused,
+      },
+    });
+  });
+
   test('the keys a run of a call for every item writes its values under count too', async () => {
     // `{"longField":"x"}` is 17 characters of JSON, though the value is 3
     const run = async (max: number) => {

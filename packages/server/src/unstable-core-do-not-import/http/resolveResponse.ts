@@ -275,6 +275,11 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
  * Handles a Fetch API `Request` for a router and returns its `Response`.
  * Every adapter uses it; call it to write your own.
  */
+/** Throws what `JSON.stringify` throws for `value`, such as for a `BigInt` */
+function assertJSON(value: unknown) {
+  JSON.stringify(value);
+}
+
 /** The runs of a call that runs for every item, as far as they are ready */
 type PipelineItemsNode = Awaited<PipelineRuns<unknown>>;
 
@@ -514,6 +519,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
+        /**
+         * For a call of a pipelined batch, which starts once what it reads is
+         * ready: not if the client has gone by then
+         */
+        const throwIfAborted = () => {
+          if (callSignal.aborted) {
+            throw new TRPCError({
+              code: 'CLIENT_CLOSED_REQUEST',
+              message: 'The request was aborted',
+            });
+          }
+        };
         const callProcedure = (getRawInput: () => Promise<unknown>) =>
           proc({
             path: call.path,
@@ -529,6 +546,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           piped?.kind === 'each'
             ? await piped.each({
                 item: async (input) => {
+                  throwIfAborted();
                   const itemData = await callProcedure(async () => input);
                   if (isDataStream(itemData)) {
                     // It would be inside a list, where nothing streams it
@@ -537,6 +555,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                       message:
                         'A call for every item cannot return a stream-like response',
                     });
+                  }
+                  if (!isStreamCall) {
+                    // What JSON can't carry fails the run, not the response
+                    assertJSON(config.transformer.output.serialize(itemData));
                   }
                   return itemData;
                 },
@@ -568,6 +590,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               // it is refused, or doesn't run, as any other
               await run(async () => {
                 const input = await piped.input();
+                throwIfAborted();
                 return callProcedure(async () => input);
               })
             : await callProcedure(call.getRawInput);
@@ -932,6 +955,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }),
             undefined,
           ];
+        }
+        if (pipeline) {
+          // In a pipelined batch, what JSON can't carry fails the call, not
+          // the response
+          try {
+            assertJSON(config.transformer.output.serialize(result.data));
+          } catch (cause) {
+            return [getTRPCErrorFromUnknown(cause), undefined];
+          }
         }
         return res;
       },

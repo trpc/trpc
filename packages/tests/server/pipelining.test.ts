@@ -16,6 +16,7 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type {
   experimental_PipeliningOptions,
   PipelineCallReads,
@@ -1985,5 +1986,99 @@ describe.each([
       expect.stringMatching(/^>> query #\d+ post$/),
       expect.stringMatching(/^<< query #\d+ post$/),
     ]);
+  });
+});
+
+describe('a call of a pipelined batch, on its own', () => {
+  /** A pipelined batch of `post` and calls that read it, as a request */
+  function pipelined(opts: {
+    paths: string;
+    pipe: unknown;
+    signal: AbortSignal | null;
+  }) {
+    return new Request(
+      `http://localhost/trpc/${opts.paths}?batch=pipeline&input=${encodeURIComponent(
+        // An input for each call that reads, to write what it reads into
+        JSON.stringify({ 1: {}, 2: {} }),
+      )}&pipe=${encodeURIComponent(JSON.stringify(opts.pipe))}`,
+      opts.signal ? { signal: opts.signal } : {},
+    );
+  }
+
+  test('a call that reads another does not start once the request is aborted', async () => {
+    const t = initTRPC.create();
+    const controller = new AbortController();
+    const ran = vi.fn();
+    const router = t.router({
+      // The client goes away while it runs
+      post: t.procedure.query(() => {
+        controller.abort();
+        return { authorId: 'u1', tags: [{ id: 't1' }] };
+      }),
+      author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+        ran();
+        return { name: 'Ada' };
+      }),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: {
+          1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+          // A run for every item does not start either
+          2: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
+        },
+        signal: controller.signal,
+      }),
+      router,
+      experimental_allowPipelining: true,
+    });
+    await res.text().catch(() => undefined);
+
+    expect(ran).not.toHaveBeenCalled();
+  });
+
+  test('a call whose data JSON can not carry fails by itself: the rest of the batch has its results', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      post: t.procedure.query(() => ({
+        authorId: 'u1',
+        tags: [{ id: 't1' }, { id: 'big' }],
+      })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => (opts.input.id === 't1' ? { id: 't1' } : { n: 1n })),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: {
+          1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+          2: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
+        },
+        signal: null,
+      }),
+      router,
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[0].result.data).toMatchObject({ authorId: 'u1' });
+    expect(json[1].error).toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    // One run fails by itself, and the other has its result
+    expect(json[2].items[0]).toEqual({ result: { data: { id: 't1' } } });
+    expect(json[2].items[1].error).toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
   });
 });
