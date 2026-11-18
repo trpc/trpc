@@ -1,15 +1,16 @@
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
+  PipelineFrame,
   PipelineLimits,
-  PipelineRead,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
-  groupPipelineReads,
+  deserializePipelinedItems,
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelinedCallsRan,
+  pipelineFrameOf,
   pipelineLimitDefaults,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -72,7 +73,7 @@ type ClientPipelineLimits = Pick<
 >;
 
 /** What a call reads the data of: an operation, or another call */
-type PipelineSource = OperationPipeline | PipelinedCall;
+export type PipelineSource = OperationPipeline | PipelinedCall;
 
 /**
  * A query the server runs in the request of an operation, after the calls
@@ -86,6 +87,8 @@ export interface PipelinedCall {
   reads: PipelineCallReads<PipelineSource>;
   /** Its place in its chain: a call that reads an operation is 2 */
   depth: number;
+  /** The items it runs for, or `null` if it runs once */
+  frame: PipelineFrame<PipelineSource> | null;
   /**
    * - `waiting`: the request hasn't gone yet
    * - `sent`: it is in a request
@@ -103,11 +106,12 @@ export interface PipelinedCall {
 }
 
 export interface PipelinedCallResult {
+  /**
+   * Its data. For a call for every item, its `items` as the response has
+   * them: see `readPipelinedItem()`
+   */
   data: unknown;
 }
-
-/** A part of a call's input that the server fills in */
-export type PipelinedCallRead = PipelineRead<PipelineSource>;
 
 export function createOperationPipeline(): OperationPipeline {
   const sent = createDeferred<readonly string[]>();
@@ -140,33 +144,43 @@ function isCall(source: PipelineSource): source is PipelinedCall {
 export function pipeCall(opts: {
   path: string;
   input: unknown;
-  reads: PipelinedCallRead[];
+  reads: PipelineCallReads<PipelineSource>;
 }): PipelinedCall | null {
-  const grouped = groupPipelineReads(opts.reads);
-  if (!grouped.ok) {
+  const { each } = opts.reads;
+  const sources: PipelineSource[] = [
+    ...(each ? [each.from] : []),
+    ...opts.reads.reads.flatMap((read) =>
+      read.kind === 'whole' ? [read.from] : [],
+    ),
+  ];
+  const framed = pipelineFrameOf({
+    reads: opts.reads,
+    frameOf: (source) => (isCall(source) ? source.frame : null),
+  });
+  if (
+    !framed.fits ||
+    // Only a call for every item has an item to read
+    (!each && opts.reads.reads.some((read) => read.kind === 'item'))
+  ) {
     return null;
   }
-  const owners = opts.reads.map((read) =>
-    isCall(read.from) ? read.from.owner : read.from,
+  const owners = sources.map((source) =>
+    isCall(source) ? source.owner : source,
   );
   // It goes with the operation of its first read
   const [owner] = owners;
   if (
     !owner ||
     !owners.every((pipeline) => pipeline.open) ||
-    !opts.reads.every(
-      (read) => !isCall(read.from) || read.from.status === 'waiting',
-    )
+    !sources.every((source) => !isCall(source) || source.status === 'waiting')
   ) {
     return null;
   }
   const depth =
     1 +
-    Math.max(
-      ...opts.reads.map((read) => (isCall(read.from) ? read.from.depth : 1)),
-    );
+    Math.max(...sources.map((source) => (isCall(source) ? source.depth : 1)));
   if (
-    opts.reads.length > owner.limits.maxReadsPerCall ||
+    opts.reads.reads.length > owner.limits.maxReadsPerCall ||
     depth > owner.limits.maxDepth
   ) {
     return null;
@@ -180,8 +194,9 @@ export function pipeCall(opts: {
   const call: PipelinedCall = {
     path: opts.path,
     input: opts.input,
-    reads: grouped.reads,
+    reads: opts.reads,
     depth,
+    frame: framed.frame,
     status: 'waiting',
     result,
     owner,
@@ -248,6 +263,11 @@ export interface PipeliningLink extends ResolvedHTTPLinkOptions {
   maxItems: number;
   /** The longest URL a request can have */
   maxURLLength: number;
+  /**
+   * Whether its responses stream. A streamed one has each value of a call
+   * for every item deserialized already, and as a promise of its own
+   */
+  streams: boolean;
   /** A call's result, as the link gives an operation's. Throws its error */
   read: (result: HTTPResult) => PipelinedCallResult;
 }
@@ -318,7 +338,7 @@ export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
  * is always in one of the two.
  */
 function pipelinedRequest(
-  pipe: PipelinedBatchPlan<PipelinedCall>['reads'],
+  pipe: PipelinedBatchPlan<PipelinedCall>['pipe'],
 ): PipelinedBatch['request'] {
   return {
     getUrl: (opts) =>
@@ -344,7 +364,7 @@ function settlePipelinedBatch(opts: {
   plan: PipelinedBatchPlan<PipelinedCall>;
   /** The result of every operation, and then of every call, that was sent */
   results: PipelinedBatch['results'];
-  read: PipeliningLink['read'];
+  link: PipeliningLink;
 }) {
   const calls = opts.plan.calls.map((call, index) => {
     const result = Promise.resolve(opts.results[opts.ops.length + index]).then(
@@ -352,7 +372,17 @@ function settlePipelinedBatch(opts: {
         if (!sent) {
           throw new Error('The server sent no result for a pipelined call');
         }
-        return opts.read(sent);
+        if ('items' in sent.json) {
+          // A call for every item: its runs, each as a call's result is
+          return {
+            data: opts.link.streams
+              ? sent.json
+              : deserializePipelinedItems(sent.json, (value) =>
+                  opts.link.transformer.output.deserialize(value),
+                ),
+          };
+        }
+        return opts.link.read(sent);
       },
     );
     result.catch(() => undefined);
@@ -365,7 +395,7 @@ function settlePipelinedBatch(opts: {
         () => false,
       ),
     ),
-    reads: opts.plan.reads,
+    pipe: opts.plan.pipe,
     calls,
   });
   for (const { call: sent, ran } of settled) {
@@ -412,7 +442,7 @@ export function experimental_pipelining(
           return (
             sent.length <= link.maxItems &&
             (link.maxURLLength === Infinity ||
-              pipelinedRequest(next.reads).getUrl({
+              pipelinedRequest(next.pipe).getUrl({
                 ...link,
                 type: 'query',
                 path: sent.map((it) => it.path).join(','),
@@ -479,7 +509,7 @@ export function experimental_pipelining(
         }
         return {
           calls: planned.calls,
-          request: pipelinedRequest(planned.reads),
+          request: pipelinedRequest(planned.pipe),
           settle: (results) => {
             results.then(
               (sent) =>
@@ -487,7 +517,7 @@ export function experimental_pipelining(
                   ops,
                   plan: planned,
                   results: sent,
-                  read: link.read,
+                  link,
                 }),
               (error: unknown) => {
                 // The request failed as a whole. None of its calls ran: a

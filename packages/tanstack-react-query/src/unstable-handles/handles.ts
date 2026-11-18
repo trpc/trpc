@@ -10,13 +10,17 @@ import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import type {
   OperationPipeline,
   PipelinedCall,
+  PipelineSource,
 } from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
   pipeCall,
   pipelineContext,
 } from '@trpc/client/unstable-internals';
-import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  PipelineCallReads,
+  PipelinePath,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   bindPipelinePath,
   readPipelinedItem,
@@ -830,13 +834,16 @@ function dataOfCall(call: PipelinedCall) {
 
 /**
  * One item's result of a call that the server ran for every item. The call's
- * data is a `{ result }` or an `{ error }` for every item.
+ * data is its `items`: a `{ result }` or an `{ error }` for every item, at
+ * `indexes`. `null` for an item the server ran no call for.
  */
-function resultOfItem(results: Promise<unknown>, index: number) {
+function resultOfItem(results: Promise<unknown>, indexes: number[] | null) {
   let missing = false;
   const result = results.then(
-    (data) => {
-      const item = readPipelinedItem(data, index);
+    async (data) => {
+      const item = indexes
+        ? await readPipelinedItem(data, indexes)
+        : ({ kind: 'missing' } as const);
       switch (item.kind) {
         case 'data':
           return item.data;
@@ -844,7 +851,9 @@ function resultOfItem(results: Promise<unknown>, index: number) {
           throw TRPCClientError.from({ error: item.error } as any);
         case 'missing':
           missing = true;
-          throw new Error(`The server sent no result for item ${index}`);
+          throw new Error(
+            `The server sent no result for item ${JSON.stringify(indexes)}`,
+          );
       }
     },
     (error: unknown) => {
@@ -1326,37 +1335,53 @@ function beginEntries(opts: {
     state: EntryState;
     /** What the entry's input reads, and the load of the entry of each */
     reads: { ref: EntryInputRef; source: EntryLoad }[];
-    /** Whether a `experimental_dataOf()` value is an item of the list an entry is loaded for */
-    readsItem: (ref: EntryDataRef) => boolean;
+    /**
+     * For an entry for every item: the list, the load of its entry, and the
+     * path of the list in the result of that entry's request
+     */
+    list: { ref: EntryDataRef; source: EntryLoad; path: PipelinePath } | null;
   }) {
-    const { state } = pipelined;
+    const { state, list } = pipelined;
     const { cursorFromOptions: _, ...request } = state.request();
     const read = pipelined.reads.filter(({ ref }) =>
       filledByServer(state, ref),
     );
-    const reads = read.flatMap(({ ref, source }) => {
-      const each = pipelined.readsItem(ref);
-      const path = requestPath({
-        type: source.leaf.state.type,
-        path: ref.path,
-        item: each,
-      });
-      return source.pipeline &&
-        path &&
-        // The server runs a call for the items of one list, not of lists of lists
-        (!each || path.filter((segment) => segment === null).length === 1)
-        ? [{ to: ref.to, from: source.pipeline, path, each }]
-        : [];
-    });
+    // Not by its path: the whole list, read with `.map()`, has the same one
+    const readsItem = (ref: EntryDataRef) => !!list && ref.itemOf === list.ref;
+    const reads = read.flatMap(
+      ({ ref, source }): PipelineCallReads<PipelineSource>['reads'] => {
+        if (list && readsItem(ref)) {
+          return [
+            {
+              kind: 'item',
+              to: ref.to,
+              path: ref.path.slice(list.ref.path.length + 1),
+            },
+          ];
+        }
+        const path = requestPath({
+          type: source.leaf.state.type,
+          path: ref.path,
+          item: false,
+        });
+        return source.pipeline && path
+          ? [{ kind: 'whole', to: ref.to, from: source.pipeline, path }]
+          : [];
+      },
+    );
+    const each = list?.source.pipeline
+      ? { from: list.source.pipeline, path: list.path }
+      : null;
     if (
       reads.length !== read.length ||
+      (list && !each) ||
       // An infinite query's request adds the cursor to its input, an object
       (state.type === 'infinite' &&
         state.refs.some((ref) => ref.to.length === 0))
     ) {
       return null;
     }
-    return pipeCall({ ...request, reads });
+    return pipeCall({ ...request, reads: { each, reads } });
   }
 
   /** The prefetch entries whose data another entry reads, by their query's hash */
@@ -1463,7 +1488,7 @@ function beginEntries(opts: {
       // The query starts now, not a tick later
       promise = start(built);
     } else {
-      const call = sendPipelined({ state, reads, readsItem: () => false });
+      const call = sendPipelined({ state, reads, list: null });
       if (call && state.type === 'query') {
         // An infinite query's data is its pages, which no one request returns,
         // so the server can't read it for the entries that read this one
@@ -1645,9 +1670,37 @@ function beginEntries(opts: {
     // One call, which the server runs once for every item. Its result is a
     // `{ result }` or an `{ error }` for every item. An entry that reads
     // nothing of its item has no call for every item: its query is an ordinary one
-    const call = perItem.reads.some(({ ref }) => readsItem(ref))
-      ? sendPipelined({ state, reads: perItem.reads, readsItem })
-      : null;
+    const listSource = sources.get(list.entry);
+    /** The list in the result of its entry's request: the first page's, of an infinite query */
+    const listPath =
+      listSource &&
+      requestPath({
+        type: listSource.leaf.state.type,
+        path: list.path,
+        item: true,
+      });
+    const call =
+      listSource && listPath && perItem.reads.some(({ ref }) => readsItem(ref))
+        ? sendPipelined({
+            state,
+            reads: perItem.reads,
+            list: { ref: list, source: listSource, path: listPath },
+          })
+        : null;
+    /**
+     * Where the server ran an item, in its levels of lists: the item's own
+     * indexes without the levels the request has no list for, such as the
+     * pages of an infinite query, where it has the first. `null` for an item
+     * it ran none for
+     */
+    const serverIndexes = (listItem: ListItem) => {
+      const skipped =
+        depth - (listPath ?? []).filter((segment) => segment === null).length;
+      return listItem.element &&
+        listItem.indexes.slice(0, skipped).every((index) => index === 0)
+        ? listItem.indexes.slice(skipped)
+        : null;
+    };
 
     /** The input without the item's parts, and where they go */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
@@ -1696,7 +1749,10 @@ function beginEntries(opts: {
               let options = optionsOfItem(data, listItem);
               if (call && serverKeys) {
                 const key = hashKey(options.queryKey);
-                const item = resultOfItem(dataOfCall(call), index);
+                const item = resultOfItem(
+                  dataOfCall(call),
+                  serverIndexes(listItem),
+                );
                 options = withPipelinedResult({
                   options,
                   result: item.result,
@@ -2890,12 +2946,14 @@ function withItemQueries(opts: {
         const call = pipeCall({
           path: path.join('.'),
           input: queries.input,
-          reads: queries.itemInputs.map((itemInput) => ({
-            to: itemInput.to,
-            from: pipeline,
-            path: [...queries.list, null, ...itemInput.path],
-            each: true,
-          })),
+          reads: {
+            each: { from: pipeline, path: [...queries.list] },
+            reads: queries.itemInputs.map((itemInput) => ({
+              kind: 'item',
+              to: itemInput.to,
+              path: itemInput.path,
+            })),
+          },
         });
         if (!call) {
           continue;
@@ -2906,7 +2964,7 @@ function withItemQueries(opts: {
           for (const [index, item] of Array.isArray(listData)
             ? listData.entries()
             : []) {
-            const itemResult = resultOfItem(dataOfCall(call), index);
+            const itemResult = resultOfItem(dataOfCall(call), [index]);
             void queryClient.prefetchQuery(
               withPipelinedResult({
                 options: procedure.queryOptions(

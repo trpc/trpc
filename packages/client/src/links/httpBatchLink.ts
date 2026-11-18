@@ -40,6 +40,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         ...resolvedOpts,
         maxItems,
         maxURLLength,
+        streams: false,
         read(result) {
           const transformed = transformResult(
             result.json,

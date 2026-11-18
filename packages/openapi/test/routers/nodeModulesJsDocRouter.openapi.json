@@ -245,7 +245,7 @@
           },
           "maxDepth": {
             "type": "number",
-            "description": "The most calls in a chain. A call that reads none is 1"
+            "description": "The most calls in a chain of reads. A call that reads none is 1"
           },
           "allowWholeValues": {
             "type": "boolean",

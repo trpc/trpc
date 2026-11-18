@@ -448,10 +448,19 @@ export function createDemoClient(network: Network, origin?: string) {
   });
 }
 
-interface PipeRead {
-  readonly from: number;
-  readonly path: ReadonlyArray<string | null>;
-  readonly to: ReadonlyArray<string>;
+/** What a call of a batch reads, as its `pipe` has it */
+interface PipeCall {
+  /** The list it runs once for every item of */
+  readonly each?: {
+    readonly from: number;
+    readonly path: ReadonlyArray<string | null>;
+  };
+  readonly reads: ReadonlyArray<{
+    /** Left out for a read of the item */
+    readonly from?: number;
+    readonly path: ReadonlyArray<string | null>;
+    readonly to: ReadonlyArray<string>;
+  }>;
 }
 
 /** `input` with `value` at `to`, on copies of what is on the way there. */
@@ -488,20 +497,39 @@ function callsOf(url: URL) {
   >;
   const pipe = (parseParam(url.searchParams.get('pipe')) ?? {}) as Record<
     number,
-    ReadonlyArray<PipeRead> | undefined
+    PipeCall | undefined
   >;
+  // The router a call is in names what it returns: `post`, `author`.
+  const sourceOf = (from: number) =>
+    `‹${(paths[from] ?? '').split('.').slice(0, -1).join('.')}›`;
+  const where = (path: readonly (string | null)[]) =>
+    path.map((segment) => (segment === null ? '[]' : `.${segment}`)).join('');
   return paths.map((path, index) => {
-    const input = (pipe[index] ?? []).reduce((filled, read) => {
-      // The router the call is in names what it returns: `post`, `author`.
-      const source = (paths[read.from] ?? '').split('.').slice(0, -1).join('.');
-      const where = read.path
-        .map((segment) => (segment === null ? '[]' : `.${segment}`))
-        .join('');
-      return withValueAt(filled, read.to, new Unfilled(`‹${source}›${where}`));
-    }, inputs[index]);
+    const call = pipe[index];
+    // A read without `from` reads the item of the list in `each`
+    const item = call?.each
+      ? `${sourceOf(call.each.from)}${where(call.each.path)}[]`
+      : '';
+    const reads = call?.reads ?? [];
+    const input = reads.reduce(
+      (filled, read) =>
+        withValueAt(
+          filled,
+          read.to,
+          new Unfilled(
+            `${read.from === undefined ? item : sourceOf(read.from)}${where(read.path)}`,
+          ),
+        ),
+      inputs[index],
+    );
     return {
       label: formatCall(path, input),
-      reads: (pipe[index] ?? []).map((read) => read.from),
+      reads: [
+        ...(call?.each ? [call.each.from] : []),
+        ...reads.flatMap((read) =>
+          read.from === undefined ? [] : [read.from],
+        ),
+      ],
     };
   });
 }

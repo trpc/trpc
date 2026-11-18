@@ -10,6 +10,7 @@ import { TRPCError } from '../../error/TRPCError';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isObject } from '../../utils';
 import {
+  deserializePipelinedItems,
   encodePipelineReads,
   pipelinedBatchBody,
   pipelinedBatchUrl,
@@ -26,17 +27,20 @@ import {
   pipeOfBody,
   pipeOfSearchParams,
 } from './server';
+import type { PipelineRuns } from './server';
 import type {
   PipelineCallReads,
   PipelineLimits,
-  PipelineRead,
+  PipelineList,
+  PipelinePath,
   PipeRead,
 } from './wire';
 import {
   bindPipelinePath,
-  groupPipelineReads,
   pipelineBatch,
+  pipelineFrameOf,
   pipelineLimitDefaults,
+  pipelineListLevels,
   readPipelinePath,
 } from './wire';
 
@@ -126,21 +130,29 @@ function serve(opts: {
     }
     // As a request handler does: a call gives how it went, and never rejects
     const results = pipeline.run({
-      call: async (call, run): Promise<[cause: unknown, data: unknown]> => {
+      call: async (
+        call,
+        run,
+      ): Promise<[cause: unknown, data: unknown, items: Items | null]> => {
         try {
           const fn = opts.fns[call.path];
           if (!fn) {
             throw new TRPCError({ code: 'NOT_FOUND' });
           }
-          return [
-            undefined,
-            await (run?.kind === 'each'
-              ? run.each({ item: async (input) => fn(input), error: wireError })
-              : fn(await call.getRawInput())),
-          ];
+          if (run?.kind === 'each') {
+            const items = await run.each({
+              item: async (input) => fn(input),
+              error: (cause, input) => {
+                opts.onError(call.path, input);
+                return wireError(cause);
+              },
+            });
+            return [undefined, undefined, items];
+          }
+          return [undefined, await fn(await call.getRawInput()), null];
         } catch (cause) {
           opts.onError(call.path, call.result());
-          return [cause ?? new Error('failed'), undefined];
+          return [cause ?? new Error('failed'), undefined, null];
         }
       },
       // A failed call has no data for the calls that read it
@@ -152,9 +164,12 @@ function serve(opts: {
       },
     });
     const answers = results.map(async (result) => {
-      const [cause, data] = await result;
+      const [cause, data, items] = await result;
       if (cause !== undefined) {
         return { error: wireError(cause) };
+      }
+      if (items) {
+        return settle(items, opts.transformer);
       }
       try {
         const serialized = opts.transformer.output.serialize(data);
@@ -190,6 +205,25 @@ function serve(opts: {
   });
 }
 
+type Items = Awaited<PipelineRuns<WireError>>;
+
+/** The runs of a call for every item, once all of them are done */
+async function settle(
+  node: Items,
+  transformer: CombinedDataTransformer,
+): Promise<object> {
+  if (!('items' in node)) {
+    return 'error' in node
+      ? node
+      : { result: { data: transformer.output.serialize(node.result.data) } };
+  }
+  const items: Record<string, object> = {};
+  for (const [index, item] of node.items.entries()) {
+    items[index] = await settle(await item, transformer);
+  }
+  return { items };
+}
+
 // ---------- a client that is `fetch` ----------
 
 /** Something a request has: what the client sends itself, or a call it adds */
@@ -206,15 +240,47 @@ function sent(path: string, input: unknown): Sent {
   return { path, input };
 }
 
-function call(path: string, input: unknown, reads: PipelineRead<Sent>[]): Call {
-  const grouped = groupPipelineReads(reads);
-  if (!grouped.ok) {
-    throw new Error(grouped.problem);
-  }
-  return { path, input, reads: grouped.reads };
+function call(
+  path: string,
+  input: unknown,
+  reads: PipelineCallReads<Sent>,
+): Call {
+  return { path, input, reads };
 }
 
-type Outcome = { data: unknown } | { error: WireError };
+/**
+ * What a call reads: a read with `from` reads that call's data, and one
+ * without it the item of the list in `each`
+ */
+function reads(
+  each: PipelineList<Sent> | null,
+  ...list: (
+    | { to: string[]; from: Sent; path: PipelinePath }
+    | { to: string[]; path: PipelinePath }
+  )[]
+): PipelineCallReads<Sent> {
+  return {
+    each,
+    reads: list.map((read) =>
+      'from' in read
+        ? { kind: 'whole', ...read }
+        : { kind: 'item', to: read.to, path: read.path },
+    ),
+  };
+}
+
+/**
+ * How a call went: its data, its error, or the runs of a call for every item,
+ * by item, one level for each level of lists
+ */
+type Outcome = { data: unknown } | { error: WireError } | { items: unknown };
+
+/** How many items a call for every item ran for, at its first level of lists */
+function itemCount(outcome: Outcome | undefined) {
+  return outcome && 'items' in outcome && isObject(outcome.items)
+    ? Object.keys(outcome.items).length
+    : null;
+}
 
 /** Each line of a streamed response, as it arrives */
 async function* linesOf(response: Response) {
@@ -242,7 +308,7 @@ async function send(opts: {
   transformer: CombinedDataTransformer;
   sent: Sent[];
   calls: Call[];
-  fits: (plan: Pick<PipelinedBatchPlan<Call>, 'calls' | 'reads'>) => boolean;
+  fits: (plan: Pick<PipelinedBatchPlan<Call>, 'calls' | 'pipe'>) => boolean;
   stream: boolean;
 }) {
   const plan = planPipelinedBatch({
@@ -264,7 +330,7 @@ async function send(opts: {
           url: `${batch}&input=${encodeURIComponent(
             JSON.stringify(Object.fromEntries(inputs.entries())),
           )}`,
-          pipe: plan.reads,
+          pipe: plan.pipe,
         })
       : pipelinedBatchUrl({ url: batch, pipe: null });
   const body =
@@ -272,7 +338,7 @@ async function send(opts: {
       ? undefined
       : pipelinedBatchBody({
           body: JSON.stringify(Object.fromEntries(inputs.entries())),
-          pipe: plan.reads,
+          pipe: plan.pipe,
         });
   const response = await fetch(url, {
     method: opts.method,
@@ -294,9 +360,17 @@ async function send(opts: {
     arrived.push(index);
     const result = isObject(answer) ? answer['result'] : undefined;
     outcomes[index]?.resolve(
-      isObject(result)
-        ? { data: opts.transformer.output.deserialize(result['data']) }
-        : { error: (answer as { error: WireError }).error },
+      isObject(answer) && 'items' in answer
+        ? {
+            items: (
+              deserializePipelinedItems(answer, (value) =>
+                opts.transformer.output.deserialize(value),
+              ) as { items: unknown }
+            ).items,
+          }
+        : isObject(result)
+          ? { data: opts.transformer.output.deserialize(result['data']) }
+          : { error: (answer as { error: WireError }).error },
     );
   };
   const reading = (async () => {
@@ -316,11 +390,11 @@ async function send(opts: {
 
   const succeeded = (index: number) =>
     Promise.resolve(outcomes[index]?.promise).then(
-      (outcome) => !!outcome && 'data' in outcome,
+      (outcome) => !!outcome && !('error' in outcome),
     );
   const ran = pipelinedCallsRan({
     sent: opts.sent.map((_it, index) => succeeded(index)),
-    reads: plan.reads,
+    pipe: plan.pipe,
     calls: plan.calls.map((it, index) => ({
       it,
       result: Promise.resolve(outcomes[opts.sent.length + index]?.promise).then(
@@ -434,9 +508,11 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'hello' });
-    const author = call('author', {}, [
-      { to: ['id'], from: post, path: ['authorId'], each: false },
-    ]);
+    const author = call(
+      'author',
+      {},
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -461,12 +537,16 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'hello' });
-    const author = call('author', {}, [
-      { to: ['id'], from: post, path: ['authorId'], each: false },
-    ]);
-    const teamPosts = call('teamPosts', {}, [
-      { to: ['teamId'], from: author, path: ['teamId'], each: false },
-    ]);
+    const author = call(
+      'author',
+      {},
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+    const teamPosts = call(
+      'teamPosts',
+      {},
+      reads(null, { to: ['teamId'], from: author, path: ['teamId'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -484,7 +564,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
       method,
       url:
         method === 'GET'
-          ? '/post,author,teamPosts?batch=pipeline&input={"0":{"slug":"hello"},"1":{},"2":{}}&pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}],"2":[{"to":["teamId"],"from":1,"path":["teamId"]}]}'
+          ? '/post,author,teamPosts?batch=pipeline&input={"0":{"slug":"hello"},"1":{},"2":{}}&pipe={"1":{"reads":[{"to":["id"],"from":0,"path":["authorId"]}]},"2":{"reads":[{"to":["teamId"],"from":1,"path":["teamId"]}]}}'
           : '/post,author,teamPosts?batch=pipeline',
       body:
         method === 'GET'
@@ -494,8 +574,8 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
               1: {},
               2: {},
               pipe: {
-                1: [{ to: ['id'], from: 0, path: ['authorId'] }],
-                2: [{ to: ['teamId'], from: 1, path: ['teamId'] }],
+                1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+                2: { reads: [{ to: ['teamId'], from: 1, path: ['teamId'] }] },
               },
             },
     });
@@ -505,9 +585,11 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, limits: wholeValues, fns });
     const post = sent('post', { slug: 'hello' });
-    const tags = call('tags', {}, [
-      { to: ['ids'], from: post, path: ['tags', null, 'id'], each: false },
-    ]);
+    const tags = call(
+      'tags',
+      {},
+      reads(null, { to: ['ids'], from: post, path: ['tags', null, 'id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -530,14 +612,14 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const list = sent('posts', undefined);
-    const authorOfEach = call('author', {}, [
-      {
-        to: ['id'],
-        from: list,
-        path: ['items', null, 'authorId'],
-        each: true,
-      },
-    ]);
+    const authorOfEach = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
 
     const res = await send({
       ...defaults,
@@ -553,9 +635,11 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
       ['author', { id: 'nobody' }],
     ]);
     const outcome = res.of(authorOfEach);
-    assert(outcome && 'data' in outcome);
+    assert(outcome && 'items' in outcome);
     expect(
-      [0, 1, 2, 3].map((index) => readPipelinedItem(outcome.data, index)),
+      await Promise.all(
+        [0, 1, 2, 3].map((index) => readPipelinedItem(outcome, [index])),
+      ),
     ).toEqual([
       { kind: 'data', data: { id: 'ada', name: 'Ada', teamId: 'infra' } },
       { kind: 'data', data: { id: 'lin', name: 'Lin', teamId: 'web' } },
@@ -571,12 +655,16 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'orphan' });
-    const author = call('author', {}, [
-      { to: ['id'], from: post, path: ['authorId'], each: false },
-    ]);
-    const teamPosts = call('teamPosts', {}, [
-      { to: ['teamId'], from: author, path: ['teamId'], each: false },
-    ]);
+    const author = call(
+      'author',
+      {},
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+    const teamPosts = call(
+      'teamPosts',
+      {},
+      reads(null, { to: ['teamId'], from: author, path: ['teamId'] }),
+    );
     const other = sent('post', { slug: 'hello' });
 
     const res = await send({
@@ -616,11 +704,16 @@ describe('what a call reads', () => {
     await using server = serve({ ...defaults, limits: wholeValues, fns });
     const hello = sent('post', { slug: 'hello' });
     const again = sent('post', { slug: 'again' });
-    const echo = call('echo', { authors: [null, null], nested: { deep: {} } }, [
-      { to: ['authors', '0'], from: hello, path: ['authorId'], each: false },
-      { to: ['authors', '1'], from: again, path: ['authorId'], each: false },
-      { to: ['nested', 'deep', 'post'], from: hello, path: [], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      { authors: [null, null], nested: { deep: {} } },
+      reads(
+        null,
+        { to: ['authors', '0'], from: hello, path: ['authorId'] },
+        { to: ['authors', '1'], from: again, path: ['authorId'] },
+        { to: ['nested', 'deep', 'post'], from: hello, path: [] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -640,9 +733,11 @@ describe('what a call reads', () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'hello' });
-    const echo = call('echo', undefined, [
-      { to: [], from: post, path: ['authorId'], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      undefined,
+      reads(null, { to: [], from: post, path: ['authorId'] }),
+    );
 
     await send({
       ...defaults,
@@ -659,21 +754,20 @@ describe('what a call reads', () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'hello' });
-    const echo = call('echo', {}, [
-      { to: ['a'], from: post, path: ['nope'], each: false },
-      { to: ['b'], from: post, path: ['slug', 'length'], each: false },
-      { to: ['c'], from: post, path: ['constructor'], each: false },
-      { to: ['d'], from: post, path: ['tags', 'length'], each: false },
-      { to: ['e'], from: post, path: ['slug', null], each: false },
-      // What every object inherits, and has JSON
-      { to: ['f'], from: post, path: ['__proto__'], each: false },
-      {
-        to: ['g'],
-        from: post,
-        path: ['tags', '__proto__', 'length'],
-        each: false,
-      },
-    ]);
+    const echo = call(
+      'echo',
+      {},
+      reads(
+        null,
+        { to: ['a'], from: post, path: ['nope'] },
+        { to: ['b'], from: post, path: ['slug', 'length'] },
+        { to: ['c'], from: post, path: ['constructor'] },
+        { to: ['d'], from: post, path: ['tags', 'length'] },
+        { to: ['e'], from: post, path: ['slug', null] },
+        { to: ['f'], from: post, path: ['__proto__'] },
+        { to: ['g'], from: post, path: ['tags', '__proto__', 'length'] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -707,11 +801,16 @@ describe('what a call reads', () => {
       },
     });
     const post = sent('post', undefined);
-    const echo = call('echo', {}, [
-      { to: ['at'], from: post, path: ['publishedAt'], each: false },
-      { to: ['secret'], from: post, path: ['secret'], each: false },
-      { to: ['tags'], from: post, path: ['tags'], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      {},
+      reads(
+        null,
+        { to: ['at'], from: post, path: ['publishedAt'] },
+        { to: ['secret'], from: post, path: ['secret'] },
+        { to: ['tags'], from: post, path: ['tags'] },
+      ),
+    );
 
     const res = await send({
       ...defaults,
@@ -737,9 +836,11 @@ describe('what a call reads', () => {
       fns: { nothing: () => undefined, echo },
     });
     const nothing = sent('nothing', undefined);
-    const reader = call('echo', { keep: 1 }, [
-      { to: ['id'], from: nothing, path: [], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      { keep: 1 },
+      reads(null, { to: ['id'], from: nothing, path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -770,23 +871,30 @@ describe('what a call reads', () => {
     });
     const post = sent('post', undefined);
     const list = sent('list', undefined);
-    const once = call('once', { ids: ['x', 'y'], filter: { id: 'x' } }, [
-      { to: ['ids', '0'], from: post, path: ['nope'], each: false },
-      { to: ['filter', 'id'], from: post, path: ['nope'], each: false },
-      { to: ['filter', 'author'], from: post, path: ['authorId'], each: false },
-    ]);
-    const whole = call('whole', 'replaced', [
-      { to: [], from: post, path: ['nope'], each: false },
-    ]);
-    const each = call('each', { ids: ['x'], filter: {} }, [
-      { to: ['ids', '0'], from: list, path: ['items', null, 'id'], each: true },
-      {
-        to: ['filter', 'id'],
-        from: list,
-        path: ['items', null, 'id'],
-        each: true,
-      },
-    ]);
+    const once = call(
+      'once',
+      { ids: ['x', 'y'], filter: { id: 'x' } },
+      reads(
+        null,
+        { to: ['ids', '0'], from: post, path: ['nope'] },
+        { to: ['filter', 'id'], from: post, path: ['nope'] },
+        { to: ['filter', 'author'], from: post, path: ['authorId'] },
+      ),
+    );
+    const whole = call(
+      'whole',
+      'replaced',
+      reads(null, { to: [], from: post, path: ['nope'] }),
+    );
+    const each = call(
+      'each',
+      { ids: ['x'], filter: {} },
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['ids', '0'], path: ['id'] },
+        { to: ['filter', 'id'], path: ['id'] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -821,10 +929,15 @@ describe('what a call reads', () => {
       },
     });
     const post = sent('post', undefined);
-    const echo = call('echo', { ids: ['x'], filter: {} }, [
-      { to: ['ids', '0'], from: post, path: ['nope'], each: false },
-      { to: ['filter', 'id'], from: post, path: ['nope'], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      { ids: ['x'], filter: {} },
+      reads(
+        null,
+        { to: ['ids', '0'], from: post, path: ['nope'] },
+        { to: ['filter', 'id'], from: post, path: ['nope'] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -858,12 +971,16 @@ describe('what a call reads', () => {
       },
     });
     const post = sent('post', undefined);
-    const rename = call('rename', {}, [
-      { to: ['author'], from: post, path: ['author'], each: false },
-    ]);
-    const echo = call('echo', {}, [
-      { to: ['author'], from: post, path: ['author'], each: false },
-    ]);
+    const rename = call(
+      'rename',
+      {},
+      reads(null, { to: ['author'], from: post, path: ['author'] }),
+    );
+    const echo = call(
+      'echo',
+      {},
+      reads(null, { to: ['author'], from: post, path: ['author'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -884,9 +1001,11 @@ describe('what a call reads', () => {
       fns: { ...fns, big: () => ({ id: 1n }) },
     });
     const big = sent('big', undefined);
-    const echo = call('echo', {}, [
-      { to: ['id'], from: big, path: ['id'], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: big, path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -908,18 +1027,17 @@ describe('a call for every item', () => {
     await using server = serve({ ...defaults, limits: wholeValues, fns });
     const list = sent('posts', undefined);
     const hello = sent('post', { slug: 'hello' });
-    const echo = call('echo', { item: {} }, [
-      { to: ['from'], from: hello, path: ['slug'], each: false },
-      { to: ['item'], from: list, path: ['items', null], each: true },
-      // Written after the item, inside it
-      { to: ['item', 'tags'], from: hello, path: ['authorId'], each: false },
-      {
-        to: ['slug'],
-        from: list,
-        path: ['items', null, 'slug'],
-        each: true,
-      },
-    ]);
+    const echo = call(
+      'echo',
+      { item: {} },
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['from'], from: hello, path: ['slug'] },
+        { to: ['item'], path: [] },
+        { to: ['item', 'tags'], from: hello, path: ['authorId'] },
+        { to: ['slug'], path: ['slug'] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -949,9 +1067,11 @@ describe('a call for every item', () => {
       fns: { list: () => scenario.data, echo },
     });
     const list = sent('list', undefined);
-    const each = call('echo', {}, [
-      { to: ['id'], from: list, path: ['items', null, 'id'], each: true },
-    ]);
+    const each = call(
+      'echo',
+      {},
+      reads({ from: list, path: ['items'] }, { to: ['id'], path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -961,7 +1081,7 @@ describe('a call for every item', () => {
       calls: [each],
     });
 
-    expect(res.of(each)).toEqual({ data: [] });
+    expect(res.of(each)).toEqual({ items: {} });
     expect(echo).not.toHaveBeenCalled();
   });
 
@@ -976,9 +1096,14 @@ describe('a call for every item', () => {
       },
     });
     const list = sent('list', undefined);
-    const each = call('echo', {}, [
-      { to: ['ids'], from: list, path: [null, 'tags', null, 'id'], each: true },
-    ]);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: list, path: [] },
+        { to: ['ids'], path: ['tags', null, 'id'] },
+      ),
+    );
 
     await send({
       ...defaults,
@@ -991,33 +1116,52 @@ describe('a call for every item', () => {
     expect(echo.mock.calls).toEqual([[{ ids: ['a', 'b'] }], [{ ids: [] }]]);
   });
 
-  test('a call can read the list of results of a call for every item', async () => {
+  test("a call that reads a call for every item runs once for every item too, and its run for an item reads that item's run", async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, limits: wholeValues, fns });
+    await using server = serve({ ...defaults, fns });
     const list = sent('posts', undefined);
-    const authorOfEach = call('author', {}, [
-      { to: ['id'], from: list, path: ['items', null, 'authorId'], each: true },
-    ]);
-    const echo = call('echo', {}, [
-      {
-        to: ['names'],
-        from: authorOfEach,
-        path: [null, 'result', 'data', 'name'],
-        each: false,
-      },
-    ]);
+    const authorOfEach = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
+    const teamPosts = call(
+      'teamPosts',
+      {},
+      reads(null, { to: ['teamId'], from: authorOfEach, path: ['teamId'] }),
+    );
 
-    await send({
+    const res = await send({
       ...defaults,
       url: server.url,
       method: 'GET',
       sent: [list],
-      calls: [authorOfEach, echo],
+      calls: [authorOfEach, teamPosts],
     });
 
-    // The third item failed: it has no result to read a name of. In a list,
-    // that is `null` once it has gone over the wire, as from a client
-    expect(ran.at(-1)).toEqual(['echo', { names: ['Ada', 'Lin', null] }]);
+    expect(ran.filter(([path]) => path === 'teamPosts')).toEqual([
+      ['teamPosts', { teamId: 'infra' }],
+      ['teamPosts', { teamId: 'web' }],
+    ]);
+    // The third author failed: its run of the team's posts doesn't run
+    expect(res.of(teamPosts)).toEqual({
+      items: {
+        0: { result: { data: ['hello'] } },
+        1: { result: { data: ['again'] } },
+        2: {
+          error: {
+            code: 'PRECONDITION_FAILED',
+            message: 'The call this call reads its input from failed',
+          },
+        },
+      },
+    });
+    expect(res.wire.url).toBe(
+      '/posts,author,teamPosts?batch=pipeline&input={"1":{},"2":{}}&pipe={"1":{"each":{"from":0,"path":["items"]},"reads":[{"to":["id"],"path":["authorId"]}]},"2":{"reads":[{"to":["teamId"],"from":1,"path":["teamId"]}]}}',
+    );
   });
 
   test('every run counts towards the most runs a request may have', async () => {
@@ -1025,9 +1169,14 @@ describe('a call for every item', () => {
     // The list, the call for its three items: four runs
     await using server = serve({ ...defaults, fns, maxRuns: 3 });
     const list = sent('posts', undefined);
-    const authorOfEach = call('author', {}, [
-      { to: ['id'], from: list, path: ['items', null, 'authorId'], each: true },
-    ]);
+    const authorOfEach = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
 
     const res = await send({
       ...defaults,
@@ -1057,12 +1206,16 @@ describe('a call for every item', () => {
     });
     const long = sent('long', undefined);
     const short = sent('short', undefined);
-    const ofLong = call('echo', {}, [
-      { to: ['n'], from: long, path: [null], each: true },
-    ]);
-    const ofShort = call('echo', {}, [
-      { to: ['n'], from: short, path: [null], each: true },
-    ]);
+    const ofLong = call(
+      'echo',
+      {},
+      reads({ from: long, path: [] }, { to: ['n'], path: [] }),
+    );
+    const ofShort = call(
+      'echo',
+      {},
+      reads({ from: short, path: [] }, { to: ['n'], path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1074,7 +1227,10 @@ describe('a call for every item', () => {
 
     expect(res.of(ofLong)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
     expect(res.of(ofShort)).toEqual({
-      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+      items: {
+        0: { result: { data: { n: 1 } } },
+        1: { result: { data: { n: 2 } } },
+      },
     });
   });
 
@@ -1096,12 +1252,16 @@ describe('a call for every item', () => {
     });
     const empty = sent('empty', undefined);
     const long = sent('long', undefined);
-    const ofEmpty = call('echo', {}, [
-      { to: ['n'], from: empty, path: [null], each: true },
-    ]);
-    const ofLong = call('echo', {}, [
-      { to: ['n'], from: long, path: [null], each: true },
-    ]);
+    const ofEmpty = call(
+      'echo',
+      {},
+      reads({ from: empty, path: [] }, { to: ['n'], path: [] }),
+    );
+    const ofLong = call(
+      'echo',
+      {},
+      reads({ from: long, path: [] }, { to: ['n'], path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1111,9 +1271,13 @@ describe('a call for every item', () => {
       calls: [ofEmpty, ofLong],
     });
 
-    expect(res.of(ofEmpty)).toEqual({ data: [] });
+    expect(res.of(ofEmpty)).toEqual({ items: {} });
     expect(echo.mock.calls).toEqual([[{ n: 1 }], [{ n: 2 }], [{ n: 3 }]]);
-    expect(res.of(ofLong)).toMatchObject({ data: { length: 3 } });
+    expect(Object.keys((res.of(ofLong) as { items: object }).items)).toEqual([
+      '0',
+      '1',
+      '2',
+    ]);
   });
 
   test('a call for every item whose list is from a failed call has no run: its place goes to one that needs it', async () => {
@@ -1136,12 +1300,16 @@ describe('a call for every item', () => {
     });
     const broken = sent('broken', undefined);
     const list = sent('list', undefined);
-    const ofBroken = call('echo', {}, [
-      { to: ['n'], from: broken, path: [null], each: true },
-    ]);
-    const ofList = call('echo', {}, [
-      { to: ['n'], from: list, path: [null], each: true },
-    ]);
+    const ofBroken = call(
+      'echo',
+      {},
+      reads({ from: broken, path: [] }, { to: ['n'], path: [] }),
+    );
+    const ofList = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1155,7 +1323,10 @@ describe('a call for every item', () => {
       error: { code: 'PRECONDITION_FAILED' },
     });
     expect(res.of(ofList)).toEqual({
-      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+      items: {
+        0: { result: { data: { n: 1 } } },
+        1: { result: { data: { n: 2 } } },
+      },
     });
   });
 
@@ -1187,12 +1358,16 @@ describe('a call for every item', () => {
       },
     });
     const list = sent('list', undefined);
-    const unreadable = call('echo', 'unreadable', [
-      { to: ['n'], from: list, path: ['0'], each: false },
-    ]);
-    const ofList = call('echo', {}, [
-      { to: ['n'], from: list, path: [null], each: true },
-    ]);
+    const unreadable = call(
+      'echo',
+      'unreadable',
+      reads(null, { to: ['n'], from: list, path: ['0'] }),
+    );
+    const ofList = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1206,7 +1381,10 @@ describe('a call for every item', () => {
       error: { message: 'unreadable' },
     });
     expect(res.of(ofList)).toEqual({
-      data: [{ result: { data: { n: 1 } } }, { result: { data: { n: 2 } } }],
+      items: {
+        0: { result: { data: { n: 1 } } },
+        1: { result: { data: { n: 2 } } },
+      },
     });
   });
 
@@ -1214,9 +1392,11 @@ describe('a call for every item', () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'gone' });
-    const tagOfEach = call('echo', {}, [
-      { to: ['id'], from: post, path: ['tags', null, 'id'], each: true },
-    ]);
+    const tagOfEach = call(
+      'echo',
+      {},
+      reads({ from: post, path: ['tags'] }, { to: ['id'], path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1234,6 +1414,253 @@ describe('a call for every item', () => {
     });
     expect(res.ran(tagOfEach)).toBe(false);
     expect(ran).toEqual([['post', { slug: 'gone' }]]);
+  });
+
+  test('a `null` in the path of `each` is a level of lists: a run has an index for each, and its response a level of `items`', async () => {
+    const echo = vi.fn((input: { n: number }) => input.n);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        book: () => ({
+          pages: [{ items: [1, 2] }, { items: [3] }, { items: 'none' }],
+        }),
+        echo,
+      },
+    });
+    const book = sent('book', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: book, path: ['pages', null, 'items'] },
+        { to: ['n'], path: [] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [book],
+      calls: [each],
+    });
+
+    expect(res.of(each)).toEqual({
+      items: {
+        0: {
+          items: { 0: { result: { data: 1 } }, 1: { result: { data: 2 } } },
+        },
+        1: { items: { 0: { result: { data: 3 } } } },
+        // What isn't a list has no items
+        2: { items: {} },
+      },
+    });
+    expect(echo).toHaveBeenCalledTimes(3);
+    expect(await readPipelinedItem(res.of(each), [1, 0])).toEqual({
+      kind: 'data',
+      data: 3,
+    });
+  });
+
+  test('every run of a list of lists counts, and a list that would go over `maxRuns` fails by itself', async () => {
+    const echo = vi.fn((input: { n: number }) => input.n);
+    await using server = serve({
+      ...defaults,
+      // The book, and the runs for the items of its first page
+      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      fns: {
+        book: () => ({ pages: [{ items: [1, 2] }, { items: [3] }] }),
+        echo,
+      },
+    });
+    const book = sent('book', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: book, path: ['pages', null, 'items'] },
+        { to: ['n'], path: [] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [book],
+      calls: [each],
+    });
+
+    expect(res.of(each)).toEqual({
+      items: {
+        0: {
+          items: { 0: { result: { data: 1 } }, 1: { result: { data: 2 } } },
+        },
+        1: {
+          error: {
+            code: 'BAD_REQUEST',
+            message:
+              'This call would make the batch run 4 times, more than `maxRuns` (3) allows',
+          },
+        },
+      },
+    });
+    expect(echo).toHaveBeenCalledTimes(2);
+  });
+
+  test('a call for every item of a list in each run of a call for every item: its runs have an index for both', async () => {
+    const echo = vi.fn((input: { group: string; member: string }) => input);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        groups: () => [{ id: 'a' }, { id: 'b' }, { id: 'gone' }],
+        members: (input: { id: string }) =>
+          input.id === 'gone'
+            ? notFound('group')
+            : { ids: [`${input.id}1`, `${input.id}2`] },
+        echo,
+      },
+    });
+    const groups = sent('groups', undefined);
+    const members = call(
+      'members',
+      {},
+      reads({ from: groups, path: [] }, { to: ['id'], path: ['id'] }),
+    );
+    // Reads the group of its run too: a frame its own starts with
+    const ofMembers = call(
+      'echo',
+      {},
+      reads(
+        { from: members, path: ['ids'] },
+        { to: ['member'], path: [] },
+        { to: ['group'], from: groups, path: ['0', 'id'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [groups],
+      calls: [members, ofMembers],
+    });
+
+    expect(res.of(ofMembers)).toEqual({
+      items: {
+        0: {
+          items: {
+            0: { result: { data: { member: 'a1', group: 'a' } } },
+            1: { result: { data: { member: 'a2', group: 'a' } } },
+          },
+        },
+        1: {
+          items: {
+            0: { result: { data: { member: 'b1', group: 'a' } } },
+            1: { result: { data: { member: 'b2', group: 'a' } } },
+          },
+        },
+        // The run of `members` it would be in failed
+        2: {
+          error: {
+            code: 'PRECONDITION_FAILED',
+            message: 'The call this call reads its input from failed',
+          },
+        },
+      },
+    });
+    expect(res.wire.url).toContain(
+      '"2":{"each":{"from":1,"path":["ids"]},"reads":[{"to":["member"],"path":[]},{"to":["group"],"from":0,"path":["0","id"]}]}',
+    );
+  });
+
+  test('a call for every item of a list in the runs of a call that was refused runs for none', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      // The groups, and one more call: not the runs of `members`
+      limits: { ...pipelineLimitDefaults, maxRuns: 2 },
+      fns: {
+        groups: () => [{ id: 'a' }, { id: 'b' }],
+        members: () => ({ ids: ['x'] }),
+        echo,
+      },
+    });
+    const groups = sent('groups', undefined);
+    const members = call(
+      'members',
+      {},
+      reads({ from: groups, path: [] }, { to: ['id'], path: ['id'] }),
+    );
+    const ofMembers = call(
+      'echo',
+      {},
+      reads({ from: members, path: ['ids'] }, { to: ['member'], path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [groups],
+      calls: [members, ofMembers],
+    });
+
+    expect(res.of(members)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+    expect(res.of(ofMembers)).toEqual({
+      items: {
+        0: { error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }) },
+        1: { error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }) },
+      },
+    });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
+  test('a call that reads calls for the items of two different lists is refused, and the rest of the batch runs', async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const post = sent('post', { slug: 'hello' });
+    const list = sent('posts', undefined);
+    const tags = call(
+      'echo',
+      {},
+      reads({ from: post, path: ['tags'] }, { to: ['id'], path: ['id'] }),
+    );
+    const authors = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
+    const both = call(
+      'echo',
+      {},
+      reads(
+        null,
+        { to: ['tag'], from: tags, path: ['id'] },
+        { to: ['author'], from: authors, path: ['id'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post, list],
+      calls: [tags, authors, both],
+    });
+
+    expect(res.of(both)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'Invalid "pipe": call 4 reads calls that run for the items of different lists',
+      },
+    });
+    expect(itemCount(res.of(tags))).toBe(2);
+    expect(ran.filter(([path]) => path === 'author')).toHaveLength(3);
   });
 });
 
@@ -1315,12 +1742,14 @@ describe('the limits of a server', () => {
       call(
         path,
         {},
-        Array.from({ length: count }, (_it, index) => ({
-          to: [`k${index}`],
-          from: post,
-          path: ['id'],
-          each: false,
-        })),
+        reads(
+          null,
+          ...Array.from({ length: count }, (_it, index) => ({
+            to: [`k${index}`],
+            from: post,
+            path: ['id'],
+          })),
+        ),
       );
     const fns = { post: () => ({ id: 'ada' }), over: () => 1, within: () => 2 };
 
@@ -1359,7 +1788,7 @@ describe('the limits of a server', () => {
           result: () => undefined,
         })),
         pipe: JSON.stringify({
-          1: Array.from({ length: 200_000 }, () => read),
+          1: { reads: Array.from({ length: 200_000 }, () => read) },
         }),
         transformer: transformers.none,
         maxRuns: null,
@@ -1379,7 +1808,7 @@ describe('the limits of a server', () => {
           if ('error' in outcome) {
             throw new Error(outcome.error.message);
           }
-          return outcome.data;
+          return 'data' in outcome ? outcome.data : undefined;
         },
       });
 
@@ -1393,10 +1822,15 @@ describe('the limits of a server', () => {
 
     test('a call for every item counts its reads too, and runs for no item', async () => {
       const list = sent('list', undefined);
-      const each = call('each', {}, [
-        { to: ['a'], from: list, path: ['items', null], each: true },
-        { to: ['b'], from: list, path: ['id'], each: false },
-      ]);
+      const each = call(
+        'each',
+        {},
+        reads(
+          { from: list, path: ['items'] },
+          { to: ['a'], path: [] },
+          { to: ['b'], from: list, path: ['id'] },
+        ),
+      );
 
       const { res, ran } = await sendWith({
         limits: { ...pipelineLimitDefaults, maxReadsPerCall: 1 },
@@ -1417,24 +1851,37 @@ describe('the limits of a server', () => {
   describe('`maxDepth`', () => {
     // `post` is 1, `author` 2, `team` 3 and `teamPosts` 4
     const post = sent('post', undefined);
-    const author = call('author', {}, [
-      { to: ['id'], from: post, path: ['authorId'], each: false },
-    ]);
-    const team = call('team', {}, [
-      { to: ['id'], from: author, path: ['teamId'], each: false },
-    ]);
-    const teamPosts = call('teamPosts', {}, [
-      { to: ['id'], from: team, path: ['id'], each: false },
-    ]);
+    const author = call(
+      'author',
+      {},
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+    const team = call(
+      'team',
+      {},
+      reads(null, { to: ['id'], from: author, path: ['teamId'] }),
+    );
+    const teamPosts = call(
+      'teamPosts',
+      {},
+      reads(null, { to: ['id'], from: team, path: ['id'] }),
+    );
     // 5: it reads a call that is refused
-    const first = call('first', {}, [
-      { to: ['slug'], from: teamPosts, path: ['0'], each: false },
-    ]);
+    const first = call(
+      'first',
+      {},
+      reads(null, { to: ['slug'], from: teamPosts, path: ['0'] }),
+    );
     // 3, from the deepest call it reads, which is 2
-    const both = call('both', {}, [
-      { to: ['slug'], from: post, path: ['slug'], each: false },
-      { to: ['id'], from: author, path: ['id'], each: false },
-    ]);
+    const both = call(
+      'both',
+      {},
+      reads(
+        null,
+        { to: ['slug'], from: post, path: ['slug'] },
+        { to: ['id'], from: author, path: ['id'] },
+      ),
+    );
     const fns = {
       post: () => ({ slug: 'hello', authorId: 'ada' }),
       author: () => ({ id: 'ada', teamId: 'infra' }),
@@ -1486,12 +1933,16 @@ describe('the limits of a server', () => {
     });
 
     test('a call for every item is as deep as the list it runs for', async () => {
-      const list = call('list', {}, [
-        { to: ['id'], from: post, path: ['authorId'], each: false },
-      ]);
-      const each = call('each', {}, [
-        { to: ['n'], from: list, path: ['items', null], each: true },
-      ]);
+      const list = call(
+        'list',
+        {},
+        reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+      );
+      const each = call(
+        'each',
+        {},
+        reads({ from: list, path: ['items'] }, { to: ['n'], path: [] }),
+      );
 
       const { res, ran } = await sendWith({
         limits: { ...pipelineLimitDefaults, maxDepth: 2 },
@@ -1506,16 +1957,22 @@ describe('the limits of a server', () => {
 
     test('a call that reads no values is 1 deep, as one the client sends itself', async () => {
       // `none` 1, `second` 2, `third` 3 and `fourth` 4
-      const none = call('none', {}, []);
-      const second = call('second', {}, [
-        { to: ['id'], from: none, path: ['id'], each: false },
-      ]);
-      const third = call('third', {}, [
-        { to: ['id'], from: second, path: ['id'], each: false },
-      ]);
-      const fourth = call('fourth', {}, [
-        { to: ['id'], from: third, path: ['id'], each: false },
-      ]);
+      const none = call('none', {}, reads(null));
+      const second = call(
+        'second',
+        {},
+        reads(null, { to: ['id'], from: none, path: ['id'] }),
+      );
+      const third = call(
+        'third',
+        {},
+        reads(null, { to: ['id'], from: second, path: ['id'] }),
+      );
+      const fourth = call(
+        'fourth',
+        {},
+        reads(null, { to: ['id'], from: third, path: ['id'] }),
+      );
 
       const { res, ran } = await sendWith({
         limits: pipelineLimitDefaults,
@@ -1537,9 +1994,11 @@ describe('the limits of a server', () => {
 
   describe('`maxRuns`', () => {
     const list = sent('list', undefined);
-    const ofList = call('echo', {}, [
-      { to: ['n'], from: list, path: [null], each: true },
-    ]);
+    const ofList = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
     const fns = (length: number) => ({
       list: () => Array.from({ length }, (_it, index) => index),
       echo: () => null,
@@ -1558,9 +2017,7 @@ describe('the limits of a server', () => {
           sent: [list],
           calls: [ofList],
         });
-        expect(within.res.of(ofList)).toMatchObject({
-          data: { length: max - 1 },
-        });
+        expect(itemCount(within.res.of(ofList))).toBe(max - 1);
 
         const over = await sendWith({
           limits,
@@ -1579,9 +2036,11 @@ describe('the limits of a server', () => {
 
     test('a refused call for every item gives its place back: a later one that fits runs', async () => {
       const short = sent('short', undefined);
-      const ofShort = call('echo', {}, [
-        { to: ['n'], from: short, path: [null], each: true },
-      ]);
+      const ofShort = call(
+        'echo',
+        {},
+        reads({ from: short, path: [] }, { to: ['n'], path: [] }),
+      );
       const { res } = await sendWith({
         // Four calls, and two runs for the items of `short`
         limits: { ...pipelineLimitDefaults, maxRuns: 4 },
@@ -1599,14 +2058,14 @@ describe('the limits of a server', () => {
       });
 
       expect(res.of(ofList)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
-      expect(res.of(ofShort)).toMatchObject({ data: { length: 2 } });
+      expect(itemCount(res.of(ofShort))).toBe(2);
     });
   });
 
   describe('`maxValueLength`', () => {
     const post = sent('post', undefined);
-    const reads = (path: string) =>
-      call(path, {}, [{ to: ['v'], from: post, path: [path], each: false }]);
+    const reader = (path: string) =>
+      call(path, {}, reads(null, { to: ['v'], from: post, path: [path] }));
     // Its quotes count: `"xx"` is 4 characters of JSON
     const ofLength = (length: number) => 'x'.repeat(length - 2);
 
@@ -1617,8 +2076,8 @@ describe('the limits of a server', () => {
     ])(
       'a call that reads a value longer than $max characters of JSON is refused, and the rest of the batch runs',
       async ({ limits, max }) => {
-        const over = reads('over');
-        const within = reads('within');
+        const over = reader('over');
+        const within = reader('within');
 
         const { res, ran } = await sendWith({
           limits,
@@ -1641,11 +2100,13 @@ describe('the limits of a server', () => {
       },
     );
 
-    test('a value of an item counts, and a call for every item runs for none if one is too long', async () => {
+    test('a value of an item counts, and a run whose value is too long fails by itself', async () => {
       const list = sent('list', undefined);
-      const each = call('each', {}, [
-        { to: ['v'], from: list, path: ['items', null, 'v'], each: true },
-      ]);
+      const each = call(
+        'each',
+        {},
+        reads({ from: list, path: ['items'] }, { to: ['v'], path: ['v'] }),
+      );
 
       const { res, ran } = await sendWith({
         limits: { ...pipelineLimitDefaults, maxValueLength: 10 },
@@ -1657,19 +2118,22 @@ describe('the limits of a server', () => {
         calls: [each],
       });
 
-      expect(res.of(each)).toEqual(
-        refused(
-          'A value this call reads is longer than `maxValueLength` (10 characters of JSON) allows',
-        ),
-      );
-      expect(ran).toEqual(['list']);
+      expect(res.of(each)).toEqual({
+        items: {
+          0: { result: { data: 1 } },
+          1: refused(
+            'A value this call reads is longer than `maxValueLength` (10 characters of JSON) allows',
+          ),
+        },
+      });
+      expect(ran).toEqual(['list', 'each']);
     });
   });
 
   describe('`allowWholeValues`', () => {
     const post = sent('post', undefined);
-    const reads = (path: string) =>
-      call(path, {}, [{ to: ['v'], from: post, path: [path], each: false }]);
+    const reader = (path: string) =>
+      call(path, {}, reads(null, { to: ['v'], from: post, path: [path] }));
     const fns = {
       post: () => ({
         author: { id: 'ada' },
@@ -1700,7 +2164,7 @@ describe('the limits of a server', () => {
         'boolean',
         'nothing',
         'missing',
-      ].map(reads);
+      ].map(reader);
 
       const { res, ran } = await sendWith({
         limits: pipelineLimitDefaults,
@@ -1730,8 +2194,8 @@ describe('the limits of a server', () => {
     });
 
     test('`allowWholeValues: true` lets a read land on an object or an array', async () => {
-      const author = reads('author');
-      const tags = reads('tags');
+      const author = reader('author');
+      const tags = reader('tags');
 
       const { res } = await sendWith({
         limits: { ...pipelineLimitDefaults, allowWholeValues: true },
@@ -1746,12 +2210,16 @@ describe('the limits of a server', () => {
 
     test('an item itself is a whole value, and a value of it is not', async () => {
       const list = sent('list', undefined);
-      const items = call('items', {}, [
-        { to: ['v'], from: list, path: ['items', null], each: true },
-      ]);
-      const ids = call('ids', {}, [
-        { to: ['v'], from: list, path: ['items', null, 'id'], each: true },
-      ]);
+      const items = call(
+        'items',
+        {},
+        reads({ from: list, path: ['items'] }, { to: ['v'], path: [] }),
+      );
+      const ids = call(
+        'ids',
+        {},
+        reads({ from: list, path: ['items'] }, { to: ['v'], path: ['id'] }),
+      );
 
       const { res } = await sendWith({
         limits: pipelineLimitDefaults,
@@ -1764,8 +2232,8 @@ describe('the limits of a server', () => {
         calls: [items, ids],
       });
 
-      expect(res.of(items)).toEqual(whole);
-      expect(res.of(ids)).toEqual({ data: [{ result: { data: 'a' } }] });
+      expect(res.of(items)).toEqual({ items: { 0: whole } });
+      expect(res.of(ids)).toEqual({ items: { 0: { result: { data: 'a' } } } });
     });
   });
 });
@@ -1797,16 +2265,25 @@ describe('`maxFillSize`: what a request fills in', () => {
       fns: { post: () => ({ big, id: 'ada' }), echo },
     });
     const post = sent('post', undefined);
-    const fits = call('echo', { n: 1 }, [
-      { to: ['big'], from: post, path: ['big'], each: false },
-    ]);
-    const tooMuch = call('echo', { n: 2 }, [
-      { to: ['big'], from: post, path: ['big'], each: false },
-      { to: ['again'], from: post, path: ['big'], each: false },
-    ]);
-    const small = call('echo', { n: 3 }, [
-      { to: ['id'], from: post, path: ['id'], each: false },
-    ]);
+    const fits = call(
+      'echo',
+      { n: 1 },
+      reads(null, { to: ['big'], from: post, path: ['big'] }),
+    );
+    const tooMuch = call(
+      'echo',
+      { n: 2 },
+      reads(
+        null,
+        { to: ['big'], from: post, path: ['big'] },
+        { to: ['again'], from: post, path: ['big'] },
+      ),
+    );
+    const small = call(
+      'echo',
+      { n: 3 },
+      reads(null, { to: ['id'], from: post, path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1834,10 +2311,15 @@ describe('`maxFillSize`: what a request fills in', () => {
       fns: { post: () => ({ lines }), echo },
     });
     const post = sent('post', undefined);
-    const reader = call('echo', {}, [
-      { to: ['a'], from: post, path: ['lines'], each: false },
-      { to: ['b'], from: post, path: ['lines'], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      {},
+      reads(
+        null,
+        { to: ['a'], from: post, path: ['lines'] },
+        { to: ['b'], from: post, path: ['lines'] },
+      ),
+    );
 
     const res = await send({
       ...defaults,
@@ -1859,12 +2341,16 @@ describe('`maxFillSize`: what a request fills in', () => {
       fns: { post: () => ({ big: 'x'.repeat(maxFillSize * 0.6) }), echo },
     });
     const post = sent('post', undefined);
-    const broken = call('echo', { id: 'text' }, [
-      { to: ['id', 'big'], from: post, path: ['big'], each: false },
-    ]);
-    const fits = call('echo', {}, [
-      { to: ['big'], from: post, path: ['big'], each: false },
-    ]);
+    const broken = call(
+      'echo',
+      { id: 'text' },
+      reads(null, { to: ['id', 'big'], from: post, path: ['big'] }),
+    );
+    const fits = call(
+      'echo',
+      {},
+      reads(null, { to: ['big'], from: post, path: ['big'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1885,7 +2371,7 @@ describe('`maxFillSize`: what a request fills in', () => {
     await using server = serve({
       ...defaults,
       limits,
-      // A refused call takes none of the runs either
+      // A run that is refused gives its place back
       maxRuns: 6,
       fns: {
         three: () => ({ big, items: [1, 2, 3] }),
@@ -1899,15 +2385,23 @@ describe('`maxFillSize`: what a request fills in', () => {
     });
     const three = sent('three', undefined);
     const two = sent('two', undefined);
-    // Three runs, each with the big value: too much together
-    const ofThree = call('echo', {}, [
-      { to: ['n'], from: three, path: ['items', null], each: true },
-      { to: ['big'], from: three, path: ['big'], each: false },
-    ]);
-    // Two runs, each with an input that is the big value
-    const ofTwo = call('echo', { big }, [
-      { to: ['n'], from: two, path: ['items', null], each: true },
-    ]);
+    // Three runs, each with the big value: the third is too much
+    const ofThree = call(
+      'echo',
+      {},
+      reads(
+        { from: three, path: ['items'] },
+        { to: ['n'], path: [] },
+        { to: ['big'], from: three, path: ['big'] },
+      ),
+    );
+    // Two runs, each with an input that is the big value, and too much once
+    // the first two runs above have theirs
+    const ofTwo = call(
+      'echo',
+      { big },
+      reads({ from: two, path: ['items'] }, { to: ['n'], path: [] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -1917,10 +2411,14 @@ describe('`maxFillSize`: what a request fills in', () => {
       calls: [ofThree, ofTwo],
     });
 
-    expect(res.of(ofThree)).toEqual(refused);
-    expect(res.of(ofTwo)).toEqual({
-      data: [{ result: { data: 1 } }, { result: { data: 2 } }],
+    expect(res.of(ofThree)).toEqual({
+      items: {
+        0: { result: { data: 1 } },
+        1: { result: { data: 2 } },
+        2: refused,
+      },
     });
+    expect(res.of(ofTwo)).toEqual({ items: { 0: refused, 1: refused } });
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
@@ -1934,9 +2432,11 @@ describe('`maxFillSize`: what a request fills in', () => {
         fns: { list: () => ['x'], echo },
       });
       const list = sent('list', undefined);
-      const each = call('echo', {}, [
-        { to: ['longField'], from: list, path: [null], each: true },
-      ]);
+      const each = call(
+        'echo',
+        {},
+        reads({ from: list, path: [] }, { to: ['longField'], path: [] }),
+      );
       const res = await send({
         ...defaults,
         url: server.url,
@@ -1949,16 +2449,22 @@ describe('`maxFillSize`: what a request fills in', () => {
 
     const over = await run(16);
     expect(over.outcome).toEqual({
-      error: {
-        code: 'BAD_REQUEST',
-        message:
-          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+      items: {
+        0: {
+          error: {
+            code: 'BAD_REQUEST',
+            message:
+              'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+          },
+        },
       },
     });
     expect(over.echo).not.toHaveBeenCalled();
 
     const within = await run(17);
-    expect(within.outcome).toEqual({ data: [{ result: { data: null } }] });
+    expect(within.outcome).toEqual({
+      items: { 0: { result: { data: null } } },
+    });
     expect(within.echo).toHaveBeenCalledWith({ longField: 'x' });
   });
 });
@@ -2032,9 +2538,11 @@ describe('data that is still to come', () => {
       },
     });
     const post = sent('post', undefined);
-    const reader = call('echo', {}, [
-      { to: ['id'], from: post, path: ['id'], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: post, path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -2064,12 +2572,16 @@ describe('a call that failed', () => {
       onError: (path, input) => failed.push([path, input]),
     });
     const post = sent('post', { slug: 'orphan' });
-    const author = call('author', { fields: ['name'] }, [
-      { to: ['id'], from: post, path: ['authorId'], each: false },
-    ]);
-    const teamPosts = call('teamPosts', { limit: 5 }, [
-      { to: ['teamId'], from: author, path: ['teamId'], each: false },
-    ]);
+    const author = call(
+      'author',
+      { fields: ['name'] },
+      reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+    );
+    const teamPosts = call(
+      'teamPosts',
+      { limit: 5 },
+      reads(null, { to: ['teamId'], from: author, path: ['teamId'] }),
+    );
 
     await send({
       ...defaults,
@@ -2120,12 +2632,16 @@ describe('the order things happen in', () => {
     });
     const slow = sent('slow', undefined);
     const fast = sent('fast', undefined);
-    const ofSlow = call('echo', {}, [
-      { to: ['id'], from: slow, path: ['id'], each: false },
-    ]);
-    const ofFast = call('echo', {}, [
-      { to: ['id'], from: fast, path: ['id'], each: false },
-    ]);
+    const ofSlow = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: slow, path: ['id'] }),
+    );
+    const ofFast = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: fast, path: ['id'] }),
+    );
 
     await send({
       ...defaults,
@@ -2169,12 +2685,16 @@ describe('the order things happen in', () => {
     });
     const slow = sent('slow', undefined);
     const fast = sent('fast', undefined);
-    const ofSlow = call('echo', {}, [
-      { to: ['id'], from: slow, path: ['id'], each: false },
-    ]);
-    const ofFast = call('echo', {}, [
-      { to: ['id'], from: fast, path: ['id'], each: false },
-    ]);
+    const ofSlow = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: slow, path: ['id'] }),
+    );
+    const ofFast = call(
+      'echo',
+      {},
+      reads(null, { to: ['id'], from: fast, path: ['id'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -2195,12 +2715,16 @@ describe('the order things happen in', () => {
 
 describe('what a client puts in a request', () => {
   const post = sent('post', { slug: 'hello' });
-  const author = call('author', {}, [
-    { to: ['id'], from: post, path: ['authorId'], each: false },
-  ]);
-  const teamPosts = call('teamPosts', {}, [
-    { to: ['teamId'], from: author, path: ['teamId'], each: false },
-  ]);
+  const author = call(
+    'author',
+    {},
+    reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+  );
+  const teamPosts = call(
+    'teamPosts',
+    {},
+    reads(null, { to: ['teamId'], from: author, path: ['teamId'] }),
+  );
 
   test('a call that does not fit is left out, and so is what reads it', () => {
     const plan = planPipelinedBatch({
@@ -2209,7 +2733,7 @@ describe('what a client puts in a request', () => {
       fits: (next) => !next.calls.includes(author),
     });
 
-    expect(plan).toEqual({ calls: [], reads: {}, left: [author, teamPosts] });
+    expect(plan).toEqual({ calls: [], pipe: {}, left: [author, teamPosts] });
   });
 
   test('a call that fits goes, also when a later one does not', () => {
@@ -2221,20 +2745,27 @@ describe('what a client puts in a request', () => {
 
     expect(plan).toEqual({
       calls: [author],
-      reads: { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+      pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } },
       left: [teamPosts],
     });
   });
 
   test('a call that reads what the request does not have is left out', () => {
     const elsewhere = sent('post', { slug: 'again' });
-    const reader = call('echo', {}, [
-      { to: ['a'], from: post, path: ['slug'], each: false },
-      { to: ['b'], from: elsewhere, path: ['slug'], each: false },
-    ]);
-    const ofEach = call('echo', {}, [
-      { to: ['a'], from: elsewhere, path: [null], each: true },
-    ]);
+    const reader = call(
+      'echo',
+      {},
+      reads(
+        null,
+        { to: ['a'], from: post, path: ['slug'] },
+        { to: ['b'], from: elsewhere, path: ['slug'] },
+      ),
+    );
+    const ofEach = call(
+      'echo',
+      {},
+      reads({ from: elsewhere, path: [] }, { to: ['a'], path: [] }),
+    );
 
     const plan = planPipelinedBatch({
       // `null`: something in the request that no call reads
@@ -2244,18 +2775,23 @@ describe('what a client puts in a request', () => {
     });
 
     expect(plan.calls).toEqual([author]);
-    expect(plan.reads).toEqual({
-      2: [{ to: ['id'], from: 1, path: ['authorId'] }],
+    expect(plan.pipe).toEqual({
+      2: { reads: [{ to: ['id'], from: 1, path: ['authorId'] }] },
     });
     expect(plan.left).toEqual([reader, ofEach]);
   });
 
   test('a call for every item that also reads what the request does not have is left out', () => {
     const elsewhere = sent('post', { slug: 'again' });
-    const ofEach = call('echo', {}, [
-      { to: ['a'], from: post, path: ['tags', null], each: true },
-      { to: ['b'], from: elsewhere, path: ['slug'], each: false },
-    ]);
+    const ofEach = call(
+      'echo',
+      {},
+      reads(
+        { from: post, path: ['tags'] },
+        { to: ['a'], path: [] },
+        { to: ['b'], from: elsewhere, path: ['slug'] },
+      ),
+    );
 
     const plan = planPipelinedBatch({
       sent: [post],
@@ -2263,77 +2799,188 @@ describe('what a client puts in a request', () => {
       fits: () => true,
     });
 
-    expect(plan).toEqual({ calls: [], reads: {}, left: [ofEach] });
+    expect(plan).toEqual({ calls: [], pipe: {}, left: [ofEach] });
   });
 
   test('a call the `pipe` says nothing of reads nothing, so it ran', async () => {
     const [first] = pipelinedCallsRan({
       sent: [Promise.resolve(false)],
-      reads: {},
+      pipe: {},
       calls: [{ result: Promise.resolve('data') }],
     });
 
     await expect(first?.ran).resolves.toBe(true);
   });
 
-  test('an item the server sent neither a result nor an error for is missing', () => {
+  test('an item the server sent neither a result nor an error for is missing', async () => {
+    const items = { items: { 0: {}, 1: { result: null }, 2: 'text' } };
     expect(
-      [0, 1, 2, 3].map((index) =>
-        readPipelinedItem([{}, { result: null }, 'text'], index),
+      await Promise.all(
+        [0, 1, 2, 3].map((index) => readPipelinedItem(items, [index])),
       ),
     ).toEqual(Array.from({ length: 4 }, () => ({ kind: 'missing' })));
-    // Data that is no list has no items
-    expect(readPipelinedItem(null, 0)).toEqual({ kind: 'missing' });
+    // What has no items, or a list that couldn't run, has no runs
+    expect(await readPipelinedItem(null, [0])).toEqual({ kind: 'missing' });
+    expect(await readPipelinedItem({ error: {} }, [0])).toEqual({
+      kind: 'missing',
+    });
+    // A level of lists with no list at an index
+    expect(
+      await readPipelinedItem({ items: { 0: { items: {} } } }, [0, 1]),
+    ).toEqual({ kind: 'missing' });
+    // A place that is a level of lists, not a run
+    expect(await readPipelinedItem(items, [])).toEqual({ kind: 'missing' });
+  });
+
+  test('a run is read through every level of lists, streamed or not', async () => {
+    const run = { result: { data: 'a' } };
+    expect(
+      await readPipelinedItem({ items: { 1: { items: { 0: run } } } }, [1, 0]),
+    ).toEqual({ kind: 'data', data: 'a' });
+    expect(
+      await readPipelinedItem(
+        {
+          items: Promise.resolve({
+            1: Promise.resolve({ items: Promise.resolve({ 0: run }) }),
+          }),
+        },
+        [1, 0],
+      ),
+    ).toEqual({ kind: 'data', data: 'a' });
+  });
+
+  test("a response that does not stream has each run deserialized as a call's result is", () => {
+    const deserialize = (value: unknown) => ({ deserialized: value });
+    expect(
+      deserializePipelinedItems(
+        {
+          items: {
+            0: { result: { data: 1 } },
+            1: { error: 'e' },
+            2: { items: { 0: { result: { data: 2 } } } },
+            // What is no run is as it was
+            3: 'text',
+            4: { result: null },
+          },
+        },
+        deserialize,
+      ),
+    ).toEqual({
+      items: {
+        0: { result: { data: { deserialized: 1 } } },
+        1: { error: { deserialized: 'e' } },
+        2: { items: { 0: { result: { data: { deserialized: 2 } } } } },
+        3: 'text',
+        4: { result: null },
+      },
+    });
   });
 
   test('the reads of a call are the same after a trip over the wire', () => {
-    const cases: PipelineRead<number>[][] = [
-      [],
-      [{ to: [], from: 0, path: [], each: false }],
-      [
-        { to: ['a'], from: 0, path: ['x', null, 'y'], each: false },
-        { to: ['b'], from: 1, path: ['items', null, 'id', null], each: true },
-        { to: ['c', '0'], from: 1, path: ['items', null], each: true },
-        { to: ['d'], from: 2, path: ['z'], each: false },
-      ],
-      [{ to: ['a'], from: 0, path: [null], each: true }],
+    const cases: PipelineCallReads<number>[] = [
+      { each: null, reads: [] },
+      { each: null, reads: [{ kind: 'whole', to: [], from: 0, path: [] }] },
+      {
+        each: { from: 1, path: ['pages', null, 'items'] },
+        reads: [
+          { kind: 'whole', to: ['a'], from: 0, path: ['x', null, 'y'] },
+          { kind: 'item', to: ['b'], path: ['id', null] },
+          { kind: 'item', to: ['c', '0'], path: [] },
+          { kind: 'whole', to: ['d'], from: 2, path: ['z'] },
+        ],
+      },
+      {
+        each: { from: 0, path: [null] },
+        reads: [{ kind: 'item', to: ['a'], path: [] }],
+      },
     ];
     for (const reads of cases) {
-      const grouped = groupPipelineReads(reads);
-      assert(grouped.ok);
-      const pipe = { 3: encodePipelineReads(grouped.reads) };
+      const pipe = { 3: encodePipelineReads(reads) };
       expect(
         // A source that is its own index: what comes out is what went in
         parsePipelineReads({
           pipe: JSON.stringify(pipe),
           sources: [0, 1, 2, 3],
         }).get(3),
-      ).toEqual(grouped.reads);
+      ).toEqual(reads);
     }
+    // What can be left out is a key, never `undefined`
+    expect(JSON.stringify(encodePipelineReads(cases[0]!))).toBe('{"reads":[]}');
   });
 
-  test('reads the server would refuse are no reads to a client either', () => {
+  test('the levels of a list are its path, split at each `null`', () => {
+    expect(pipelineListLevels([])).toEqual([[]]);
+    expect(pipelineListLevels(['items'])).toEqual([['items']]);
+    expect(pipelineListLevels(['pages', null, 'items'])).toEqual([
+      ['pages'],
+      ['items'],
+    ]);
+    expect(pipelineListLevels([null])).toEqual([[], []]);
+  });
+
+  test('a call runs for the items of one list: the frames of what it reads are the start of its own', () => {
+    const frameOf = new Map<
+      number,
+      ReturnType<typeof pipelineFrameOf<number>>['frame']
+    >();
+    const add = (index: number, reads: PipelineCallReads<number>) => {
+      const framed = pipelineFrameOf({
+        reads,
+        frameOf: (from) => frameOf.get(from) ?? null,
+      });
+      frameOf.set(index, framed.frame);
+      return framed;
+    };
+    const whole = (from: number) => ({
+      kind: 'whole' as const,
+      to: [],
+      from,
+      path: [],
+    });
+    // 1 and 2 run for the items of two lists of 0, 3 for the items of 1's
+    expect(add(1, { each: { from: 0, path: ['a'] }, reads: [] }).frame).toEqual(
+      {
+        parent: null,
+        list: { from: 0, path: ['a'] },
+        depth: 1,
+      },
+    );
+    add(2, { each: { from: 0, path: ['b'] }, reads: [] });
     expect(
-      groupPipelineReads([
-        { to: ['a'], from: post, path: ['tags'], each: true },
-      ]),
-    ).toEqual({ ok: false, problem: 'each-without-list' });
-    for (const other of [
-      { to: ['b'], from: author, path: ['tags', null], each: true },
-      { to: ['b'], from: post, path: ['other', null], each: true },
-      { to: ['b'], from: post, path: ['tags', 'more', null], each: true },
-    ]) {
-      expect(
-        groupPipelineReads([
-          { to: ['a'], from: post, path: ['tags', null], each: true },
-          other,
-        ]),
-      ).toEqual({ ok: false, problem: 'more-than-one-list' });
-    }
+      add(3, { each: { from: 1, path: ['c', null, 'd'] }, reads: [] }).frame
+        ?.depth,
+    ).toBe(3);
+    // In 1's frame, as it reads 1
+    expect(add(4, { each: null, reads: [whole(0), whole(1)] })).toEqual({
+      frame: frameOf.get(1),
+      fits: true,
+    });
+    // 3's frame starts with 1's, and with 4's, which is the same
+    expect(add(5, { each: null, reads: [whole(3), whole(4)] }).fits).toBe(true);
+    // Another list of the same call, and a call over another list
+    expect(add(6, { each: null, reads: [whole(1), whole(2)] }).fits).toBe(
+      false,
+    );
+    expect(add(7, { each: null, reads: [whole(3), whole(2)] }).fits).toBe(
+      false,
+    );
+    // A list in each of 1's runs, which reads 2
+    expect(
+      add(8, { each: { from: 1, path: ['e'] }, reads: [whole(2)] }).fits,
+    ).toBe(false);
+    // The same list, as another call has it
+    expect(
+      add(9, {
+        each: { from: 0, path: ['a'] },
+        reads: [whole(1), whole(4)],
+      }).fits,
+    ).toBe(true);
   });
 
   test('the URL of a batch, pipelined', () => {
-    const pipe = { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] };
+    const pipe = {
+      1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+    };
     const encoded = encodeURIComponent(JSON.stringify(pipe));
     expect(
       pipelinedBatchUrl({ url: 'http://x/a,b?batch=1&input=%7B%7D', pipe }),
@@ -2397,84 +3044,94 @@ describe('a request the server refuses, before anything of it runs', () => {
     { name: 'no object', pipe: '[]', message: 'expected an object' },
     {
       name: 'a call that is not there',
-      pipe: { 2: [] },
+      pipe: { 2: { reads: [] } },
       message: 'no call at index 2',
     },
     {
       name: 'a call before the first',
-      pipe: { '-1': [] },
+      pipe: { '-1': { reads: [] } },
       message: 'no call at index -1',
     },
     // It would be read as `1`, and the last of the two would win
     {
       name: 'a second way to write an index',
-      pipe: { '01': [read] },
+      pipe: { '01': { reads: [read] } },
       message: 'no call at index 01',
     },
     {
       name: 'a third way to write an index',
-      pipe: { '1e0': [read] },
+      pipe: { '1e0': { reads: [read] } },
       message: 'no call at index 1e0',
     },
     {
       name: 'a zero with a sign',
-      pipe: { '-0': [] },
+      pipe: { '-0': { reads: [] } },
       message: 'no call at index -0',
     },
     {
       name: 'a key that is no index',
-      pipe: { a: [] },
+      pipe: { a: { reads: [] } },
       message: 'no call at index a',
     },
     {
+      name: 'a call that is no object',
+      pipe: { 1: [read] },
+      message: 'expected "reads" at 1',
+    },
+    {
       name: 'reads that are no list',
-      pipe: { 1: {} },
-      message: 'expected an array at 1',
+      pipe: { 1: { reads: {} } },
+      message: 'expected "reads" at 1',
     },
     {
       name: 'a read that is no object',
-      pipe: { 1: ['x'] },
+      pipe: { 1: { reads: ['x'] } },
       message: 'expected "to" and "path" at 1',
     },
     {
       name: 'a `to` that is no list of keys',
-      pipe: { 1: [{ ...read, to: [1] }] },
+      pipe: { 1: { reads: [{ ...read, to: [1] }] } },
       message: 'expected "to" and "path" at 1',
     },
     {
       name: 'a `path` that is no path',
-      pipe: { 1: [{ ...read, path: [1] }] },
+      pipe: { 1: { reads: [{ ...read, path: [1] }] } },
       message: 'expected "to" and "path" at 1',
     },
     {
       name: 'a read from itself',
-      pipe: { 1: [{ ...read, from: 1 }] },
+      pipe: { 1: { reads: [{ ...read, from: 1 }] } },
       message: 'call 1 can only read from an earlier call',
     },
     {
       name: 'a read from no call',
-      pipe: { 1: [{ ...read, from: 0.5 }] },
+      pipe: { 1: { reads: [{ ...read, from: 0.5 }] } },
       message: 'call 1 can only read from an earlier call',
     },
     {
       name: 'a read from a name',
-      pipe: { 1: [{ ...read, from: '0' }] },
+      pipe: { 1: { reads: [{ ...read, from: '0' }] } },
       message: 'call 1 can only read from an earlier call',
     },
     {
-      name: '`each` without a list',
-      pipe: { 1: [{ ...read, each: true }] },
-      message: '"each" at 1 needs a list in its path',
+      name: 'a read of an item without `each`',
+      pipe: { 1: { reads: [{ to: ['id'], path: [] }] } },
+      message: 'call 1 reads an item without "each", or has no "from"',
     },
     {
-      name: 'the items of two lists',
-      pipe: {
-        1: [
-          { to: ['a'], from: 0, path: ['a', null], each: true },
-          { to: ['b'], from: 0, path: ['b', null], each: true },
-        ],
-      },
-      message: 'call 1 reads each item of more than one list',
+      name: 'an `each` that is no object',
+      pipe: { 1: { each: ['a'], reads: [] } },
+      message: 'expected "from" and "path" in "each" at 1',
+    },
+    {
+      name: 'an `each` without a path',
+      pipe: { 1: { each: { from: 0 }, reads: [] } },
+      message: 'expected "from" and "path" in "each" at 1',
+    },
+    {
+      name: 'an `each` of a list in itself',
+      pipe: { 1: { each: { from: 1, path: [] }, reads: [] } },
+      message: 'call 1 can only read from an earlier call',
     },
   ])('$name', async (scenario) => {
     const { fns, ran } = blog();
@@ -2523,9 +3180,11 @@ describe('a place in an input that a read cannot write to', () => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
     const post = sent('post', { slug: 'hello' });
-    const echo = call('echo', scenario.input, [
-      { to: scenario.to, from: post, path: ['authorId'], each: false },
-    ]);
+    const echo = call(
+      'echo',
+      scenario.input,
+      reads(null, { to: scenario.to, from: post, path: ['authorId'] }),
+    );
 
     const res = await send({
       ...defaults,
@@ -2559,9 +3218,11 @@ describe('a place in an input that a read cannot write to', () => {
         fns: { post: () => ({ authorId: 'ada' }), echo },
       });
       const post = sent('post', undefined);
-      const reader = call('echo', scenario.input, [
-        { to: ['filter', 'id'], from: post, path: ['authorId'], each: false },
-      ]);
+      const reader = call(
+        'echo',
+        scenario.input,
+        reads(null, { to: ['filter', 'id'], from: post, path: ['authorId'] }),
+      );
 
       const res = await send({
         ...defaults,
@@ -2596,9 +3257,11 @@ describe('a place in an input that a read cannot write to', () => {
       },
     });
     const post = sent('post', undefined);
-    const reader = call('echo', {}, [
-      { to: ['__proto__'], from: post, path: ['evil'], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      {},
+      reads(null, { to: ['__proto__'], from: post, path: ['evil'] }),
+    );
 
     await send({
       ...defaults,
@@ -2631,9 +3294,11 @@ describe('a place in an input that a read cannot write to', () => {
     });
     const post = sent('post', undefined);
     // An input that has one: JSON makes `"__proto__"` a property
-    const reader = call('echo', JSON.parse('{"__proto__":{"a":1}}'), [
-      { to: ['__proto__', 'polluted'], from: post, path: ['yes'], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      JSON.parse('{"__proto__":{"a":1}}'),
+      reads(null, { to: ['__proto__', 'polluted'], from: post, path: ['yes'] }),
+    );
 
     await send({
       ...defaults,
@@ -2665,9 +3330,11 @@ describe('a place in an input that a read cannot write to', () => {
         fns: { post: () => ({ yes: true }), echo },
       });
       const post = sent('post', undefined);
-      const reader = call('echo', {}, [
-        { to, from: post, path: ['yes'], each: false },
-      ]);
+      const reader = call(
+        'echo',
+        {},
+        reads(null, { to, from: post, path: ['yes'] }),
+      );
 
       const res = await send({
         ...defaults,
@@ -2713,9 +3380,11 @@ describe('a place in an input that a read cannot write to', () => {
       },
     });
     const post = sent('post', undefined);
-    const reader = call('echo', new Range(1, 0), [
-      { to: ['to'], from: post, path: ['max'], each: false },
-    ]);
+    const reader = call(
+      'echo',
+      new Range(1, 0),
+      reads(null, { to: ['to'], from: post, path: ['max'] }),
+    );
 
     await send({
       ...defaults,

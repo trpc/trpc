@@ -1,20 +1,22 @@
-import { TRPCError } from '../../error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from '../../error/TRPCError';
 import { isPromise } from '../../stream/jsonl';
 import { createDeferred } from '../../stream/utils/createDeferred';
+import type { Deferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isAsyncIterable, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipelineCallReads,
+  PipelineFrame,
   PipelineItemEnvelope,
   PipelineLimits,
+  PipelineList,
   PipelinePath,
-  PipelineRead,
-  PipelineWholeRead,
 } from './wire';
 import {
-  groupPipelineReads,
+  pipelineFrameOf,
   pipelineLimitDefaults,
+  pipelineListLevels,
   readPipelinePath,
 } from './wire';
 
@@ -80,9 +82,9 @@ function isPath(value: unknown): value is PipelinePath {
  * call's index. A string is the search param's JSON. A request without one
  * has nothing to fill in. Nothing after this checks it again.
  *
- * A read names its source by index. It comes back as what `sources` has for
- * that call, so a read from a call that isn't there, or isn't earlier, can't
- * come out of this.
+ * A read, and a list, names its source by index. It comes back as what
+ * `sources` has for that call, so a read from a call that isn't there, or
+ * isn't earlier, can't come out of this.
  */
 export function parsePipelineReads<TSource extends object | number>(opts: {
   pipe: unknown;
@@ -104,7 +106,7 @@ export function parsePipelineReads<TSource extends object | number>(opts: {
     throw invalidPipe('expected an object');
   }
   return new Map(
-    Object.entries(parsed).map(([key, reads]) => {
+    Object.entries(parsed).map(([key, call]) => {
       const index = Number(key);
       if (
         !Number.isInteger(index) ||
@@ -115,43 +117,51 @@ export function parsePipelineReads<TSource extends object | number>(opts: {
       ) {
         throw invalidPipe(`no call at index ${key}`);
       }
-      if (!Array.isArray(reads)) {
-        throw invalidPipe(`expected an array at ${key}`);
+      if (!isObject(call) || !Array.isArray(call['reads'])) {
+        throw invalidPipe(`expected "reads" at ${key}`);
       }
-      const grouped = groupPipelineReads(
-        reads.map((read: unknown): PipelineRead<TSource> => {
+      const sourceOf = (from: unknown) => {
+        // Only earlier calls, so calls can't wait for each other
+        const source =
+          typeof from === 'number' && Number.isInteger(from) && from < index
+            ? opts.sources[from]
+            : undefined;
+        if (source === undefined) {
+          throw invalidPipe(`call ${key} can only read from an earlier call`);
+        }
+        return source;
+      };
+      const list = call['each'];
+      let each: PipelineList<TSource> | null = null;
+      if (list !== undefined) {
+        if (!isObject(list) || !isPath(list['path'])) {
+          throw invalidPipe(`expected "from" and "path" in "each" at ${key}`);
+        }
+        each = { from: sourceOf(list['from']), path: list['path'] };
+      }
+      const reads = call['reads'].map(
+        (read: unknown): PipelineCallReads<TSource>['reads'][number] => {
           if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
             throw invalidPipe(`expected "to" and "path" at ${key}`);
           }
-          const from = read['from'];
-          // Only earlier calls, so calls can't wait for each other
-          const source =
-            typeof from === 'number' && Number.isInteger(from) && from < index
-              ? opts.sources[from]
-              : undefined;
-          if (source === undefined) {
-            throw invalidPipe(`call ${key} can only read from an earlier call`);
+          if (read['from'] !== undefined) {
+            return {
+              kind: 'whole',
+              to: read['to'],
+              from: sourceOf(read['from']),
+              path: read['path'],
+            };
           }
-          return {
-            to: read['to'],
-            from: source,
-            path: read['path'],
-            each: read['each'] === true,
-          };
-        }),
+          // What reads no call reads the item a run is for
+          if (!each) {
+            throw invalidPipe(
+              `call ${key} reads an item without "each", or has no "from"`,
+            );
+          }
+          return { kind: 'item', to: read['to'], path: read['path'] };
+        },
       );
-      if (grouped.ok) {
-        return [index, grouped.reads];
-      }
-      switch (grouped.problem) {
-        case 'each-without-list':
-          throw invalidPipe(`"each" at ${key} needs a list in its path`);
-        case 'more-than-one-list':
-          // A call runs once per item of one list
-          throw invalidPipe(
-            `call ${key} reads each item of more than one list`,
-          );
-      }
+      return [index, { each, reads }];
     }),
   );
 }
@@ -380,23 +390,102 @@ export interface PipelineServerCall {
 }
 
 /**
- * Runs a call once for every item of the list it reads, and gives every
- * item's outcome: what `item` returned, or what `error` made of what it threw.
+ * The runs of a call that runs for every item, as a response has them: by
+ * the item's index, one level for each level of lists, down to the outcome
+ * of each run. A list that can't run is an `{ error }`. Each level, and each
+ * run, is a promise of its own, ready when it is.
+ */
+export type PipelineRuns<TError> = Promise<
+  PipelineItemEnvelope<TError> | { items: PipelineRuns<TError>[] }
+>;
+
+/**
+ * Runs a call once for every item of its frame, and gives every run's
+ * outcome: what `item` returned, or what `error` made of what it threw. A
+ * list that can't run gets what `error` makes of why.
  */
 export type PipelineEach = <TError>(run: {
   item: (input: unknown) => Promise<unknown>;
   error: (cause: unknown, input: unknown) => TError;
-}) => Promise<PipelineItemEnvelope<TError>[]>;
+}) => PipelineRuns<TError>;
 
 /**
  * How a call of a pipelined batch that reads values runs: once, with an input
- * that is filled in before it runs, or once for every item of a list. It runs
- * after its input is filled in even when nothing of it reads its input: a
- * procedure without an input parser is refused, or doesn't run, as any other.
+ * that is filled in before it runs, or once for every item of its frame. It
+ * runs after its input is filled in even when nothing of it reads its input:
+ * a procedure without an input parser is refused, or doesn't run, as any
+ * other.
  */
 export type PipelineCallRun =
   | { kind: 'once'; input: () => Promise<unknown> }
   | { kind: 'each'; each: PipelineEach };
+
+/**
+ * The places of a frame: one level of items for each level of lists, down to
+ * a value for each run. A list that can't run has failed in place of its
+ * items. Each is ready when it is.
+ */
+type Places<TValue> = Promise<PlacesNode<TValue>>;
+type PlacesNode<TValue> =
+  | { kind: 'run'; value: TValue }
+  | { kind: 'items'; items: Places<TValue>[] }
+  | { kind: 'failed'; error: TRPCError };
+
+/** Where a run is: an index for each level of lists, and its item */
+interface Place {
+  indexes: number[];
+  item: unknown;
+}
+
+/** `places` with what `fn` makes of each run's value */
+function mapPlaces<TFrom, TTo>(
+  places: Places<TFrom>,
+  fn: (value: TFrom) => PlacesNode<TTo> | Places<TTo>,
+): Places<TTo> {
+  return places.then((node) => {
+    switch (node.kind) {
+      case 'run':
+        return fn(node.value);
+      case 'items':
+        return {
+          kind: 'items',
+          items: node.items.map((item) => mapPlaces(item, fn)),
+        };
+      case 'failed':
+        return node;
+    }
+  });
+}
+
+/** The places of the items of a list in `value`, and of the lists in them */
+function itemsAt(opts: {
+  value: unknown;
+  /** Where the list is in `value` */
+  path: string[];
+  /** Where the list of the next level is in each item, and so on */
+  inner: string[][];
+  /** The indexes of the place the list is in */
+  indexes: readonly number[];
+}): PlacesNode<Place> {
+  const list = readPipelinePath(opts.value, opts.path);
+  // What is no list has no items
+  if (!Array.isArray(list)) {
+    return { kind: 'items', items: [] };
+  }
+  const [next, ...inner] = opts.inner;
+  // By index: a list with holes has a run for each of them too
+  return {
+    kind: 'items',
+    items: Array.from(list.keys(), (index) => {
+      const indexes = [...opts.indexes, index];
+      return Promise.resolve<PlacesNode<Place>>(
+        next
+          ? itemsAt({ value: list[index], path: next, inner, indexes })
+          : { kind: 'run', value: { indexes, item: list[index] } },
+      );
+    }),
+  };
+}
 
 /**
  * Makes the calls of a batch read parts of their input from the data of
@@ -409,8 +498,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   transformer: CombinedDataTransformer;
   /**
    * The most runs of a call the batch may have, or `null` for any number. A
-   * call for every item of a list runs once for each item. Of two such calls
-   * that are over it together, the one whose list is ready first runs.
+   * call for every item runs once for each item. Of two such calls that are
+   * over it together, the one whose list is ready first runs.
    */
   maxRuns: number | null;
   /** What the server lets the batch make it do */
@@ -418,20 +507,39 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
 }) {
   const { limits } = opts;
   const sizeOf = createPipelineSizeOf();
-  /** A call, as the calls that read its data see it */
-  interface Source {
-    /** How the call went: its data, or a rejection if it has none to read */
-    outcome: ReturnType<typeof createDeferred<unknown>>;
+  /** A run of a call, as the calls that read it see it */
+  interface Run {
+    /** How it went: its data, or a rejection if it has none to read */
+    outcome: Deferred<unknown>;
     /** Its data as the client gets it, which is what a path refers to */
     clientData: Promise<unknown> | null;
-    /** Its place in its chain: 1 for a call that reads none */
-    depth: number;
   }
-  const sent = opts.calls.map((call) => {
+  /** A call, as the calls that read its data see it */
+  interface Source {
+    index: number;
+    /** Its place in its chain of reads: 1 for a call that reads none */
+    depth: number;
+    /** The items it runs for, or `null` if it runs once */
+    frame: PipelineFrame<Source> | null;
+    /** Its runs, at the places of its frame */
+    runs: Deferred<PlacesNode<Run>>;
+    /** Whether what it reads runs for the items of different lists */
+    framesDiffer: boolean;
+  }
+  const newRun = (): Run => {
     const outcome = createDeferred<unknown>();
-    // A failed call that nothing reads from isn't an unhandled rejection
+    // A failed run that nothing reads from isn't an unhandled rejection
     outcome.promise.catch(() => undefined);
-    const source: Source = { outcome, clientData: null, depth: 1 };
+    return { outcome, clientData: null };
+  };
+  const sent = opts.calls.map((call, index) => {
+    const source: Source = {
+      index,
+      depth: 1,
+      frame: null,
+      runs: createDeferred<PlacesNode<Run>>(),
+      framesDiffer: false,
+    };
     return { call, source };
   });
   const plan = parsePipelineReads({
@@ -445,8 +553,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       const from = reads.reads.flatMap((read) =>
         read.kind === 'whole' ? [read.from] : [],
       );
-      if (reads.kind === 'each') {
-        from.push(reads.list.from);
+      if (reads.each) {
+        from.push(reads.each.from);
       }
       // 1 for a call whose reads are empty, as for one that has none. A loop,
       // as a spread of a long list of reads would overflow the stack
@@ -455,6 +563,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         deepest = Math.max(deepest, it.depth);
       }
       source.depth = 1 + deepest;
+      const framed = pipelineFrameOf({ reads, frameOf: (it) => it.frame });
+      source.frame = framed.frame;
+      source.framesDiffer = !framed.fits;
     }
   }
   /** Why a call is refused before it reads anything, if it is */
@@ -467,6 +578,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     if (source.depth > limits.maxDepth) {
       return overLimit(
         `This call is ${source.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
+      );
+    }
+    if (source.framesDiffer) {
+      return invalidPipe(
+        `call ${source.index} reads calls that run for the items of different lists`,
       );
     }
     return null;
@@ -490,18 +606,76 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }
 
   /**
-   * The data of a call that another reads. Rejects if that call failed, or if
-   * some of its data is still to come, as a stream sends it
+   * The data of a run that another call reads. Rejects if it failed, or if
+   * some of it is still to come, as a stream sends it
    */
-  function dataOf(source: Source) {
-    source.clientData ??= source.outcome.promise.then(
+  function dataOfRun(run: Run) {
+    run.clientData ??= run.outcome.promise.then(
       (data) => readableData(opts.transformer.output, data),
       () => {
         throw sourceFailed();
       },
     );
-    return source.clientData;
+    return run.clientData;
   }
+  /**
+   * The data that the run at `indexes` of a call reads of `source`: its run
+   * at the start of those indexes, as its frame is the start of the call's
+   */
+  async function dataOf(source: Source, indexes: readonly number[]) {
+    let node = await source.runs.promise;
+    for (const index of indexes) {
+      if (node.kind !== 'items') {
+        break;
+      }
+      // Its runs are at the places of its frame, which these indexes are in.
+      // oxlint-disable-next-line typescript/non-nullable-type-assertion-style -- `!` is not allowed either
+      node = await (node.items[index] as Places<Run>);
+    }
+    // A list of it that was refused, or a call that failed as a whole, has
+    // no run to read
+    if (node.kind !== 'run') {
+      throw sourceFailed();
+    }
+    return dataOfRun(node.value);
+  }
+
+  /** The places of each frame, by what the frame is */
+  const placesOfFrames = new Map<string, Places<Place>>();
+  const keyOf = (frame: PipelineFrame<Source> | null): string =>
+    frame
+      ? `${keyOf(frame.parent)}/${frame.list.from.index}:${JSON.stringify(frame.list.path)}`
+      : '';
+  /** Where the runs of a frame are, as the lists it is made of are ready */
+  function placesOf(frame: PipelineFrame<Source>): Places<Place> {
+    const key = keyOf(frame);
+    let places = placesOfFrames.get(key);
+    if (!places) {
+      const { parent, list } = frame;
+      places = mapPlaces(
+        parent
+          ? placesOf(parent)
+          : Promise.resolve<PlacesNode<Place>>({
+              kind: 'run',
+              value: { indexes: [], item: null },
+            }),
+        async (place): Promise<PlacesNode<Place>> => {
+          let data: unknown;
+          try {
+            data = await dataOf(list.from, place.indexes);
+          } catch (cause) {
+            // The run the list is in failed: none of its items run
+            return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
+          }
+          const [path, ...inner] = pipelineListLevels(list.path);
+          return itemsAt({ value: data, path, inner, indexes: place.indexes });
+        },
+      );
+      placesOfFrames.set(key, places);
+    }
+    return places;
+  }
+
   /**
    * A filled-in input as a call gets it when a client fills it in and sends
    * it: through the transformer of inputs, all of it, so what is not there
@@ -519,9 +693,9 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    */
   let runs = opts.calls.length;
   /**
-   * Changes the places a call holds from `held` to `count`, and gives
-   * `count`. Throws if the batch would then have too many runs, and changes
-   * nothing then. Nothing waits in it, so calls can't go over together.
+   * Changes the places a call holds from `held` to `count`. Throws if the
+   * batch would then have too many runs, and changes nothing then. Nothing
+   * waits in it, so calls can't go over together.
    */
   function holdRuns(held: number, count: number) {
     const taken = runs - held + count;
@@ -537,91 +711,174 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       );
     }
     runs = taken;
-    return count;
   }
 
   let filledSize = 0;
   /**
-   * Counts what a call fills in. It takes it from what the batch may fill in
-   * only once the call's inputs are made: a call that is refused, or whose
-   * inputs can't be made, takes none. Nothing waits between the last `add`
-   * and `take`, so calls that fill in at the same time can't go over together.
+   * The input of a run: the call's own, with what it reads written in. It
+   * takes what it fills in from what the batch may fill in only once the
+   * input is made: a run whose input can't be made takes none. Nothing waits
+   * between counting and taking, so runs that fill in at the same time can't
+   * go over together.
    */
-  function fillCounter() {
+  async function fill(run: {
+    /** The call's input as the client sent it */
+    base: unknown;
+    reads: PipelineCallReads<Source>;
+    place: Place;
+    /**
+     * Whether the call runs for every item. Each run's whole input counts
+     * then, as each is a copy. Otherwise only the values it reads do: the
+     * rest is what the client sent
+     */
+    perItem: boolean;
+  }) {
+    const values = await Promise.all(
+      run.reads.reads.map(async (read) =>
+        readPipelinePath(
+          read.kind === 'whole'
+            ? await dataOf(read.from, run.place.indexes)
+            : run.place.item,
+          read.path,
+        ),
+      ),
+    );
     let size = 0;
-    return {
-      /** Counts a value. Throws if the call fills in more than is left */
-      add: (value: unknown) => {
-        size += sizeOf(value, limits.maxFillSize - filledSize - size);
-        if (filledSize + size > limits.maxFillSize) {
-          throw overLimit(
-            `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
-          );
-        }
-      },
-      take: () => {
-        filledSize += size;
-      },
+    const count = (value: unknown) => {
+      size += sizeOf(value, limits.maxFillSize - filledSize - size);
+      if (filledSize + size > limits.maxFillSize) {
+        throw overLimit(
+          `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
+        );
+      }
     };
+    let input = run.base;
+    for (const [at, read] of run.reads.reads.entries()) {
+      const value = values[at];
+      checkValue(value);
+      if (!run.perItem) {
+        count(value);
+      }
+      input = writePipelinePath({ input, to: read.to, value });
+    }
+    input = asSent(input);
+    if (run.perItem) {
+      // All of it, with the keys its values are written under
+      count(input);
+    }
+    filledSize += size;
+    return input;
   }
 
-  /** The inputs of a call that runs once per item of a list */
-  async function inputsOfEach(
-    call: TCall,
-    reads: Extract<PipelineCallReads<Source>, { kind: 'each' }>,
-    refusal: TRPCError | null,
-  ) {
-    // The places it holds among the runs: its own, then one for every item
-    let held = 1;
-    try {
-      if (refusal) {
-        throw refusal;
-      }
-      const base = await call.getRawInput();
-      const found = readPipelinePath(
-        await dataOf(reads.list.from),
-        reads.list.path,
-      );
-      // What is no list has no items
-      const items: unknown[] = Array.isArray(found) ? found : [];
-      held = holdRuns(held, items.length);
-      /** What a value that is the same for every run is */
-      const wholes = new Map<PipelineWholeRead<Source>, unknown>();
-      const counter = fillCounter();
-      const inputs: unknown[] = [];
-      // By index: a list with holes has a run for each of them too
-      for (const index of items.keys()) {
-        let input = base;
-        for (const read of reads.reads) {
-          if (read.kind === 'whole' && !wholes.has(read)) {
-            const value = readPipelinePath(await dataOf(read.from), read.path);
-            checkValue(value);
-            wholes.set(read, value);
-          }
-          let value: unknown;
-          if (read.kind === 'item') {
-            value = readPipelinePath(items[index], read.path);
-            checkValue(value);
-          } else {
-            value = wholes.get(read);
-          }
-          input = writePipelinePath({ input, to: read.to, value });
+  /** A call that runs once for every item of its frame */
+  function perItem(each: {
+    call: TCall;
+    source: Source;
+    frame: PipelineFrame<Source>;
+    reads: PipelineCallReads<Source>;
+  }): PipelineEach {
+    const { call, source, frame, reads } = each;
+    const refusal = refusalOf(source, reads);
+    return async function runEach<TError>(run: {
+      item: (input: unknown) => Promise<unknown>;
+      error: (cause: unknown, input: unknown) => TError;
+    }): PipelineRuns<TError> {
+      const { error } = run;
+      let base: unknown;
+      try {
+        if (refusal) {
+          throw refusal;
         }
-        // Every run has an input of its own, as calls the client sends do.
-        // All of it counts, with the keys its values are written under, and
-        // before the next is made
-        const sent = asSent(input);
-        counter.add(sent);
-        inputs.push(sent);
+        base = await call.getRawInput();
+      } catch (cause) {
+        // Refused, or its own input can't be read: it runs for no item, and
+        // gives back the place it holds
+        runs -= 1;
+        throw cause;
       }
-      counter.take();
-      return inputs;
-    } catch (cause) {
-      // Refused, or its inputs can't be made: it runs for no item, and gives
-      // back the places it holds
-      runs -= held;
-      throw cause;
-    }
+      /** Whether it still holds the place it held from the start */
+      let placeholder = true;
+      const release = () => {
+        if (placeholder) {
+          placeholder = false;
+          runs -= 1;
+        }
+      };
+      interface Ran {
+        run: Run;
+        envelope: Promise<PipelineItemEnvelope<TError>>;
+      }
+      const start = (place: Place): Ran => {
+        const ran = newRun();
+        const envelope = (async (): Promise<PipelineItemEnvelope<TError>> => {
+          let input: unknown;
+          try {
+            input = await fill({ base, reads, place, perItem: true });
+          } catch (cause) {
+            // It doesn't run, and gives back its place
+            runs -= 1;
+            ran.outcome.reject(cause);
+            return { error: error(cause, base) };
+          }
+          try {
+            const data = await run.item(input);
+            ran.outcome.resolve(data);
+            return { result: { data } };
+          } catch (cause) {
+            ran.outcome.reject(cause);
+            return { error: error(cause, input) };
+          }
+        })();
+        return { run: ran, envelope };
+      };
+      const walk = (places: Places<Place>, level: number): Places<Ran> =>
+        places.then((node): PlacesNode<Ran> => {
+          switch (node.kind) {
+            case 'failed':
+              release();
+              return node;
+            case 'items':
+              // Its items are its runs: it holds a place for each
+              if (level + 1 === frame.depth) {
+                try {
+                  holdRuns(placeholder ? 1 : 0, node.items.length);
+                  placeholder = false;
+                } catch (cause) {
+                  release();
+                  return {
+                    kind: 'failed',
+                    error: getTRPCErrorFromUnknown(cause),
+                  };
+                }
+              } else {
+                release();
+              }
+              return {
+                kind: 'items',
+                items: node.items.map((item) => walk(item, level + 1)),
+              };
+            case 'run':
+              return { kind: 'run', value: start(node.value) };
+          }
+        });
+      const ran = walk(placesOf(frame), 0);
+      void mapPlaces(ran, (it) => ({ kind: 'run', value: it.run })).then(
+        source.runs.resolve,
+      );
+      type Response = Awaited<PipelineRuns<TError>>;
+      const response = (places: Places<Ran>): PipelineRuns<TError> =>
+        places.then((node): Response | Promise<Response> => {
+          switch (node.kind) {
+            case 'run':
+              return node.value.envelope;
+            case 'items':
+              return { items: node.items.map(response) };
+            case 'failed':
+              return { error: error(node.error, base) };
+          }
+        });
+      return response(ran);
+    };
   }
 
   /** A call with its input filled in when it is read, or its runs per item */
@@ -633,45 +890,27 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     if (!reads) {
       return { call, run: null };
     }
-    const refusal = refusalOf(source, reads);
-    if (reads.kind === 'each') {
+    const { frame } = source;
+    if (frame) {
       return {
         call,
-        run: {
-          kind: 'each',
-          each: async (run) => {
-            const inputs = await inputsOfEach(call, reads, refusal);
-            return Promise.all(
-              inputs.map(async (input) => {
-                try {
-                  return { result: { data: await run.item(input) } };
-                } catch (cause) {
-                  return { error: run.error(cause, input) };
-                }
-              }),
-            );
-          },
-        },
+        run: { kind: 'each', each: perItem({ call, source, frame, reads }) },
       };
     }
+    const refusal = refusalOf(source, reads);
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
-    const fill = async () => {
+    const fillOnce = async () => {
       try {
         if (refusal) {
           throw refusal;
         }
-        let input = await call.getRawInput();
-        const counter = fillCounter();
-        for (const read of reads.reads) {
-          const value = readPipelinePath(await dataOf(read.from), read.path);
-          checkValue(value);
-          // Only the values: the rest of its input is what the client sent
-          counter.add(value);
-          input = writePipelinePath({ input, to: read.to, value });
-        }
-        input = asSent(input);
-        counter.take();
+        const input = await fill({
+          base: await call.getRawInput(),
+          reads,
+          place: { indexes: [], item: null },
+          perItem: false,
+        });
         read = [input];
         return input;
       } catch (cause) {
@@ -681,7 +920,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         throw cause;
       }
     };
-    const getRawInput = () => (reading ??= fill());
+    const getRawInput = () => (reading ??= fillOnce());
     return {
       call: {
         ...call,
@@ -691,10 +930,18 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       run: { kind: 'once', input: getRawInput },
     };
   }
-  const calls = sent.map((it, index) => ({
-    ...pipelined(it.call, it.source, plan.get(index)),
-    outcome: it.source.outcome,
-  }));
+  const calls = sent.map((it, index) => {
+    // A call that runs once has one run, which its outcome settles
+    const once = it.source.frame ? null : newRun();
+    if (once) {
+      it.source.runs.resolve({ kind: 'run', value: once });
+    }
+    return {
+      ...pipelined(it.call, it.source, plan.get(index)),
+      once,
+      source: it.source,
+    };
+  });
 
   return {
     /** The calls, with inputs that are filled in when they are read */
@@ -711,7 +958,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }): Promise<TResult>[] =>
       calls.map((it) => {
         const result = run.call(it.call, it.run);
-        result.then(run.data).then(it.outcome.resolve, it.outcome.reject);
+        result.then(run.data).then(
+          (data) => it.once?.outcome.resolve(data),
+          (cause: unknown) => {
+            it.once?.outcome.reject(cause);
+            // A call for every item that failed as a whole has no runs
+            it.source.runs.resolve({ kind: 'failed', error: sourceFailed() });
+          },
+        );
         return result;
       }),
   };

@@ -62,7 +62,7 @@ export type PipelineLimits = {
    */
   maxFillSize: number;
   /**
-   * The most calls in a chain. A call that reads none is 1
+   * The most calls in a chain of reads. A call that reads none is 1
    */
   maxDepth: number;
   /**

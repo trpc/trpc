@@ -4,6 +4,69 @@
  *
  * The client's half is in `./client`, the server's in `./server`. Both are
  * tested against each other, over HTTP, in `./pipeline.test.ts`.
+ *
+ * ## The request
+ *
+ * An ordinary batch, `?batch=pipeline`: every call is a path in the URL and
+ * an input in the batch's `input`, by index. Its `pipe` says what each call
+ * reads, by the call's index. It is in the body of a request that has one,
+ * beside the inputs, and in the `pipe` search param of one that has none.
+ * Here, the author of every post of call 0, and the posts of each author's
+ * team:
+ *
+ * ```http
+ * GET /post.list,author.byId,post.byTeam?batch=pipeline&input=…&pipe=…
+ * ```
+ *
+ * ```json
+ * {
+ *   "1": { "each": { "from": 0, "path": ["items"] },
+ *          "reads": [{ "to": ["id"], "path": ["authorId"] }] },
+ *   "2": { "reads": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }] }
+ * }
+ * ```
+ *
+ * - A **read**, `{ to, from, path }`, writes the value at `path` in the data
+ *   of call `from` into the input at `to`. `null` in a path is every item of
+ *   a list there: `["items", null, "id"]` is the list of the items' ids.
+ * - **`each: { from, path }`** runs the call once for every item of the list
+ *   at `path` in call `from`'s data. A `null` in its path is a level of
+ *   lists: `["pages", null, "items"]` is every item of every page. A read
+ *   without `from` reads the item, which only a call with `each` has.
+ * - What can be left out is a key, never a place in an array: in an array,
+ *   `JSON.stringify` makes `undefined` a `null`, which is a value an input
+ *   can have. A batch's inputs are by index in an object for the same reason
+ *   (trpc/trpc#669).
+ *
+ * ## Frames
+ *
+ * A call's frame is the items it runs for, an index for every level of
+ * lists. A call with `each` adds its levels to the frame of its `from`. A
+ * call without it runs in the frame of what it reads: one that reads a call
+ * for every item runs once for every item too, and its run for item 3 reads
+ * run 3. What a call reads has its frame, or one its frame starts with. A
+ * call runs once everything it reads is ready.
+ *
+ * ## The response
+ *
+ * A list of the calls' outcomes, by index, as in any batch. A call that runs
+ * for every item has `{ items }`, by the item's index, one level for each
+ * level of lists, down to a `{ result }` or an `{ error }` for each run:
+ *
+ * ```json
+ * [
+ *   { "result": { "data": { "items": [{ "authorId": "ada" }] } } },
+ *   { "items": { "0": { "result": { "data": { "teamId": 1 } } } } },
+ *   { "items": { "0": { "result": { "data": [] } } } }
+ * ]
+ * ```
+ *
+ * - A list that can't run, as the call it is in failed, is an `{ error }`
+ *   with the code `PRECONDITION_FAILED`, in place of its items. What isn't a
+ *   list has no items: `{ items: {} }`.
+ * - A run fails by itself, and a run that reads a failed one doesn't run.
+ * - Streamed, the `items` of a level and each of its items are values of
+ *   their own, so each run arrives when it is ready, in any order.
  */
 
 /**
@@ -13,8 +76,8 @@
 export const pipelineBatch = 'pipeline';
 
 /**
- * Where a value is in a call's data: the keys to follow. `null` stands for every
- * item of an array, so `['items', null, 'id']` is the list of the items' ids.
+ * Where a value is: the keys to follow. `null` stands for every item of a
+ * list, so `['items', null, 'id']` is the list of the items' ids.
  */
 export type PipelinePath = (string | null)[];
 
@@ -22,24 +85,31 @@ export type PipelinePath = (string | null)[];
 export interface PipeRead {
   /** Where the value goes in the call's input. Empty for the whole input */
   to: string[];
-  /** The index of the call whose data it comes from */
-  from: number;
-  /** Where the value is in that call's data. Empty for all of it */
-  path: PipelinePath;
   /**
-   * Runs the call once for every item of the array at the first `null` in
-   * `path`, each time with that item's value. The call's data is then a list
-   * with a `{ result }` or an `{ error }` for every item.
+   * The index of the call whose data it comes from. Left out for the item a
+   * run is for
    */
-  each?: true;
+  from?: number;
+  /** Where the value is in that data. Empty for all of it */
+  path: PipelinePath;
 }
 
-/**
- * The `pipe` of a pipelined batch: the reads of each call, by the call's
- * index. It is in the body of a request that has one, beside the inputs, and
- * in the `pipe` search param of one that has none.
- */
-export type PipelineReads = Record<number, PipeRead[]>;
+/** The list a call runs once for every item of, as it is in a request */
+export interface PipeEach {
+  /** The index of the call whose data it is in */
+  from: number;
+  /** Where it is in that data. A `null` is a level of lists */
+  path: PipelinePath;
+}
+
+/** What a call reads, as it is in a request's `pipe` */
+export interface PipeCall {
+  each?: PipeEach;
+  reads: PipeRead[];
+}
+
+/** The `pipe` of a pipelined batch: what each call reads, by its index */
+export type PipelinePipe = Record<number, PipeCall>;
 
 /**
  * What a server lets a pipelined batch make it do. Each value a call reads is
@@ -57,7 +127,7 @@ export interface PipelineLimits {
    * into an input, and the whole input of every run of a call for every item
    */
   maxFillSize: number;
-  /** The most calls in a chain. A call that reads none is 1 */
+  /** The most calls in a chain of reads. A call that reads none is 1 */
   maxDepth: number;
   /** Whether a value a call reads can be an object or an array */
   allowWholeValues: boolean;
@@ -82,27 +152,16 @@ export const pipelineLimitDefaults: PipelineLimits = {
 };
 
 /**
- * A read as code writes it. `TFrom` names what it reads from: an index in a
- * request, or whatever a client has for what it sends.
+ * A value that a call reads of another, the same for each run that reads
+ * the same run of it. `TFrom` names what it reads from: an index in a
+ * request, or whatever a client or a server has for a call.
  */
-export interface PipelineRead<TFrom> {
+export interface PipelineWholeRead<TFrom> {
+  kind: 'whole';
   /** Where the value goes in the call's input. Empty for the whole input */
   to: string[];
   from: TFrom;
   /** Where the value is in that data. Empty for all of it */
-  path: PipelinePath;
-  /**
-   * Runs the call once for every item of the array at the first `null` in
-   * `path`, each time with that item's value
-   */
-  each: boolean;
-}
-
-/** A value that is the same for every run of a call */
-export interface PipelineWholeRead<TFrom> {
-  kind: 'whole';
-  to: string[];
-  from: TFrom;
   path: PipelinePath;
 }
 
@@ -117,78 +176,114 @@ export interface PipelineItemRead {
 /** The list a call runs once for every item of */
 export interface PipelineList<TFrom> {
   from: TFrom;
-  /** Where the list is in that data. Empty if the data is the list */
-  path: string[];
+  /** Where the list is in that data. A `null` is a level of lists */
+  path: PipelinePath;
+}
+
+/** What a call reads, as code has it */
+export interface PipelineCallReads<TFrom> {
+  /** The list it runs once for every item of, or `null` if it has none */
+  each: PipelineList<TFrom> | null;
+  /** In the order they are written to the input */
+  reads: (PipelineWholeRead<TFrom> | PipelineItemRead)[];
+}
+
+/** The path to each level of a list: its path, split at each `null` */
+export function pipelineListLevels(
+  path: PipelinePath,
+): [string[], ...string[][]] {
+  let level: string[] = [];
+  const levels: [string[], ...string[][]] = [level];
+  for (const segment of path) {
+    if (segment === null) {
+      level = [];
+      levels.push(level);
+    } else {
+      level.push(segment);
+    }
+  }
+  return levels;
 }
 
 /**
- * What a call reads. It runs once, or once for every item of one list: it
- * can't read the items of two.
+ * The items a call runs for: the levels of a list, in the frame of what the
+ * list is in. `null`, as a frame, is the one run of a call that runs once.
  */
-export type PipelineCallReads<TFrom> =
-  | { kind: 'once'; reads: PipelineWholeRead<TFrom>[] }
-  | {
-      kind: 'each';
-      list: PipelineList<TFrom>;
-      /** In the order they are written to the input */
-      reads: (PipelineWholeRead<TFrom> | PipelineItemRead)[];
-    };
+export interface PipelineFrame<TFrom> {
+  /** The frame of the call the list is in */
+  parent: PipelineFrame<TFrom> | null;
+  list: PipelineList<TFrom>;
+  /** How many indexes a run has: one for every level of lists, the parent's too */
+  depth: number;
+}
 
-function samePath(a: readonly string[], b: readonly string[]) {
+function samePath(a: PipelinePath, b: PipelinePath) {
   return a.length === b.length && a.every((segment, at) => segment === b[at]);
 }
 
+function sameFrame<TFrom>(
+  a: PipelineFrame<TFrom> | null,
+  b: PipelineFrame<TFrom> | null,
+): boolean {
+  if (!a || !b) {
+    return a === b;
+  }
+  return (
+    a.depth === b.depth &&
+    a.list.from === b.list.from &&
+    samePath(a.list.path, b.list.path) &&
+    sameFrame(a.parent, b.parent)
+  );
+}
+
+/** Whether `frame` starts with `start`: its runs are each in one of `start`'s */
+function startsWith<TFrom>(
+  frame: PipelineFrame<TFrom> | null,
+  start: PipelineFrame<TFrom> | null,
+) {
+  let at = frame;
+  while (at && at.depth > (start?.depth ?? 0)) {
+    at = at.parent;
+  }
+  return sameFrame(at, start);
+}
+
 /**
- * Sorts a call's reads into what it reads once and what it reads of every
- * item. The client and the server both do this, so neither takes reads the
- * other refuses.
+ * The frame of a call, from the frames of what it reads, and whether what it
+ * reads fits in it. It doesn't if what it reads runs for the items of
+ * different lists: a call can't run for both. The client and the server both
+ * work it out with this, so neither takes a call the other refuses.
  */
-export function groupPipelineReads<TFrom>(
-  reads: readonly PipelineRead<TFrom>[],
-):
-  | { ok: true; reads: PipelineCallReads<TFrom> }
-  | { ok: false; problem: 'each-without-list' | 'more-than-one-list' } {
-  const whole: PipelineWholeRead<TFrom>[] = [];
-  const all: (PipelineWholeRead<TFrom> | PipelineItemRead)[] = [];
-  let list: PipelineList<TFrom> | null = null;
-  for (const read of reads) {
-    if (!read.each) {
-      const value: PipelineWholeRead<TFrom> = {
-        kind: 'whole',
-        to: read.to,
-        from: read.from,
-        path: read.path,
-      };
-      whole.push(value);
-      all.push(value);
-      continue;
+export function pipelineFrameOf<TFrom>(opts: {
+  reads: PipelineCallReads<TFrom>;
+  frameOf: (from: TFrom) => PipelineFrame<TFrom> | null;
+}): { frame: PipelineFrame<TFrom> | null; fits: boolean } {
+  const { each } = opts.reads;
+  const sources: (PipelineFrame<TFrom> | null)[] = [];
+  for (const read of opts.reads.reads) {
+    if (read.kind === 'whole') {
+      sources.push(opts.frameOf(read.from));
     }
-    // The list is what is before the first `null`
-    const listPath: string[] = [];
-    for (const segment of read.path) {
-      if (segment === null) {
-        break;
+  }
+  let frame: PipelineFrame<TFrom> | null = null;
+  if (each) {
+    const parent = opts.frameOf(each.from);
+    frame = {
+      parent,
+      list: each,
+      depth: (parent?.depth ?? 0) + pipelineListLevels(each.path).length,
+    };
+  } else {
+    // The deepest of them, which the others have to be the start of
+    for (const source of sources) {
+      if ((source?.depth ?? 0) > (frame?.depth ?? 0)) {
+        frame = source;
       }
-      listPath.push(segment);
     }
-    if (listPath.length === read.path.length) {
-      return { ok: false, problem: 'each-without-list' };
-    }
-    if (list && (list.from !== read.from || !samePath(list.path, listPath))) {
-      return { ok: false, problem: 'more-than-one-list' };
-    }
-    list ??= { from: read.from, path: listPath };
-    all.push({
-      kind: 'item',
-      to: read.to,
-      path: read.path.slice(listPath.length + 1),
-    });
   }
   return {
-    ok: true,
-    reads: list
-      ? { kind: 'each', list, reads: all }
-      : { kind: 'once', reads: whole },
+    frame,
+    fits: sources.every((source) => startsWith(frame, source)),
   };
 }
 
@@ -199,6 +294,15 @@ export function bindPipelinePath(
 ): PipelinePath {
   const position = path.indexOf(null);
   return path.map((segment, at) => (at === position ? String(index) : segment));
+}
+
+/** Whether `value` is an object or an array with `key` as its own property */
+export function hasOwn(value: unknown, key: string) {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.prototype.hasOwnProperty.call(value, key)
+  );
 }
 
 /**
@@ -217,11 +321,7 @@ export function readPipelinePath(
         ? current.map((item) => readPipelinePath(item, rest))
         : undefined;
     }
-    if (
-      typeof current !== 'object' ||
-      current === null ||
-      !Object.prototype.hasOwnProperty.call(current, segment)
-    ) {
+    if (!hasOwn(current, segment)) {
       return undefined;
     }
     current = (current as Record<string, unknown>)[segment];
@@ -229,10 +329,16 @@ export function readPipelinePath(
   return current;
 }
 
-/**
- * One item's outcome in the data of a call that ran once for every item of a
- * list. `TError` is the error as the server sends it.
- */
+/** The outcome of one run, as a response has it */
 export type PipelineItemEnvelope<TError> =
   | { result: { data: unknown } }
   | { error: TError };
+
+/**
+ * What a response has for a call that runs for every item: its runs, by the
+ * item's index, one level for each level of lists. A list that can't run is
+ * an `{ error }`.
+ */
+export type PipelineItemsResponse<TError> =
+  | PipelineItemEnvelope<TError>
+  | { items: Record<string, PipelineItemsResponse<TError>> };

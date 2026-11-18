@@ -25,7 +25,7 @@ import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
-import type { PipelineCallRun } from './pipeline/server';
+import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -275,6 +275,46 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
  * Handles a Fetch API `Request` for a router and returns its `Response`.
  * Every adapter uses it; call it to write your own.
  */
+/** The runs of a call that runs for every item, as far as they are ready */
+type PipelineItemsNode = Awaited<PipelineRuns<unknown>>;
+
+/**
+ * The runs of a call for every item, for a response that streams: the items
+ * of each level, and each run, are values of their own, so each arrives when
+ * it is ready
+ */
+function streamedItems(node: PipelineItemsNode): unknown {
+  if (!('items' in node)) {
+    return node;
+  }
+  const items: Record<string, Promise<unknown>> = {};
+  for (const [index, item] of node.items.entries()) {
+    items[index] = item.then(streamedItems);
+  }
+  // A value of its own: the stream only looks for them one level down
+  return { items: Promise.resolve(items) };
+}
+
+/**
+ * The runs of a call for every item, for a response that doesn't stream,
+ * once every run is done. `outcome` makes what a run's outcome is in it.
+ */
+async function settledItems(
+  node: PipelineItemsNode,
+  outcome: (
+    envelope: Exclude<PipelineItemsNode, { items: unknown }>,
+  ) => unknown,
+): Promise<unknown> {
+  if (!('items' in node)) {
+    return outcome(node);
+  }
+  const items: Record<string, unknown> = {};
+  for (const [index, item] of node.items.entries()) {
+    items[index] = await settledItems(await item, outcome);
+  }
+  return { items };
+}
+
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -419,6 +459,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     interface RPCResultOk {
       data: unknown;
       /**
+       * For a call of a pipelined batch that runs for every item: its runs,
+       * by item, in place of its data
+       */
+      items: PipelineItemsNode | null;
+      /**
        * Only set for subscriptions
        */
       abort?: ReturnType<typeof combinedAbortController>;
@@ -478,11 +523,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             signal: combinedAbort.signal,
             batchIndex: call.batchIndex,
           });
-        const data =
+        // Once per item of its frame. Every run validates its input and has
+        // its own result or error
+        const items =
           piped?.kind === 'each'
-            ? // Once per item of an earlier call's list. Every run validates its
-              // input and has its own result or error
-              await piped.each({
+            ? await piped.each({
                 item: async (input) => {
                   const itemData = await callProcedure(async () => input);
                   if (isDataStream(itemData)) {
@@ -515,18 +560,22 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   });
                 },
               })
-            : piped
-              ? // Its input is filled in first, so a procedure that never reads
-                // it is refused, or doesn't run, as any other
-                await run(async () => {
-                  const input = await piped.input();
-                  return callProcedure(async () => input);
-                })
-              : await callProcedure(call.getRawInput);
+            : null;
+        const data = items
+          ? undefined
+          : piped?.kind === 'once'
+            ? // Its input is filled in first, so a procedure that never reads
+              // it is refused, or doesn't run, as any other
+              await run(async () => {
+                const input = await piped.input();
+                return callProcedure(async () => input);
+              })
+            : await callProcedure(call.getRawInput);
         return [
           undefined,
           {
             data,
+            items,
             abort:
               proc._def.type === 'subscription' ? combinedAbort : undefined,
           },
@@ -801,6 +850,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               }),
             };
           }
+          if (result.items) {
+            return streamedItems(result.items);
+          }
 
           /**
            * Not very pretty, but we need to wrap nested data in promises
@@ -884,12 +936,36 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         return res;
       },
     );
+    // The runs of each call for every item, once all of them are done: as
+    // they are, and with the transformer's output of each run's outcome
+    const settled = await Promise.all(
+      results.map(async ([error, result]) => {
+        if (error || !result.items) {
+          return null;
+        }
+        const serialize = (value: unknown) =>
+          config.transformer.output.serialize(value);
+        return {
+          json: await settledItems(result.items, (outcome) => outcome),
+          sent: await settledItems(result.items, (outcome) =>
+            'error' in outcome
+              ? { error: serialize(outcome.error) }
+              : { result: { data: serialize(outcome.result.data) } },
+          ),
+        };
+      }),
+    );
     const resultAsRPCResponse = results.map(
       (
         [error, result],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
         const call = info.calls[index]!;
+        const items = settled[index];
+        if (items) {
+          // Not a response of its own, but the runs of one: `{ items }`
+          return items.json as TRPCResponse<unknown, inferRouterError<TRouter>>;
+        }
         if (error) {
           return {
             error: getErrorShape({
@@ -920,7 +996,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     return new Response(
-      JSON.stringify(transformTRPCResponse(config, resultAsRPCResponse)),
+      JSON.stringify(
+        resultAsRPCResponse.map(
+          (response, index) =>
+            settled[index]?.sent ?? transformTRPCResponse(config, response),
+        ),
+      ),
       {
         status: headResponse.status,
         headers,

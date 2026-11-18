@@ -2191,8 +2191,6 @@ describe.each([
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
     });
-    // The server runs a call for the items of one list, so these are asked
-    // for by themselves, each with its own id
     expect(data.members.map((member) => member.id)).toEqual(['u1', 'u2', 'u3']);
     expect(
       resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
@@ -2201,6 +2199,19 @@ describe.each([
       ['author.byId', { id: 'u2' }],
       ['author.byId', { id: 'u3' }],
     ]);
+    // In one request: one call, for every item of every group
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    const url = new URL(
+      resource.onRequestSpy.mock.calls[0]![0].url!,
+      'http://localhost',
+    );
+    expect(url.pathname.endsWith('/group.list,author.byId')).toBe(true);
+    expect(JSON.parse(url.searchParams.get('pipe')!)).toEqual({
+      1: {
+        each: { from: 0, path: ['groups', null, 'members'] },
+        reads: [{ to: ['id'], path: [] }],
+      },
+    });
   });
 
   test("an entry per page of an infinite entry does not break the entry's request", async () => {

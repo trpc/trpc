@@ -8,6 +8,7 @@ import {
   loggerLink,
 } from '@trpc/client';
 import type { experimental_PipeliningLinkOptions } from '@trpc/client';
+import type { PipelineSource } from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
   pipeCall,
@@ -15,13 +16,39 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  experimental_PipeliningOptions,
+  PipelineCallReads,
+  PipelinePath,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
   isObject,
   pipelineLimitDefaults,
+  readPipelinedItem,
 } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
+
+/** What a call reads of the data of others */
+function whole(
+  ...reads: { to: string[]; from: PipelineSource; path: PipelinePath }[]
+): PipelineCallReads<PipelineSource> {
+  return {
+    each: null,
+    reads: reads.map((read) => ({ kind: 'whole', ...read })),
+  };
+}
+
+/** What a call for every item of a list reads of each item */
+function eachItem(
+  list: { from: PipelineSource; path: PipelinePath },
+  ...reads: { to: string[]; path: PipelinePath }[]
+): PipelineCallReads<PipelineSource> {
+  return {
+    each: list,
+    reads: reads.map((read) => ({ kind: 'item', ...read })),
+  };
+}
 
 const createRouter = (transformer: 'none' | 'superjson') => {
   const t =
@@ -185,29 +212,26 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined, since: undefined },
-      reads: [
-        { to: ['id'], from: post, path: ['authorId'], each: false },
-        { to: ['since'], from: post, path: ['publishedAt'], each: false },
-      ],
+      reads: whole(
+        { to: ['id'], from: post, path: ['authorId'] },
+        { to: ['since'], from: post, path: ['publishedAt'] },
+      ),
     });
     assert(author);
     // A call reads another call
     const team = pipeCall({
       path: 'team',
       input: undefined,
-      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+      reads: whole({ to: [], from: author, path: ['teamId'] }),
     });
     const tags = pipeCall({
       path: 'tags',
       input: { ids: [undefined, 'extra'] },
-      reads: [
-        {
-          to: ['ids', '0'],
-          from: post,
-          path: ['tags', '1', 'id'],
-          each: false,
-        },
-      ],
+      reads: whole({
+        to: ['ids', '0'],
+        from: post,
+        path: ['tags', '1', 'id'],
+      }),
     });
     assert(team);
     assert(tags);
@@ -262,9 +286,7 @@ describe.each([
     const tags = pipeCall({
       path: 'tags',
       input: { ids: undefined },
-      reads: [
-        { to: ['ids'], from: post, path: ['tags', null, 'id'], each: false },
-      ],
+      reads: whole({ to: ['ids'], from: post, path: ['tags', null, 'id'] }),
     });
     assert(tags);
     await postResult;
@@ -289,9 +311,10 @@ describe.each([
     const tag = pipeCall({
       path: 'tag',
       input: { id: undefined },
-      reads: [
-        { to: ['id'], from: post, path: ['tags', null, 'id'], each: true },
-      ],
+      reads: eachItem(
+        { from: post, path: ['tags'] },
+        { to: ['id'], path: ['id'] },
+      ),
     });
     assert(tag);
     await postResult;
@@ -300,9 +323,58 @@ describe.each([
       scenario.transformer === 'superjson'
         ? new Date('2026-02-02T00:00:00Z')
         : '2026-02-02T00:00:00.000Z';
-    expect((await tag.result).data).toMatchObject([
-      { result: { data: { id: 't1', at } } },
-      { error: { data: { code: 'FORBIDDEN' } } },
+    const { data } = await tag.result;
+    expect(await readPipelinedItem(data, [0])).toEqual({
+      kind: 'data',
+      data: { id: 't1', at },
+    });
+    expect(await readPipelinedItem(data, [1])).toMatchObject({
+      kind: 'error',
+      error: { data: { code: 'FORBIDDEN' } },
+    });
+    expect(await readPipelinedItem(data, [2])).toEqual({ kind: 'missing' });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('a call that reads a call for every item runs for every item too, and each run arrives by itself', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const tag = pipeCall({
+      path: 'tag',
+      input: { id: undefined },
+      reads: eachItem(
+        { from: post, path: ['tags'] },
+        { to: ['id'], path: ['id'] },
+      ),
+    });
+    assert(tag);
+    // In the frame of `tag`: once for each of its runs
+    const team = pipeCall({
+      path: 'team',
+      input: undefined,
+      reads: whole({ to: [], from: tag, path: ['id'] }),
+    });
+    assert(team);
+    await postResult;
+
+    const { data } = await team.result;
+    expect(await readPipelinedItem(data, [0])).toEqual({
+      kind: 'data',
+      data: { id: 't1' },
+    });
+    // The run of `tag` it reads failed
+    expect(await readPipelinedItem(data, [1])).toMatchObject({
+      kind: 'error',
+      error: { data: { code: 'PRECONDITION_FAILED' } },
+    });
+    expect(ctx.calls.mock.calls.filter(([path]) => path === 'team')).toEqual([
+      ['team', 't1'],
     ]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
@@ -325,7 +397,7 @@ describe.each([
       const author = pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       });
       assert(author);
       // The server says so itself: the client doesn't work it out
@@ -382,7 +454,7 @@ describe.each([
       const author = pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       });
       assert(author);
       await expect(postResult).rejects.toMatchObject({
@@ -407,13 +479,13 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     const team = pipeCall({
       path: 'team',
       input: undefined,
-      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+      reads: whole({ to: [], from: author, path: ['teamId'] }),
     });
     assert(team);
 
@@ -446,13 +518,13 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     const team = pipeCall({
       path: 'team',
       input: undefined,
-      reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+      reads: whole({ to: [], from: author, path: ['teamId'] }),
     });
     assert(team);
     // Sent in the same tick: it waits for the next request
@@ -491,7 +563,7 @@ describe.each([
       path: 'author',
       // Too long for a URL, also with the post alone
       input: { id: undefined, since: 'x'.repeat(500) },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     await results;
@@ -519,7 +591,7 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     await expect(postResult).rejects.toThrow(
@@ -542,12 +614,13 @@ describe.each([
       { context: pipelineContext(post) },
     );
     const reads = (count: number) =>
-      Array.from({ length: count }, () => ({
-        to: ['id'],
-        from: post,
-        path: ['authorId'],
-        each: false,
-      }));
+      whole(
+        ...Array.from({ length: count }, () => ({
+          to: ['id'],
+          from: post,
+          path: ['authorId'],
+        })),
+      );
     expect(
       pipeCall({
         path: 'author',
@@ -586,19 +659,19 @@ describe.each([
       const author = pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       });
       assert(author);
       const team = pipeCall({
         path: 'team',
         input: undefined,
-        reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+        reads: whole({ to: [], from: author, path: ['teamId'] }),
       });
       assert(team);
       const fourth = pipeCall({
         path: 'team',
         input: undefined,
-        reads: [{ to: [], from: team, path: ['id'], each: false }],
+        reads: whole({ to: [], from: team, path: ['id'] }),
       });
       await postResult;
       expect(await team.result).toEqual({ data: { id: 'team-of-u1' } });
@@ -620,29 +693,46 @@ describe.each([
       { slug: 'hello' },
       { context: pipelineContext(post) },
     );
-    // Every item of what is no list
+    // An item, without a list to have it
     expect(
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: true }],
+        reads: { each: null, reads: [{ kind: 'item', to: ['id'], path: [] }] },
       }),
     ).toBeNull();
-    // The items of two lists
+    // The runs for the items of two lists
+    const tags = pipeCall({
+      path: 'tag',
+      input: { id: undefined },
+      reads: eachItem({ from: post, path: ['tags'] }, { to: ['id'], path: [] }),
+    });
+    const related = pipeCall({
+      path: 'tag',
+      input: { id: undefined },
+      reads: eachItem(
+        { from: post, path: ['related'] },
+        { to: ['id'], path: [] },
+      ),
+    });
+    assert(tags && related);
     expect(
       pipeCall({
         path: 'author',
         input: {},
-        reads: [
-          { to: ['a'], from: post, path: ['tags', null], each: true },
-          { to: ['b'], from: post, path: ['related', null], each: true },
-        ],
+        reads: whole(
+          { to: ['a'], from: tags, path: [] },
+          { to: ['b'], from: related, path: [] },
+        ),
       }),
     ).toBeNull();
-    // The server would have refused the whole request for either
+    // The server would have refused either. The request goes with the calls
+    // for every item, and without the call that reads both
     expect(await postResult).toMatchObject({ authorId: 'u1' });
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
-    expect(ctx.onRequestSpy.mock.calls[0]?.[0].url).toContain('batch=1');
+    expect(ctx.onRequestSpy.mock.calls[0]?.[0].url).toContain(
+      '/post,tag,tag?batch=pipeline',
+    );
   });
 
   test.each([
@@ -690,7 +780,7 @@ describe.each([
       const author = pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       });
       assert(author);
       expect(await postResult).toMatchObject({ slug: 'hello' });
@@ -735,7 +825,7 @@ describe.each([
       const author = pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       });
       assert(author);
       await expect(postResult).rejects.toThrow('The connection broke');
@@ -786,17 +876,17 @@ describe.each([
     const both = pipeCall({
       path: 'author',
       input: { id: undefined, since: undefined },
-      reads: [
-        { to: ['id'], from: first, path: ['authorId'], each: false },
-        { to: ['since'], from: second, path: ['slug'], each: false },
-      ],
+      reads: whole(
+        { to: ['id'], from: first, path: ['authorId'] },
+        { to: ['since'], from: second, path: ['slug'] },
+      ),
     });
     // Reads the first post. Two requests would have room for it, and none
     // for the call above: one call either way
     const one = pipeCall({
       path: 'team',
       input: undefined,
-      reads: [{ to: [], from: first, path: ['authorId'], each: false }],
+      reads: whole({ to: [], from: first, path: ['authorId'] }),
     });
     assert(both);
     assert(one);
@@ -832,10 +922,10 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined, since: undefined },
-      reads: [
-        { to: ['id'], from: first, path: ['authorId'], each: false },
-        { to: ['since'], from: second, path: ['slug'], each: false },
-      ],
+      reads: whole(
+        { to: ['id'], from: first, path: ['authorId'] },
+        { to: ['since'], from: second, path: ['slug'] },
+      ),
     });
     assert(author);
     await results;
@@ -863,7 +953,7 @@ describe.each([
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       }),
     ).toBeNull();
   });
@@ -881,7 +971,7 @@ describe.each([
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       }),
     ).toBeNull();
     await postResult;
@@ -942,7 +1032,7 @@ describe('a server without `experimental_allowPipelining`, whose error formatter
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     await expect(postResult).rejects.toThrow(
@@ -961,7 +1051,9 @@ describe('a server without `experimental_allowPipelining`', () => {
       JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' } }),
     );
     const pipe = encodeURIComponent(
-      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+      JSON.stringify({
+        1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+      }),
     );
 
     // An ordinary batch that happens to have a `pipe`: it is not read
@@ -1047,7 +1139,7 @@ describe('the `pipe` search param', () => {
 
   test('fills in the input of a later call', async () => {
     const res = await get(
-      pipe({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+      pipe({ 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } }),
       { path: 'post,author', allowPipelining: true },
     );
     expect(res.json[1]).toEqual({
@@ -1062,7 +1154,7 @@ describe('the `pipe` search param', () => {
     const res = await get(
       `input=${tagsInput}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }],
+          1: { reads: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }] },
         }),
       )}`,
       { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
@@ -1073,7 +1165,7 @@ describe('the `pipe` search param', () => {
     const notAnArray = await get(
       `input=${tagsInput}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }],
+          1: { reads: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }] },
         }),
       )}`,
       { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
@@ -1085,37 +1177,45 @@ describe('the `pipe` search param', () => {
     const eachInput = encodeURIComponent(
       JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: [null, 'extra'] } }),
     );
-    const each = (reads: unknown) =>
+    const each = (call: unknown) =>
       get(
-        `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: reads }))}`,
+        `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: call }))}`,
         { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
       );
 
-    const res = await each([
-      { to: ['ids', '0'], from: 0, path: ['tags', null, 'id'], each: true },
-    ]);
+    const res = await each({
+      each: { from: 0, path: ['tags'] },
+      reads: [{ to: ['ids', '0'], path: ['id'] }],
+    });
     expect(res.json[1]).toEqual({
-      result: {
-        data: [
-          { result: { data: ['t1', 'extra'] } },
-          { result: { data: ['t2', 'extra'] } },
-        ],
+      items: {
+        0: { result: { data: ['t1', 'extra'] } },
+        1: { result: { data: ['t2', 'extra'] } },
       },
     });
 
     // Every run validates its own input
-    const invalid = await each([
-      { to: ['ids', '0'], from: 0, path: ['tags', null], each: true },
-    ]);
+    const invalid = await each({
+      each: { from: 0, path: ['tags'] },
+      reads: [{ to: ['ids', '0'], path: [] }],
+    });
     expect(
-      invalid.json[1].result.data.map((item: any) => item.error.data.code),
+      Object.values(invalid.json[1].items).map(
+        (item: any) => item.error.data.code,
+      ),
     ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
 
-    const noList = await each([
-      { to: ['ids', '0'], from: 0, path: ['slug'], each: true },
-    ]);
-    expect(noList.json.error.message).toBe(
-      'Invalid "pipe": "each" at 1 needs a list in its path',
+    // What isn't a list has no items
+    const noList = await each({
+      each: { from: 0, path: ['slug'] },
+      reads: [{ to: ['ids', '0'], path: [] }],
+    });
+    expect(noList.json[1]).toEqual({ items: {} });
+
+    // An item, without a list to have it
+    const noEach = await each({ reads: [{ to: ['ids', '0'], path: [] }] });
+    expect(noEach.json.error.message).toBe(
+      'Invalid "pipe": call 1 reads an item without "each", or has no "from"',
     );
   });
 
@@ -1126,14 +1226,17 @@ describe('the `pipe` search param', () => {
     const res = await get(
       `input=${eachInput}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
         }),
       )}`,
       { path: 'post,ticks', allowPipelining: true },
     );
     // Not `{}`, which is what a stream inside a list would be sent as
     expect(
-      res.json[1].result.data.map((item: any) => item.error.data.code),
+      Object.values(res.json[1].items).map((item: any) => item.error.data.code),
     ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
   });
 
@@ -1141,7 +1244,9 @@ describe('the `pipe` search param', () => {
     const search = `input=${encodeURIComponent(
       JSON.stringify({ 1: {} }),
     )}&pipe=${encodeURIComponent(
-      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+      JSON.stringify({
+        1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+      }),
     )}`;
     const res = await get(search, {
       path: 'feed,author',
@@ -1158,7 +1263,9 @@ describe('the `pipe` search param', () => {
         JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: ['a'] } }),
       )}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['ids', 'length'], from: 0, path: ['authorId'] }],
+          1: {
+            reads: [{ to: ['ids', 'length'], from: 0, path: ['authorId'] }],
+          },
         }),
       )}`,
       { path: 'post,tags', allowPipelining: true },
@@ -1172,11 +1279,13 @@ describe('the `pipe` search param', () => {
   test('a call can read so many values, and no more', async () => {
     const reads = (count: number) =>
       pipe({
-        1: Array.from({ length: count }, () => ({
-          to: ['id'],
-          from: 0,
-          path: ['authorId'],
-        })),
+        1: {
+          reads: Array.from({ length: count }, () => ({
+            to: ['id'],
+            from: 0,
+            path: ['authorId'],
+          })),
+        },
       });
     const within = await get(reads(pipelineLimitDefaults.maxReadsPerCall), {
       path: 'post,author',
@@ -1201,10 +1310,12 @@ describe('the `pipe` search param', () => {
   test('a call to a procedure without an input parser is refused, or does not run, as any other', async () => {
     const over = await get(
       pipe({
-        1: [
-          { to: ['a'], from: 0, path: ['authorId'] },
-          { to: ['b'], from: 0, path: ['authorId'] },
-        ],
+        1: {
+          reads: [
+            { to: ['a'], from: 0, path: ['authorId'] },
+            { to: ['b'], from: 0, path: ['authorId'] },
+          ],
+        },
       }),
       { path: 'post,unread', allowPipelining: { maxReadsPerCall: 1 } },
     );
@@ -1219,7 +1330,9 @@ describe('the `pipe` search param', () => {
       `input=${encodeURIComponent(
         JSON.stringify({ 0: { slug: 'missing' }, 1: {} }),
       )}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+        JSON.stringify({
+          1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+        }),
       )}`,
       { path: 'post,unread', allowPipelining: true },
     );
@@ -1235,10 +1348,10 @@ describe('the `pipe` search param', () => {
       JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 4: {} }),
     )}&pipe=${encodeURIComponent(
       JSON.stringify({
-        1: [{ to: ['id'], from: 0, path: ['authorId'] }],
-        2: [{ to: [], from: 1, path: ['teamId'] }],
-        3: [{ to: ['id'], from: 2, path: ['id'] }],
-        4: [{ to: ['id'], from: 0, path: ['tags'] }],
+        1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+        2: { reads: [{ to: [], from: 1, path: ['teamId'] }] },
+        3: { reads: [{ to: ['id'], from: 2, path: ['id'] }] },
+        4: { reads: [{ to: ['id'], from: 0, path: ['tags'] }] },
       }),
     )}`;
     const res = await get(search, {
@@ -1265,11 +1378,13 @@ describe('the `pipe` search param', () => {
   test('an object sets the limits it has, raised or lowered', async () => {
     const reads = (count: number) =>
       pipe({
-        1: Array.from({ length: count }, () => ({
-          to: ['id'],
-          from: 0,
-          path: ['authorId'],
-        })),
+        1: {
+          reads: Array.from({ length: count }, () => ({
+            to: ['id'],
+            from: 0,
+            path: ['authorId'],
+          })),
+        },
       });
     const raised = await get(reads(20), {
       path: 'post,author',
@@ -1336,7 +1451,10 @@ describe('the `pipe` search param', () => {
         JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
       )}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
         }),
       )}`;
       const res = await fetch(
@@ -1347,7 +1465,7 @@ describe('the `pipe` search param', () => {
 
     // Two calls, of which one runs for two items: three runs
     const within = await each(3);
-    expect(within.json[1].result.data).toHaveLength(2);
+    expect(Object.keys(within.json[1].items)).toHaveLength(2);
 
     const over = await each(2);
     expect(over.json[0].result.data.slug).toBe('hello');
@@ -1364,9 +1482,10 @@ describe('the `pipe` search param', () => {
     await using ctx = testServerAndClientResource(appRouter, {
       server: { experimental_allowPipelining: true, maxBatchSize: 4 },
     });
-    const each = (list: string) => [
-      { to: ['id'], from: 0, path: [list, null, 'id'], each: true },
-    ];
+    const each = (list: string) => ({
+      each: { from: 0, path: [list] },
+      reads: [{ to: ['id'], path: ['id'] }],
+    });
     const res = await fetch(
       `${ctx.httpUrl}/lists,tag,tag?batch=pipeline&input=${encodeURIComponent(
         JSON.stringify({ 1: {}, 2: {} }),
@@ -1379,7 +1498,7 @@ describe('the `pipe` search param', () => {
     expect(json[1].error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );
-    expect(json[2].result.data).toHaveLength(2);
+    expect(Object.keys(json[2].items)).toHaveLength(2);
     expect(calls).toHaveBeenCalledTimes(2);
   });
 
@@ -1389,15 +1508,19 @@ describe('the `pipe` search param', () => {
     )}&pipe=${encodeURIComponent(
       JSON.stringify({
         // The whole post as the input, and then its slug replaced
-        1: [
-          { to: [], from: 0, path: [] },
-          { to: ['slug'], from: 0, path: ['authorId'] },
-        ],
+        1: {
+          reads: [
+            { to: [], from: 0, path: [] },
+            { to: ['slug'], from: 0, path: ['authorId'] },
+          ],
+        },
         // Reads the slug after the call above has replaced its own
-        2: [
-          { to: ['other'], from: 0, path: ['authorId'] },
-          { to: ['slug'], from: 0, path: ['slug'] },
-        ],
+        2: {
+          reads: [
+            { to: ['other'], from: 0, path: ['authorId'] },
+            { to: ['slug'], from: 0, path: ['slug'] },
+          ],
+        },
       }),
     )}`;
     const res = await get(search, {
@@ -1415,12 +1538,14 @@ describe('the `pipe` search param', () => {
         JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
       )}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['tags'], from: 0, path: ['tags'] }],
+          1: { reads: [{ to: ['tags'], from: 0, path: ['tags'] }] },
           // Reads the tags once the call above has run
-          2: [
-            { to: ['after'], from: 1, path: [] },
-            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
-          ],
+          2: {
+            reads: [
+              { to: ['after'], from: 1, path: [] },
+              { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
+            ],
+          },
         }),
       )}`,
       { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
@@ -1436,23 +1561,33 @@ describe('the `pipe` search param', () => {
       )}&pipe=${encodeURIComponent(
         JSON.stringify({
           // Every run gets the whole list too
-          1: [
-            { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
-            { to: ['tags'], from: 0, path: ['tags'] },
-          ],
-          2: [
-            { to: ['after'], from: 1, path: [] },
-            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
-          ],
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [
+              { to: ['id'], path: ['id'] },
+              { to: ['tags'], from: 0, path: ['tags'] },
+            ],
+          },
+          // Runs once for every run above, after it
+          2: {
+            reads: [
+              { to: ['after'], from: 1, path: [] },
+              { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
+            ],
+          },
         }),
       )}`,
       { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
     );
-    expect(res.json[1].result.data).toEqual([
-      { result: { data: 3 } },
-      { result: { data: 3 } },
-    ]);
-    expect(res.json[2].result.data).toEqual(['t1', 't2']);
+    expect(res.json[1]).toEqual({
+      items: { 0: { result: { data: 3 } }, 1: { result: { data: 3 } } },
+    });
+    expect(res.json[2]).toEqual({
+      items: {
+        0: { result: { data: ['t1', 't2'] } },
+        1: { result: { data: ['t1', 't2'] } },
+      },
+    });
   });
 
   test('a run for an item that changes the input the client sent does not change it for other runs', async () => {
@@ -1461,16 +1596,18 @@ describe('the `pipe` search param', () => {
         JSON.stringify({ 0: { slug: 'hello' }, 1: { tags: [] } }),
       )}&pipe=${encodeURIComponent(
         JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
         }),
       )}`,
       { path: 'post,stamp', allowPipelining: true },
     );
     // Every run adds a tag to its own list
-    expect(res.json[1].result.data).toEqual([
-      { result: { data: 1 } },
-      { result: { data: 1 } },
-    ]);
+    expect(res.json[1]).toEqual({
+      items: { 0: { result: { data: 1 } }, 1: { result: { data: 1 } } },
+    });
   });
 
   test('filling in an input keeps what the transformer made of it', async () => {
@@ -1507,7 +1644,9 @@ describe('the `pipe` search param', () => {
       `${ctx.httpUrl}/start,span?batch=pipeline&input=${encodeURIComponent(
         JSON.stringify({ 1: { from: null, to: 5 } }),
       )}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: [{ to: ['from'], from: 0, path: ['at'] }] }),
+        JSON.stringify({
+          1: { reads: [{ to: ['from'], from: 0, path: ['at'] }] },
+        }),
       )}`,
     );
     expect((await res.json())[1]).toEqual({ result: { data: [1, 5] } });
@@ -1562,7 +1701,7 @@ describe('the `pipe` search param', () => {
           JSON.stringify({ 1: {} }),
         )}&pipe=${encodeURIComponent(
           JSON.stringify({
-            1: [{ to: ['since'], from: 0, path: ['publishedAt'] }],
+            1: { reads: [{ to: ['since'], from: 0, path: ['publishedAt'] }] },
           }),
         )}`,
       ),
@@ -1588,7 +1727,10 @@ describe('the `pipe` search param', () => {
           JSON.stringify({ 0: source, 1: {} }),
         )}&pipe=${encodeURIComponent(
           JSON.stringify({
-            1: [{ to: ['id'], from: 0, path: [list, null, 'id'], each: true }],
+            1: {
+              each: { from: 0, path: [list] },
+              reads: [{ to: ['id'], path: ['id'] }],
+            },
           }),
         )}`,
         { path, allowPipelining: true },
@@ -1599,14 +1741,14 @@ describe('the `pipe` search param', () => {
     expect(failed.calls).not.toHaveBeenCalled();
 
     const noList = await eachOf('post,tag', { slug: 'hello' }, 'slug');
-    expect(noList.json[1]).toEqual({ result: { data: [] } });
+    expect(noList.json[1]).toEqual({ items: {} });
     expect(noList.calls).not.toHaveBeenCalled();
   });
 
   test('a call whose data is `undefined` gives the calls that read it nothing', async () => {
     const res = await get(
       `input=${encodeURIComponent(JSON.stringify({ 1: {} }))}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: [{ to: ['id'], from: 0, path: [] }] }),
+        JSON.stringify({ 1: { reads: [{ to: ['id'], from: 0, path: [] }] } }),
       )}`,
       { path: 'nothing,author', allowPipelining: true },
     );
@@ -1617,7 +1759,7 @@ describe('the `pipe` search param', () => {
 
   test('a call still validates its input', async () => {
     const res = await get(
-      pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),
+      pipe({ 1: { reads: [{ to: ['id'], from: 0, path: ['tags'] }] } }),
       { path: 'post,author', allowPipelining: { allowWholeValues: true } },
     );
     expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
@@ -1627,11 +1769,13 @@ describe('the `pipe` search param', () => {
   test('reads own properties only', async () => {
     const res = await get(
       pipe({
-        1: [
-          { to: ['id'], from: 0, path: ['authorId'] },
-          { to: ['since'], from: 0, path: ['secret', 'inherited'] },
-          { to: ['__proto__'], from: 0, path: ['constructor'] },
-        ],
+        1: {
+          reads: [
+            { to: ['id'], from: 0, path: ['authorId'] },
+            { to: ['since'], from: 0, path: ['secret', 'inherited'] },
+            { to: ['__proto__'], from: 0, path: ['constructor'] },
+          ],
+        },
       }),
       { path: 'post,author', allowPipelining: true },
     );
@@ -1640,22 +1784,30 @@ describe('the `pipe` search param', () => {
   });
 
   test.each([
-    ['a call that reads from itself', { 1: [{ to: [], from: 1, path: [] }] }],
+    [
+      'a call that reads from itself',
+      { 1: { reads: [{ to: [], from: 1, path: [] }] } },
+    ],
     [
       'a call that reads from a later one',
-      { 0: [{ to: [], from: 1, path: [] }] },
+      { 0: { reads: [{ to: [], from: 1, path: [] }] } },
     ],
-    ['a call that is not in the batch', { 2: [{ to: [], from: 0, path: [] }] }],
-    ['paths that are not strings', { 1: [{ to: [1], from: 0, path: [] }] }],
+    [
+      'a call that is not in the batch',
+      { 2: { reads: [{ to: [], from: 0, path: [] }] } },
+    ],
+    [
+      'paths that are not strings',
+      { 1: { reads: [{ to: [1], from: 0, path: [] }] } },
+    ],
     ['reads that are no list', { 1: { to: [], from: 0, path: [] } }],
     [
-      'a call for every item of two lists',
-      {
-        1: [
-          { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
-          { to: ['since'], from: 0, path: ['others', null], each: true },
-        ],
-      },
+      'a list that is in no call',
+      { 1: { each: { path: ['tags'] }, reads: [] } },
+    ],
+    [
+      'a read of an item without a list',
+      { 1: { reads: [{ to: ['id'], path: [] }] } },
     ],
     ['something that is not an object', 'nope'],
   ])('rejects %s', async (_name, value) => {
@@ -1693,7 +1845,7 @@ describe('the `pipe` search param', () => {
     const res = await post({
       0: { slug: 'hello' },
       1: {},
-      pipe: { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] },
+      pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } },
     });
     expect((await res.json())[1]).toEqual({
       result: { data: { id: 'u1', teamId: 'team-of-u1' } },
@@ -1703,7 +1855,7 @@ describe('the `pipe` search param', () => {
     const invalid = await post({
       0: { slug: 'hello' },
       1: {},
-      pipe: { 1: [{ to: ['id'], from: 1, path: [] }] },
+      pipe: { 1: { reads: [{ to: ['id'], from: 1, path: [] }] } },
     });
     expect(invalid.status).toBe(400);
     expect((await invalid.json()).error.message).toMatch(/^Invalid "pipe"/);
@@ -1771,14 +1923,14 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
     assert(
       pipeCall({
         path: 'team',
         input: undefined,
-        reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+        reads: whole({ to: [], from: author, path: ['teamId'] }),
       }),
     );
     return result;
@@ -1824,7 +1976,7 @@ describe.each([
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
       }),
     ).toBeNull();
     await result;

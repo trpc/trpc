@@ -64,6 +64,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
         ...resolvedOpts,
         maxItems,
         maxURLLength,
+        streams: true,
         read(result) {
           if ('error' in result.json) {
             throw TRPCClientError.from(result.json, { meta: result.meta });
