@@ -2722,6 +2722,80 @@ describe.each([
     expect(resource.calls.mock.calls).toEqual([['post.paged', { cursor: 1 }]]);
   });
 
+  test("a later page's row whose query can't start doesn't stop the rows after it", async () => {
+    // A row whose id no query key can hold, as an app with a transformer for
+    // it can have, comes first on the second page
+    const addRow: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) =>
+        observable((observer) =>
+          next(op).subscribe({
+            next(value) {
+              const data = value.result.data as
+                | { items?: unknown[] }
+                | undefined;
+              const cursor = (op.input as { cursor?: unknown } | undefined)
+                ?.cursor;
+              observer.next(
+                op.path === 'post.paged' && cursor === 1 && data?.items
+                  ? ({
+                      ...value,
+                      result: {
+                        ...value.result,
+                        data: {
+                          ...data,
+                          items: [{ id: 'big', authorId: 1n }, ...data.items],
+                        },
+                      },
+                    } as typeof value)
+                  : value,
+              );
+            },
+            error: (error) => observer.error(error),
+            complete: () => observer.complete(),
+          }),
+        );
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [addRow],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The row after it has its author, from the page's request
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 'u1' }),
+      ),
+    ).toMatchObject({ id: 'u1' });
+  });
+
   test("a later page loads its items' queries in the same request", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,

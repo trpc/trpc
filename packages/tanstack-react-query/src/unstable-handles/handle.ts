@@ -455,18 +455,23 @@ export function withItemQueries(opts: {
             ? listData.entries()
             : []) {
             const itemResult = resultOfItem(dataOfCall(call), [index]);
-            void queryClient.prefetchQuery(
-              withPipelinedResult({
-                options: procedure.queryOptions(
-                  experimental_handleOfItem(queries, item).input,
-                ),
-                result: itemResult.result,
-                unresolved: () =>
-                  call.status === 'unresolved' || itemResult.missing(),
-                // The server filled in the inputs from the same list
-                sameInput: () => Promise.resolve(true),
-              }),
-            );
+            try {
+              void queryClient.prefetchQuery(
+                withPipelinedResult({
+                  options: procedure.queryOptions(
+                    experimental_handleOfItem(queries, item).input,
+                  ),
+                  result: itemResult.result,
+                  unresolved: () =>
+                    call.status === 'unresolved' || itemResult.missing(),
+                  // The server filled in the inputs from the same list
+                  sameInput: () => Promise.resolve(true),
+                }),
+              );
+            } catch {
+              // Its query can't start, such as for an input no query key can
+              // hold. The row that reads it gets that error. The others load
+            }
           }
         }, nothing);
       }

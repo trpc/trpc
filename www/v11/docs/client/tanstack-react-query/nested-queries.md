@@ -75,10 +75,14 @@ export const appRouter = t.router({
           cursor: z.number().nullish(),
         }),
       )
-      .query(() => ({
-        items: [] as Post[],
-        nextCursor: null as number | null,
-      })),
+      .query(({ input }) => {
+        const cursor = input.cursor ?? 0;
+        return {
+          items: [] as Post[],
+          // Pages of 10, up to 30
+          nextCursor: cursor < 20 ? cursor + 10 : null,
+        };
+      }),
   }),
   author: t.router({
     byId: t.procedure
