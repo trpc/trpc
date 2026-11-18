@@ -198,7 +198,9 @@
     {
       "files": ["packages/**"],
       "rules": {
-        "no-console": "error"
+        "no-console": "error",
+        // Not in `www/**`, whose tests set the clock with `useFakeTimers({ now })`.
+        "trpc/no-direct-fake-timers": "error"
       }
     },
     {

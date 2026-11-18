@@ -2,6 +2,7 @@ import { EventEmitter, on } from 'node:events';
 /// <reference types="vitest" />
 import '@testing-library/react';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import type { TRPCServerResourceOpts } from '@trpc/server/__tests__/trpcServerResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
@@ -5073,12 +5074,6 @@ describe('lastEventId', () => {
 });
 
 describe('keep alive on the server', () => {
-  beforeAll(() => {
-    vi.useFakeTimers();
-  });
-  afterAll(() => {
-    vi.useRealTimers();
-  });
   function attachPongMock(wss: WebSocketServer) {
     const onPong = vi.fn();
 
@@ -5094,6 +5089,7 @@ describe('keep alive on the server', () => {
     return onPong;
   }
   test('pong message should be received', async () => {
+    using _timers = fakeTimersResource();
     const pingMs = 2_000;
     const pongWaitMs = 5_000;
     await using ctx = factory({
@@ -5122,6 +5118,7 @@ describe('keep alive on the server', () => {
     }
   });
   test('no pong message should be received', async () => {
+    using _timers = fakeTimersResource();
     await using ctx = factory({});
 
     await new Promise((resolve) => {
@@ -5138,14 +5135,8 @@ describe('keep alive on the server', () => {
 });
 
 describe('keep alive from the client', () => {
-  beforeAll(() => {
-    vi.useFakeTimers();
-  });
-  afterAll(() => {
-    vi.useRealTimers();
-  });
-
   test('pong message should be received', async () => {
+    using _timers = fakeTimersResource();
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
@@ -5190,6 +5181,7 @@ describe('keep alive from the client', () => {
   });
 
   test('should close if no pong is received', async () => {
+    using _timers = fakeTimersResource();
     const intervalMs = 2_000;
     const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
@@ -5232,7 +5224,6 @@ describe('keep alive from the client', () => {
 
     expect(pong).toBe(false);
 
-    vi.useRealTimers();
     await vi.waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
