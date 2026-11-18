@@ -225,8 +225,9 @@ describe.each([
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
     // A pipelined batch is a request of its own kind
     const { url } = ctx.onRequestSpy.mock.calls[0]![0];
-    expect(url).toContain('/post,author,team,tags?batch=pipeline');
-    expect(url).toContain('pipe=');
+    // The calls are in the post's tree, not its path
+    expect(url).toContain('/post?batch=tree');
+    expect(url).toContain('tree=');
     // A call is no operation: the links before saw one, with its whole input
     expect(ctx.ops).toEqual([{ path: 'post', input: { slug: 'hello' } }]);
     // A link can serialize the context, which says what went with the request
@@ -461,10 +462,11 @@ describe.each([
       'The call did not fit in the request of what it reads',
     );
     expect(team.status).toBe('unresolved');
-    // Two requests, which reach the server in either order
+    // Two requests, which reach the server in either order. The author is in
+    // the post's tree, not its path
     expect(
       ctx.onRequestSpy.mock.calls.map(([req]) => req.url?.split('?')[0]).sort(),
-    ).toEqual(['/post,author', '/team']);
+    ).toEqual(['/post', '/team']);
   });
 
   test('a call that fits in no request does not split the batch', async () => {
@@ -672,8 +674,11 @@ describe.each([
         // Such as a proxy that drops what it doesn't expect
         fetch: async (input, init) => {
           const res = await fetch(input, init);
-          const results: unknown[] = await res.json();
-          return Response.json(results.slice(0, 1), res);
+          const results: Record<string, unknown>[] = await res.json();
+          return Response.json(
+            results.map(({ children: _, ...result }) => result),
+            res,
+          );
         },
       });
       const post = createOperationPipeline();
@@ -777,35 +782,19 @@ describe.each([
         { context: pipelineContext(second) },
       ),
     ]);
-    // Reads both posts: it can only go in a request with both
-    const both = pipeCall({
-      path: 'author',
-      input: { id: undefined, since: undefined },
-      reads: [
-        { to: ['id'], from: first, path: ['authorId'], each: false },
-        { to: ['since'], from: second, path: ['slug'], each: false },
-      ],
-    });
-    // Reads the first post. Two requests would have room for it, and none
-    // for the call above: one call either way
+    // Two posts and the call fit in one request, as in two
     const one = pipeCall({
       path: 'team',
       input: undefined,
       reads: [{ to: [], from: first, path: ['authorId'], each: false }],
     });
-    assert(both);
     assert(one);
     await results;
-    expect(await both.result).toEqual({
-      data: { id: 'u1', teamId: 'team-of-u1' },
-    });
-    await expect(one.result).rejects.toThrow(
-      'The call did not fit in the request of what it reads',
-    );
+    expect(await one.result).toEqual({ data: { id: 'u1' } });
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('a call that reads two operations goes in the request of both', async () => {
+  test('a call that reads two operations, neither under the other, is not added: it waits for their data', async () => {
     await using ctx = setup({ allowPipelining: true, pipelining: true });
 
     const first = createOperationPipeline();
@@ -816,30 +805,58 @@ describe.each([
         { slug: 'hello' },
         { context: pipelineContext(first) },
       ),
-      // Between the two: the call's other operation comes after it
-      ctx.untyped.query('team', 'team1'),
       ctx.untyped.query(
         'post',
         { slug: 'other' },
         { context: pipelineContext(second) },
       ),
     ]);
+    // A follow-up sits under the one call it reads, with what is above it
+    expect(
+      pipeCall({
+        path: 'author',
+        input: { id: undefined, since: undefined },
+        reads: [
+          { to: ['id'], from: first, path: ['authorId'], each: false },
+          { to: ['since'], from: second, path: ['slug'], each: false },
+        ],
+      }),
+    ).toBeNull();
+    await results;
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('a call can read the operation and every call it is under', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
     const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+    });
+    assert(author);
+    const both = pipeCall({
       path: 'author',
       input: { id: undefined, since: undefined },
       reads: [
-        { to: ['id'], from: first, path: ['authorId'], each: false },
-        { to: ['since'], from: second, path: ['slug'], each: false },
+        { to: ['id'], from: author, path: ['id'], each: false },
+        { to: ['since'], from: post, path: ['slug'], each: false },
       ],
     });
-    assert(author);
-    await results;
-    expect(await author.result).toEqual({
+    assert(both);
+    await postResult;
+    expect(await both.result).toEqual({
       data: { id: 'u1', teamId: 'team-of-u1' },
     });
     expect(ctx.calls.mock.calls).toContainEqual([
       'author',
-      { id: 'u1', since: 'other' },
+      { id: 'u1', since: 'hello' },
     ]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
@@ -947,7 +964,7 @@ describe('a server without `experimental_allowPipelining`, whose error formatter
 });
 
 describe('a server without `experimental_allowPipelining`', () => {
-  test('answers an ordinary batch as it did before: `pipe` means nothing. A pipelined batch is a bad request', async () => {
+  test('answers an ordinary batch as it did before: `tree` means nothing. A pipelined batch is a bad request', async () => {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
       server: { allowMethodOverride: true },
@@ -955,13 +972,21 @@ describe('a server without `experimental_allowPipelining`', () => {
     const input = encodeURIComponent(
       JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' } }),
     );
-    const pipe = encodeURIComponent(
-      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+    const tree = encodeURIComponent(
+      JSON.stringify({
+        0: {
+          author: {
+            path: 'author',
+            input: {},
+            reads: [{ to: ['id'], data: ['authorId'] }],
+          },
+        },
+      }),
     );
 
-    // An ordinary batch that happens to have a `pipe`: it is not read
+    // An ordinary batch that happens to have a `tree`: it is not read
     const ordinary = await fetch(
-      `${ctx.httpUrl}/post,author?batch=1&input=${input}&pipe=${pipe}`,
+      `${ctx.httpUrl}/post,author?batch=1&input=${input}&tree=${tree}`,
     );
     expect((await ordinary.json())[1]).toEqual({
       result: { data: { id: 'u9', teamId: 'team-of-u9' } },
@@ -969,27 +994,24 @@ describe('a server without `experimental_allowPipelining`', () => {
     const ordinaryPost = await fetch(`${ctx.httpUrl}/post,author?batch=1`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' }, pipe: {} }),
+      body: JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u9' }, tree: {} }),
     });
     expect((await ordinaryPost.json())[1].result.data.id).toBe('u9');
 
     // A pipelined batch: nothing of it runs, and the answer says why
     calls.mockClear();
     const pipelined = await fetch(
-      `${ctx.httpUrl}/post,author?batch=pipeline&input=${input}&pipe=${pipe}`,
+      `${ctx.httpUrl}/post,author?batch=tree&input=${input}&tree=${tree}`,
     );
     expect(pipelined.status).toBe(400);
     expect((await pipelined.json()).error.message).toBe(
       'Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link',
     );
-    const pipelinedPost = await fetch(
-      `${ctx.httpUrl}/post,author?batch=pipeline`,
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ 0: { slug: 'hello' }, 1: {}, pipe: {} }),
-      },
-    );
+    const pipelinedPost = await fetch(`${ctx.httpUrl}/post,author?batch=tree`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ 0: { slug: 'hello' }, 1: {}, tree: {} }),
+    });
     expect(pipelinedPost.status).toBe(400);
     expect(calls).not.toHaveBeenCalled();
   });
@@ -1013,209 +1035,236 @@ describe('a server without `experimental_allowPipelining`', () => {
     await serve(true);
     // An ordinary request is the same request either way
     expect(infos[1]).toEqual(infos[0]);
-    expect(infos[0]).not.toContain('experimental_getPipe');
+    expect(infos[0]).not.toContain('experimental_pipeline');
   });
 });
 
-describe('the `pipe` search param', () => {
-  async function get(
-    search: string,
-    opts: {
-      path: string;
-      allowPipelining: true | experimental_PipeliningOptions;
-    },
-  ) {
+describe('the `tree` search param', () => {
+  async function get(opts: {
+    path: string;
+    input: Record<number, unknown>;
+    tree: unknown;
+    allowPipelining: true | experimental_PipeliningOptions;
+    maxBatchSize: number | undefined;
+  }) {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: opts.allowPipelining },
+      server: {
+        experimental_allowPipelining: opts.allowPipelining,
+        maxBatchSize: opts.maxBatchSize,
+      },
     });
+    const tree =
+      typeof opts.tree === 'string' ? opts.tree : JSON.stringify(opts.tree);
     const res = await fetch(
-      `${ctx.httpUrl}/${opts.path}?batch=pipeline&${search}`,
+      `${ctx.httpUrl}/${opts.path}?batch=tree&input=${encodeURIComponent(
+        JSON.stringify(opts.input),
+      )}&tree=${encodeURIComponent(tree)}`,
     );
     return { status: res.status, json: await res.json(), calls };
   }
-  const input = encodeURIComponent(
-    JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
-  );
-  const pipe = (value: unknown) =>
-    `input=${input}&pipe=${encodeURIComponent(JSON.stringify(value))}`;
+  const defaults = {
+    input: { 0: { slug: 'hello' } },
+    allowPipelining: true,
+    maxBatchSize: undefined,
+  } as const;
+  /** A follow-up of `path`, with an empty input */
+  const node = (path: string, reads: unknown[], more: object = {}) => ({
+    path,
+    input: {},
+    reads,
+    ...more,
+  });
+  const author = node('author', [{ to: ['id'], data: ['authorId'] }]);
 
-  test('fills in the input of a later call', async () => {
-    const res = await get(
-      pipe({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
-      { path: 'post,author', allowPipelining: true },
-    );
-    expect(res.json[1]).toEqual({
-      result: { data: { id: 'u1', teamId: 'team-of-u1' } },
+  test('fills in the input of a follow-up', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: { 0: { author } },
+    });
+    expect(res.json[0].children).toEqual({
+      author: { result: { data: { id: 'u1', teamId: 'team-of-u1' } } },
     });
   });
 
   test('`null` in a path reads every item of an array', async () => {
-    const tagsInput = encodeURIComponent(
-      JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
-    );
-    const res = await get(
-      `input=${tagsInput}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }],
-        }),
-      )}`,
-      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
-    );
-    expect(res.json[1]).toEqual({ result: { data: ['t1', 't2'] } });
-
-    // Not an array: nothing to read
-    const notAnArray = await get(
-      `input=${tagsInput}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }],
-        }),
-      )}`,
-      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
-    );
-    expect(notAnArray.json[1].error.data.code).toBe('BAD_REQUEST');
-  });
-
-  test('`each` runs a call for every item of a list', async () => {
-    const eachInput = encodeURIComponent(
-      JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: [null, 'extra'] } }),
-    );
-    const each = (reads: unknown) =>
-      get(
-        `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: reads }))}`,
-        { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
-      );
-
-    const res = await each([
-      { to: ['ids', '0'], from: 0, path: ['tags', null, 'id'], each: true },
-    ]);
-    expect(res.json[1]).toEqual({
-      result: {
-        data: [
-          { result: { data: ['t1', 'extra'] } },
-          { result: { data: ['t2', 'extra'] } },
-        ],
-      },
+    const tags = (path: unknown[]) => ({
+      ...defaults,
+      path: 'post',
+      allowPipelining: { allowWholeValues: true },
+      tree: { 0: { tags: node('tags', [{ to: ['ids'], data: path }]) } },
+    });
+    const res = await get(tags(['tags', null, 'id']));
+    expect(res.json[0].children.tags).toEqual({
+      result: { data: ['t1', 't2'] },
     });
 
-    // Every run validates its own input
-    const invalid = await each([
-      { to: ['ids', '0'], from: 0, path: ['tags', null], each: true },
-    ]);
-    expect(
-      invalid.json[1].result.data.map((item: any) => item.error.data.code),
-    ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
-
-    const noList = await each([
-      { to: ['ids', '0'], from: 0, path: ['slug'], each: true },
-    ]);
-    expect(noList.json.error.message).toBe(
-      'Invalid "pipe": "each" at 1 needs a list in its path',
+    // Not an array: nothing to read
+    const notAnArray = await get(tags(['slug', null, 'id']));
+    expect(notAnArray.json[0].children.tags.error.data.code).toBe(
+      'BAD_REQUEST',
     );
   });
 
-  test('a run of a call for every item that returns a stream fails by itself', async () => {
-    const eachInput = encodeURIComponent(
-      JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
-    );
-    const res = await get(
-      `input=${eachInput}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
-        }),
-      )}`,
-      { path: 'post,ticks', allowPipelining: true },
-    );
-    // Not `{}`, which is what a stream inside a list would be sent as
+  test('a list key runs a follow-up for every item, each with a result or an error of its own', async () => {
+    const each = (item: unknown[], list = 'tags[]') =>
+      get({
+        ...defaults,
+        path: 'post',
+        allowPipelining: { allowWholeValues: true },
+        tree: {
+          0: {
+            [list]: {
+              tags: {
+                path: 'tags',
+                input: { ids: [null, 'extra'] },
+                reads: [{ to: ['ids', '0'], item }],
+              },
+            },
+          },
+        },
+      });
+
+    const res = await each(['id']);
+    expect(res.json[0].children['tags[]']).toEqual([
+      { tags: { result: { data: ['t1', 'extra'] } } },
+      { tags: { result: { data: ['t2', 'extra'] } } },
+    ]);
+
+    // Every run validates its own input
+    const invalid = await each([]);
     expect(
-      res.json[1].result.data.map((item: any) => item.error.data.code),
+      invalid.json[0].children['tags[]'].map(
+        (item: any) => item.tags.error.data.code,
+      ),
+    ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
+
+    // What is no list has no items
+    const noList = await each(['id'], 'slug[]');
+    expect(noList.json[0].children['slug[]']).toEqual([]);
+  });
+
+  test('a run for an item that returns a stream fails by itself', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: {
+          'tags[]': { ticks: node('ticks', [{ to: ['id'], item: ['id'] }]) },
+        },
+      },
+    });
+    // Not `{}`, which is what a stream inside a response that doesn't stream would be
+    expect(
+      res.json[0].children['tags[]'].map(
+        (item: any) => item.ticks.error.data.code,
+      ),
     ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
   });
 
-  test('a call whose data the response can not carry is not read: the call that reads it does not run', async () => {
-    const search = `input=${encodeURIComponent(
-      JSON.stringify({ 1: {} }),
-    )}&pipe=${encodeURIComponent(
-      JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
-    )}`;
-    const res = await get(search, {
-      path: 'feed,author',
-      allowPipelining: true,
+  test('a call whose data the response can not carry is not read: the follow-up under it does not run', async () => {
+    const res = await get({
+      ...defaults,
+      input: {},
+      path: 'feed',
+      tree: { 0: { author } },
     });
     expect(res.json[0].error.data.code).toBe('UNSUPPORTED_MEDIA_TYPE');
-    expect(res.json[1].error.data.code).toBe('PRECONDITION_FAILED');
+    expect(res.json[0].children.author.error.data.code).toBe(
+      'PRECONDITION_FAILED',
+    );
     expect(res.calls).not.toHaveBeenCalled();
   });
 
-  test('a place in an input that can not be written is an invalid `pipe`, not a server error', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(
-        JSON.stringify({ 0: { slug: 'hello' }, 1: { ids: ['a'] } }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['ids', 'length'], from: 0, path: ['authorId'] }],
-        }),
-      )}`,
-      { path: 'post,tags', allowPipelining: true },
-    );
-    expect(res.json[1].error).toMatchObject({
-      message: 'Invalid "pipe": the input has nothing at "ids.length"',
+  test('a place in an input that can not be written is an invalid `tree`, not a server error', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: {
+          tags: {
+            path: 'tags',
+            input: { ids: ['a'] },
+            reads: [{ to: ['ids', 'length'], data: ['authorId'] }],
+          },
+        },
+      },
+    });
+    expect(res.json[0].children.tags.error).toMatchObject({
+      message: 'Invalid "tree": the input has nothing at "ids.length"',
       data: { code: 'BAD_REQUEST' },
     });
   });
 
-  test('a call can read so many values, and no more', async () => {
-    const reads = (count: number) =>
-      pipe({
-        1: Array.from({ length: count }, () => ({
+  /** An author that reads its id `count` times */
+  const reading = (count: number) => ({
+    0: {
+      author: node(
+        'author',
+        Array.from({ length: count }, () => ({
           to: ['id'],
-          from: 0,
-          path: ['authorId'],
+          data: ['authorId'],
         })),
-      });
-    const within = await get(reads(pipelineLimitDefaults.maxReadsPerCall), {
-      path: 'post,author',
-      allowPipelining: true,
-    });
-    expect(within.json[1].result.data.id).toBe('u1');
+      ),
+    },
+  });
 
-    const over = await get(reads(pipelineLimitDefaults.maxReadsPerCall + 1), {
-      path: 'post,author',
-      allowPipelining: true,
+  test('a follow-up can read so many values, and no more', async () => {
+    const within = await get({
+      ...defaults,
+      path: 'post',
+      tree: reading(pipelineLimitDefaults.maxReadsPerCall),
     });
-    // The call is refused, and the rest of the batch runs
-    expect(over.status).toBe(207);
+    expect(within.json[0].children.author.result.data.id).toBe('u1');
+
+    const over = await get({
+      ...defaults,
+      path: 'post',
+      tree: reading(pipelineLimitDefaults.maxReadsPerCall + 1),
+    });
+    // The follow-up is refused, and the rest of the batch runs. The status is
+    // the batch's calls'
+    expect(over.status).toBe(200);
     expect(over.json[0].result.data.slug).toBe('hello');
-    expect(over.json[1].error).toMatchObject({
+    expect(over.json[0].children.author.error).toMatchObject({
       message: `This call reads ${pipelineLimitDefaults.maxReadsPerCall + 1} values, more than \`maxReadsPerCall\` (${pipelineLimitDefaults.maxReadsPerCall}) allows`,
       data: { code: 'BAD_REQUEST' },
     });
     expect(over.calls).not.toHaveBeenCalled();
   });
 
-  test('`true` refuses a call more than 3 calls deep, or that reads an object, and the rest of the batch runs', async () => {
+  test('`true` refuses a follow-up more than 3 calls deep, or that reads an object, and the rest of the batch runs', async () => {
     // post 1, author 2, team 3, author 4
-    const search = `input=${encodeURIComponent(
-      JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 4: {} }),
-    )}&pipe=${encodeURIComponent(
-      JSON.stringify({
-        1: [{ to: ['id'], from: 0, path: ['authorId'] }],
-        2: [{ to: [], from: 1, path: ['teamId'] }],
-        3: [{ to: ['id'], from: 2, path: ['id'] }],
-        4: [{ to: ['id'], from: 0, path: ['tags'] }],
-      }),
-    )}`;
-    const res = await get(search, {
-      path: 'post,author,team,author,author',
-      allowPipelining: true,
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: {
+          author: {
+            ...author,
+            children: {
+              team: {
+                path: 'team',
+                reads: [{ to: [], data: ['teamId'] }],
+                children: {
+                  author: node('author', [{ to: ['id'], data: ['id'] }]),
+                },
+              },
+            },
+          },
+          whole: node('author', [{ to: ['id'], data: ['tags'] }]),
+        },
+      },
     });
-    expect(res.json[2].result.data).toEqual({ id: 'team-of-u1' });
-    expect(res.json[3].error).toMatchObject({
+    const { team } = res.json[0].children.author.children;
+    expect(team.result.data).toEqual({ id: 'team-of-u1' });
+    expect(team.children.author.error).toMatchObject({
       message:
         'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
       data: { code: 'BAD_REQUEST' },
     });
-    expect(res.json[4].error).toMatchObject({
+    expect(res.json[0].children.whole.error).toMatchObject({
       message:
         'A value this call reads is an object or an array, and `allowWholeValues` is false',
       data: { code: 'BAD_REQUEST' },
@@ -1227,189 +1276,195 @@ describe('the `pipe` search param', () => {
   });
 
   test('an object sets the limits it has, raised or lowered', async () => {
-    const reads = (count: number) =>
-      pipe({
-        1: Array.from({ length: count }, () => ({
-          to: ['id'],
-          from: 0,
-          path: ['authorId'],
-        })),
-      });
-    const raised = await get(reads(20), {
-      path: 'post,author',
-      allowPipelining: { maxReadsPerCall: 20 },
-    });
-    expect(raised.json[1].result.data.id).toBe('u1');
-
-    const lowered = await get(reads(2), {
-      path: 'post,author',
-      allowPipelining: { maxReadsPerCall: 1, maxValueLength: 2 },
-    });
-    expect(lowered.json[1].error.message).toBe(
+    const error = async (
+      count: number,
+      allowPipelining: experimental_PipeliningOptions,
+    ) =>
+      (
+        await get({
+          ...defaults,
+          path: 'post',
+          allowPipelining,
+          tree: reading(count),
+        })
+      ).json[0].children.author;
+    expect((await error(20, { maxReadsPerCall: 20 })).result.data.id).toBe(
+      'u1',
+    );
+    expect((await error(2, { maxReadsPerCall: 1 })).error.message).toBe(
       'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
     );
     // `"u1"` is 4 characters of JSON
-    const short = await get(reads(1), {
-      path: 'post,author',
-      allowPipelining: { maxValueLength: 3 },
-    });
-    expect(short.json[1].error.message).toBe(
+    expect((await error(1, { maxValueLength: 3 })).error.message).toBe(
       'A value this call reads is longer than `maxValueLength` (3 characters of JSON) allows',
     );
     // Two of them are 8
-    const small = await get(reads(2), {
-      path: 'post,author',
-      allowPipelining: { maxFillSize: 6 },
-    });
-    expect(small.json[1].error.message).toBe(
+    expect((await error(2, { maxFillSize: 6 })).error.message).toBe(
       'What this call fills in goes over `maxFillSize` (6 characters of JSON for the batch)',
     );
   });
 
-  test('a call for every item counts each item towards `maxBatchSize`', async () => {
-    async function each(maxBatchSize: number) {
-      const { appRouter, calls } = createRouter('none');
-      await using ctx = testServerAndClientResource(appRouter, {
-        server: { experimental_allowPipelining: true, maxBatchSize },
-      });
-      const search = `input=${encodeURIComponent(
-        JSON.stringify({ 0: { slug: 'hello' }, 1: {} }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
-        }),
-      )}`;
-      const res = await fetch(
-        `${ctx.httpUrl}/post,tag?batch=pipeline&${search}`,
-      );
-      return { json: await res.json(), calls };
-    }
+  /** A tag for every tag of the post */
+  const tagOfEach = {
+    0: { 'tags[]': { tag: node('tag', [{ to: ['id'], item: ['id'] }]) } },
+  };
 
-    // Two calls, of which one runs for two items: three runs
-    const within = await each(3);
-    expect(within.json[1].result.data).toHaveLength(2);
+  test('every run of a follow-up for every item counts towards `maxBatchSize`', async () => {
+    // The post, and a run for each of its two tags: three runs
+    const within = await get({
+      ...defaults,
+      path: 'post',
+      maxBatchSize: 3,
+      tree: tagOfEach,
+    });
+    expect(within.json[0].children['tags[]']).toHaveLength(2);
+    expect(within.calls).toHaveBeenCalledTimes(2);
 
-    const over = await each(2);
+    const over = await get({
+      ...defaults,
+      path: 'post',
+      maxBatchSize: 2,
+      tree: tagOfEach,
+    });
     expect(over.json[0].result.data.slug).toBe('hello');
-    expect(over.json[1].error).toMatchObject({
+    const refused = {
       message: 'A call for every item exceeds the maximum batch size',
       data: { code: 'BAD_REQUEST' },
-    });
+    };
+    expect(over.json[0].children['tags[]']).toMatchObject([
+      { tag: { error: refused } },
+      { tag: { error: refused } },
+    ]);
     // It ran for no item
     expect(over.calls).not.toHaveBeenCalled();
   });
 
-  test('a call for every item that is refused takes none of `maxBatchSize` from the next', async () => {
-    const { appRouter, calls } = createRouter('none');
-    await using ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: true, maxBatchSize: 4 },
+  test('a follow-up that is refused takes none of `maxBatchSize` from the next', async () => {
+    const tag = { tag: node('tag', [{ to: ['id'], item: ['id'] }]) };
+    const res = await get({
+      ...defaults,
+      input: {},
+      path: 'lists',
+      maxBatchSize: 4,
+      tree: { 0: { 'long[]': tag, 'short[]': tag } },
     });
-    const each = (list: string) => [
-      { to: ['id'], from: 0, path: [list, null, 'id'], each: true },
-    ];
-    const res = await fetch(
-      `${ctx.httpUrl}/lists,tag,tag?batch=pipeline&input=${encodeURIComponent(
-        JSON.stringify({ 1: {}, 2: {} }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: each('long'), 2: each('short') }),
-      )}`,
-    );
-    const json = await res.json();
-    // Three calls and four items are over the limit. Three calls and two are not
-    expect(json[1].error.message).toBe(
+    // The lists and four runs are over the limit. The lists and two are not
+    expect(res.json[0].children['long[]'][0].tag.error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );
-    expect(json[2].result.data).toHaveLength(2);
-    expect(calls).toHaveBeenCalledTimes(2);
+    expect(res.json[0].children['short[]']).toHaveLength(2);
+    expect(res.calls).toHaveBeenCalledTimes(2);
   });
 
-  test('filling in an input does not change the data that another call reads', async () => {
-    const search = `input=${encodeURIComponent(
-      JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
-    )}&pipe=${encodeURIComponent(
-      JSON.stringify({
-        // The whole post as the input, and then its slug replaced
-        1: [
-          { to: [], from: 0, path: [] },
-          { to: ['slug'], from: 0, path: ['authorId'] },
-        ],
-        // Reads the slug after the call above has replaced its own
-        2: [
-          { to: ['other'], from: 0, path: ['authorId'] },
-          { to: ['slug'], from: 0, path: ['slug'] },
-        ],
-      }),
-    )}`;
-    const res = await get(search, {
-      path: 'post,post,post',
+  test('filling in an input does not change the data that another follow-up reads', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
       allowPipelining: { allowWholeValues: true },
+      tree: {
+        0: {
+          // The whole post as the input, and then its slug replaced
+          first: {
+            path: 'post',
+            reads: [
+              { to: [], data: [] },
+              { to: ['slug'], data: ['authorId'] },
+            ],
+          },
+          second: node('post', [
+            { to: ['other'], data: ['authorId'] },
+            { to: ['slug'], data: ['slug'] },
+          ]),
+        },
+      },
     });
-    expect(res.json[1].result.data.slug).toBe('u1');
-    // Not `u1`: the first call's data is as it was sent
-    expect(res.json[2].result.data.slug).toBe('hello');
+    expect(res.json[0].children.first.result.data.slug).toBe('u1');
+    // Not `u1`: the post's data is as it was sent
+    expect(res.json[0].children.second.result.data.slug).toBe('hello');
   });
 
-  test('a call that changes its input does not change what a later call reads', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(
-        JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['tags'], from: 0, path: ['tags'] }],
-          // Reads the tags once the call above has run
-          2: [
-            { to: ['after'], from: 1, path: [] },
-            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
-          ],
-        }),
-      )}`,
-      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
-    );
-    expect(res.json[1].result.data).toBe(3);
-    expect(res.json[2].result.data).toEqual(['t1', 't2']);
+  test('a follow-up that changes its input does not change what the follow-ups under it read', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      allowPipelining: { allowWholeValues: true },
+      tree: {
+        0: {
+          stamp: node('stamp', [{ to: ['tags'], data: ['tags'] }], {
+            children: {
+              // Reads the tags once the stamp has run
+              tags: node('tags', [
+                { to: ['after'], data: [] },
+                { to: ['ids'], data: ['tags', null, 'id'], up: 2 },
+              ]),
+            },
+          }),
+        },
+      },
+    });
+    const { stamp } = res.json[0].children;
+    expect(stamp.result.data).toBe(3);
+    expect(stamp.children.tags.result.data).toEqual(['t1', 't2']);
   });
 
   test('a run for an item that changes its input does not change what other runs and calls read', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(
-        JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 2: {} }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          // Every run gets the whole list too
-          1: [
-            { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
-            { to: ['tags'], from: 0, path: ['tags'] },
-          ],
-          2: [
-            { to: ['after'], from: 1, path: [] },
-            { to: ['ids'], from: 0, path: ['tags', null, 'id'] },
-          ],
-        }),
-      )}`,
-      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      allowPipelining: { allowWholeValues: true },
+      tree: {
+        0: {
+          'tags[]': {
+            // Every run gets the whole list too
+            stamp: node(
+              'stamp',
+              [
+                { to: ['id'], item: ['id'] },
+                { to: ['tags'], data: ['tags'] },
+              ],
+              {
+                children: {
+                  tags: node('tags', [
+                    { to: ['after'], data: [] },
+                    { to: ['ids'], data: ['tags', null, 'id'], up: 2 },
+                  ]),
+                },
+              },
+            ),
+          },
+        },
+      },
+    });
+    expect(res.json[0].children['tags[]']).toEqual(
+      Array.from({ length: 2 }, () => ({
+        stamp: {
+          result: { data: 3 },
+          children: { tags: { result: { data: ['t1', 't2'] } } },
+        },
+      })),
     );
-    expect(res.json[1].result.data).toEqual([
-      { result: { data: 3 } },
-      { result: { data: 3 } },
-    ]);
-    expect(res.json[2].result.data).toEqual(['t1', 't2']);
   });
 
   test('a run for an item that changes the input the client sent does not change it for other runs', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(
-        JSON.stringify({ 0: { slug: 'hello' }, 1: { tags: [] } }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({
-          1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
-        }),
-      )}`,
-      { path: 'post,stamp', allowPipelining: true },
-    );
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: {
+          'tags[]': {
+            stamp: {
+              path: 'stamp',
+              input: { tags: [] },
+              reads: [{ to: ['id'], item: ['id'] }],
+            },
+          },
+        },
+      },
+    });
     // Every run adds a tag to its own list
-    expect(res.json[1].result.data).toEqual([
-      { result: { data: 1 } },
-      { result: { data: 1 } },
+    expect(res.json[0].children['tags[]']).toEqual([
+      { stamp: { result: { data: 1 } } },
+      { stamp: { result: { data: 1 } } },
     ]);
   });
 
@@ -1444,13 +1499,21 @@ describe('the `pipe` search param', () => {
       server: { experimental_allowPipelining: true },
     });
     const res = await fetch(
-      `${ctx.httpUrl}/start,span?batch=pipeline&input=${encodeURIComponent(
-        JSON.stringify({ 1: { from: null, to: 5 } }),
-      )}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: [{ to: ['from'], from: 0, path: ['at'] }] }),
+      `${ctx.httpUrl}/start?batch=tree&tree=${encodeURIComponent(
+        JSON.stringify({
+          0: {
+            span: {
+              path: 'span',
+              input: { from: null, to: 5 },
+              reads: [{ to: ['from'], data: ['at'] }],
+            },
+          },
+        }),
       )}`,
     );
-    expect((await res.json())[1]).toEqual({ result: { data: [1, 5] } });
+    expect((await res.json())[0].children.span).toEqual({
+      result: { data: [1, 5] },
+    });
   });
 
   test("a value goes through the input's transformer, as if the client had sent it", async () => {
@@ -1484,137 +1547,144 @@ describe('the `pipe` search param', () => {
     await using ctx = testServerAndClientResource(appRouter, {
       server: { experimental_allowPipelining: true },
     });
-    const url = (search: string) => `${ctx.httpUrl}/${search}`;
 
     // What the client would send by itself
     const alone = await fetch(
-      url(
-        `since?input=${encodeURIComponent(
-          JSON.stringify({ since: '2026-01-01T00:00:00.000Z' }),
-        )}`,
-      ),
+      `${ctx.httpUrl}/since?input=${encodeURIComponent(
+        JSON.stringify({ since: '2026-01-01T00:00:00.000Z' }),
+      )}`,
     );
     expect(await alone.json()).toEqual({ result: { data: 2026 } });
 
     const res = await fetch(
-      url(
-        `post,since?batch=pipeline&input=${encodeURIComponent(
-          JSON.stringify({ 1: {} }),
-        )}&pipe=${encodeURIComponent(
-          JSON.stringify({
-            1: [{ to: ['since'], from: 0, path: ['publishedAt'] }],
-          }),
-        )}`,
-      ),
+      `${ctx.httpUrl}/post?batch=tree&tree=${encodeURIComponent(
+        JSON.stringify({
+          0: {
+            since: node('since', [{ to: ['since'], data: ['publishedAt'] }]),
+          },
+        }),
+      )}`,
     );
-    expect((await res.json())[1]).toEqual({ result: { data: 2026 } });
+    expect((await res.json())[0].children.since).toEqual({
+      result: { data: 2026 },
+    });
   });
 
-  test('`batch=pipeline` without a `pipe` is an ordinary batch', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(
+  test('`batch=tree` without a `tree` is an ordinary batch', async () => {
+    const { appRouter } = createRouter('none');
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+    });
+    const res = await fetch(
+      `${ctx.httpUrl}/post,author?batch=tree&input=${encodeURIComponent(
         JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u2' } }),
       )}`,
-      { path: 'post,author', allowPipelining: true },
     );
-    expect(res.json[0].result.data.slug).toBe('hello');
-    expect(res.json[1].result.data.id).toBe('u2');
+    const json = await res.json();
+    expect(json[0].result.data.slug).toBe('hello');
+    expect(json[1].result.data.id).toBe('u2');
+    expect(json[0]).not.toHaveProperty('children');
   });
 
-  test('a call for every item of a failed call, or of what is no list, runs for none', async () => {
-    const eachOf = (path: string, source: object, list: string) =>
-      get(
-        `input=${encodeURIComponent(
-          JSON.stringify({ 0: source, 1: {} }),
-        )}&pipe=${encodeURIComponent(
-          JSON.stringify({
-            1: [{ to: ['id'], from: 0, path: [list, null, 'id'], each: true }],
-          }),
-        )}`,
-        { path, allowPipelining: true },
-      );
-    const failed = await eachOf('post,tag', { slug: 'missing' }, 'tags');
+  test('a list key under a failed call, or over what is no list, runs for none', async () => {
+    const failed = await get({
+      ...defaults,
+      input: { 0: { slug: 'missing' } },
+      path: 'post',
+      tree: tagOfEach,
+    });
     expect(failed.json[0].error.data.code).toBe('NOT_FOUND');
-    expect(failed.json[1].error.data.code).toBe('PRECONDITION_FAILED');
+    expect(failed.json[0].children['tags[]'].error.data.code).toBe(
+      'PRECONDITION_FAILED',
+    );
     expect(failed.calls).not.toHaveBeenCalled();
 
-    const noList = await eachOf('post,tag', { slug: 'hello' }, 'slug');
-    expect(noList.json[1]).toEqual({ result: { data: [] } });
+    const noList = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: { 'slug[]': { tag: node('tag', [{ to: ['id'], item: ['id'] }]) } },
+      },
+    });
+    expect(noList.json[0].children['slug[]']).toEqual([]);
     expect(noList.calls).not.toHaveBeenCalled();
   });
 
-  test('a call whose data is `undefined` gives the calls that read it nothing', async () => {
-    const res = await get(
-      `input=${encodeURIComponent(JSON.stringify({ 1: {} }))}&pipe=${encodeURIComponent(
-        JSON.stringify({ 1: [{ to: ['id'], from: 0, path: [] }] }),
-      )}`,
-      { path: 'nothing,author', allowPipelining: true },
-    );
+  test('a call whose data is `undefined` gives the follow-ups that read it nothing', async () => {
+    const res = await get({
+      ...defaults,
+      input: {},
+      path: 'nothing',
+      tree: { 0: { author: node('author', [{ to: ['id'], data: [] }]) } },
+    });
     // The author's input has no id, and fails to validate
-    expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
+    expect(res.json[0].children.author.error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
-  test('a call still validates its input', async () => {
-    const res = await get(
-      pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),
-      { path: 'post,author', allowPipelining: { allowWholeValues: true } },
-    );
-    expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
+  test('a follow-up still validates its input', async () => {
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      allowPipelining: { allowWholeValues: true },
+      tree: { 0: { author: node('author', [{ to: ['id'], data: ['tags'] }]) } },
+    });
+    expect(res.json[0].children.author.error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
   test('reads own properties only', async () => {
-    const res = await get(
-      pipe({
-        1: [
-          { to: ['id'], from: 0, path: ['authorId'] },
-          { to: ['since'], from: 0, path: ['secret', 'inherited'] },
-          { to: ['__proto__'], from: 0, path: ['constructor'] },
-        ],
-      }),
-      { path: 'post,author', allowPipelining: true },
-    );
-    expect(res.json[1].result.data).toEqual({ id: 'u1', teamId: 'team-of-u1' });
+    const res = await get({
+      ...defaults,
+      path: 'post',
+      tree: {
+        0: {
+          author: node('author', [
+            { to: ['id'], data: ['authorId'] },
+            { to: ['since'], data: ['secret', 'inherited'] },
+            { to: ['__proto__'], data: ['constructor'] },
+          ]),
+        },
+      },
+    });
+    expect(res.json[0].children.author.result.data).toEqual({
+      id: 'u1',
+      teamId: 'team-of-u1',
+    });
     expect(res.calls.mock.calls[0]![1]).toEqual({ id: 'u1' });
   });
 
   test.each([
-    ['a call that reads from itself', { 1: [{ to: [], from: 1, path: [] }] }],
     [
-      'a call that reads from a later one',
-      { 0: [{ to: [], from: 1, path: [] }] },
+      'a read of data above the top-level call',
+      { 0: { author: node('author', [{ to: ['id'], data: [], up: 2 }]) } },
     ],
-    ['a call that is not in the batch', { 2: [{ to: [], from: 0, path: [] }] }],
-    ['paths that are not strings', { 1: [{ to: [1], from: 0, path: [] }] }],
-    ['reads that are no list', { 1: { to: [], from: 0, path: [] } }],
     [
-      'a call for every item of two lists',
-      {
-        1: [
-          { to: ['id'], from: 0, path: ['tags', null, 'id'], each: true },
-          { to: ['since'], from: 0, path: ['others', null], each: true },
-        ],
-      },
+      'a read of an item outside a list',
+      { 0: { author: node('author', [{ to: ['id'], item: [] }]) } },
     ],
+    ['a call that is not in the batch', { 2: { author } }],
+    [
+      'paths that are not strings',
+      { 0: { author: node('author', [{ to: [1], data: [] }]) } },
+    ],
+    [
+      'reads that are no list',
+      { 0: { author: { path: 'author', reads: { to: [], data: [] } } } },
+    ],
+    ['a key that is no key', { 0: { 'a..b[]': {} } }],
     ['something that is not an object', 'nope'],
-  ])('rejects %s', async (_name, value) => {
-    const res = await get(pipe(value), {
-      path: 'post,author',
-      allowPipelining: true,
-    });
+  ])('rejects %s', async (_name, tree) => {
+    const res = await get({ ...defaults, path: 'post', tree });
     expect(res.status).toBe(400);
-    expect(res.json.error.message).toMatch(/^Invalid "pipe"/);
+    expect(res.json.error.message).toMatch(/^Invalid "tree"/);
     expect(res.calls).not.toHaveBeenCalled();
   });
 
-  test('rejects a `pipe` that is not JSON', async () => {
-    const res = await get(`input=${input}&pipe=%7Bnope`, {
-      path: 'post,author',
-      allowPipelining: true,
-    });
+  test('rejects a `tree` that is not JSON', async () => {
+    const res = await get({ ...defaults, path: 'post', tree: '{nope' });
     expect(res.status).toBe(400);
-    expect(res.json.error.message).toBe('Invalid "pipe": not JSON');
+    expect(res.json.error.message).toBe('Invalid "tree": not JSON');
     expect(res.calls).not.toHaveBeenCalled();
   });
 
@@ -1624,29 +1694,21 @@ describe('the `pipe` search param', () => {
       server: { experimental_allowPipelining: true, allowMethodOverride: true },
     });
     const post = (body: unknown) =>
-      fetch(`${ctx.httpUrl}/post,author?batch=pipeline`, {
+      fetch(`${ctx.httpUrl}/post?batch=tree`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body),
       });
 
-    const res = await post({
-      0: { slug: 'hello' },
-      1: {},
-      pipe: { 1: [{ to: ['id'], from: 0, path: ['authorId'] }] },
-    });
-    expect((await res.json())[1]).toEqual({
+    const res = await post({ 0: { slug: 'hello' }, tree: { 0: { author } } });
+    expect((await res.json())[0].children.author).toEqual({
       result: { data: { id: 'u1', teamId: 'team-of-u1' } },
     });
 
     calls.mockClear();
-    const invalid = await post({
-      0: { slug: 'hello' },
-      1: {},
-      pipe: { 1: [{ to: ['id'], from: 1, path: [] }] },
-    });
+    const invalid = await post({ 0: { slug: 'hello' }, tree: { 1: {} } });
     expect(invalid.status).toBe(400);
-    expect((await invalid.json()).error.message).toMatch(/^Invalid "pipe"/);
+    expect((await invalid.json()).error.message).toMatch(/^Invalid "tree"/);
     expect(calls).not.toHaveBeenCalled();
   });
 
@@ -1655,15 +1717,68 @@ describe('the `pipe` search param', () => {
     await using ctx = testServerAndClientResource(appRouter, {
       server: { experimental_allowPipelining: true },
     });
-    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=pipeline`, {
+    const res = await fetch(`${ctx.httpUrl}/rename,rename?batch=tree`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' }, pipe: {} }),
+      body: JSON.stringify({ 0: { id: 'a' }, 1: { id: 'b' }, tree: {} }),
     });
     expect(res.status).toBe(400);
     expect((await res.json()).error.message).toBe(
       'Only a batch of queries can be pipelined',
     );
+  });
+
+  test('`responseMeta` gets the errors of follow-ups too', async () => {
+    const { appRouter } = createRouter('none');
+    const responseMeta = vi.fn(() => ({}));
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true, responseMeta },
+    });
+    await fetch(
+      `${ctx.httpUrl}/post?batch=tree&input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'hello' } }),
+      )}&tree=${encodeURIComponent(
+        JSON.stringify({
+          0: { author: node('author', [{ to: ['id'], data: ['missing'] }]) },
+        }),
+      )}`,
+    );
+    expect(responseMeta).toHaveBeenCalledWith(
+      expect.objectContaining({
+        errors: [expect.objectContaining({ code: 'BAD_REQUEST' })],
+      }),
+    );
+  });
+
+  test('a follow-up runs with the context of the top-level calls, and is no call in `info.calls`', async () => {
+    const t = initTRPC.context<{ calls: string[] }>().create();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'u1' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .use(async (opts) => {
+          // What `getRawInput()` gives a follow-up: its filled-in input
+          expect(await opts.getRawInput()).toEqual({ id: 'u1' });
+          return opts.next();
+        })
+        .query((opts) => opts.ctx.calls),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: {
+        experimental_allowPipelining: true,
+        createContext: (opts) => ({
+          calls: opts.info.calls.map((call) => call.path),
+        }),
+      },
+    });
+    const res = await fetch(
+      `${ctx.httpUrl}/post?batch=tree&tree=${encodeURIComponent(
+        JSON.stringify({ 0: { author } }),
+      )}`,
+    );
+    expect((await res.json())[0].children.author).toEqual({
+      result: { data: ['post'] },
+    });
   });
 });
 

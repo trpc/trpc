@@ -3,7 +3,7 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
-import { pipeOfBody, pipeOfSearchParams } from './pipeline/server';
+import { treeOfBody, treeOfSearchParams } from './pipeline/server';
 import { pipelineBatch } from './pipeline/wire';
 import type { PipelineLimits } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
@@ -40,7 +40,7 @@ type GetRequestInfoOptions = {
   router: AnyRouter;
   maxBatchSize?: number;
   /**
-   * What a pipelined batch, `?batch=pipeline`, can make the server do, or
+   * What a pipelined batch, `?batch=tree`, can make the server do, or
    * `null` if it isn't accepted: it is then a bad request
    */
   pipelineLimits: PipelineLimits | null;
@@ -137,8 +137,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     }
 
     type InputRecord = Record<number, unknown>;
-    /** The `pipe` in the body of a pipelined batch, once the body is read */
-    let bodyPipe: unknown = undefined;
+    /** The `tree` in the body of a pipelined batch, once the body is read */
+    let bodyTree: unknown = undefined;
     const getInputs = memo(async (): Promise<InputRecord> => {
       let inputs: unknown = undefined;
       if (req.method === 'GET') {
@@ -154,7 +154,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           inputs = JSON.parse(body);
         }
         if (isPipelined) {
-          bodyPipe = pipeOfBody(inputs);
+          bodyTree = treeOfBody(inputs);
         }
       }
       if (inputs === undefined) {
@@ -257,14 +257,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         pipelineLimits && {
           experimental_pipeline: {
             limits: pipelineLimits,
-            getPipe: async () => {
+            getTree: async () => {
               // A GET has it in the URL. Any other request has it in its body,
               // beside the inputs
               if (req.method === 'GET') {
-                return pipeOfSearchParams(opts.searchParams);
+                return treeOfSearchParams(opts.searchParams);
               }
               await getInputs.read();
-              return bodyPipe;
+              return bodyTree;
             },
           },
         }),

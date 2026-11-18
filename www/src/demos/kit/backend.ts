@@ -271,10 +271,18 @@ interface HttpCall {
   first: string | undefined;
   readonly id: number;
   runs: number;
+  /** The procedure it calls. */
+  readonly path: string;
+  /** The index of the top-level call it is, or is under. */
+  readonly root: number;
+  /** The call it is a follow-up of. `null` for a top-level call. */
+  readonly parent: HttpCall | null;
+  /** How many of its runs succeeded. */
+  succeeded: number;
 }
 
 interface ServerContext {
-  /** The calls of the HTTP request, by index. `null` for a call with no request. */
+  /** The calls of the HTTP request, follow-ups too. `null` for a call with no request. */
   readonly calls: ReadonlyArray<HttpCall> | null;
   /** How long a result takes from the server to the browser, in ms. */
   readonly tripBack: number;
@@ -298,7 +306,10 @@ function createAppRouter(network: Network) {
    * browser.
    */
   const procedure = t.procedure.use(async (opts) => {
-    const call = opts.ctx.calls?.[opts.batchIndex];
+    // A follow-up has the index of the top-level call it is under
+    const call = opts.ctx.calls?.find(
+      (it) => it.root === opts.batchIndex && it.path === opts.path,
+    );
     if (!call) {
       return opts.next();
     }
@@ -323,9 +334,20 @@ function createAppRouter(network: Network) {
     });
     const result = await opts.next();
     call.finished++;
+    call.succeeded += result.ok ? 1 : 0;
     if (call.finished === call.runs) {
       network.served(call.id, 'end');
       arrives(result.ok ? 'done' : 'error');
+      if (call.succeeded === 0) {
+        // What is under it never runs, and fails with it
+        const isUnder = (it: HttpCall): boolean =>
+          !!it.parent && (it.parent === call || isUnder(it.parent));
+        for (const under of opts.ctx.calls?.filter(isUnder) ?? []) {
+          network.after(opts.ctx.tripBack, () =>
+            network.end(under.id, 'error'),
+          );
+        }
+      }
     }
     return result;
   });
@@ -431,11 +453,20 @@ export function createDemoClient(network: Network, origin?: string) {
   });
 }
 
-interface PipeRead {
-  readonly from: number;
-  readonly path: ReadonlyArray<string | null>;
-  readonly to: ReadonlyArray<string>;
+/** A follow-up call as it is in a request's tree. */
+interface TreeNode {
+  readonly path: string;
+  readonly input?: unknown;
+  readonly reads: ReadonlyArray<{
+    readonly to: ReadonlyArray<string>;
+    readonly item?: ReadonlyArray<string | null>;
+    readonly data?: ReadonlyArray<string | null>;
+    readonly up?: number;
+  }>;
+  readonly children?: TreeChildren;
 }
+
+type TreeChildren = Readonly<Record<string, unknown>>;
 
 /** `input` with `value` at `to`, on copies of what is on the way there. */
 function withValueAt(
@@ -458,32 +489,100 @@ function parseParam(value: string | null): unknown {
   return value === null ? undefined : JSON.parse(value);
 }
 
+/** A path as code: `.authorId`, `[].authorId`. */
+function pathOf(path: ReadonlyArray<string | null>) {
+  return path
+    .map((segment) => (segment === null ? '[]' : `.${segment}`))
+    .join('');
+}
+
+/** The router a call is in, which names what it returns: `post`, `author`. */
+function sourceOf(path: string) {
+  return path.split('.').slice(0, -1).join('.');
+}
+
 /**
- * The calls of a batch request's URL, as code. What the server fills in from
- * another call's data shows as where it comes from, such as
- * `‹post›.authorId`, until the server has run the call.
+ * The calls of a batch request, as code: each top-level call, then the
+ * follow-ups in its tree. What the server fills in from another call's data
+ * shows as where it comes from, such as `‹post›.authorId`, until the server
+ * has run the call.
  */
-function labelsOf(url: URL) {
+function callsOf(url: URL) {
   const paths = url.pathname.slice('/trpc/'.length).split(',');
   const inputs = (parseParam(url.searchParams.get('input')) ?? {}) as Record<
     number,
     unknown
   >;
-  const pipe = (parseParam(url.searchParams.get('pipe')) ?? {}) as Record<
+  const tree = (parseParam(url.searchParams.get('tree')) ?? {}) as Record<
     number,
-    ReadonlyArray<PipeRead> | undefined
+    TreeChildren | undefined
   >;
-  return paths.map((path, index) => {
-    const input = (pipe[index] ?? []).reduce((filled, read) => {
-      // The router the call is in names what it returns: `post`, `author`.
-      const source = (paths[read.from] ?? '').split('.').slice(0, -1).join('.');
-      const where = read.path
-        .map((segment) => (segment === null ? '[]' : `.${segment}`))
-        .join('');
-      return withValueAt(filled, read.to, new Unfilled(`‹${source}›${where}`));
-    }, inputs[index]);
-    return formatCall(path, input);
-  });
+  const calls: {
+    label: string;
+    path: string;
+    root: number;
+    parent: number | null;
+  }[] = [];
+  /**
+   * The follow-ups in `children`: `above` is the path of each call above,
+   * nearest first, and `list` the list key they are under.
+   */
+  const walk = (
+    children: TreeChildren,
+    at: {
+      root: number;
+      parent: number;
+      above: ReadonlyArray<string>;
+      list: string;
+    },
+  ) => {
+    for (const [key, value] of Object.entries(children)) {
+      if (key.endsWith('[]')) {
+        walk(value as TreeChildren, { ...at, list: `${at.list}.${key}` });
+        continue;
+      }
+      const node = value as TreeNode;
+      const input = node.reads.reduce((filled, read) => {
+        const up = read.up ?? (read.item ? 0 : 1);
+        const where = read.item
+          ? `‹${sourceOf(at.above[0] ?? '')}›${at.list}${pathOf(read.item)}`
+          : `‹${sourceOf(at.above[up - 1] ?? '')}›${pathOf(read.data ?? [])}`;
+        return withValueAt(filled, read.to, new Unfilled(where));
+      }, node.input);
+      calls.push({
+        label: formatCall(node.path, input),
+        path: node.path,
+        root: at.root,
+        parent: at.parent,
+      });
+      if (node.children) {
+        walk(node.children, {
+          root: at.root,
+          parent: calls.length - 1,
+          above: [node.path, ...at.above],
+          list: '',
+        });
+      }
+    }
+  };
+  for (const [index, path] of paths.entries()) {
+    calls.push({
+      label: formatCall(path, inputs[index]),
+      path,
+      root: index,
+      parent: null,
+    });
+    const children = tree[index];
+    if (children) {
+      walk(children, {
+        root: index,
+        parent: calls.length - 1,
+        above: [path],
+        list: '',
+      });
+    }
+  }
+  return calls;
 }
 
 type FetchEsque = NonNullable<
@@ -520,12 +619,19 @@ export function createHttpDemoClient(
     const trip = network.delay(1);
     const tripThere = Math.round(trip / 2);
     const tripBack = trip - tripThere;
-    const calls = labelsOf(new URL(req.url)).map((label): HttpCall => ({
-      finished: 0,
-      first: undefined,
-      id: network.request(label, origin, http),
-      runs: 0,
-    }));
+    const calls: HttpCall[] = [];
+    for (const call of callsOf(new URL(req.url))) {
+      calls.push({
+        finished: 0,
+        first: undefined,
+        id: network.request(call.label, origin, http),
+        parent: call.parent === null ? null : (calls[call.parent] ?? null),
+        path: call.path,
+        root: call.root,
+        runs: 0,
+        succeeded: 0,
+      });
+    }
     const endAll = (status: 'aborted' | 'done') => {
       for (const call of calls) {
         network.end(call.id, status);

@@ -6,6 +6,7 @@ import {
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
+import { getProcedureAtPath } from '../router';
 import {
   type AnyRouter,
   type inferRouterContext,
@@ -24,8 +25,16 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
-import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
-import type { PipelineEach } from './pipeline/server';
+import {
+  pipelineChildrenJSON,
+  pipelineChildrenStream,
+  pipelineLimitsOf,
+  pipelineTree,
+} from './pipeline/server';
+import type {
+  PipelineChildrenResult,
+  PipelineNodeOutcome,
+} from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -392,7 +401,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // Only a pipelined batch has this, which the server only accepts with
     // `experimental_allowPipelining`
     const pipelined = info.experimental_pipeline;
-    const pipeline = pipelined
+    const tree = pipelined
       ? await run(async () => {
           if (info.type === 'mutation') {
             throw new TRPCError({
@@ -400,9 +409,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Only a batch of queries can be pipelined`,
             });
           }
-          return pipelineCalls({
-            calls: info.calls,
-            pipe: await pipelined.getPipe(),
+          return pipelineTree({
+            tree: await pipelined.getTree(),
+            calls: info.calls.length,
             transformer: config.transformer,
             limits: pipelined.limits,
             // Every run of a procedure counts towards `maxBatchSize`
@@ -411,10 +420,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
         })
       : null;
-    if (pipeline) {
-      // After `createContext`, which can't wait for an input that a call fills in
-      info.calls = pipeline.calls;
-    }
 
     interface RPCResultOk {
       data: unknown;
@@ -431,8 +436,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     ]);
     const runCall = async (
       call: TRPCRequestInfo['calls'][number],
-      /** For a call of a pipelined batch that runs once per item of a list */
-      each: PipelineEach | null,
     ): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
@@ -478,43 +481,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             signal: combinedAbort.signal,
             batchIndex: call.batchIndex,
           });
-        const data = each
-          ? // Once per item of an earlier call's list. Every run validates its
-            // input and has its own result or error
-            await each({
-              item: async (input) => {
-                const itemData = await callProcedure(async () => input);
-                if (isDataStream(itemData)) {
-                  // It would be inside a list, where nothing streams it
-                  throw new TRPCError({
-                    code: 'UNSUPPORTED_MEDIA_TYPE',
-                    message:
-                      'A call for every item cannot return a stream-like response',
-                  });
-                }
-                return itemData;
-              },
-              error: (cause, input) => {
-                const error = getTRPCErrorFromUnknown(cause);
-                opts.onError?.({
-                  error,
-                  path: call.path,
-                  input,
-                  ctx: ctxManager.valueOrUndefined(),
-                  type: proc._def.type,
-                  req: opts.req,
-                });
-                return getErrorShape({
-                  config,
-                  ctx: ctxManager.valueOrUndefined(),
-                  error,
-                  input,
-                  path: call.path,
-                  type: proc._def.type,
-                });
-              },
-            })
-          : await callProcedure(call.getRawInput);
+        const data = await callProcedure(call.getRawInput);
         return [
           undefined,
           {
@@ -539,27 +506,109 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         return [error, undefined];
       }
     };
-    const rpcCalls = pipeline
-      ? pipeline.run({
-          call: runCall,
-          // What the calls that read a call's data get of it
-          data: ([error, result]) => {
-            if (error) {
-              throw error;
-            }
-            if (!isStreamCall && isDataStream(result.data)) {
-              // The response can't carry it, so the client gets an error for
-              // this call. A call that reads it then doesn't run, as for any
-              // failed call
-              throw new TRPCError({
-                code: 'UNSUPPORTED_MEDIA_TYPE',
-                message: 'Cannot read the data of a stream-like response',
-              });
-            }
-            return result.data;
-          },
-        })
-      : info.calls.map((call) => runCall(call, null));
+    const rpcCalls = info.calls.map((call) => runCall(call));
+
+    /**
+     * The errors of follow-up calls, which `responseMeta` gets with those of
+     * the calls in `info.calls`, so a response with one isn't cached as if
+     * it had none
+     */
+    const followUpErrors: TRPCError[] = [];
+    /** The error shape of a follow-up call, which isn't in `info.calls` */
+    const followUpError = (
+      error: TRPCError,
+      node: { path: string; input: unknown } | null,
+      type: ProcedureType | 'unknown',
+    ) => {
+      followUpErrors.push(error);
+      opts.onError?.({
+        error,
+        path: node?.path,
+        input: node?.input,
+        ctx: ctxManager.valueOrUndefined(),
+        type,
+        req: opts.req,
+      });
+      return getErrorShape({
+        config,
+        ctx: ctxManager.valueOrUndefined(),
+        error,
+        input: node?.input,
+        path: node?.path,
+        type,
+      });
+    };
+    /** Runs a follow-up call, with the context of the top-level calls */
+    const runFollowUp = async (node: {
+      path: string;
+      input: unknown;
+      index: number;
+    }): Promise<PipelineNodeOutcome<unknown>> => {
+      const proc = await getProcedureAtPath(router, node.path);
+      try {
+        if (!proc) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `No procedure found on path "${node.path}"`,
+          });
+        }
+        if (proc._def.type !== 'query') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Only a query can be a follow-up call`,
+          });
+        }
+        const data = await proc({
+          path: node.path,
+          getRawInput: async () => node.input,
+          ctx: ctxManager.value(),
+          type: proc._def.type,
+          signal: callSignal,
+          batchIndex: node.index,
+        });
+        if (!isStreamCall && isDataStream(data)) {
+          throw new TRPCError({
+            code: 'UNSUPPORTED_MEDIA_TYPE',
+            message:
+              'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
+          });
+        }
+        return { ok: true, data };
+      } catch (cause) {
+        return {
+          ok: false,
+          error: followUpError(
+            getTRPCErrorFromUnknown(cause),
+            node,
+            proc?._def.type ?? 'unknown',
+          ),
+        };
+      }
+    };
+    /** The follow-up calls of each top-level call, as they run */
+    const childrenOf: (Promise<PipelineChildrenResult<unknown>> | null)[] = run(
+      () => {
+        if (!tree) {
+          return info.calls.map(() => null);
+        }
+        const running = tree.run({
+          node: runFollowUp,
+          fail: (error, node) =>
+            followUpError(error, node, node ? 'query' : 'unknown'),
+        });
+        return rpcCalls.map((result, index) =>
+          running.children(
+            index,
+            result.then(([error, ok]) =>
+              // What the response can't carry has no data to read
+              error || (!isStreamCall && isDataStream(ok.data))
+                ? { ok: false }
+                : { ok: true, data: ok.data },
+            ),
+          ),
+        );
+      },
+    );
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
@@ -780,9 +829,25 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const [error, result] = await res;
 
           const call = info.calls[index];
+          const children = childrenOf[index];
+          // Its follow-up calls, each a value of its own in the stream
+          const tree = children && {
+            children: pipelineChildrenStream(children, (outcome) =>
+              outcome.ok
+                ? {
+                    result: Promise.resolve({
+                      data: isObservable(outcome.data)
+                        ? observableToAsyncIterable(outcome.data, callSignal)
+                        : Promise.resolve(outcome.data),
+                    }),
+                  }
+                : { error: outcome.error },
+            ),
+          };
 
           if (error) {
             return {
+              ...tree,
               error: getErrorShape({
                 config,
                 ctx: ctxManager.valueOrUndefined(),
@@ -802,6 +867,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? observableToAsyncIterable(result.data, callSignal)
             : Promise.resolve(result.data);
           return {
+            ...tree,
             result: Promise.resolve({
               data: iterable,
             }),
@@ -902,22 +968,51 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const errors = results.map(([error]) => error);
 
+    /** A follow-up call's outcome, as the response has it */
+    const serializeOutcome = (outcome: PipelineNodeOutcome<unknown>) => {
+      if (!outcome.ok) {
+        return { error: config.transformer.output.serialize(outcome.error) };
+      }
+      try {
+        return {
+          result: { data: config.transformer.output.serialize(outcome.data) },
+        };
+      } catch (cause) {
+        // What can't go in the response is that call's error
+        return {
+          error: config.transformer.output.serialize(
+            followUpError(getTRPCErrorFromUnknown(cause), null, 'query'),
+          ),
+        };
+      }
+    };
+    const response = await Promise.all(
+      resultAsRPCResponse.map(async (untransformed, index) => {
+        const item = transformTRPCResponse(config, untransformed);
+        const children = childrenOf[index];
+        return children
+          ? {
+              ...item,
+              children: await pipelineChildrenJSON(children, serializeOutcome),
+            }
+          : item;
+      }),
+    );
+
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
       info,
       responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
-      errors,
+      // The status is from the calls in `info.calls` only, which come first
+      errors: [...errors, ...followUpErrors],
       headers,
     });
 
-    return new Response(
-      JSON.stringify(transformTRPCResponse(config, resultAsRPCResponse)),
-      {
-        status: headResponse.status,
-        headers,
-      },
-    );
+    return new Response(JSON.stringify(response), {
+      status: headResponse.status,
+      headers,
+    });
   } catch (cause) {
     const [_infoError, info] = infoTuple;
     const ctx = ctxManager.valueOrUndefined();

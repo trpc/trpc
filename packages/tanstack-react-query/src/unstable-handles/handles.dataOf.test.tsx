@@ -1941,9 +1941,29 @@ describe.each([
     });
 
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
-    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain(
-      '/post.bySlug,author.byId,post.byAuthor?batch=pipeline',
+    // The author under the post, and the author's posts under the author
+    const url = new URL(
+      resource.onRequestSpy.mock.calls[0]![0].url!,
+      'http://localhost',
     );
+    expect(url.pathname.endsWith('/post.bySlug')).toBe(true);
+    expect(url.searchParams.get('batch')).toBe('tree');
+    expect(JSON.parse(url.searchParams.get('tree')!)).toEqual({
+      0: {
+        'author.byId': {
+          path: 'author.byId',
+          input: {},
+          reads: [{ to: ['id'], data: ['authorId'] }],
+          children: {
+            'post.byAuthor': {
+              path: 'post.byAuthor',
+              input: { direction: 'forward' },
+              reads: [{ to: ['authorId'], data: ['id'] }],
+            },
+          },
+        },
+      },
+    });
     expect(resource.calls.mock.calls.map(([path]) => path).sort()).toEqual([
       'author.byId',
       'post.byAuthor',
@@ -2281,7 +2301,12 @@ describe.each([
     // One request for every page, with its author in it
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
     for (const [req] of resource.onRequestSpy.mock.calls) {
-      expect(req.url).toContain('/post.paged,author.byId?batch=pipeline');
+      const url = new URL(req.url!, 'http://localhost');
+      expect(url.pathname.endsWith('/post.paged')).toBe(true);
+      // An author for every item of the page
+      expect(Object.keys(JSON.parse(url.searchParams.get('tree')!)[0])).toEqual(
+        ['items[]'],
+      );
     }
     // A row reads its author from the cache
     const lastPost = data.data!.pages[2]!.items[0]!;

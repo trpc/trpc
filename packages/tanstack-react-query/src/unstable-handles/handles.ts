@@ -6,7 +6,7 @@ import type {
   QueryFunctionContext,
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
-import { isTRPCClientError, TRPCClientError } from '@trpc/client';
+import { isTRPCClientError } from '@trpc/client';
 import type {
   OperationPipeline,
   PipelinedCall,
@@ -824,7 +824,8 @@ function resultOfItem(results: Promise<unknown>, index: number) {
         case 'data':
           return item.data;
         case 'error':
-          throw TRPCClientError.from({ error: item.error } as any);
+          // As the link read it
+          throw item.error;
         case 'missing':
           missing = true;
           throw new Error(`The server sent no result for item ${index}`);

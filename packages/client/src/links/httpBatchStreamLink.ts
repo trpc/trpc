@@ -104,20 +104,17 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           const pipelined = pipelining?.take(batchOps) ?? null;
           const results = fetchBatch(batchOps, pipelined);
           pipelined?.settle(results);
-          return pipelined
-            ? (await results).slice(0, batchOps.length)
-            : results;
+          return results;
         },
       };
 
       async function fetchBatch(
         batchOps: BatchStreamOperation[],
-        /** The calls the server makes after the operations, in the same request */
+        /** The calls the server makes under the operations, in the same request */
         pipelined: ReturnType<BatchPipelining['take']>,
       ) {
-        const sent = pipelined ? [...batchOps, ...pipelined.calls] : batchOps;
-        const path = sent.map((it) => it.path).join(',');
-        const inputs = sent.map((it) => it.input);
+        const path = batchOps.map((it) => it.path).join(',');
+        const inputs = batchOps.map((it) => it.input);
 
         const batchSignals = allAbortSignals(
           ...batchOps.map((op) => op.signal),
@@ -171,7 +168,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             );
           }
 
-          return sent.map((): Promise<HTTPResult> =>
+          return batchOps.map((): Promise<HTTPResult> =>
             Promise.resolve({
               json,
               meta: {
@@ -195,7 +192,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           },
           abortController,
         });
-        const promises = Object.keys(sent).map(
+        const promises = Object.keys(batchOps).map(
           async (key): Promise<HTTPResult> => {
             let json: TRPCResponse = await Promise.resolve(head[key]);
 
@@ -206,6 +203,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
                */
               const result = await Promise.resolve(json.result);
               json = {
+                // With the `children` of a request with a tree
+                ...json,
                 result: {
                   data: await Promise.resolve(result.data),
                 },

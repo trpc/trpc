@@ -1,212 +1,274 @@
-import { isObject } from '../../utils';
-import type {
-  PipelineCallReads,
-  PipelineItemRead,
-  PipelineReads,
-  PipelineWholeRead,
-  PipeRead,
-} from './wire';
-import { pipelineBatch, readPipelinePath } from './wire';
+import { emptyObject, isObject } from '../../utils';
+import type { PipeChildren, PipeNode, PipeRead, PipeTree } from './wire';
+import { formatPipelineListKey, hasOwn, pipelineBatch } from './wire';
 
-/** A call's reads as they are in a `pipe`, where a number names each source */
-export function encodePipelineReads(
-  reads: PipelineCallReads<number>,
-): PipeRead[] {
-  switch (reads.kind) {
-    case 'once':
-      return reads.reads.map((read) => ({
-        to: read.to,
-        from: read.from,
-        path: read.path,
-      }));
-    case 'each':
-      return reads.reads.map((read) =>
-        read.kind === 'whole'
-          ? { to: read.to, from: read.from, path: read.path }
-          : {
-              to: read.to,
-              from: reads.list.from,
-              path: [...reads.list.path, null, ...read.path],
-              each: true,
-            },
-      );
-  }
+/** A step on the way from a top-level call to a node */
+export type PipelineStep =
+  /** `depth` is how many levels of lists it has: one for each `[]` */
+  { kind: 'list'; key: string; depth: number } | { kind: 'node'; key: string };
+
+/** A call that a client puts under another, for the server to run */
+export interface PipelineTreeCall {
+  /** What it reads the data of: what the request has, or another call */
+  parent: object;
+  /**
+   * The list in the parent's data it runs for every item of, as the path to
+   * each level of lists, or `null` if it runs once
+   */
+  list: string[][] | null;
+  /** The procedure's path */
+  path: string;
+  /** Its input, with what the server fills in left out */
+  input: unknown;
+  reads: PipeRead[];
 }
 
-/** `reads` with each source's index in a request, or `null` if one has none */
-function indexPipelineReads<TSource>(
-  reads: PipelineCallReads<TSource>,
-  indexes: ReadonlyMap<TSource, number>,
-): PipelineCallReads<number> | null {
-  const whole = (read: PipelineWholeRead<TSource>) => {
-    const from = indexes.get(read.from);
-    return from === undefined ? null : { ...read, from };
-  };
-  switch (reads.kind) {
-    case 'once': {
-      const indexed: PipelineWholeRead<number>[] = [];
-      for (const read of reads.reads) {
-        const value = whole(read);
-        if (!value) {
-          return null;
-        }
-        indexed.push(value);
-      }
-      return { kind: 'once', reads: indexed };
-    }
-    case 'each': {
-      const from = indexes.get(reads.list.from);
-      if (from === undefined) {
-        return null;
-      }
-      const indexed: (PipelineWholeRead<number> | PipelineItemRead)[] = [];
-      for (const read of reads.reads) {
-        const value = read.kind === 'whole' ? whole(read) : read;
-        if (!value) {
-          return null;
-        }
-        indexed.push(value);
-      }
-      return {
-        kind: 'each',
-        list: { from, path: reads.list.path },
-        reads: indexed,
-      };
-    }
-  }
+/** Where a call is in a request */
+export interface PipelinePlace {
+  /** The index of the top-level call it is under */
+  index: number;
+  steps: PipelineStep[];
 }
 
-/** The calls a client puts in a request for the server to fill in */
-export interface PipelinedBatchPlan<TCall> {
-  /** The calls that go in the request, after what it has without them */
+/** The calls a client puts in a request for the server to run */
+export interface PipelineTreePlan<TCall> {
+  /** The calls that go in the request */
   calls: TCall[];
-  /** What the server fills in, by index in the request */
-  reads: PipelineReads;
-  /** The calls that don't go: they don't fit, or read what isn't in the request */
+  /** The request's `tree` */
+  tree: PipeTree;
+  places: Map<TCall, PipelinePlace>;
+  /** The calls that don't go: they don't fit, or their parent doesn't go */
   left: TCall[];
 }
 
+/** The tree of a request with these calls, each after its parent */
+function treeOf<TCall extends PipelineTreeCall>(opts: {
+  sent: readonly (object | null)[];
+  calls: readonly TCall[];
+  serialize: (input: unknown) => unknown;
+}) {
+  const tree: PipeTree = emptyObject();
+  interface Where {
+    place: PipelinePlace;
+    children: () => PipeChildren;
+  }
+  const where = new Map<object, Where>();
+  for (const [index, sent] of opts.sent.entries()) {
+    if (sent) {
+      where.set(sent, {
+        place: { index, steps: [] },
+        children: () => (tree[index] ??= emptyObject()),
+      });
+    }
+  }
+  const places = new Map<TCall, PipelinePlace>();
+  for (const call of opts.calls) {
+    const parent = where.get(call.parent);
+    if (!parent) {
+      continue;
+    }
+    let children = parent.children();
+    const steps = [...parent.place.steps];
+    if (call.list !== null) {
+      const key = formatPipelineListKey(call.list);
+      children = (children[key] ??= emptyObject()) as PipeChildren;
+      steps.push({ kind: 'list', key, depth: call.list.length });
+    }
+    // Its name is its path, and another number for each call there before it
+    let name = call.path;
+    for (let count = 2; name in children; count++) {
+      name = `${call.path}#${count}`;
+    }
+    const node: PipeNode = {
+      path: call.path,
+      ...(call.input !== undefined && { input: opts.serialize(call.input) }),
+      reads: call.reads,
+    };
+    children[name] = node;
+    steps.push({ kind: 'node', key: name });
+    const place = { index: parent.place.index, steps };
+    places.set(call, place);
+    where.set(call, {
+      place,
+      children: () => (node.children ??= emptyObject()),
+    });
+  }
+  return { tree, places };
+}
+
 /**
- * The calls that go in a request, each after everything it reads. What a call
- * reads from is whatever the client has for it: something the request has
- * already, or another call.
+ * The calls that go in a request, each under the call it reads the data of.
+ * What a call's parent is: something the request has already, or another
+ * call before it.
  */
-export function planPipelinedBatch<
-  TCall extends { reads: PipelineCallReads<object> },
->(opts: {
+export function planPipelineTree<TCall extends PipelineTreeCall>(opts: {
   /** What the request has without the calls, in order. `null` for what no call reads */
   sent: readonly (object | null)[];
-  /** The calls that want to go in it */
+  /** The calls that want to go in it, each after its parent */
   calls: readonly TCall[];
+  /** Serializes a call's input, as the request's inputs are */
+  serialize: (input: unknown) => unknown;
   /** Whether a request with these calls is within the client's limits */
-  fits: (plan: Pick<PipelinedBatchPlan<TCall>, 'calls' | 'reads'>) => boolean;
-}): PipelinedBatchPlan<TCall> {
-  const indexes = new Map<object, number>();
-  for (const [index, source] of opts.sent.entries()) {
-    if (source) {
-      indexes.set(source, index);
+  fits: (plan: Pick<PipelineTreePlan<TCall>, 'calls' | 'tree'>) => boolean;
+}): PipelineTreePlan<TCall> {
+  const calls: TCall[] = [];
+  const left: TCall[] = [];
+  for (const call of opts.calls) {
+    const next = [...calls, call];
+    const tree = treeOf({ ...opts, calls: next });
+    // Its parent isn't in the request, or it doesn't fit
+    if (
+      !tree.places.has(call) ||
+      !opts.fits({ calls: next, tree: tree.tree })
+    ) {
+      left.push(call);
+      continue;
     }
+    calls.push(call);
   }
-  const plan: PipelinedBatchPlan<TCall> = { calls: [], reads: {}, left: [] };
-  let waiting = [...opts.calls];
-  let placed = true;
-  while (placed) {
-    placed = false;
-    const later: TCall[] = [];
-    for (const call of waiting) {
-      const reads = indexPipelineReads(call.reads, indexes);
-      if (!reads) {
-        // What it reads isn't in the request, or not yet
-        later.push(call);
-        continue;
-      }
-      const index = opts.sent.length + plan.calls.length;
-      const next = {
-        calls: [...plan.calls, call],
-        reads: { ...plan.reads, [index]: encodePipelineReads(reads) },
-      };
-      if (!opts.fits(next)) {
-        plan.left.push(call);
-        continue;
-      }
-      plan.calls = next.calls;
-      plan.reads = next.reads;
-      indexes.set(call, index);
-      placed = true;
-    }
-    waiting = later;
-  }
-  plan.left.push(...waiting);
-  return plan;
+  return { calls, left, ...treeOf({ ...opts, calls }) };
 }
 
 /**
- * Whether the server ran each call of a request. It doesn't run a call that
- * reads the data of one that failed.
- */
-export function pipelinedCallsRan<
-  TCall extends { result: Promise<unknown> },
->(opts: {
-  /** Whether each thing the request has before the calls succeeded */
-  sent: readonly Promise<boolean>[];
-  /** The request's `pipe` */
-  reads: PipelineReads;
-  /** The calls in the request, in order. A call's `result` rejects if it failed */
-  calls: readonly TCall[];
-}): { call: TCall; ran: Promise<boolean> }[] {
-  const succeeded = [
-    ...opts.sent,
-    ...opts.calls.map((call) =>
-      call.result.then(
-        () => true,
-        () => false,
-      ),
-    ),
-  ];
-  return opts.calls.map((call, index) => ({
-    call,
-    ran: Promise.all(
-      (opts.reads[opts.sent.length + index] ?? []).map(
-        async (read) => (await succeeded[read.from]) === true,
-      ),
-    ).then((sources) => sources.every(Boolean)),
-  }));
-}
-
-/**
- * The URL of a batch, for the same batch pipelined. `pipe` goes in it when
+ * The URL of a batch, for the same batch with a tree. `tree` goes in it when
  * the request has no body to put it in.
  */
 export function pipelinedBatchUrl(opts: {
   /** The URL of an ordinary batch: it has `batch=1` */
   url: string;
-  pipe: PipelineReads | null;
+  tree: PipeTree | null;
 }) {
   const url = opts.url.replace(
     /([?&])batch=1(?=&|$)/,
     `$1batch=${pipelineBatch}`,
   );
-  return opts.pipe
-    ? `${url}&pipe=${encodeURIComponent(JSON.stringify(opts.pipe))}`
+  return opts.tree
+    ? `${url}&tree=${encodeURIComponent(JSON.stringify(opts.tree))}`
     : url;
 }
 
 /**
- * The body of a batch, for the same batch pipelined: its inputs by index,
- * with its `pipe` beside them.
+ * The body of a batch, for the same batch with a tree: its inputs by index,
+ * with its `tree` beside them.
  */
 export function pipelinedBatchBody(opts: {
   /** The body of an ordinary batch: the JSON of its inputs by index */
   body: string;
-  pipe: PipelineReads;
+  tree: PipeTree;
 }) {
-  return JSON.stringify({ ...JSON.parse(opts.body), pipe: opts.pipe });
+  return JSON.stringify({ ...JSON.parse(opts.body), tree: opts.tree });
 }
 
-/** One item's outcome of a call that the server ran once for every item of a list */
+/** A call's outcome, as a response has it */
+export type PipelineEnvelope =
+  | { result: { data: unknown } }
+  | { error: unknown };
+
+/** What a response has for a call */
+export type PipelineCallOutcome =
+  | { kind: 'outcome'; outcome: PipelineEnvelope }
+  /**
+   * The outcome of each run, for a call that ran for every item of a list:
+   * a list for each level of lists on its way, and `undefined` for a run
+   * the response has nothing for
+   */
+  | { kind: 'items'; items: unknown[] }
+  /** A call above it failed, so it didn't run */
+  | { kind: 'failed'; error: unknown }
+  /** The response has nothing for it */
+  | { kind: 'missing' };
+
+/**
+ * An outcome as a response has it, streamed or not: a streamed one has its
+ * result, and the result's data, as values of their own
+ */
+async function envelopeOf(value: unknown): Promise<PipelineEnvelope | null> {
+  if (!isObject(value)) {
+    return null;
+  }
+  if (hasOwn(value, 'error')) {
+    return { error: value['error'] };
+  }
+  const result: unknown = await value['result'];
+  return isObject(result) ? { result: { data: await result['data'] } } : null;
+}
+
+/** An object or an array */
+function isContainer(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/** A list's items, as a response has them: streamed, they are by index */
+function itemsOf(list: Record<string, unknown>): unknown[] {
+  return Array.isArray(list)
+    ? list
+    : Array.from({ length: Object.keys(list).length }, (_it, index) =>
+        hasOwn(list, String(index)) ? list[index] : undefined,
+      );
+}
+
+/**
+ * What a response has for the call at `steps`, given the `children` of the
+ * top-level call it is under, streamed or not. It waits only for what is on
+ * the way to the call.
+ */
+export async function readPipelineCall(
+  children: unknown,
+  steps: readonly PipelineStep[],
+): Promise<PipelineCallOutcome> {
+  const [step, ...rest] = steps;
+  const container: unknown = await children;
+  if (!step || !isObject(container) || !hasOwn(container, step.key)) {
+    return { kind: 'missing' };
+  }
+  const value: unknown = await container[step.key];
+  if (!isContainer(value)) {
+    return { kind: 'missing' };
+  }
+  if (step.kind === 'node') {
+    if (rest.length === 0) {
+      const outcome = await envelopeOf(value);
+      return outcome ? { kind: 'outcome', outcome } : { kind: 'missing' };
+    }
+    // A node that failed has an error for each of its children
+    if (hasOwn(value, 'children')) {
+      return readPipelineCall(value['children'], rest);
+    }
+    return hasOwn(value, 'error')
+      ? { kind: 'failed', error: value['error'] }
+      : { kind: 'missing' };
+  }
+  if (hasOwn(value, 'error') && !Array.isArray(value)) {
+    return { kind: 'failed', error: value['error'] };
+  }
+  const runs = async (items: unknown[], level: number): Promise<unknown[]> =>
+    Promise.all(
+      items.map(async (item) => {
+        const resolved: unknown = await item;
+        if (level > 1) {
+          return isContainer(resolved)
+            ? runs(itemsOf(resolved), level - 1)
+            : [];
+        }
+        const outcome = await readPipelineCall(resolved, rest);
+        switch (outcome.kind) {
+          case 'outcome':
+            return outcome.outcome;
+          case 'items':
+            return outcome.items;
+          case 'failed':
+            return { error: outcome.error };
+          case 'missing':
+            return undefined;
+        }
+      }),
+    );
+  return { kind: 'items', items: await runs(itemsOf(value), step.depth) };
+}
+
+/** One run's outcome of a call that the server ran for every item of a list */
 export type PipelinedItem =
   | { kind: 'data'; data: unknown }
-  /** As the server sent it */
   | { kind: 'error'; error: unknown }
   /** The server sent nothing for the item */
   | { kind: 'missing' };
@@ -216,15 +278,15 @@ export type PipelinedItem =
  * item of a list: a `{ result }` or an `{ error }` for each.
  */
 export function readPipelinedItem(data: unknown, index: number): PipelinedItem {
-  const envelope = readPipelinePath(data, [String(index)]);
+  const envelope: unknown = Array.isArray(data) ? data[index] : undefined;
   if (!isObject(envelope)) {
     return { kind: 'missing' };
   }
-  const result = envelope['result'];
-  if (isObject(result)) {
-    return { kind: 'data', data: result['data'] };
+  if (hasOwn(envelope, 'error')) {
+    return { kind: 'error', error: envelope['error'] };
   }
-  return envelope['error']
-    ? { kind: 'error', error: envelope['error'] }
+  const result = envelope['result'];
+  return isObject(result)
+    ? { kind: 'data', data: result['data'] }
     : { kind: 'missing' };
 }

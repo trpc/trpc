@@ -115,13 +115,13 @@ export interface TRPCRequestInfo {
   isBatchCall: boolean;
   /**
    * Only on a pipelined batch: what the server lets it make it do, and a
-   * function that reads its `pipe`, which says which parts of the calls'
-   * inputs to fill in from earlier calls' data. The `pipe` isn't validated.
+   * function that reads its `tree`, the follow-up calls of the calls in
+   * `calls`. The `tree` isn't validated. A follow-up call isn't in `calls`.
    * @internal
    */
   experimental_pipeline?: {
     limits: PipelineLimits;
-    getPipe: () => Promise<unknown>;
+    getTree: () => Promise<unknown>;
   };
   /**
    * The procedure calls in the request.

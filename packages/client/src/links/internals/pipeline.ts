@@ -1,18 +1,18 @@
 import type {
-  PipelineCallReads,
-  PipelinedBatchPlan,
   PipelineLimits,
-  PipelineRead,
+  PipelinePath,
+  PipeRead,
+  PipeTree,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
-  groupPipelineReads,
   pipelinedBatchBody,
   pipelinedBatchUrl,
-  pipelinedCallsRan,
   pipelineLimitDefaults,
-  planPipelinedBatch,
+  planPipelineTree,
+  readPipelineCall,
 } from '@trpc/server/unstable-core-do-not-import';
+import { TRPCClientError } from '../../TRPCClientError';
 import type { Operation } from '../types';
 import type {
   ContentOptions,
@@ -27,8 +27,8 @@ export { pipelineContext } from './pipelineContext';
 /**
  * What a batch link does with the protocol in
  * `@trpc/server/unstable-core-do-not-import/http/pipeline`: when an
- * operation's request can take more calls, which of them fit in it, and what
- * each call's result is.
+ * operation's request can take more calls, where each goes in its tree, and
+ * what each call's result is.
  */
 
 /**
@@ -49,8 +49,9 @@ export interface OperationPipeline {
   /** The limits of the server, as the link that opens it says */
   limits: ClientPipelineLimits;
   /**
-   * The calls added to the operation's request, with `pipeCall()`. They stay
-   * here once the request has gone, for a link that logs the context.
+   * The calls added to the operation's request, with `pipeCall()`, and the
+   * calls under those. They stay here once the request has gone, for a link
+   * that logs the context.
    */
   calls: PipelinedCall[];
   /**
@@ -75,7 +76,7 @@ type ClientPipelineLimits = Pick<
 type PipelineSource = OperationPipeline | PipelinedCall;
 
 /**
- * A query the server runs in the request of an operation, after the calls
+ * A query the server runs in the request of an operation, under the call
  * whose data it reads.
  */
 export interface PipelinedCall {
@@ -83,15 +84,20 @@ export interface PipelinedCall {
   path: string;
   /** The input, with `undefined` in place of what the server fills in */
   input: unknown;
-  reads: PipelineCallReads<PipelineSource>;
-  /** Its place in its chain: a call that reads an operation is 2 */
+  /** What it is under: the operation or the call whose data it reads */
+  parent: PipelineSource;
+  /** The list in its parent's data it runs for every item of, or `null` */
+  list: string[][] | null;
+  /** What the server fills in of its input */
+  reads: PipeRead[];
+  /** How deep it is: a call under an operation is 2 */
   depth: number;
   /**
    * - `waiting`: the request hasn't gone yet
    * - `sent`: it is in a request
    * - `unresolved`: it didn't run. It wasn't sent, its request failed as a
-   *   whole, or a call it reads failed. Its `result` is then an error, and
-   *   what wants it makes a request
+   *   whole, or the call it is under failed. Its `result` is then an error,
+   *   and what wants it makes a request
    */
   status: 'waiting' | 'sent' | 'unresolved';
   /** Rejects with what the call failed with */
@@ -106,8 +112,19 @@ export interface PipelinedCallResult {
   data: unknown;
 }
 
-/** A part of a call's input that the server fills in */
-export type PipelinedCallRead = PipelineRead<PipelineSource>;
+/**
+ * A part of a call's input that the server fills in: the value at `path` in
+ * the data of `from`, an operation or another call. With `each`, the call
+ * runs once for every item of the list at the first `null` in `path`, and
+ * reads the rest of `path` in the item.
+ */
+export interface PipelinedCallRead {
+  /** Where the value goes in the call's input. Empty for the whole input */
+  to: string[];
+  from: PipelineSource;
+  path: PipelinePath;
+  each: boolean;
+}
 
 export function createOperationPipeline(): OperationPipeline {
   const sent = createDeferred<readonly string[]>();
@@ -131,42 +148,80 @@ function isCall(source: PipelineSource): source is PipelinedCall {
   return 'owner' in source;
 }
 
+/** A source, then what it is under, up to its operation */
+function chainOf(source: PipelineSource): PipelineSource[] {
+  const chain: PipelineSource[] = [source];
+  for (let at = source; isCall(at); at = at.parent) {
+    chain.push(at.parent);
+  }
+  return chain;
+}
+
+/** Whether a call, or a call it is under, runs once for every item of a list */
+function runsPerItem(source: PipelineSource): boolean {
+  return chainOf(source).some((it) => isCall(it) && it.list !== null);
+}
+
 /**
- * Adds a call to the request of the operations it reads. `null` if that
- * request has gone, no link that pipelines took those operations, or the
- * server would refuse it: more reads or a longer chain than it takes, or
- * items of two lists.
+ * Adds a call to the request of the operation whose data it reads, under the
+ * call it reads. `null` if that request has gone, no link that pipelines took
+ * that operation, or the server would refuse it or couldn't place it: more
+ * reads or a deeper tree than it takes, items of two lists, or reads of two
+ * calls of which neither is under the other.
  */
 export function pipeCall(opts: {
   path: string;
   input: unknown;
   reads: PipelinedCallRead[];
 }): PipelinedCall | null {
-  const grouped = groupPipelineReads(opts.reads);
-  if (!grouped.ok) {
+  // It goes under the deepest call it reads, and reads only what is above it
+  const [first, ...more] = opts.reads;
+  if (!first) {
     return null;
   }
-  const owners = opts.reads.map((read) =>
-    isCall(read.from) ? read.from.owner : read.from,
+  const parent = more.reduce(
+    (deepest, read) =>
+      chainOf(read.from).length > chainOf(deepest).length ? read.from : deepest,
+    first.from,
   );
-  // It goes with the operation of its first read
-  const [owner] = owners;
+  const chain = chainOf(parent);
+  const [owner] = chain.slice(-1);
   if (
     !owner ||
-    !owners.every((pipeline) => pipeline.open) ||
-    !opts.reads.every(
-      (read) => !isCall(read.from) || read.from.status === 'waiting',
-    )
+    isCall(owner) ||
+    !owner.open ||
+    // Under a call for every item, a call would run for every item too
+    runsPerItem(parent) ||
+    !opts.reads.every((read) => chain.includes(read.from)) ||
+    !chain.every((it) => !isCall(it) || it.status === 'waiting')
   ) {
     return null;
   }
-  const depth =
-    1 +
-    Math.max(
-      ...opts.reads.map((read) => (isCall(read.from) ? read.from.depth : 1)),
-    );
+  let list: string[][] | null = null;
+  const reads: PipeRead[] = [];
+  for (const read of opts.reads) {
+    if (!read.each) {
+      const up = chain.indexOf(read.from) + 1;
+      reads.push({ to: read.to, data: read.path, ...(up !== 1 && { up }) });
+      continue;
+    }
+    // The list is what is before the first `null`, in the parent's data
+    const at = read.path.indexOf(null);
+    const listPath = read.path.slice(0, at);
+    if (
+      read.from !== parent ||
+      at === -1 ||
+      listPath.includes(null) ||
+      (list && listPath.join('\0') !== list[0]?.join('\0'))
+    ) {
+      return null;
+    }
+    list = [listPath as string[]];
+    reads.push({ to: read.to, item: read.path.slice(at + 1) });
+  }
+  const depth = chain.length + 1;
   if (
-    opts.reads.length > owner.limits.maxReadsPerCall ||
+    reads.length > owner.limits.maxReadsPerCall ||
     depth > owner.limits.maxDepth
   ) {
     return null;
@@ -180,7 +235,9 @@ export function pipeCall(opts: {
   const call: PipelinedCall = {
     path: opts.path,
     input: opts.input,
-    reads: grouped.reads,
+    parent,
+    list,
+    reads,
     depth,
     status: 'waiting',
     result,
@@ -200,9 +257,7 @@ function moveCall(
   to:
     | { kind: 'sent' }
     /** It didn't run, and its result is this error */
-    | { kind: 'not-run'; error: unknown }
-    /** It didn't run, as its own result says: a call it reads failed */
-    | { kind: 'source-failed' },
+    | { kind: 'not-run'; error: unknown },
 ) {
   switch (to.kind) {
     case 'sent':
@@ -211,9 +266,6 @@ function moveCall(
     case 'not-run':
       call.status = 'unresolved';
       call.settle(Promise.reject(to.error));
-      return;
-    case 'source-failed':
-      call.status = 'unresolved';
       return;
   }
 }
@@ -248,18 +300,11 @@ export interface PipeliningLink extends ResolvedHTTPLinkOptions {
   maxItems: number;
   /** The longest URL a request can have */
   maxURLLength: number;
-  /** A call's result, as the link gives an operation's. Throws its error */
+  /**
+   * A call's result, from its outcome as the response has it, in what a
+   * result of the link has. Throws its error
+   */
   read: (result: HTTPResult) => PipelinedCallResult;
-}
-
-/** A batch's request, with calls in it that read the data of others */
-export interface PipelinedBatch {
-  /** The calls that go in the request, after the operations */
-  calls: readonly Pick<PipelinedCall, 'path' | 'input'>[];
-  /** The URL and body of the request */
-  request: Pick<ContentOptions, 'getUrl' | 'getBody'>;
-  /** The result of every operation, and then of every call, that was sent */
-  results: readonly (HTTPResult | Promise<HTTPResult>)[];
 }
 
 /** What a batch link does with the operations it takes, when it pipelines */
@@ -278,11 +323,61 @@ export interface BatchPipelining {
    * it is then an ordinary batch.
    */
   take: (ops: readonly BatchOp[]) => {
-    calls: PipelinedBatch['calls'];
-    request: PipelinedBatch['request'];
-    /** Gives the calls their results, or what the request failed with */
-    settle: (results: Promise<PipelinedBatch['results']>) => void;
+    /** The URL and body of the request */
+    request: Pick<ContentOptions, 'getUrl' | 'getBody'>;
+    /**
+     * Gives the calls their results, from the result of every operation,
+     * with the `children` the response has beside it, or what the request
+     * failed with
+     */
+    settle: (
+      results: Promise<readonly (HTTPResult | Promise<HTTPResult>)[]>,
+    ) => void;
   } | null;
+}
+
+/**
+ * The value of a batch link's `experimental_pipelining` option. Make one with
+ * `experimental_pipelining()`.
+ */
+export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
+
+/**
+ * The URL and body of a request with a tree. Its `tree` is in its body if it
+ * has one to put it in, and in its URL if not: both ask the same question,
+ * so it is always in one of the two.
+ */
+function treeRequest(
+  tree: PipeTree,
+): Pick<ContentOptions, 'getUrl' | 'getBody'> {
+  return {
+    getUrl: (opts) =>
+      pipelinedBatchUrl({
+        url: getUrl(opts),
+        tree: typeof getBody(opts) === 'string' ? null : tree,
+      }),
+    getBody: (opts) => {
+      const body = getBody(opts);
+      return typeof body === 'string'
+        ? pipelinedBatchBody({ body, tree })
+        : body;
+    },
+  };
+}
+
+/** The `children` beside an operation's outcome in a response */
+function childrenOf(result: HTTPResult): unknown {
+  const json: unknown = result.json;
+  return typeof json === 'object' &&
+    json !== null &&
+    Object.prototype.hasOwnProperty.call(json, 'children')
+    ? (json as Record<string, unknown>)['children']
+    : undefined;
+}
+
+/** Whether an error is a server's refusal: a bad request */
+function isBadRequest(error: unknown) {
+  return error instanceof TRPCClientError && error.data?.code === 'BAD_REQUEST';
 }
 
 /**
@@ -291,7 +386,7 @@ export interface BatchPipelining {
  * data it reads, and goes in a request of its own.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
  */
 export interface experimental_PipeliningLinkOptions {
   /**
@@ -307,80 +402,6 @@ export interface experimental_PipeliningLinkOptions {
 }
 
 /**
- * The value of a batch link's `experimental_pipelining` option. Make one with
- * `experimental_pipelining()`.
- */
-export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
-
-/**
- * The URL and body of a pipelined batch. Its `pipe` is in its body if it has
- * one to put it in, and in its URL if not: both ask the same question, so it
- * is always in one of the two.
- */
-function pipelinedRequest(
-  pipe: PipelinedBatchPlan<PipelinedCall>['reads'],
-): PipelinedBatch['request'] {
-  return {
-    getUrl: (opts) =>
-      pipelinedBatchUrl({
-        url: getUrl(opts),
-        pipe: typeof getBody(opts) === 'string' ? null : pipe,
-      }),
-    getBody: (opts) => {
-      const body = getBody(opts);
-      return typeof body === 'string'
-        ? pipelinedBatchBody({ body, pipe })
-        : body;
-    },
-  };
-}
-
-/**
- * Gives the calls of a batch their results. A call that reads a failed one
- * didn't run, and is `unresolved`.
- */
-function settlePipelinedBatch(opts: {
-  ops: readonly BatchOp[];
-  plan: PipelinedBatchPlan<PipelinedCall>;
-  /** The result of every operation, and then of every call, that was sent */
-  results: PipelinedBatch['results'];
-  read: PipeliningLink['read'];
-}) {
-  const calls = opts.plan.calls.map((call, index) => {
-    const result = Promise.resolve(opts.results[opts.ops.length + index]).then(
-      (sent) => {
-        if (!sent) {
-          throw new Error('The server sent no result for a pipelined call');
-        }
-        return opts.read(sent);
-      },
-    );
-    result.catch(() => undefined);
-    return { call, result };
-  });
-  const settled = pipelinedCallsRan({
-    sent: opts.ops.map((_op, index) =>
-      Promise.resolve(opts.results[index]).then(
-        (result) => !!result && !('error' in result.json),
-        () => false,
-      ),
-    ),
-    reads: opts.plan.reads,
-    calls,
-  });
-  for (const { call: sent, ran } of settled) {
-    sent.call.settle(
-      ran.then((itRan) => {
-        if (!itRan) {
-          moveCall(sent.call, { kind: 'source-failed' });
-        }
-        return sent.result;
-      }),
-    );
-  }
-}
-
-/**
  * Lets `httpBatchLink` or `httpBatchStreamLink` send queries that read parts
  * of their input from the data of other queries in the same request. Pass what
  * it returns as the link's `experimental_pipelining` option.
@@ -388,7 +409,7 @@ function settlePipelinedBatch(opts: {
  * It is apart from the links so that only an app that uses it has its code.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
  */
 export function experimental_pipelining(
   opts?: experimental_PipeliningLinkOptions,
@@ -402,25 +423,22 @@ export function experimental_pipelining(
     /** The calls that go in the request of a batch, within the link's limits */
     const plan = (ops: readonly BatchOp[]) => {
       const pipelines = ops.map(pipelineOf);
-      return planPipelinedBatch({
+      return planPipelineTree({
         sent: pipelines,
         calls: pipelines
           .flatMap((pipeline) => pipeline?.calls ?? [])
           .filter((call) => call.status === 'waiting'),
-        fits: (next) => {
-          const sent = [...ops, ...next.calls];
-          return (
-            sent.length <= link.maxItems &&
-            (link.maxURLLength === Infinity ||
-              pipelinedRequest(next.reads).getUrl({
-                ...link,
-                type: 'query',
-                path: sent.map((it) => it.path).join(','),
-                inputs: sent.map((it) => it.input),
-                signal: null,
-              }).length <= link.maxURLLength)
-          );
-        },
+        serialize: (input) => link.transformer.input.serialize(input),
+        fits: (next) =>
+          ops.length + next.calls.length <= link.maxItems &&
+          (link.maxURLLength === Infinity ||
+            treeRequest(next.tree).getUrl({
+              ...link,
+              type: 'query',
+              path: ops.map((it) => it.path).join(','),
+              inputs: ops.map((it) => it.input),
+              signal: null,
+            }).length <= link.maxURLLength),
       });
     };
     return {
@@ -438,8 +456,8 @@ export function experimental_pipelining(
           return false;
         }
         // An operation's calls go in its request before more operations do,
-        // if that lets more calls go. A call that fits in neither request, or
-        // reads operations of both, goes in neither
+        // if that lets more calls go. A call that fits in neither request
+        // goes in neither
         return (
           plan(ops.slice(0, -1)).calls.length +
             plan(ops.slice(-1)).calls.length >
@@ -478,26 +496,104 @@ export function experimental_pipelining(
           return null;
         }
         return {
-          calls: planned.calls,
-          request: pipelinedRequest(planned.reads),
+          request: treeRequest(planned.tree),
           settle: (results) => {
-            results.then(
-              (sent) =>
-                settlePipelinedBatch({
-                  ops,
-                  plan: planned,
-                  results: sent,
-                  read: link.read,
-                }),
-              (error: unknown) => {
-                // The request failed as a whole. None of its calls ran: a
-                // link can send the operations again, and what wants a call
-                // then asks for it
-                for (const call of planned.calls) {
-                  moveCall(call, { kind: 'not-run', error });
+            /** Whether a call's parent succeeded, and so the call ran */
+            const ran = new Map<PipelineSource, Promise<boolean>>();
+            for (const [index, op] of ops.entries()) {
+              const pipeline = pipelineOf(op);
+              if (pipeline) {
+                ran.set(
+                  pipeline,
+                  results
+                    .then(async (sent) => {
+                      const result = await sent[index];
+                      return !!result && !('error' in result.json);
+                    })
+                    // Such as a response that broke off: what it didn't
+                    // have, didn't run for sure
+                    .catch(() => false),
+                );
+              }
+            }
+            for (const call of planned.calls) {
+              const place = planned.places.get(call);
+              const result = results.then(async (sent) => {
+                const opResult = place ? await sent[place.index] : undefined;
+                if (!place || !opResult) {
+                  throw new Error(
+                    'The server sent no result for a pipelined call',
+                  );
                 }
-              },
-            );
+                const read = (json: unknown) =>
+                  link.read({ ...opResult, json: json as HTTPResult['json'] });
+                const children = childrenOf(opResult);
+                // The server answered for the request as a whole, such as
+                // when it doesn't allow pipelining: that is the call's error
+                if (children === undefined && 'error' in opResult.json) {
+                  return read(opResult.json);
+                }
+                const outcome = await readPipelineCall(children, place.steps);
+                switch (outcome.kind) {
+                  case 'outcome':
+                    return read(outcome.outcome);
+                  case 'items': {
+                    const runs = outcome.items.map((item) => {
+                      if (item === undefined) {
+                        return undefined;
+                      }
+                      try {
+                        return { result: read(item) };
+                      } catch (error) {
+                        return { error };
+                      }
+                    });
+                    // Every run refused: the server refused the call, and
+                    // its items each ask by themselves
+                    const errors = runs.flatMap((run) =>
+                      run && 'error' in run ? [run.error] : [],
+                    );
+                    if (
+                      errors.length > 0 &&
+                      errors.length === runs.length &&
+                      errors.every(isBadRequest)
+                    ) {
+                      throw errors[0];
+                    }
+                    return { data: runs };
+                  }
+                  case 'failed':
+                    // A call above it failed: its error, as the link reads one
+                    return read({ error: outcome.error });
+                  case 'missing':
+                    throw new Error(
+                      'The server sent no result for a pipelined call',
+                    );
+                }
+              });
+              result.catch(() => undefined);
+              const parentRan = ran.get(call.parent) ?? Promise.resolve(false);
+              const callRan = parentRan.then(async (itRan) => {
+                if (!itRan) {
+                  return false;
+                }
+                return result.then(
+                  () => true,
+                  () => false,
+                );
+              });
+              ran.set(call, callRan);
+              call.settle(
+                parentRan.then((itRan) => {
+                  // The call it is under failed, or the request failed as a
+                  // whole: it didn't run, and what wants it asks for it
+                  if (!itRan) {
+                    call.status = 'unresolved';
+                  }
+                  return result;
+                }),
+              );
+            }
           },
         };
       },

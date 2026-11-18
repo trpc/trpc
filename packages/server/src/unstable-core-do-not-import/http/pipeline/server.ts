@@ -1,19 +1,18 @@
 import { TRPCError } from '../../error/TRPCError';
-import { createDeferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
-import { isObject } from '../../utils';
+import { emptyObject, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
-  PipelineCallReads,
-  PipelineItemEnvelope,
+  PipeChildrenResponse,
   PipelineLimits,
   PipelinePath,
-  PipelineRead,
-  PipelineWholeRead,
+  PipeListResponse,
+  PipeOutcome,
 } from './wire';
 import {
-  groupPipelineReads,
+  parsePipelineKey,
   pipelineLimitDefaults,
+  readPipelineList,
   readPipelinePath,
 } from './wire';
 
@@ -42,20 +41,20 @@ export function pipelineLimitsOf(
   };
 }
 
-/** The `pipe` of a request that has no body, not yet checked */
-export function pipeOfSearchParams(searchParams: URLSearchParams) {
-  return searchParams.get('pipe') ?? undefined;
+/** The `tree` of a request that has no body, not yet checked */
+export function treeOfSearchParams(searchParams: URLSearchParams) {
+  return searchParams.get('tree') ?? undefined;
 }
 
-/** The `pipe` beside the inputs in a request's body, not yet checked */
-export function pipeOfBody(body: unknown): unknown {
-  return isObject(body) ? body['pipe'] : undefined;
+/** The `tree` beside the inputs in a request's body, not yet checked */
+export function treeOfBody(body: unknown): unknown {
+  return isObject(body) ? body['tree'] : undefined;
 }
 
-function invalidPipe(message: string) {
+function invalidTree(message: string) {
   return new TRPCError({
     code: 'BAD_REQUEST',
-    message: `Invalid "pipe": ${message}`,
+    message: `Invalid "tree": ${message}`,
   });
 }
 
@@ -73,21 +72,88 @@ function isPath(value: unknown): value is PipelinePath {
   );
 }
 
+/** A plain object, not an array */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return isObject(value) && !Array.isArray(value);
+}
+
+/** Whether an object has only the keys it may have */
+function hasOnly(value: Record<string, unknown>, keys: readonly string[]) {
+  return Object.keys(value).every((key) => keys.includes(key));
+}
+
+// ---------- a request's tree, checked ----------
+
+/** A read, checked: where it comes from, as how many calls up */
+export interface PipelinePlanRead {
+  to: string[];
+  /** The item a run is for, or the data of a call */
+  from: 'item' | 'data';
+  /** How many calls up: 0 is the node itself, 1 its parent */
+  up: number;
+  path: PipelinePath;
+}
+
+/** A node, checked */
+export interface PipelinePlanNode {
+  key: string;
+  /** The procedure's path */
+  path: string;
+  /** The input as the client sent it */
+  input: unknown;
+  reads: PipelinePlanRead[];
+  /** How deep it is: a top-level call is 1 */
+  depth: number;
+  /** Whether it runs once for every item of a list in its parent's data */
+  perItem: boolean;
+  /** The keys of its children, in order, which the response has too */
+  childKeys: string[];
+  /**
+   * Its children, or `null` if it has none, or if it is deeper than the
+   * server goes: it is refused then, and what it has under it doesn't matter
+   */
+  children: PipelinePlanChildren | null;
+}
+
+/** Children, checked, in the order of their keys */
+export type PipelinePlanChildren = (
+  | { kind: 'node'; node: PipelinePlanNode }
+  | {
+      kind: 'list';
+      key: string;
+      levels: string[][];
+      children: PipelinePlanChildren;
+    }
+)[];
+
+/** The keys of children, in order */
+function keysOf(children: PipelinePlanChildren) {
+  return children.map((child) =>
+    child.kind === 'node' ? child.node.key : child.key,
+  );
+}
+
+/** What a call has above it, for what its reads can reach */
+interface PlanFrame {
+  /** Whether it runs for the item of a list */
+  hasItem: boolean;
+}
+
 /**
- * Validates the `pipe` of a batch request: what each call reads, by the
- * call's index. A string is the search param's JSON. A request without one
- * has nothing to fill in. Nothing after this checks it again.
- *
- * A read names its source by index. It comes back as what `sources` has for
- * that call, so a read from a call that isn't there, or isn't earlier, can't
- * come out of this.
+ * Checks the `tree` of a request: the children of each top-level call, by
+ * its index. A string is the search param's JSON. A request without one has
+ * no children. Nothing after this checks it again: a read that comes out of
+ * this reaches what it names.
  */
-export function parsePipelineReads<TSource extends object | number>(opts: {
-  pipe: unknown;
-  /** What stands for each call of the batch, in order */
-  sources: readonly TSource[];
-}): Map<number, PipelineCallReads<TSource>> {
-  let parsed = opts.pipe;
+export function parsePipelineTree(opts: {
+  tree: unknown;
+  /** How many top-level calls the batch has */
+  calls: number;
+  /** How deep the server goes: what is deeper isn't looked at */
+  maxDepth: number;
+}): Map<number, PipelinePlanChildren> {
+  const { maxDepth } = opts;
+  let parsed = opts.tree;
   if (parsed === undefined) {
     return new Map();
   }
@@ -95,61 +161,158 @@ export function parsePipelineReads<TSource extends object | number>(opts: {
     try {
       parsed = JSON.parse(parsed);
     } catch {
-      throw invalidPipe('not JSON');
+      throw invalidTree('not JSON');
     }
   }
-  if (!isObject(parsed)) {
-    throw invalidPipe('expected an object');
+  if (!isRecord(parsed)) {
+    throw invalidTree('expected an object');
   }
+
+  function parseRead(
+    read: unknown,
+    /** The node, then the calls above it, nearest first */
+    frames: readonly PlanFrame[],
+    where: string,
+  ): PipelinePlanRead {
+    if (
+      !isRecord(read) ||
+      !isKeys(read['to']) ||
+      !hasOnly(read, ['to', 'item', 'data', 'up'])
+    ) {
+      throw invalidTree(`expected a read with "to" at ${where}`);
+    }
+    const hasItem = read['item'] !== undefined;
+    const hasData = read['data'] !== undefined;
+    const path = hasItem ? read['item'] : read['data'];
+    if (hasItem === hasData || !isPath(path)) {
+      throw invalidTree(`expected "item" or "data" at ${where}`);
+    }
+    const from = hasItem ? 'item' : 'data';
+    const up = read['up'] ?? (from === 'item' ? 0 : 1);
+    if (typeof up !== 'number' || !Number.isInteger(up) || up < 0) {
+      throw invalidTree(`expected "up" to be a whole number at ${where}`);
+    }
+    const frame = frames[up];
+    // The node itself has no data yet, and only a run for an item has one
+    if (!frame || (from === 'data' ? up === 0 : !frame.hasItem)) {
+      throw invalidTree(
+        `a read at ${where} reaches no ${from === 'item' ? 'item' : 'call'} above it`,
+      );
+    }
+    return { to: read['to'], from, up, path };
+  }
+
+  function parseNode(opts: {
+    key: string;
+    value: unknown;
+    /** The calls above it, nearest first */
+    above: readonly PlanFrame[];
+    perItem: boolean;
+    where: string;
+  }): PipelinePlanNode {
+    const { value, where } = opts;
+    if (
+      !isRecord(value) ||
+      typeof value['path'] !== 'string' ||
+      value['path'] === '' ||
+      !Array.isArray(value['reads']) ||
+      !hasOnly(value, ['path', 'input', 'reads', 'children']) ||
+      (value['children'] !== undefined && !isRecord(value['children']))
+    ) {
+      throw invalidTree(`expected a node with "path" and "reads" at ${where}`);
+    }
+    const frames = [{ hasItem: opts.perItem }, ...opts.above];
+    const depth = frames.length;
+    const children = value['children'];
+    return {
+      key: opts.key,
+      path: value['path'],
+      input: value['input'],
+      reads: value['reads'].map((read, index) =>
+        parseRead(read, frames, `${where}.reads.${index}`),
+      ),
+      depth,
+      perItem: opts.perItem,
+      childKeys: children ? Object.keys(children) : [],
+      children:
+        children && depth <= maxDepth
+          ? parseChildren({
+              value: children,
+              above: frames,
+              perItem: false,
+              where,
+            })
+          : null,
+    };
+  }
+
+  function parseChildren(opts: {
+    value: Record<string, unknown>;
+    /** The call they are the children of, then the calls above it */
+    above: readonly PlanFrame[];
+    /** Whether they are under a list */
+    perItem: boolean;
+    where: string;
+  }): PipelinePlanChildren {
+    return Object.entries(opts.value).map(([key, value]) => {
+      const where = `${opts.where} ${JSON.stringify(key)}`;
+      const parsedKey = parsePipelineKey(key);
+      if (!parsedKey) {
+        throw invalidTree(`no such key: ${JSON.stringify(key)}`);
+      }
+      if (parsedKey.kind === 'node') {
+        return {
+          kind: 'node' as const,
+          node: parseNode({
+            key,
+            value,
+            above: opts.above,
+            perItem: opts.perItem,
+            where,
+          }),
+        };
+      }
+      if (!isRecord(value)) {
+        throw invalidTree(`expected children at ${where}`);
+      }
+      return {
+        kind: 'list' as const,
+        key,
+        levels: parsedKey.levels,
+        children: parseChildren({
+          value,
+          above: opts.above,
+          perItem: true,
+          where,
+        }),
+      };
+    });
+  }
+
   return new Map(
-    Object.entries(parsed).map(([key, reads]) => {
+    Object.entries(parsed).map(([key, children]) => {
       const index = Number(key);
       if (
         !Number.isInteger(index) ||
         index < 0 ||
-        index >= opts.sources.length ||
+        index >= opts.calls ||
         // One key per call: `01` is not another way to write `1`
         String(index) !== key
       ) {
-        throw invalidPipe(`no call at index ${key}`);
+        throw invalidTree(`no call at index ${key}`);
       }
-      if (!Array.isArray(reads)) {
-        throw invalidPipe(`expected an array at ${key}`);
+      if (!isRecord(children)) {
+        throw invalidTree(`expected children at ${key}`);
       }
-      const grouped = groupPipelineReads(
-        reads.map((read: unknown): PipelineRead<TSource> => {
-          if (!isObject(read) || !isKeys(read['to']) || !isPath(read['path'])) {
-            throw invalidPipe(`expected "to" and "path" at ${key}`);
-          }
-          const from = read['from'];
-          // Only earlier calls, so calls can't wait for each other
-          const source =
-            typeof from === 'number' && Number.isInteger(from) && from < index
-              ? opts.sources[from]
-              : undefined;
-          if (source === undefined) {
-            throw invalidPipe(`call ${key} can only read from an earlier call`);
-          }
-          return {
-            to: read['to'],
-            from: source,
-            path: read['path'],
-            each: read['each'] === true,
-          };
+      return [
+        index,
+        parseChildren({
+          value: children,
+          above: [{ hasItem: false }],
+          perItem: false,
+          where: key,
         }),
-      );
-      if (grouped.ok) {
-        return [index, grouped.reads];
-      }
-      switch (grouped.problem) {
-        case 'each-without-list':
-          throw invalidPipe(`"each" at ${key} needs a list in its path`);
-        case 'more-than-one-list':
-          // A call runs once per item of one list
-          throw invalidPipe(
-            `call ${key} reads each item of more than one list`,
-          );
-      }
+      ];
     }),
   );
 }
@@ -191,10 +354,10 @@ function writePipelinePath(opts: {
           Object.prototype.hasOwnProperty.call(target, key)
         ))
     ) {
-      throw invalidPipe(`the input has nothing at "${opts.to.join('.')}"`);
+      throw invalidTree(`the input has nothing at "${opts.to.join('.')}"`);
     }
     if (!isRecordLike(target)) {
-      throw invalidPipe(
+      throw invalidTree(
         `the input has a value on the way to "${opts.to.join('.')}" that can't be written to`,
       );
     }
@@ -319,86 +482,113 @@ export function createPipelineSizeOf() {
   return sizeOf;
 }
 
-/** What the server needs of a batch's call to fill in its input */
-export interface PipelineServerCall {
-  /** The input as the client sent it */
-  getRawInput: () => Promise<unknown>;
-  /** The input, once it has been read */
-  result: () => unknown;
+// ---------- running a tree ----------
+
+/** How a node went, as a response has it, with its data as it really is */
+export type PipelineNodeOutcome<TError> =
+  | { ok: true; data: unknown }
+  | { ok: false; error: TError };
+
+/** A node's outcome, and its children once its data is there */
+export interface PipelineNodeResult<TError> {
+  outcome: PipelineNodeOutcome<TError>;
+  /** `null` if it has no children */
+  children: Promise<PipelineChildrenResult<TError>> | null;
+}
+
+/** The items of a list, a list for each level */
+export type PipelineListResult<TError> = (
+  | PipelineChildrenResult<TError>
+  | PipelineListResult<TError>
+)[];
+
+/** The children of a call, by their keys, in order */
+export interface PipelineChildrenResult<TError> {
+  entries: [
+    key: string,
+    value:
+      | { kind: 'node'; result: Promise<PipelineNodeResult<TError>> }
+      | { kind: 'list'; items: PipelineListResult<TError> }
+      /** Its call failed: it has no node or items */
+      | { kind: 'failed'; error: TError },
+  ][];
+}
+
+/** What a call is to the calls under it */
+interface Frame {
+  /** Its data, as the client gets it */
+  data: unknown;
+  /** The item it runs for, if it runs for one */
+  item: unknown;
+}
+
+/** Where children run: once for each item of their lists, or once */
+interface Place<TError> {
+  /** The index of the top-level call they are under */
+  index: number;
+  /** The call they are the children of, then the calls above it */
+  above: readonly Frame[];
+  /** What their keys are resolved in: the call's data, or the item */
+  value: unknown;
+  /** The item they run for, under a list */
+  item: unknown;
+  /** Their results, filled in as they start */
+  out: PipelineChildrenResult<TError>;
 }
 
 /**
- * Runs a call once for every item of the list it reads, and gives every
- * item's outcome: what `item` returned, or what `error` made of what it threw.
+ * Runs the follow-up calls of a batch's top-level calls, as their `tree`
+ * says. Throws if the `tree` is invalid.
  */
-export type PipelineEach = <TError>(run: {
-  item: (input: unknown) => Promise<unknown>;
-  error: (cause: unknown, input: unknown) => TError;
-}) => Promise<PipelineItemEnvelope<TError>[]>;
-
-/**
- * Makes the calls of a batch read parts of their input from the data of
- * earlier calls, as its `pipe` says. Throws if the `pipe` is invalid.
- */
-export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
-  calls: readonly TCall[];
-  /** The request's `pipe`, not yet checked. `undefined` if it has none */
-  pipe: unknown;
+export function pipelineTree(opts: {
+  /** The request's `tree`, not yet checked. `undefined` if it has none */
+  tree: unknown;
+  /** How many top-level calls the batch has */
+  calls: number;
   transformer: CombinedDataTransformer;
+  limits: PipelineLimits;
   /**
-   * The most runs of a call the batch may have, or `null` for any number. A
-   * call for every item of a list runs once for each item. Of two such calls
-   * that are over it together, the one whose list is ready first runs.
+   * The most runs of calls the batch may have, top-level calls included, or
+   * `null` for any number. A node runs once for every item it is under. A
+   * node whose runs would go over it is refused.
    */
   maxRuns: number | null;
-  /** What the server lets the batch make it do */
-  limits: PipelineLimits;
 }) {
   const { limits } = opts;
+  const plan = parsePipelineTree({
+    tree: opts.tree,
+    calls: opts.calls,
+    maxDepth: limits.maxDepth,
+  });
   const sizeOf = createPipelineSizeOf();
-  /** A call, as the calls that read its data see it */
-  interface Source {
-    /** How the call went: its data, or a rejection if it has none to read */
-    outcome: ReturnType<typeof createDeferred<unknown>>;
-    /** Its data as the client gets it, which is what a path refers to */
-    clientData: Promise<unknown> | null;
-    /** Its place in its chain: 1 for a call that reads none */
-    depth: number;
+  let runs = opts.calls;
+  let filledSize = 0;
+
+  /** A value as the client gets it, which is what a path refers to */
+  function asRead(data: unknown) {
+    return overTheWire(opts.transformer.output, data);
   }
-  const sent = opts.calls.map((call) => {
-    const outcome = createDeferred<unknown>();
-    // A failed call that nothing reads from isn't an unhandled rejection
-    outcome.promise.catch(() => undefined);
-    const source: Source = { outcome, clientData: null, depth: 1 };
-    return { call, source };
-  });
-  const plan = parsePipelineReads({
-    pipe: opts.pipe,
-    sources: sent.map((it) => it.source),
-  });
-  // A call reads only earlier calls, so theirs are known by its turn
-  for (const [index, { source }] of sent.entries()) {
-    const reads = plan.get(index);
-    if (reads) {
-      const from = reads.reads.flatMap((read) =>
-        read.kind === 'whole' ? [read.from] : [],
-      );
-      if (reads.kind === 'each') {
-        from.push(reads.list.from);
-      }
-      source.depth = 1 + Math.max(...from.map((it) => it.depth));
-    }
+  /**
+   * A filled-in input as a call gets it when a client fills it in and sends
+   * it: through the transformer of inputs, all of it, so what is not there
+   * is `null` in a list and left out of an object where JSON makes it so. It
+   * is a value of its own too, so a call that changes its input in place
+   * changes nothing that another call, or another run, reads.
+   */
+  function asSent(input: unknown) {
+    return overTheWire(opts.transformer.input, input);
   }
-  /** Why a call is refused before it reads anything, if it is */
-  function refusalOf(source: Source, reads: PipelineCallReads<Source>) {
-    if (reads.reads.length > limits.maxReadsPerCall) {
+
+  /** Why a node is refused before it reads anything, if it is */
+  function refusalOf(node: PipelinePlanNode) {
+    if (node.reads.length > limits.maxReadsPerCall) {
       return overLimit(
-        `This call reads ${reads.reads.length} values, more than \`maxReadsPerCall\` (${limits.maxReadsPerCall}) allows`,
+        `This call reads ${node.reads.length} values, more than \`maxReadsPerCall\` (${limits.maxReadsPerCall}) allows`,
       );
     }
-    if (source.depth > limits.maxDepth) {
+    if (node.depth > limits.maxDepth) {
       return overLimit(
-        `This call is ${source.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
+        `This call is ${node.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
       );
     }
     return null;
@@ -421,219 +611,361 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }
   }
 
-  /** The data of a call that another reads. Rejects if that call failed */
-  function dataOf(source: Source) {
-    source.clientData ??= source.outcome.promise.then((data) =>
-      overTheWire(opts.transformer.output, data),
-    );
-    return source.clientData.catch(() => {
-      throw new TRPCError({
-        code: 'PRECONDITION_FAILED',
-        message: `The call this call reads its input from failed`,
-      });
-    });
-  }
-  /**
-   * A filled-in input as a call gets it when a client fills it in and sends
-   * it: through the transformer of inputs, all of it, so what is not there
-   * is `null` in a list and left out of an object where JSON makes it so. It
-   * is a value of its own too, so a call that changes its input in place
-   * changes nothing that another call, or another run, reads.
-   */
-  function asSent(input: unknown) {
-    return overTheWire(opts.transformer.input, input);
-  }
-  let runs = opts.calls.length;
-  /** Counts the runs of a call for `count` items. Throws if they are too many */
-  function takeRuns(count: number) {
-    const taken = runs + count - 1;
-    if (opts.maxRuns !== null && taken > opts.maxRuns) {
-      // A call that is refused runs for no item: it takes none of the limit,
-      // not its own place either
-      runs -= 1;
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `A call for every item exceeds the maximum batch size`,
-      });
-    }
-    runs = taken;
-  }
-
-  let filledSize = 0;
-  /**
-   * Counts what a call fills in. It takes it from what the batch may fill in
-   * only once the call's inputs are made: a call that is refused, or whose
-   * inputs can't be made, takes none. Nothing waits between the last `add`
-   * and `take`, so calls that fill in at the same time can't go over together.
-   */
-  function fillCounter() {
-    let size = 0;
-    return {
-      /** Counts a value. Throws if the call fills in more than is left */
-      add: (value: unknown) => {
-        size += sizeOf(value, limits.maxFillSize - filledSize - size);
-        if (filledSize + size > limits.maxFillSize) {
-          throw overLimit(
-            `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
-          );
-        }
-      },
-      take: () => {
-        filledSize += size;
-      },
-    };
-  }
-
-  /** The inputs of a call that runs once per item of a list */
-  async function inputsOfEach(
-    call: TCall,
-    reads: Extract<PipelineCallReads<Source>, { kind: 'each' }>,
-    refusal: TRPCError | null,
-  ) {
-    if (refusal) {
-      // It runs for no item: it takes no place among the runs
-      runs -= 1;
-      throw refusal;
-    }
-    const base = await call.getRawInput();
-    const found = readPipelinePath(
-      await dataOf(reads.list.from),
-      reads.list.path,
-    );
-    // What is no list has no items
-    const items: unknown[] = Array.isArray(found) ? found : [];
-    takeRuns(items.length);
-    /** What a value that is the same for every run is */
-    const wholes = new Map<PipelineWholeRead<Source>, unknown>();
-    const counter = fillCounter();
-    const valuesOfRuns: unknown[][] = [];
-    try {
-      // By index: a list with holes has a run for each of them too
-      for (const index of items.keys()) {
-        counter.add(base);
-        const values: unknown[] = [];
-        for (const read of reads.reads) {
-          if (read.kind === 'whole' && !wholes.has(read)) {
-            const value = readPipelinePath(await dataOf(read.from), read.path);
-            checkValue(value);
-            wholes.set(read, value);
-          }
-          let value: unknown;
-          if (read.kind === 'item') {
-            value = readPipelinePath(items[index], read.path);
-            checkValue(value);
-          } else {
-            value = wholes.get(read);
-          }
-          counter.add(value);
-          values.push(value);
-        }
-        valuesOfRuns.push(values);
-      }
-      // Every run has an input of its own, as calls the client sends do
-      const inputs = valuesOfRuns.map((values) =>
-        asSent(
-          reads.reads.reduce(
-            (input, read, at) =>
-              writePipelinePath({ input, to: read.to, value: values[at] }),
-            base,
+  return {
+    /**
+     * Runs the children of each top-level call once it has an outcome.
+     * Gives what `children` gives each call that has any.
+     */
+    run<TError>(run: {
+      /** Runs a node with its filled-in input. Never rejects */
+      node: (node: {
+        path: string;
+        input: unknown;
+        /** The index of the top-level call it is under */
+        index: number;
+      }) => Promise<PipelineNodeOutcome<TError>>;
+      /** What a node that doesn't run, or children whose call failed, get */
+      fail: (
+        error: TRPCError,
+        node: { path: string; input: unknown } | null,
+      ) => TError;
+    }) {
+      const failed = (keys: readonly string[], cause: unknown) => {
+        const error = run.fail(
+          new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'The call this call reads its input from failed',
+            cause,
+          }),
+          null,
+        );
+        return {
+          entries: keys.map(
+            (key): PipelineChildrenResult<TError>['entries'][number] => [
+              key,
+              { kind: 'failed', error },
+            ],
           ),
-        ),
-      );
-      counter.take();
-      return inputs;
-    } catch (cause) {
-      // It runs for no item: it takes none of the runs, not its place either
-      runs -= items.length;
-      throw cause;
-    }
-  }
+        };
+      };
 
-  /** A call with its input filled in when it is read, or its runs per item */
-  function pipelined(
-    call: TCall,
-    source: Source,
-    reads: PipelineCallReads<Source> | undefined,
-  ): { call: TCall; each: PipelineEach | null } {
-    if (!reads) {
-      return { call, each: null };
-    }
-    const refusal = refusalOf(source, reads);
-    if (reads.kind === 'each') {
-      return {
-        call,
-        each: async (run) => {
-          const inputs = await inputsOfEach(call, reads, refusal);
-          return Promise.all(
-            inputs.map(async (input) => {
-              try {
-                return { result: { data: await run.item(input) } };
-              } catch (cause) {
-                return { error: run.error(cause, input) };
+      /** Starts the children of a call that ran, at each place they run at */
+      function startChildren(
+        children: PipelinePlanChildren,
+        places: readonly Place<TError>[],
+      ) {
+        for (const child of children) {
+          if (child.kind === 'node') {
+            runNode(child.node, places);
+            continue;
+          }
+          // The places the items make, a level of lists for each `[]`
+          const inner: Place<TError>[] = [];
+          const shape = (
+            items: unknown[],
+            depth: number,
+            place: Place<TError>,
+          ): PipelineListResult<TError> =>
+            items.map((item) => {
+              if (depth > 1) {
+                return shape(item as unknown[], depth - 1, place);
               }
-            }),
+              const itemPlace: Place<TError> = {
+                index: place.index,
+                above: place.above,
+                value: item,
+                item,
+                out: { entries: [] },
+              };
+              inner.push(itemPlace);
+              return itemPlace.out;
+            });
+          for (const place of places) {
+            place.out.entries.push([
+              child.key,
+              {
+                kind: 'list',
+                items: shape(
+                  readPipelineList(place.value, child.levels),
+                  child.levels.length,
+                  place,
+                ),
+              },
+            ]);
+          }
+          startChildren(child.children, inner);
+        }
+      }
+      /** The children of a call, once it has an outcome */
+      function childrenOf(of: {
+        children: PipelinePlanChildren;
+        index: number;
+        frame:
+          | { ok: true; frame: Frame; above: readonly Frame[] }
+          | { ok: false; cause: unknown };
+      }): PipelineChildrenResult<TError> {
+        const { frame } = of;
+        if (!frame.ok) {
+          return failed(keysOf(of.children), frame.cause);
+        }
+        const place: Place<TError> = {
+          index: of.index,
+          above: [frame.frame, ...frame.above],
+          value: frame.frame.data,
+          item: undefined,
+          out: { entries: [] },
+        };
+        startChildren(of.children, [place]);
+        return place.out;
+      }
+
+      /** Starts a node's runs, one at each place */
+      function runNode(
+        node: PipelinePlanNode,
+        places: readonly Place<TError>[],
+      ) {
+        const start = (
+          run: (
+            place: Place<TError>,
+            at: number,
+          ) => Promise<PipelineNodeResult<TError>>,
+        ) => {
+          for (const [at, place] of places.entries()) {
+            place.out.entries.push([
+              node.key,
+              { kind: 'node', result: run(place, at) },
+            ]);
+          }
+        };
+        const refuse = (error: TRPCError) => {
+          const outcome: PipelineNodeOutcome<TError> = {
+            ok: false,
+            error: run.fail(error, { path: node.path, input: node.input }),
+          };
+          start(async () => ({
+            outcome,
+            children:
+              node.childKeys.length === 0
+                ? null
+                : Promise.resolve(failed(node.childKeys, error)),
+          }));
+        };
+        const refusal = refusalOf(node);
+        if (refusal) {
+          refuse(refusal);
+          return;
+        }
+        let inputs: unknown[];
+        try {
+          const base =
+            node.input === undefined
+              ? undefined
+              : opts.transformer.input.deserialize(node.input);
+          let size = 0;
+          const add = (value: unknown) => {
+            size += sizeOf(value, limits.maxFillSize - filledSize - size);
+            if (filledSize + size > limits.maxFillSize) {
+              throw overLimit(
+                `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
+              );
+            }
+          };
+          inputs = places.map((place) => {
+            // Every run of a node for an item gets a copy of its whole input
+            if (node.perItem) {
+              add(base);
+            }
+            return asSent(
+              node.reads.reduce((input, read) => {
+                const value = readPipelinePath(
+                  read.from === 'item'
+                    ? read.up === 0
+                      ? place.item
+                      : place.above[read.up - 1]?.item
+                    : place.above[read.up - 1]?.data,
+                  read.path,
+                );
+                checkValue(value);
+                add(value);
+                return writePipelinePath({ input, to: read.to, value });
+              }, base),
+            );
+          });
+          if (opts.maxRuns !== null && runs + places.length > opts.maxRuns) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `A call for every item exceeds the maximum batch size`,
+            });
+          }
+          // Taken only once its inputs are made: a refused node takes none
+          runs += places.length;
+          filledSize += size;
+        } catch (cause) {
+          refuse(
+            cause instanceof TRPCError
+              ? cause
+              : new TRPCError({ code: 'BAD_REQUEST', cause }),
           );
+          return;
+        }
+        const { children } = node;
+        start(async (place, at) => {
+          const input = inputs[at];
+          const outcome = await run.node({
+            path: node.path,
+            input,
+            index: place.index,
+          });
+          if (!children) {
+            return { outcome, children: null };
+          }
+          let frame:
+            | { ok: true; frame: Frame; above: readonly Frame[] }
+            | { ok: false; cause: unknown };
+          if (outcome.ok) {
+            try {
+              frame = {
+                ok: true,
+                frame: { data: asRead(outcome.data), item: place.item },
+                above: place.above,
+              };
+            } catch (cause) {
+              frame = { ok: false, cause };
+            }
+          } else {
+            frame = { ok: false, cause: null };
+          }
+          return {
+            outcome,
+            children: Promise.resolve(
+              childrenOf({ children, index: place.index, frame }),
+            ),
+          };
+        });
+      }
+
+      return {
+        /**
+         * The children of the top-level call at `index`, once it has an
+         * outcome, or `null` if it has none
+         */
+        children: (
+          index: number,
+          outcome: Promise<{ ok: true; data: unknown } | { ok: false }>,
+        ): Promise<PipelineChildrenResult<TError>> | null => {
+          const children = plan.get(index);
+          if (!children) {
+            return null;
+          }
+          const keys = keysOf(children);
+          return outcome.then((it) => {
+            if (!it.ok) {
+              return failed(keys, null);
+            }
+            let data: unknown;
+            try {
+              data = asRead(it.data);
+            } catch (cause) {
+              return failed(keys, cause);
+            }
+            return childrenOf({
+              children,
+              index,
+              frame: { ok: true, frame: { data, item: undefined }, above: [] },
+            });
+          });
         },
       };
-    }
-    let reading: Promise<unknown> | null = null;
-    let read: [input: unknown] | null = null;
-    const fill = async () => {
-      if (refusal) {
-        // It doesn't run: it takes no place among the runs
-        runs -= 1;
-        throw refusal;
-      }
-      let input = await call.getRawInput();
-      const counter = fillCounter();
-      try {
-        for (const read of reads.reads) {
-          const value = readPipelinePath(await dataOf(read.from), read.path);
-          checkValue(value);
-          counter.add(value);
-          input = writePipelinePath({ input, to: read.to, value });
-        }
-        input = asSent(input);
-      } catch (cause) {
-        // It doesn't run: it takes no place among the runs
-        runs -= 1;
-        throw cause;
-      }
-      counter.take();
-      read = [input];
-      return input;
-    };
-    return {
-      call: {
-        ...call,
-        getRawInput: () => (reading ??= fill()),
-        result: () => (read ? read[0] : call.result()),
-      },
-      each: null,
-    };
-  }
-  const calls = sent.map((it, index) => ({
-    ...pipelined(it.call, it.source, plan.get(index)),
-    outcome: it.source.outcome,
-  }));
-
-  return {
-    /** The calls, with inputs that are filled in when they are read */
-    calls: calls.map((it) => it.call),
-    /**
-     * Runs every call, and tells the calls that read a call's data how it
-     * went. A call that runs once per item of a list gets `each` to run
-     * with.
-     */
-    run: <TResult>(run: {
-      call: (call: TCall, each: PipelineEach | null) => Promise<TResult>;
-      /** A call's data, from what `call` gave. Throws if it has none to read */
-      data: (result: TResult) => unknown;
-    }): Promise<TResult>[] =>
-      calls.map((it) => {
-        const result = run.call(it.call, it.each);
-        result.then(run.data).then(it.outcome.resolve, it.outcome.reject);
-        return result;
-      }),
+    },
   };
+}
+
+// ---------- a tree's results in a response ----------
+
+/**
+ * The children of a call in a response that isn't streamed: every node's
+ * outcome, with `serialize` making each what the response has
+ */
+export async function pipelineChildrenJSON<TError>(
+  children: Promise<PipelineChildrenResult<TError>>,
+  serialize: (outcome: PipelineNodeOutcome<TError>) => PipeOutcome<TError>,
+): Promise<PipeChildrenResponse<TError>> {
+  const response: PipeChildrenResponse<TError> = emptyObject();
+  const listJSON = async (
+    items: PipelineListResult<TError>,
+  ): Promise<PipeListResponse<TError>> =>
+    Promise.all(
+      items.map((item) =>
+        Array.isArray(item)
+          ? listJSON(item)
+          : pipelineChildrenJSON(Promise.resolve(item), serialize),
+      ),
+    );
+  for (const [key, value] of (await children).entries) {
+    switch (value.kind) {
+      case 'failed':
+        // Through the transformer, as every error the response has
+        response[key] = serialize({ ok: false, error: value.error });
+        break;
+      case 'list':
+        response[key] = await listJSON(value.items);
+        break;
+      case 'node': {
+        const result = await value.result;
+        const outcome = serialize(result.outcome);
+        response[key] = result.children
+          ? {
+              ...outcome,
+              children: await pipelineChildrenJSON(result.children, serialize),
+            }
+          : outcome;
+        break;
+      }
+    }
+  }
+  return response;
+}
+
+/**
+ * The children of a call in a streamed response: each node's outcome, the
+ * items of each list and the children of each item are values of their own,
+ * which the stream sends when each is ready. `envelope` makes a node's
+ * outcome what the stream has for it.
+ */
+export function pipelineChildrenStream<TError>(
+  children: Promise<PipelineChildrenResult<TError>>,
+  envelope: (outcome: PipelineNodeOutcome<TError>) => object,
+): Promise<Record<string, Promise<unknown>>> {
+  // The stream has values of their own only in objects, not in arrays
+  const listStream = (items: PipelineListResult<TError>) => {
+    const byIndex: Record<string, Promise<unknown>> = emptyObject();
+    for (const [index, item] of items.entries()) {
+      byIndex[index] = Array.isArray(item)
+        ? Promise.resolve(listStream(item))
+        : pipelineChildrenStream(Promise.resolve(item), envelope);
+    }
+    return byIndex;
+  };
+  return children.then(({ entries }) => {
+    const stream: Record<string, Promise<unknown>> = emptyObject();
+    for (const [key, value] of entries) {
+      switch (value.kind) {
+        case 'failed':
+          stream[key] = Promise.resolve({ error: value.error });
+          break;
+        case 'list':
+          stream[key] = Promise.resolve(listStream(value.items));
+          break;
+        case 'node':
+          stream[key] = value.result.then((result) => ({
+            ...envelope(result.outcome),
+            ...(result.children && {
+              children: pipelineChildrenStream(result.children, envelope),
+            }),
+          }));
+          break;
+      }
+    }
+    return stream;
+  });
 }

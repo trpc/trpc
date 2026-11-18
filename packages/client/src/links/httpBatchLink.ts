@@ -86,20 +86,17 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           const pipelined = pipelining?.take(batchOps) ?? null;
           const results = fetchBatch(batchOps, pipelined);
           pipelined?.settle(results);
-          return pipelined
-            ? (await results).slice(0, batchOps.length)
-            : results;
+          return results;
         },
       };
 
       async function fetchBatch(
         batchOps: Operation[],
-        /** The calls the server makes after the operations, in the same request */
+        /** The calls the server makes under the operations, in the same request */
         pipelined: ReturnType<BatchPipelining['take']>,
       ) {
-        const sent = pipelined ? [...batchOps, ...pipelined.calls] : batchOps;
-        const path = sent.map((it) => it.path).join(',');
-        const inputs = sent.map((it) => it.input);
+        const path = batchOps.map((it) => it.path).join(',');
+        const inputs = batchOps.map((it) => it.input);
         const signal = allAbortSignals(...batchOps.map((op) => op.signal));
 
         const res = await httpRequest({
@@ -126,7 +123,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         });
         const resJSON = Array.isArray(res.json)
           ? res.json
-          : sent.map(() => res.json);
+          : batchOps.map(() => res.json);
         const result = resJSON.map((item) => ({
           meta: res.meta,
           json: item,
