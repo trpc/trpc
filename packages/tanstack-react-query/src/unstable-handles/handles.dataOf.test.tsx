@@ -3099,6 +3099,38 @@ describe.each([
     ).toMatchObject({ id: 'u1' });
   });
 
+  test("an item whose run fails on the server has that run's own error, not an unknown one", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    // The list is `['hello', 'missing']`: the second run throws `NOT_FOUND`
+    const posts = ensureEntry(trpc.tag.byIds, { ids: ['hello', 'missing'] });
+    const [, results] = await loadHandlesSettled(trpc, {
+      posts,
+      bySlug: experimental_entryPerItem(
+        experimental_dataOf(posts).map((tag) => tag.id),
+        (slug) => ensureEntry(trpc.post.bySlug, { slug }),
+      ),
+    });
+    // Both runs went in the list's request
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(results.bySlug[0]).toMatchObject({
+      status: 'success',
+      data: { id: 'id-of-hello' },
+    });
+    const failed = results.bySlug[1];
+    const error = failed?.status === 'error' ? failed.error : null;
+    expect(error?.code).toBe('NOT_FOUND');
+    expect(error?.cause.message).toBe('NOT_FOUND');
+    expect(error?.cause.message).not.toBe('Unknown error');
+  });
+
   test("a server row whose item key can't be held makes only that row ask by itself", async () => {
     // A row whose id no query key can hold, as an app with a transformer for
     // it can have, comes last in the list the client reads
@@ -4330,6 +4362,77 @@ describe.each([
       'post.bySlug',
       'team.byId',
     ]);
+  });
+});
+
+describe('a run the link cannot read', () => {
+  // `httpBatchLink` reads each run with the transformer by itself. A stream
+  // is read with it as it comes, so no one run is read apart
+  test('fails its own item with what the link failed with, not an unknown error', async () => {
+    // The server reads and sends every value as it is
+    const t = initTRPC.create({
+      transformer: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) => value,
+      },
+    });
+    /** The link's: it reads every value as it is, but an author marked `unreadable` */
+    const transformer = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => {
+        if (
+          typeof value === 'object' &&
+          value !== null &&
+          (value as { unreadable?: unknown }).unreadable === true
+        ) {
+          throw new Error('The link cannot read this author');
+        }
+        return value;
+      },
+    };
+    const appRouter = t.router({
+      list: t.procedure.query(() => ({ ids: ['u1', 'bad', 'u2'] })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({
+          id: opts.input.id,
+          unreadable: opts.input.id === 'bad',
+        })),
+    });
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const list = ensureEntry(trpc.list);
+    const [, results] = await loadHandlesSettled(trpc, {
+      list,
+      authors: experimental_entryPerItem(experimental_dataOf(list).ids, (id) =>
+        ensureEntry(trpc.author, { id }, { retry: false }),
+      ),
+    });
+    // Every run went in the list's request
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(results.authors[0]).toMatchObject({
+      status: 'success',
+      data: { id: 'u1' },
+    });
+    expect(results.authors[2]).toMatchObject({
+      status: 'success',
+      data: { id: 'u2' },
+    });
+    const failed = results.authors[1];
+    const error = failed?.status === 'error' ? failed.error : null;
+    expect(error?.cause.message).toContain('The link cannot read this author');
   });
 });
 

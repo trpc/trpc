@@ -1,8 +1,7 @@
 import type { QueryFunctionContext } from '@tanstack/react-query';
 import { skipToken } from '@tanstack/react-query';
-import { TRPCClientError } from '@trpc/client';
 import type { PipelinedCall } from '@trpc/client/unstable-internals';
-import { readPipelinedItem } from '@trpc/server/unstable-core-do-not-import';
+import { readPipelinedRun } from '@trpc/client/unstable-internals';
 import type { EntryQueryOptions } from './entry';
 import type { Outcome } from './outcome';
 import { failed, ok } from './outcome';
@@ -65,17 +64,24 @@ export type PipelinedOutcome =
 
 const notRun: PipelinedOutcome = { kind: 'notRun' };
 
-/** A failure of the call: its own error if it ran, else it didn't run */
-function failureOfCall(call: PipelinedCall, error: unknown): PipelinedOutcome {
-  return call.status === 'unresolved' ? notRun : { kind: 'error', error };
-}
-
-/** What a call that runs once settled to. Never rejects */
+/**
+ * What a call that runs once settled to: its data, or its own error if it
+ * ran and failed. Never rejects
+ */
 export function outcomeOfCall(call: PipelinedCall): Promise<PipelinedOutcome> {
-  return call.result.then(
-    (result): PipelinedOutcome => ({ kind: 'data', data: result.data }),
-    (error: unknown) => failureOfCall(call, error),
-  );
+  return call.settled.then((settled): PipelinedOutcome => {
+    if (settled.status === 'not-run') {
+      return notRun;
+    }
+    const { outcome } = settled;
+    if (!outcome.ok) {
+      return { kind: 'error', error: outcome.error };
+    }
+    return outcome.data.kind === 'once'
+      ? { kind: 'data', data: outcome.data.data }
+      : // A call for every item is read by item, with `outcomeOfItem()`
+        notRun;
+  });
 }
 
 /** A call's data, as the outcome of what the server read. Never rejects */
@@ -88,42 +94,35 @@ export function dataOfCall(call: PipelinedCall): Promise<Outcome<unknown>> {
 }
 
 /**
- * One item's outcome of a call that the server ran for every item. The
- * call's data is its `items`: a `{ result }` or an `{ error }` for every
- * item, at `indexes`. `null` for an item the server ran no call for. Each
- * item has its own: a call that failed as a whole ran for none of them, so
- * none has its error. Never rejects
+ * One item's outcome of a call that the server ran for every item, at
+ * `indexes`: `null` for an item the server ran no call for. Each item has
+ * its own. A call that failed as a whole ran for none of them, so none has
+ * its error. A run's error, also one the link couldn't read, is a
+ * `TRPCClientError` already, and is the item's as it is. Never rejects
  */
 export function outcomeOfItem(
   call: PipelinedCall,
   indexes: number[] | null,
 ): Promise<PipelinedOutcome> {
-  return call.result.then(
-    async (result): Promise<PipelinedOutcome> => {
-      if (!indexes) {
+  return call.settled.then(async (settled): Promise<PipelinedOutcome> => {
+    if (
+      !indexes ||
+      settled.status === 'not-run' ||
+      !settled.outcome.ok ||
+      settled.outcome.data.kind !== 'each'
+    ) {
+      return notRun;
+    }
+    const item = await readPipelinedRun(settled.outcome.data.runs, indexes);
+    switch (item.kind) {
+      case 'data':
+        return { kind: 'data', data: item.data };
+      case 'error':
+        return { kind: 'error', error: item.error };
+      case 'missing':
         return notRun;
-      }
-      try {
-        const item = await readPipelinedItem(result.data, indexes);
-        switch (item.kind) {
-          case 'data':
-            return { kind: 'data', data: item.data };
-          case 'error':
-            return {
-              kind: 'error',
-              error: TRPCClientError.from({ error: item.error } as any),
-            };
-          case 'missing':
-            return notRun;
-        }
-      } catch (error) {
-        // A streamed run that failed as it came
-        return failureOfCall(call, error);
-      }
-    },
-    // The call failed as a whole, such as for too many items: it ran for none
-    () => notRun,
-  );
+    }
+  });
 }
 
 /**
