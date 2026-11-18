@@ -738,7 +738,9 @@ function AuthorName(props: {
 - **The load doesn't wait for a list from a prefetch entry.** The items' queries start when the list arrives.
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
-- **A list inside a list that is `null` has no items.** A `null` in a list that `.map()` made looks the same, so it has no query either.
+- **A `null` in the list is an item like any other**, a `null` in a list of lists too. Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items.
+- **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as `'pending'` and idle. No call goes to the server, and it takes nothing from `maxBatchSize`.
+- **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
