@@ -125,14 +125,17 @@ export type ContentOptions = {
 };
 
 export const getUrl: GetUrl = (opts) => {
-  const parts = opts.url.split('?') as [string, string?];
-  const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
+  // Only the first `?` starts the query. A later one is part of a value.
+  const queryStart = opts.url.indexOf('?');
+  const path = queryStart === -1 ? opts.url : opts.url.slice(0, queryStart);
+  const query = queryStart === -1 ? '' : opts.url.slice(queryStart + 1);
+  const base = path.replace(/\/$/, ''); // Remove any trailing slashes
 
   let url = base + '/' + procedurePathToURLPath(opts.path, opts.pathSeparator);
   const queryParts: string[] = [];
 
-  if (parts[1]) {
-    queryParts.push(parts[1]);
+  if (query) {
+    queryParts.push(query);
   }
   if ('inputs' in opts) {
     queryParts.push('batch=1');
