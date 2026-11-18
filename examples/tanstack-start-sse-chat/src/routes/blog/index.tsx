@@ -36,6 +36,7 @@ import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { DevNote, DevNoteText } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
+import { useBlogPreload } from './-components/preload';
 
 /** Every query the list needs. The loader waits for none of them */
 function postListEntries(trpc: TRPC) {
@@ -144,6 +145,7 @@ function PostList(
   }>,
 ) {
   const trpc = useTRPC();
+  const preload = useBlogPreload();
   const postsQuery = useSuspenseInfiniteQuery(
     fromHandle(trpc, props.handles.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -193,7 +195,13 @@ function PostList(
           <Item
             key={post.slug}
             variant="outline"
-            render={<Link to="/blog/$slug" params={{ slug: post.slug }} />}
+            render={
+              <Link
+                to="/blog/$slug"
+                params={{ slug: post.slug }}
+                preload={preload}
+              />
+            }
           >
             <ItemContent>
               <ItemTitle>{post.title}</ItemTitle>

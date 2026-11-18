@@ -28,6 +28,7 @@ import { useTRPC, type TRPC } from '~/lib/trpc';
 import { AuthorCard } from './-components/author-card';
 import { DevFallback, DevNote } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
+import { useBlogPreload } from './-components/preload';
 
 /**
  * Every query the post page needs, from the URL alone. The loader waits for
@@ -135,9 +136,11 @@ function PostError(props: ErrorComponentProps) {
 }
 
 function AllPostsLink() {
+  const preload = useBlogPreload();
   return (
     <Link
       to="/blog"
+      preload={preload}
       className={buttonVariants({
         variant: 'ghost',
         size: 'sm',

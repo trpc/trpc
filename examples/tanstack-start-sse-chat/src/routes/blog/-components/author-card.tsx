@@ -21,6 +21,7 @@ import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import type { PostPageHandles } from '../$slug';
 import { DevFallback, DevNote } from './dev-note';
+import { useBlogPreload } from './preload';
 
 /**
  * The author of a post, and what else their team wrote. The author's id is in
@@ -98,6 +99,7 @@ function MoreFromTeam(
   }>,
 ) {
   const trpc = useTRPC();
+  const preload = useBlogPreload();
   const moreQuery = useSuspenseInfiniteQuery(
     fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -139,6 +141,7 @@ function MoreFromTeam(
             <Link
               to="/blog/$slug"
               params={{ slug: post.slug }}
+              preload={preload}
               className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
               {post.title}
