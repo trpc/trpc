@@ -55,13 +55,54 @@ export function serverList(itemPath: ItemPath) {
 }
 
 /**
- * The list whose elements are the items at `itemPath`, if there is one
- * level of lists: `["items", null]` is the elements of `["items"]`
+ * How the calls of an entry per item go with its list's requests, decided
+ * once, for the first load and for a later fetch of the list alike
  */
-export function listOfElements(itemPath: RequestPath): string[] | null {
-  return itemPath.indexOf(null) === itemPath.length - 1
-    ? (itemPath.slice(0, -1) as string[])
-    : null;
+export interface PerItemPlan {
+  /** The path to the items, with a `null` for each level of lists */
+  itemPath: ItemPath;
+  /**
+   * The server's list in the first request of the list's entry: of an
+   * infinite query, its first page. `null` if it isn't there, or the calls
+   * can't go in that request
+   */
+  first: RequestPath | null;
+  /**
+   * What a later fetch of the list, such as the next page, loads the items'
+   * queries with: the list in the result of any one of its requests, and what
+   * of each element the item is. `null` for a list of lists, a list in the
+   * first page only, or calls that can't go in the list's request
+   */
+  later: { list: string[]; itemRead: string[] } | null;
+}
+
+export function perItemPlan(opts: {
+  list: EntryDataRef;
+  /** The type of the list's entry */
+  listType: HandleType;
+  /** Whether both the entry per item and the list's entry take part in pipelining */
+  pipelines: boolean;
+}): PerItemPlan {
+  const itemPath = itemPathOf(opts.list);
+  if (!opts.pipelines) {
+    return { itemPath, first: null, later: null };
+  }
+  const { each, itemRead } = serverList(itemPath);
+  // In every page's request: not a list of the first page only
+  const inAnyPage =
+    opts.listType === 'query'
+      ? each
+      : each[0] === 'pages' && each[1] === null
+        ? each.slice(2)
+        : null;
+  return {
+    itemPath,
+    first: requestPath({ type: opts.listType, path: each, item: true }),
+    later:
+      inAnyPage && !inAnyPage.includes(null)
+        ? { list: inAnyPage as string[], itemRead }
+        : null,
+  };
 }
 
 /** An item of a list: where it is, by its index at each `null` of the path */

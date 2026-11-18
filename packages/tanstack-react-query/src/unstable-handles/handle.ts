@@ -439,10 +439,11 @@ export function withItemQueries(opts: {
           input: queries.input,
           reads: {
             each: { from: pipeline, path: [...queries.list] },
+            // From the element: the item is `itemRead` of it
             reads: queries.itemInputs.map((itemInput) => ({
               kind: 'item',
               to: itemInput.to,
-              path: itemInput.path,
+              path: [...queries.itemRead, ...itemInput.path],
             })),
           },
         });
@@ -452,9 +453,10 @@ export function withItemQueries(opts: {
         // Before the list's data reaches the components that read the items
         void list.then((data) => {
           const listData = readPipelinePath(data, queries.list, null);
-          for (const [index, item] of Array.isArray(listData)
+          for (const [index, element] of Array.isArray(listData)
             ? listData.entries()
             : []) {
+            const item = readPipelinePath(element, [...queries.itemRead], null);
             const itemResult = resultOfItem(dataOfCall(call), [index]);
             try {
               const options = withPipelinedResult({

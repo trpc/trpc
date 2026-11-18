@@ -100,6 +100,8 @@ export interface PerItemQueries extends experimental_TRPCQueryHandlePerItem<
 > {
   /** The list in a query's data, or in a page of an infinite query */
   readonly list: readonly string[];
+  /** What of each element of the list the item is: `[]` for the element */
+  readonly itemRead: readonly string[];
 }
 
 /** Any query or infinite query handle. */

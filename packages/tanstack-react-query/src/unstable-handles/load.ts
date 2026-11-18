@@ -25,13 +25,7 @@ import { blankInput } from './dataRef';
 import type { EntryQueryOptions, EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
-import {
-  itemPathOf,
-  itemsAt,
-  listOfElements,
-  requestPath,
-  serverList,
-} from './list';
+import { itemPathOf, itemsAt, perItemPlan, requestPath } from './list';
 import type { ListItem } from './list';
 import type { DataPath, RequestPath } from './path';
 import {
@@ -661,11 +655,12 @@ export function beginEntries(opts: {
     /** The list in the result of its entry's request: the first page's, of an infinite query */
     const listPath =
       listSource &&
-      requestPath({
-        type: listSource.leaf.state.type,
-        path: serverList(itemPath).each,
-        item: true,
-      });
+      perItemPlan({
+        list,
+        listType: listSource.leaf.state.type,
+        pipelines:
+          state.request.pipelines && listSource.leaf.state.request.pipelines,
+      }).first;
     const call =
       listSource && listPath && perItem.reads.some(({ ref }) => readsItem(ref))
         ? sendPipelined({
@@ -821,7 +816,7 @@ export function handlesOfLoads(opts: {
   // A list's handle says what its items load, so that a later fetch of the
   // list, such as the next page, can load that in the same request
   for (const [leaf, handle] of handleOfLeaf) {
-    if (leaf.built.by !== 'entryPerItem' || !leaf.state.request.pipelines) {
+    if (leaf.built.by !== 'entryPerItem') {
       continue;
     }
     const source = opts.leafOfEntry.get(leaf.built.list.entry);
@@ -829,20 +824,16 @@ export function handlesOfLoads(opts: {
     if (!source || !sourceHandle) {
       continue;
     }
-    // The items in one request's result: a query's data, or any page
-    const itemPath = itemPathOf(leaf.built.list);
-    const inRequest = requestPath({
-      type: source.state.type,
-      path: itemPath,
-      item: true,
+    const { later } = perItemPlan({
+      list: leaf.built.list,
+      listType: source.state.type,
+      pipelines: leaf.state.request.pipelines && source.state.request.pipelines,
     });
-    // A later fetch reads the items there
-    const list = inRequest ? listOfElements(inRequest) : null;
-    if (list) {
+    if (later) {
       sourceHandle['experimental_perItem'] = [
         ...((sourceHandle['experimental_perItem'] as unknown[] | undefined) ??
           []),
-        { ...handle, list },
+        { ...handle, ...later },
       ];
     }
   }

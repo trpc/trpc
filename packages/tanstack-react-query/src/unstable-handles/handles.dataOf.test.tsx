@@ -718,6 +718,39 @@ describe('review regressions', () => {
     expect(handles.posts.experimental_perItem).toBeUndefined();
   });
 
+  test("a list's handle doesn't load, in later fetches, an entry per item of the first page only, or of a list with a `trpc.context` of its own", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const routed = ensureEntry(
+      trpc.post.byAuthor,
+      { authorId: 'u1' },
+      { trpc: { context: { route: 'posts' } } },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      // The first page's items only: a later page has other items
+      firstPageAuthors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages[0]!.items,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+      routed,
+      routedAuthors: experimental_entryPerItem(
+        experimental_dataOf(routed).items,
+        (id) => prefetchEntry(trpc.author.byId, { id }),
+      ),
+    });
+    expect(handles.posts.experimental_perItem).toBeUndefined();
+    expect(handles.routed.experimental_perItem).toBeUndefined();
+  });
+
   test('an unfinished handle has no undefined in it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
@@ -2322,10 +2355,8 @@ describe.each([
       ),
     });
 
-    const context = ops.find((op) => op.path === 'author.byId')?.context as
-      | Record<PropertyKey, unknown>
-      | undefined;
-    expect(context?.[route]).toBe('authors');
+    const context = ops.find((op) => op.path === 'author.byId')?.context;
+    expect(Reflect.get(context ?? {}, route)).toBe('authors');
   });
 
   test('an entry with a `trpc.context` of its own carries no call of an entry that reads it', async () => {
@@ -2828,6 +2859,49 @@ describe.each([
         trpc.author.byId.queryKey({ id: 'u1' }),
       ),
     ).toMatchObject({ id: 'u1' });
+  });
+
+  test("a list fetched again loads its items' queries from `.map()` in the same request", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles] = await loadHandles(trpc, {
+      post,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(post).tags.map((tag) => tag.id),
+        (id) => prefetchEntry(trpc.author.byId, { id }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.queryClient.removeQueries({
+      queryKey: trpc.author.byId.pathKey(),
+    });
+    resource.onRequestSpy.mockClear();
+
+    // As an invalidation does: the post again, which the cache had
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, handles.post),
+      staleTime: 0,
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 't2' }),
+      ),
+    ).toMatchObject({ id: 't2' });
   });
 
   test("a later page loads its items' queries in the same request", async () => {
