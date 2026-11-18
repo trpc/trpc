@@ -14,6 +14,7 @@ import {
   setSlowQueries,
 } from '~/lib/blog-settings';
 import { useTRPC } from '~/lib/trpc';
+import { RequestMeter } from './-components/request-meter';
 import { BlogPreloadProvider, BlogSettingsBar } from './-components/settings';
 
 export const Route = createFileRoute('/blog')({
@@ -53,6 +54,7 @@ function BlogLayout() {
             }).then(() => (slowChanged ? router.invalidate() : undefined));
           }}
         />
+        <RequestMeter />
         <BlogPreloadProvider value={settings.preload}>
           <Outlet />
         </BlogPreloadProvider>

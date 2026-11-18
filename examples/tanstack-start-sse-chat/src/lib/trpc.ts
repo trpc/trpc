@@ -16,6 +16,7 @@ import {
 } from '@trpc/tanstack-react-query';
 import SuperJSON from 'superjson';
 import { slowQueriesHeaders } from '~/lib/blog-settings';
+import { meteredFetch } from '~/lib/request-meter';
 import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
@@ -66,6 +67,8 @@ const getLinks = createIsomorphicFn()
           methodOverride: 'POST',
           // The blog's "Slow queries" setting, from its search params
           headers: () => slowQueriesHeaders(),
+          // Only for the request meter on the blog pages: it counts the requests
+          fetch: meteredFetch,
         }),
       }),
     ];
