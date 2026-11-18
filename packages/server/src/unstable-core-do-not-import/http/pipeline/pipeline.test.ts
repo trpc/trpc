@@ -1936,6 +1936,40 @@ describe('the limits of a server', () => {
       expect(res.of(withInput)).toEqual([{ data: 1 }, { data: 2 }]);
       expect(echo).toHaveBeenCalledTimes(2);
     });
+
+    test('the keys a run of a node for every item writes its values under count too', async () => {
+      // `{"longField":"x"}` is 17 characters of JSON, though the value is 3
+      const run = async (max: number) => {
+        const list = sent('list', undefined);
+        const each = call({
+          parent: list,
+          path: 'echo',
+          input: {},
+          reads: [{ to: ['longField'], item: [] }],
+          list: [['items']],
+        });
+        const echo = vi.fn(() => null);
+        const { res } = await sendWith({
+          limits: { ...pipelineLimitDefaults, maxFillSize: max },
+          fns: { list: () => ({ items: ['x'] }), echo },
+          sent: [list],
+          calls: [each],
+        });
+        return { outcome: res.of(each), echo };
+      };
+
+      const tooSmall = await run(16);
+      expect(tooSmall.outcome).toEqual([
+        refused(
+          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+        ),
+      ]);
+      expect(tooSmall.echo).not.toHaveBeenCalled();
+
+      const enough = await run(17);
+      expect(enough.outcome).toEqual([{ data: null }]);
+      expect(enough.echo).toHaveBeenCalledWith({ longField: 'x' });
+    });
   });
 });
 

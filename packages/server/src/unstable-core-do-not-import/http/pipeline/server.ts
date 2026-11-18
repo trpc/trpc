@@ -771,11 +771,7 @@ export function pipelineTree(opts: {
             }
           };
           inputs = places.map((place) => {
-            // Every run of a node for an item gets a copy of its whole input
-            if (node.perItem) {
-              add(base);
-            }
-            return asSent(
+            const input = asSent(
               node.reads.reduce((input, read) => {
                 const value = readPipelinePath(
                   read.from === 'item'
@@ -786,10 +782,19 @@ export function pipelineTree(opts: {
                   read.path,
                 );
                 checkValue(value);
-                add(value);
+                if (!node.perItem) {
+                  add(value);
+                }
                 return writePipelinePath({ input, to: read.to, value });
               }, base),
             );
+            // Every run of a node for an item gets a copy of its whole input.
+            // All of it counts, with the keys its values are written under,
+            // before the next is made
+            if (node.perItem) {
+              add(input);
+            }
+            return input;
           });
           if (opts.maxRuns !== null && runs + places.length > opts.maxRuns) {
             throw new TRPCError({

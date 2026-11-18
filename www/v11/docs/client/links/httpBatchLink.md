@@ -253,7 +253,7 @@ const client = createTRPCClient<AppRouter>({
 - You pass it in, so only an app that uses it has its code in its bundle.
 
 - The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
-- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep queries nest, how many values a follow-up reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to the server's, 16 and 3 by default, and a follow-up that would go over them waits for the data it reads and goes in a request of its own.
+- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep queries nest, how many values a follow-up reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to them, 16 and 3 by default, and a follow-up that would go over them waits for the data it reads and goes in a request of its own. The link doesn't ask the server for its limits: when you change the server's, set these to the same or lower, or the server refuses the follow-ups that go over.
 - `maxBatchSize` counts every run in a query tree: each call, and each follow-up once for every item it runs for.
 - A query that reads two queries, neither nested under the other, can't sit in one tree. It goes in a request of its own once their data is there.
 - Other requests are sent as they are without the option.

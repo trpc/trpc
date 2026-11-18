@@ -76,6 +76,11 @@ const createRouter = (transformer: 'none' | 'superjson') => {
     })),
     // Data that JSON has no word for
     nothing: t.procedure.query(() => undefined),
+    // No input parser: nothing reads its input but the pipeline
+    unread: t.procedure.query(() => {
+      calls('unread', undefined);
+      return 3;
+    }),
     // Two lists in one call's data
     lists: t.procedure.query(() => ({
       long: [{ id: 't1' }, { id: 't1' }, { id: 't1' }, { id: 't1' }],
@@ -1231,6 +1236,40 @@ describe('the `tree` search param', () => {
       data: { code: 'BAD_REQUEST' },
     });
     expect(over.calls).not.toHaveBeenCalled();
+  });
+
+  test('a follow-up of a procedure without an input parser is refused, or does not run, as any other', async () => {
+    const unread = (count: number) =>
+      node(
+        'unread',
+        Array.from({ length: count }, (_it, index) => ({
+          to: [`k${index}`],
+          data: ['authorId'],
+        })),
+      );
+    const over = await get({
+      ...defaults,
+      path: 'post',
+      tree: { 0: { unread: unread(2) } },
+      allowPipelining: { maxReadsPerCall: 1 },
+    });
+    expect(over.json[0].children.unread.error).toMatchObject({
+      message:
+        'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
+      data: { code: 'BAD_REQUEST' },
+    });
+    expect(over.calls).not.toHaveBeenCalled();
+
+    const afterFailed = await get({
+      ...defaults,
+      input: { 0: { slug: 'missing' } },
+      path: 'post',
+      tree: { 0: { unread: unread(1) } },
+    });
+    expect(afterFailed.json[0].children.unread.error).toMatchObject({
+      data: { code: 'PRECONDITION_FAILED' },
+    });
+    expect(afterFailed.calls).not.toHaveBeenCalled();
   });
 
   test('`true` refuses a follow-up more than 3 calls deep, or that reads an object, and the rest of the batch runs', async () => {

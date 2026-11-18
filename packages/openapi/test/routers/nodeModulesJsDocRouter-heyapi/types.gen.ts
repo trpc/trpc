@@ -22,6 +22,14 @@ export type TrpcRequestInfo = {
    */
   isBatchCall: boolean;
   /**
+   * Only on a pipelined batch: the limits the server sets on it, and a
+   * function that reads its `tree`, the follow-up calls of the calls in
+   * `calls`. The `tree` isn't validated. A follow-up call isn't in `calls`.
+   */
+  experimental_pipeline?: {
+    limits: PipelineLimits;
+  };
+  /**
    * The procedure calls in the request.
    */
   calls: Array<TrpcRequestInfoProcedureCall>;
@@ -37,6 +45,30 @@ export type TrpcRequestInfo = {
    * The request's URL, if known.
    */
   url: Url | null;
+};
+
+export type PipelineLimits = {
+  /**
+   * The longest value a call reads, in characters of JSON
+   */
+  maxValueLength: number;
+  /**
+   * The most values one call reads
+   */
+  maxReadsPerCall: number;
+  /**
+   * The most a batch fills in, in characters of JSON: every value written
+   * into an input, and the whole input of every run of a call for every item
+   */
+  maxFillSize: number;
+  /**
+   * How deep queries nest: a top-level call is 1
+   */
+  maxDepth: number;
+  /**
+   * Whether a value a call reads can be an object or an array
+   */
+  allowWholeValues: boolean;
 };
 
 export type TrpcRequestInfoProcedureCall = {

@@ -114,7 +114,7 @@ export interface TRPCRequestInfo {
    */
   isBatchCall: boolean;
   /**
-   * Only on a pipelined batch: what the server lets it make it do, and a
+   * Only on a pipelined batch: the limits the server sets on it, and a
    * function that reads its `tree`, the follow-up calls of the calls in
    * `calls`. The `tree` isn't validated. A follow-up call isn't in `calls`.
    * @internal
