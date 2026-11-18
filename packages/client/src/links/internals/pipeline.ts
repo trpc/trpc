@@ -311,7 +311,7 @@ export interface BatchPipelining {
  * data it reads, and goes in a request of its own.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
  */
 export interface experimental_PipeliningLinkOptions {
   /**
@@ -418,7 +418,7 @@ function settlePipelinedBatch(opts: {
  * It is apart from the links so that only an app that uses it has its code.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
  */
 export function experimental_pipelining(
   opts?: experimental_PipeliningLinkOptions,

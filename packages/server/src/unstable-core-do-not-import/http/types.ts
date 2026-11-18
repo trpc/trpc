@@ -178,7 +178,7 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
  * fails as a whole.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
  */
 export interface experimental_PipeliningOptions {
   /**
@@ -266,8 +266,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * runs. A batch with more calls than `maxRuns` fails as a whole.
    *
    * Experimental: it may change in a minor release.
-   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
-   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
    * @default false
    */
   experimental_allowPipelining?: boolean | experimental_PipeliningOptions;

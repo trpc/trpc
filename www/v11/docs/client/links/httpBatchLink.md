@@ -92,7 +92,7 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
    * Lets a query read parts of its input from the data of another query in
    * the same batch. Pass `experimental_pipelining()` from `@trpc/client`.
    * The server must set `experimental_allowPipelining: true`
-   * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
+   * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
    */
   experimental_pipelining?: experimental_Pipelining;
 }
@@ -253,12 +253,12 @@ const client = createTRPCClient<AppRouter>({
 - You pass it in, so only an app that uses it has its code in its bundle.
 
 - The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
-- The server [limits](/docs/client/tanstack-react-query/chained-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to them, 16 and 3 by default, and a call that would go over them waits for the data it reads and goes in a request of its own. The link doesn't ask the server for its limits: when you change the server's, set these to the same or lower, or the server refuses the calls that go over.
+- The server [limits](/docs/client/tanstack-react-query/nested-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to them, 16 and 3 by default, and a call that would go over them waits for the data it reads and goes in a request of its own. The link doesn't ask the server for its limits: when you change the server's, set these to the same or lower, or the server refuses the calls that go over.
 - Other requests are sent as they are without the option.
-- A query that is sent this way isn't an operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/chained-queries#links).
+- A query that is sent this way isn't an operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/nested-queries#links).
 - `httpBatchStreamLink` takes the same option, and sends each result back when it is ready.
 
-See [Chained queries in one request](/docs/client/tanstack-react-query/chained-queries#one-request).
+See [Nested queries in one request](/docs/client/tanstack-react-query/nested-queries#one-request).
 
 ## Disabling request batching
 

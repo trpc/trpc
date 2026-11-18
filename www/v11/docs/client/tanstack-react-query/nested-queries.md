@@ -1,8 +1,8 @@
 ---
-id: chained-queries
-title: Chained queries in one request
-sidebar_label: Chained queries
-slug: /client/tanstack-react-query/chained-queries
+id: nested-queries
+title: Nested queries in one request
+sidebar_label: Nested queries
+slug: /client/tanstack-react-query/nested-queries
 section: "Client Usage"
 parent: "client/tanstack-react-query"
 order: 54
@@ -26,7 +26,7 @@ With [handles](/docs/client/tanstack-react-query/handles) and the functions on t
 
 An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment. It sits next to its component. A page puts several together. All of it loads in one request. But it is plain TypeScript and plain tRPC procedures: there is no schema, no resolver and no build step.
 
-```demo chained-queries
+```demo nested-queries
 ```
 
 :::tip See it in an app
@@ -385,16 +385,64 @@ Its `pipe`, decoded, has the blanks of every call that has any:
 
 ```json
 {
-  "1": [{ "to": ["id"], "from": 0, "path": ["authorId"] }],
-  "2": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }]
+  "1": { "reads": [{ "to": ["id"], "from": 0, "path": ["authorId"] }] },
+  "2": { "reads": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }] }
 }
 ```
 
-- **`pipe`** lists the blanks: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
+Its response has a result for every call, by index, as any batch's:
+
+```json
+[
+  { "result": { "data": { "slug": "hello", "authorId": "u1" } } },
+  { "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } } },
+  { "result": { "data": { "items": [], "nextCursor": null } } }
+]
+```
+
+- **A read is a blank**, `{ to, from, path }`: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), `pipe` is in the body, beside the inputs.
+- **What can be left out is a key, never a place in an array**, where JSON would make `undefined` a `null`: an input a query can have. The inputs are in an object by index for the same reason.
 - **Every call still validates its input** and runs its middleware, as if the browser had sent it.
 - **The server only reads what it sends back anyway**: the data of a call in the same request, as the client gets it.
+- **A call runs once everything it reads is ready.** With `httpBatchStreamLink`, each result arrives as soon as it is ready, in any order.
 - **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the first call's data, as the server did.
 - **Only a request with a blank is sent this way**, as `batch=pipeline`. Every other request is sent as it always was, also with the options on.
+
+A call can also run once for every item of a list. The [post list](#entry-per-item) loads the author of every post, and could load each author's team's posts too:
+
+```http
+GET /post.list,author.byId,post.list?batch=pipeline&input=…&pipe=…
+```
+
+Its `pipe`, decoded:
+
+```json
+{
+  "1": { "each": { "from": 0, "path": ["items"] },
+         "reads": [{ "to": ["id"], "path": ["authorId"] }] },
+  "2": { "reads": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }] }
+}
+```
+
+Its response has the runs of a call for every item in `items`, by the item's index:
+
+```json
+[
+  { "result": { "data": { "items": [{ "authorId": "u1" }, { "authorId": "u9" }] } } },
+  { "items": {
+      "0": { "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } } },
+      "1": { "error": { "message": "No author", "data": { "code": "NOT_FOUND" } } } } },
+  { "items": {
+      "0": { "result": { "data": { "items": [], "nextCursor": null } } },
+      "1": { "error": { "message": "The call this call reads its input from failed", "data": { "code": "PRECONDITION_FAILED" } } } } }
+]
+```
+
+- **`each: { from, path }`** runs a call once for every item of the list at `path` in call `from`'s data. A read without `from` reads the item.
+- **A `null` in its path is a level of lists**: `["pages", null, "items"]` is every item of every page. `items` then has a level for each.
+- **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call that reads calls for the items of two different lists is refused.
+- **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
+- **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
 ### What your links see {#links}
 
@@ -431,7 +479,7 @@ Pipelining is not enabled on the server. Set `experimental_allowPipelining: true
 ```
 
 - **The server says so itself.** The client doesn't guess from the answer, so an error formatter can't hide it, unless it changes the message.
-- **A server older than this option** doesn't know such a request, and reads it as one call, not a batch. With several paths, that is one procedure named after all of them, which `httpBatchLink` gets "not found" for, and nothing runs. With one path, its procedure runs, with the batch's inputs as its input, which its input parser normally refuses. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
+- **A server older than this option** doesn't know such a request, and reads it as one call, not a batch: one procedure named after all of its paths. Such a request always has at least two, so `httpBatchLink` gets "not found", and nothing runs. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
 - **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
 - **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
@@ -494,19 +542,21 @@ This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 ```
 
 - **The rest of the request runs**, unless it has more calls than `maxRuns` allows: then it fails as a whole. Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
-- **The query of that call gets the error**, as it would get the procedure's own. A call for every item runs for no item, and its items each ask by themselves.
+- **The query of that call gets the error**, as it would get the procedure's own. A run of a call for every item fails by itself, and its item's query gets the error. A list whose runs would go over `maxRuns` runs for none of its items, and they each ask by themselves.
 - **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
 
 #### What a value is {#limit-terms}
 
-A **value** is one place in an input that the server fills in from another call's data: `{ id: experimental_dataOf(post).authorId }` reads one. A call for every item reads its values again for every item.
+A **value** is one place in an input that the server fills in from another call's data: `{ id: experimental_dataOf(post).authorId }` reads one. A call for every item reads its values again for every run.
+
+A **run** is one time the server runs a procedure: once for a call, and once for every item for a call that runs in a [frame](#wire).
 
 **Characters of JSON** are how long a value is as JSON, as JavaScript counts a string: `"abc"` is 5, with its quotes, `1024` is 4 and `null` is 4. Escapes count, so a line break in a string is 2. A character is up to 3 bytes in UTF-8, and an emoji counts as 2.
 
 #### `maxDepth` {#limit-depth}
 
-The most calls in a chain, 3 by default. A query that reads nothing is 1, and a call is 1 more than the deepest call it reads. `post.bySlug` → `author.byId` → `post.list` is 3: the post page above.
+The longest chain of reads, 3 by default. A query that reads nothing is 1, and a call is 1 more than the deepest call it reads, the call its list is in too. `post.bySlug` → `author.byId` → `post.list` is 3: the post page above.
 
 - **Why 3:** a page rarely needs more steps than that, and every step waits for the one before it.
 - **Raise it** for a page that really chains more, and set the link's `maxDepth` to the same.
@@ -536,14 +586,14 @@ Whether a value can be an object or a list: `false` by default. Without it, a va
 
 #### `maxFillSize` {#limit-fill-size}
 
-The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call for every item, it counts the whole input of every run instead, keys and all, as each run gets its own copy.
+The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call that runs in a frame, for every item, it counts the whole input of every run instead, keys and all, as each run gets its own copy. A run that would go over it fails by itself.
 
 - **Why 100,000:** the other limits keep a call small. This one keeps the whole request small, as it can have many calls, and a call can run for many items.
 - **Raise it** with `maxValueLength` or `allowWholeValues`, if a request of yours fills in more.
 
 #### `maxRuns` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is a run, and a call for every item is a run for each item. A call for every item that would go over it is refused, and its items each ask by themselves.
+The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and they each ask by themselves. In a list of lists, that is each inner list by itself.
 
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load an entry for every item of long lists.
@@ -653,7 +703,7 @@ A list often needs a query for every row: the author of every post. Without help
 
 `experimental_entryPerItem(list, (item) => entry)` loads an entry for every item of a list in another entry's data. With [one request](#one-request), the server runs it for every item it finds.
 
-```demo chained-queries start=list
+```demo nested-queries start=list
 ```
 
 ```ts twoslash title='post-list.entries.ts'
@@ -754,9 +804,9 @@ function AuthorName(props: {
 - **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
-- **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
-- **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A call for more than that is refused too. See [Limits](#limits).
-- **One list at a time.** The server runs a call for the items of one list. The items of a list inside a list load in a second request. The pages of an infinite entry are the exception: their items load with the first page.
+- **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server runs the call for none of the list's items, and each item asks by itself.
+- **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](#limits).
+- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page: the items of a later page load with that page, as [below](#later-fetches).
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
@@ -772,14 +822,10 @@ Content-Type: application/json
   "0": { "cursor": 10, "direction": "forward" },
   "1": {},
   "pipe": {
-    "1": [
-      {
-        "to": ["id"],
-        "from": 0,
-        "path": ["items", null, "authorId"],
-        "each": true
-      }
-    ]
+    "1": {
+      "each": { "from": 0, "path": ["items"] },
+      "reads": [{ "to": ["id"], "path": ["authorId"] }]
+    }
   }
 }
 ```
@@ -1082,8 +1128,8 @@ Use this page's way when you'd rather keep the procedures small.
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
-- **Set the link's `maxItems` to it, or lower**, and to `maxRuns` or lower: 100 by default. A request with more calls than either fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
-- **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call that would go over one is refused: it fails, or its items each ask by themselves.
+- **Set the link's `maxItems` to it, or lower**, and to `maxRuns` or lower: 100 by default. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items each ask by themselves.
+- **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain of reads is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call or a run that would go over one is refused, and fails by itself.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
