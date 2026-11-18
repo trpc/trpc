@@ -447,15 +447,14 @@ describe.each([
       ['post', { slug: 'hello' }],
       ['author', { id: 'ada' }],
     ]);
-    // A node is [path, reads, children, input], and a read [to, from]
+    // A node is { p, r, c?, i? }, and a read [to, from]
     const tree = {
       0: [
-        [
-          'author',
-          [[['id'], ['authorId']]],
-          [],
-          transformer.input.serialize({}),
-        ],
+        {
+          p: 'author',
+          r: [[['id'], ['authorId']]],
+          i: transformer.input.serialize({}),
+        },
       ],
     };
     expect(res.wire).toEqual(
@@ -1182,7 +1181,9 @@ describe('a list', () => {
 
     // A list of the data itself has one level, with no path
     expect(res.wire.body).toMatchObject({
-      tree: { 0: [[[[]], [['echo', [[['id'], ['id'], 0]], [], {}]]]] },
+      tree: {
+        0: [{ l: [[]], c: [{ p: 'echo', r: [[['id'], ['id'], 0]], i: {} }] }],
+      },
     });
     expect(res.of(each)).toEqual([
       { data: { id: 'a' } },
@@ -1251,13 +1252,9 @@ describe('a list', () => {
     // Not a list of `pages` with a list of `items` inside it: one way to
     // write it, which also keeps how deep a tree goes to what `maxDepth`
     // allows
+    const ofItem = { p: 'echo', r: [[['id'], ['id'], 0]], i: {} };
     const tree = {
-      0: [
-        [
-          [['pages']],
-          [[[['items']], [['echo', [[['id'], ['id'], 0]], [], {}]]]],
-        ],
-      ],
+      0: [{ l: [['pages']], c: [{ l: [['items']], c: [ofItem] }] }],
     };
     const response = await fetch(
       `${server.url}/pages?batch=tree&tree=${encodeURIComponent(JSON.stringify(tree))}`,
@@ -2405,6 +2402,48 @@ describe('the order things happen in', () => {
     // The author doesn't wait for the team under it
     expect(res.arrived).toEqual(['post', 'author', 'other', 'slowTeam']);
   });
+
+  test('streamed, a child that is ready before the ones before it arrives first: nothing waits for its position', async () => {
+    const wait = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+    await using server = serve({
+      ...defaults,
+      stream: true,
+      fns: {
+        post: async () => ({ id: 'p' }),
+        slow: async () => {
+          await wait(60);
+          return 'slow';
+        },
+        fast: async () => 'fast',
+      },
+    });
+    const post = sent('post', undefined);
+    const under = (path: string) =>
+      call({
+        parent: post,
+        path,
+        input: {},
+        reads: [[['id'], ['id']]],
+        list: null,
+      });
+    // At position 0 and 1
+    const slow = under('slow');
+    const fast = under('fast');
+
+    const res = await send({
+      ...defaults,
+      stream: true,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [slow, fast],
+    });
+
+    expect(res.arrived).toEqual(['post', 'fast', 'slow']);
+    expect(res.of(slow)).toEqual({ data: 'slow' });
+    expect(res.of(fast)).toEqual({ data: 'fast' });
+  });
 });
 
 describe('what a client puts in a request', () => {
@@ -2468,26 +2507,23 @@ describe('what a client puts in a request', () => {
     expect(planned.left).toEqual([orphan]);
   });
 
-  test('two nodes with the same path at one place sit side by side, by position, and an input left out is not in the tree', () => {
+  test('two nodes with the same path at one place sit side by side, by position, and what a node does not have is a key left out', () => {
     const again = call({ ...author, parent: post, input: undefined });
-    const teamOfAgain = call({ ...team, parent: again });
-    const planned = plan([author, again, team, teamOfAgain], () => true);
-    // No input: the node ends with its children, or its reads
+    const planned = plan([author, again, team], () => true);
     expect(planned.tree).toEqual({
       0: [
-        [
-          'author',
-          [[['id'], ['authorId']]],
-          [['team', [[['id'], ['teamId']]]]],
-          {},
-        ],
-        [
-          'author',
-          [[['id'], ['authorId']]],
-          [['team', [[['id'], ['teamId']]]]],
-        ],
+        {
+          p: 'author',
+          r: [[['id'], ['authorId']]],
+          c: [{ p: 'team', r: [[['id'], ['teamId']]] }],
+          i: {},
+        },
+        { p: 'author', r: [[['id'], ['authorId']]] },
       ],
     });
+    // No input is no `i`, never `undefined`, which an array would make `null`:
+    // an input a call can have
+    expect(JSON.stringify(planned.tree)).not.toContain('null');
     const steps = (it: Call): PipelineStep[] | undefined =>
       planned.places.get(it)?.steps;
     expect(steps(again)).toEqual([{ kind: 'node', at: 1 }]);
@@ -2588,12 +2624,12 @@ describe('paths', () => {
 });
 
 describe('a request the server refuses, before anything of it runs', () => {
-  const author = ['author', [[['id'], ['authorId']]]];
-  const node = (...rest: unknown[]) => ({ 0: [['author', ...rest]] });
-  const read = (value: unknown) => node([value]);
+  const author = { p: 'author', r: [[['id'], ['authorId']]] };
+  const node = (more: object) => ({ 0: [{ p: 'author', ...more }] });
+  const read = (value: unknown) => node({ r: [value] });
   const childOrList =
-    'expected a node, [path, reads, children?, input?], or a list, [levels, nodes], at 0.0';
-  const notANode = 'expected a node, [path, reads, children?, input?], at 0.0';
+    'expected a node, { p, r, c?, i? }, or a list, { l, c }, at 0.0';
+  const notANode = 'expected a node, { p, r, c?, i? }, at 0.0';
   const notARead = 'expected a read, [to, from, up?], at 0.0 read 0';
   test.each<{ name: string; tree: unknown; message: string }>([
     { name: 'a tree that is not JSON', tree: '{nope', message: 'not JSON' },
@@ -2619,53 +2655,53 @@ describe('a request the server refuses, before anything of it runs', () => {
     },
     {
       name: 'a child that is neither a node nor a list',
-      tree: { 0: ['author'] },
+      tree: { 0: [['author', []]] },
       message: childOrList,
     },
     {
       name: 'a list without levels',
-      tree: { 0: [[[], [author]]] },
+      tree: { 0: [{ l: [], c: [author] }] },
       message: childOrList,
     },
     {
       name: 'a list whose levels are no paths',
-      tree: { 0: [[[[1]], [author]]] },
+      tree: { 0: [{ l: [[1]], c: [author] }] },
       message: childOrList,
     },
     {
       name: 'a list whose nodes are no list',
-      tree: { 0: [[[['items']], {}]] },
+      tree: { 0: [{ l: [['items']], c: {} }] },
       message: childOrList,
     },
     {
-      name: 'a list with something else too',
-      tree: { 0: [[[['items']], [author], 'x']] },
+      name: 'a list with another key',
+      tree: { 0: [{ l: [['items']], c: [author], x: 1 }] },
       message: childOrList,
     },
     {
       name: 'a list right under a list',
-      tree: { 0: [[[['pages']], [[[['items']], [author]]]]] },
+      tree: { 0: [{ l: [['pages']], c: [{ l: [['items']], c: [author] }] }] },
       message: "a list's children are nodes: expected one at 0.0.0",
     },
     {
       name: 'a node with an empty path',
-      tree: { 0: [['', []]] },
+      tree: node({ p: '', r: [] }),
       message: notANode,
     },
-    { name: 'a node without reads', tree: node(), message: notANode },
+    { name: 'a node without reads', tree: node({}), message: notANode },
     {
       name: 'a node whose reads are no list',
-      tree: node({}),
+      tree: node({ r: {} }),
       message: notANode,
     },
     {
       name: 'a node whose children are no list',
-      tree: node([], {}),
+      tree: node({ r: [], c: {} }),
       message: notANode,
     },
     {
-      name: 'a node with something else too',
-      tree: node([], [], {}, 'x'),
+      name: 'a node with another key',
+      tree: node({ r: [], x: 1 }),
       message: notANode,
     },
     {
@@ -2711,12 +2747,14 @@ describe('a request the server refuses, before anything of it runs', () => {
     },
     {
       name: 'a read of the item of a call that runs once',
-      tree: { 0: [[...author, [['team', [[[], [], -1]]]]]] },
+      tree: node({ ...author, c: [{ p: 'team', r: [[[], [], -1]] }] }),
       message: 'a read at 0.0.0 read 0 reaches no item above it',
     },
     {
       name: 'a read of an item above the top-level call',
-      tree: { 0: [[[['items']], [['author', [[[], [], -3]]]]]] },
+      tree: {
+        0: [{ l: [['items']], c: [{ p: 'author', r: [[[], [], -3]] }] }],
+      },
       message: 'a read at 0.0.0 read 0 reaches no item above it',
     },
   ])('$name', async (scenario) => {
@@ -2741,9 +2779,28 @@ describe('a request the server refuses, before anything of it runs', () => {
     expect(ran).toEqual([]);
   });
 
+  test("a read's `up` that is `null`, as JSON makes `undefined` in an array, is left out: the parent's data", async () => {
+    const { fns, ran } = blog();
+    await using server = serve({ ...defaults, fns });
+    const read = [['id'], ['authorId'], undefined];
+    const tree = { 0: [{ p: 'author', r: [read], i: {} }] };
+    expect(JSON.stringify(tree)).toContain('null');
+
+    const response = await fetch(`${server.url}/post?batch=tree`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ 0: { slug: 'hello' }, tree }),
+    });
+
+    expect((await response.json())[0].children[0]).toEqual({
+      result: { data: authors[0] },
+    });
+    expect(ran).toContainEqual(['author', { id: 'ada' }]);
+  });
+
   test('a node deeper than the server goes is not looked at', () => {
     const plan = parsePipelineTree({
-      tree: { 0: [['a', [], ['anything']]] },
+      tree: { 0: [{ p: 'a', r: [], c: ['anything'] }] },
       calls: 1,
       maxDepth: 1,
       maxRuns: pipelineLimitDefaults.maxRuns,
@@ -2921,12 +2978,12 @@ describe('properties named `__proto__` or `constructor`', () => {
         echo,
       },
     });
-    const ofItem = ['echo', [[['id'], ['id'], 0]], [], {}];
+    const ofItem = { p: 'echo', r: [[['id'], ['id'], 0]], i: {} };
     const tree = {
       0: [
-        ['echo', [[['n'], ['__proto__', '0', 'id']]], [], {}],
-        [[['__proto__']], [ofItem]],
-        [[['constructor']], [ofItem]],
+        { p: 'echo', r: [[['n'], ['__proto__', '0', 'id']]], i: {} },
+        { l: [['__proto__']], c: [ofItem] },
+        { l: [['constructor']], c: [ofItem] },
       ],
     };
 
@@ -2937,11 +2994,11 @@ describe('properties named `__proto__` or `constructor`', () => {
     });
     const json = await response.json();
 
-    expect(json[0].children).toEqual([
-      { result: { data: { n: 'a' } } },
-      [[{ result: { data: { id: 'a' } } }]],
-      [],
-    ]);
+    expect(json[0].children).toEqual({
+      0: { result: { data: { n: 'a' } } },
+      1: { 0: { 0: { result: { data: { id: 'a' } } } } },
+      2: {},
+    });
     expect(prototypes().map((it) => Object.keys(it))).toEqual(before);
     expect(({} as Record<string, unknown>)['n']).toBeUndefined();
   });

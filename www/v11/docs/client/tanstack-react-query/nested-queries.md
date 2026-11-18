@@ -369,11 +369,11 @@ export const client = createTRPCClient<AppRouter>({
 
 ### What goes over the wire {#wire}
 
-A request carries a **query tree** for each top-level call: the queries nested under it. The format is for machines: tuples, by position, with nothing named that the position says.
+A request carries a **query tree** for each top-level call: the queries nested under it. The format is terse, for machines. What can be left out is a key, never a place in an array, where JSON would make `undefined` a `null`: an input a query can have. A batch's inputs are in an object by index for the same reason.
 
-- **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, `[path, reads, children, input]`. A node without children or input leaves them out.
+- **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, `{ p, r, c, i }`: its path, reads, children and input. A node without children or input leaves the key out.
 - **Children** are a list: the nodes under a query, and lists.
-- **A list** is `[levels, nodes]`. Its nodes run once for every item of the list at `levels` in the data they are under: `[["items"]]` is every item of `items`, `[["pages"], ["items"]]` a list of lists, and `[[]]` the data itself, for a query that returns a list.
+- **A list** is `{ l, c }`. Its nodes, `c`, run once for every item of the list at `l` in the data they are under: `[["items"]]` is every item of `items`, `[["pages"], ["items"]]` a list of lists, and `[[]]` the data itself, for a query that returns a list.
 - **A read** fills in a part of a follow-up's input: `[to, from, up]`. `to` is where it goes, and `from` where it comes from. `up` says from what: 1, the default, is the data of the query above, and 2 the one above that. 0 is the item a run is for.
 
 A chain, such as `post.bySlug` → `author.byId` → `post.list`, is a tree with one branch. A tree can also branch, and run once for every item of a list.
@@ -394,35 +394,35 @@ Content-Type: application/json
   "0": { "slug": "hello" },
   "tree": {
     "0": [
-      ["author.byId", [[["id"], ["authorId"]]], [
-        ["post.list", [[["teamId"], ["teamId"]]], [], { "direction": "forward" }]
-      ], {}]
+      { "p": "author.byId", "r": [[["id"], ["authorId"]]], "i": {}, "c": [
+        { "p": "post.list", "r": [[["teamId"], ["teamId"]]], "i": { "direction": "forward" } }
+      ] }
     ]
   }
 }
 ```
 
-The response has the result of each follow-up at the same position, under `children`:
+The response has the result of each follow-up under `children`, by its position:
 
 ```json
 [
   {
     "result": { "data": { "slug": "hello", "authorId": "u1", "tags": [] } },
-    "children": [
-      {
+    "children": {
+      "0": {
         "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } },
-        "children": [
-          { "result": { "data": { "items": [], "nextCursor": null } } }
-        ]
+        "children": {
+          "0": { "result": { "data": { "items": [], "nextCursor": null } } }
+        }
       }
-    ]
+    }
   }
 ]
 ```
 
 - **Every follow-up still validates its input** and runs its middleware, as if the browser had sent it.
 - **The server only reads what it sends back anyway**: the data of the queries a follow-up is nested under, as the client gets it.
-- **With `httpBatchStreamLink`, each follow-up arrives as soon as it is ready**, before the ones under it. Each part of the tree is a value of its own in the stream, a list's items too, so nothing waits for the slowest query in the tree.
+- **With `httpBatchStreamLink`, each follow-up arrives as soon as it is ready**, before the ones under it, and before the ones before it. Each part of the tree is a value of its own in the stream, a list's items too, so nothing waits for the slowest query in the tree, or for its position. Results are in objects by position, so they can arrive in any order.
 - **A follow-up whose query failed doesn't run.** Each child of that query gets an error with the code `PRECONDITION_FAILED`. A run for one item fails by itself.
 - **Each result is an ordinary cache entry**, under the key of its filled-in input. The client works that input out from the data above, as the server did.
 - **A follow-up reads only the queries it is nested under.** One that reads two queries, neither nested under the other, can't sit in one tree. See [When it isn't one request](#fallback).
@@ -805,7 +805,7 @@ Content-Type: application/json
   "0": { "cursor": 10, "direction": "forward" },
   "tree": {
     "0": [
-      [[["items"]], [["author.byId", [[["id"], ["authorId"], 0]], [], {}]]]
+      { "l": [["items"]], "c": [{ "p": "author.byId", "r": [[["id"], ["authorId"], 0]], "i": {} }] }
     ]
   }
 }
@@ -819,11 +819,13 @@ The response has the page, and an author for every item of it:
     "result": {
       "data": { "items": [{ "slug": "next", "authorId": "u2" }], "nextCursor": 20 }
     },
-    "children": [
-      [
-        [{ "result": { "data": { "id": "u2", "name": "Sam", "teamId": "t1" } } }]
-      ]
-    ]
+    "children": {
+      "0": {
+        "0": {
+          "0": { "result": { "data": { "id": "u2", "name": "Sam", "teamId": "t1" } } }
+        }
+      }
+    }
   }
 ]
 ```

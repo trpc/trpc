@@ -8,9 +8,16 @@
  * soon as the data it reads is there, so queries that nest cost one round
  * trip.
  *
- * The format is positional, for machines rather than people: a node is a
- * tuple, children are a list, and a response has its results at the
- * positions the request had its children at.
+ * The format is terse, for machines rather than people, and safe to write
+ * with `JSON.stringify`:
+ *
+ * - What can be left out is a key, never a position. In an array,
+ *   `undefined` becomes `null`, which is a value an input can have, so a call
+ *   without an input would get `null`. A batch's inputs are by index in an
+ *   object for the same reason (trpc/trpc#669).
+ * - A response has the results of a call's children, and the items of a
+ *   list, in objects by position, so nothing about them depends on the order
+ *   they are ready in, and a stream sends each when it is.
  *
  * The client's half is in `./client`, the server's in `./server`. Both are
  * tested against each other, over HTTP, in `./pipeline.test.ts`.
@@ -27,11 +34,11 @@
  *   "0": { "cursor": 10 },
  *   "tree": {
  *     "0": [
- *       [[["items"]], [
- *         ["author.byId", [[["id"], ["authorId"], 0]], [
- *           ["post.byTeam", [[["teamId"], ["teamId"]]]]
- *         ]]
- *       ]]
+ *       { "l": [["items"]], "c": [
+ *         { "p": "author.byId", "r": [[["id"], ["authorId"], 0]], "c": [
+ *           { "p": "post.byTeam", "r": [[["teamId"], ["teamId"]]] }
+ *         ] }
+ *       ] }
  *     ]
  *   }
  * }
@@ -39,40 +46,40 @@
  *
  * - The tree has the children of each top-level call that has any, by the
  *   call's index.
- * - **Children** are a list of nodes and lists, in an order the response
- *   keeps.
- * - A **node** is a follow-up call: `[path, reads, children?, input?]`.
- *   `input` is as a top-level call's input, through the transformer, with
- *   what the server fills in left out. No children is `[]`.
- * - A **list** is `[levels, nodes]`: its nodes run once for every item of a
- *   list in the data of the call they are under. `levels` has the path to
- *   each level of lists, so `[["pages"], ["items"]]` is every item of every
- *   page, and `[[]]` every item of data that is a list. A list's children
- *   are nodes.
+ * - **Children** are a list of nodes and lists. The response has their
+ *   results at the same positions.
+ * - A **node** is a follow-up call: `{ p, r, c?, i? }`, its path, reads,
+ *   children and input. `i` is as a top-level call's input, through the
+ *   transformer, with what the server fills in left out.
+ * - A **list** is `{ l, c }`: its nodes, `c`, run once for every item of a
+ *   list in the data of the call they are under. `l` has the path to each
+ *   level of lists, so `[["pages"], ["items"]]` is every item of every page,
+ *   and `[[]]` every item of data that is a list.
  * - A **read** fills a part of a node's input: `[to, from, up?]`. See
  *   {@link PipeRead}.
  *
  * ## The response
  *
  * A list of the top-level calls' outcomes, as in any batch. A call that had
- * children has `children` next to its outcome, a list with a result at the
- * position of each of its children:
+ * children has `children` next to its outcome: their results, by position.
  *
  * ```json
  * [
  *   {
  *     "result": { "data": { "items": [{ "authorId": "ada" }] } },
- *     "children": [
- *       [
- *         [{ "result": { "data": { "teamId": 1 } }, "children": [...] }]
- *       ]
- *     ]
+ *     "children": {
+ *       "0": {
+ *         "0": {
+ *           "0": { "result": { "data": { "teamId": 1 } }, "children": {...} }
+ *         }
+ *       }
+ *     }
  *   }
  * ]
  * ```
  *
- * - A list has the children of every item, in the order of the items, one
- *   level of lists for each level. What isn't a list has no items: `[]`.
+ * - A list has the children of every item, by the item's index, one level
+ *   for each level of lists. What isn't a list has no items: `{}`.
  * - A node has its outcome, `{ result }` or `{ error }`, as a top-level
  *   call's, with its own `children` if it had any.
  * - A node that fails, or doesn't run, gives each of its children an
@@ -85,11 +92,11 @@
  * `httpBatchStreamLink`'s response is the JSON Lines stream that tRPC
  * streams every batch with: a first line with the shape, where every value
  * that isn't ready yet is a placeholder, and a line for each one as it gets
- * ready. A node's outcome is a placeholder of its own, so each node arrives
- * as soon as it is ready, and a node's children are one more, ready as soon
- * as the node's data is there. Children and a list's items are objects by
- * position there, not lists, as the stream only has placeholders in
- * objects. A subtree is complete once every placeholder in it is.
+ * ready, in any order. It has the same shape as a response that isn't
+ * streamed. A node's outcome is a placeholder of its own, so each node
+ * arrives as soon as it is ready, and a node's children are one more, ready
+ * as soon as the node's data is there. A subtree is complete once every
+ * placeholder in it is.
  */
 
 /**
@@ -115,28 +122,38 @@ export type PipelinePath = (string | null)[];
  *   of the call above that, and so on.
  * - 0 is the item the node runs for, under a list, -1 the item the call it
  *   is under runs for, and so on.
+ *
+ * `up` is the one thing in it that can be left out, and `null`, which
+ * `JSON.stringify` makes of `undefined` in an array, is left out too.
  */
 export type PipeRead =
   | [to: string[], from: PipelinePath]
-  | [to: string[], from: PipelinePath, up: number];
+  | [to: string[], from: PipelinePath, up: number | null];
+
+/** A follow-up call as it is in a request */
+export interface PipeNode {
+  /** The procedure's path */
+  p: string;
+  /** Its reads */
+  r: PipeRead[];
+  /** Its children */
+  c?: PipeChild[];
+  /** Its input as the client sent it, with what the server fills in left out */
+  i?: unknown;
+}
 
 /**
- * A follow-up call as it is in a request: `[path, reads, children?,
- * input?]`. No children is `[]`, and no input is left out.
+ * A list as it is in a request: its nodes run once for every item of the
+ * list, which is in the data of the call they are under
  */
-export type PipeNode =
-  | [path: string, reads: PipeRead[]]
-  | [path: string, reads: PipeRead[], children: PipeChild[]]
-  | [path: string, reads: PipeRead[], children: PipeChild[], input: unknown];
+export interface PipeList {
+  /** The path to each level of lists */
+  l: string[][];
+  /** The nodes that run for every item */
+  c: PipeNode[];
+}
 
-/**
- * A list as it is in a request, `[levels, nodes]`: the nodes run once for
- * every item of the list, which is at `levels` in the data of the call they
- * are under, one path for each level of lists
- */
-export type PipeList = [levels: string[][], nodes: PipeNode[]];
-
-/** A call's child: a node, whose path is a string, or a list */
+/** A call's child: a node, which has a path, or a list, which has levels */
 export type PipeChild = PipeNode | PipeList;
 
 /** A request's tree: the children of each top-level call, by its index */
@@ -144,26 +161,24 @@ export type PipeTree = Record<string, PipeChild[]>;
 
 /** The outcome of a call, as it is in a response */
 export type PipeOutcome<TError> =
-  | { result: { data: unknown }; children?: PipeChildResponse<TError>[] }
-  | { error: TError; children?: PipeChildResponse<TError>[] };
+  | { result: { data: unknown }; children?: PipeChildrenResponse<TError> }
+  | { error: TError; children?: PipeChildrenResponse<TError> };
+
+/** The results of a call's children in a response, by position */
+export interface PipeChildrenResponse<TError> {
+  [at: string]:
+    | PipeOutcome<TError>
+    | PipeListResponse<TError>
+    | { error: TError };
+}
 
 /**
- * What a response has for a child: a node's outcome, a list's items, or an
- * error in place of either
+ * A list's items in a response, by index, one level for each level of
+ * lists: the results of the list's nodes for each item
  */
-export type PipeChildResponse<TError> =
-  | PipeOutcome<TError>
-  | PipeListResponse<TError>
-  | { error: TError };
-
-/**
- * A list's items in a response, one level of lists for each level: the
- * children of each item, at the positions of the list's nodes
- */
-export type PipeListResponse<TError> = (
-  | PipeChildResponse<TError>[]
-  | PipeListResponse<TError>
-)[];
+export interface PipeListResponse<TError> {
+  [index: string]: PipeChildrenResponse<TError> | PipeListResponse<TError>;
+}
 
 /**
  * What the server lets a pipelined batch make it do. Each value a call reads

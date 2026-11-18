@@ -1073,15 +1073,17 @@ describe('the `tree` search param', () => {
     allowPipelining: true,
     maxBatchSize: undefined,
   } as const;
-  /** A follow-up of `path`, with an empty input: [path, reads, children, input] */
-  const node = (path: string, reads: unknown[], children: unknown[] = []) => [
-    path,
-    reads,
-    children,
-    {},
-  ];
-  /** The nodes under a list, which run for every item of it */
-  const list = (levels: string[][], ...nodes: unknown[]) => [levels, nodes];
+  /** A follow-up of `path`: `{ p, r, c?, i? }` */
+  const node = (
+    path: string,
+    reads: unknown[],
+    more: { c?: unknown[]; i?: unknown } = {},
+  ) => ({ p: path, r: reads, i: {}, ...more });
+  /** The nodes under a list, which run for every item of it: `{ l, c }` */
+  const list = (levels: string[][], ...nodes: unknown[]) => ({
+    l: levels,
+    c: nodes,
+  });
   const author = node('author', [[['id'], ['authorId']]]);
 
   test('fills in the input of a follow-up', async () => {
@@ -1090,9 +1092,10 @@ describe('the `tree` search param', () => {
       path: 'post',
       tree: { 0: [author] },
     });
-    expect(res.json[0].children).toEqual([
-      { result: { data: { id: 'u1', teamId: 'team-of-u1' } } },
-    ]);
+    // By position, as each child's result is
+    expect(res.json[0].children).toEqual({
+      0: { result: { data: { id: 'u1', teamId: 'team-of-u1' } } },
+    });
   });
 
   test('`null` in a path reads every item of an array', async () => {
@@ -1120,31 +1123,34 @@ describe('the `tree` search param', () => {
         allowPipelining: { allowWholeValues: true },
         tree: {
           0: [
-            list(levels, [
-              'tags',
-              [[['ids', '0'], item, 0]],
-              [],
-              { ids: [null, 'extra'] },
-            ]),
+            list(
+              levels,
+              node('tags', [[['ids', '0'], item, 0]], {
+                i: { ids: [null, 'extra'] },
+              }),
+            ),
           ],
         },
       });
 
     const res = await each(['id']);
-    expect(res.json[0].children[0]).toEqual([
-      [{ result: { data: ['t1', 'extra'] } }],
-      [{ result: { data: ['t2', 'extra'] } }],
-    ]);
+    // By the item's index, and the node's position
+    expect(res.json[0].children[0]).toEqual({
+      0: { 0: { result: { data: ['t1', 'extra'] } } },
+      1: { 0: { result: { data: ['t2', 'extra'] } } },
+    });
 
     // Every run validates its own input
     const invalid = await each([]);
     expect(
-      invalid.json[0].children[0].map(([tags]: any[]) => tags.error.data.code),
+      Object.values(invalid.json[0].children[0]).map(
+        (item: any) => item[0].error.data.code,
+      ),
     ).toEqual(['BAD_REQUEST', 'BAD_REQUEST']);
 
     // What is no list has no items
     const noList = await each(['id'], [['slug']]);
-    expect(noList.json[0].children[0]).toEqual([]);
+    expect(noList.json[0].children[0]).toEqual({});
   });
 
   test('a run for an item that returns a stream fails by itself', async () => {
@@ -1155,7 +1161,9 @@ describe('the `tree` search param', () => {
     });
     // Not `{}`, which is what a stream inside a response that doesn't stream would be
     expect(
-      res.json[0].children[0].map(([ticks]: any[]) => ticks.error.data.code),
+      Object.values(res.json[0].children[0]).map(
+        (item: any) => item[0].error.data.code,
+      ),
     ).toEqual(['UNSUPPORTED_MEDIA_TYPE', 'UNSUPPORTED_MEDIA_TYPE']);
   });
 
@@ -1176,7 +1184,11 @@ describe('the `tree` search param', () => {
       ...defaults,
       path: 'post',
       tree: {
-        0: [['tags', [[['ids', 'length'], ['authorId']]], [], { ids: ['a'] }]],
+        0: [
+          node('tags', [[['ids', 'length'], ['authorId']]], {
+            i: { ids: ['a'] },
+          }),
+        ],
       },
     });
     expect(res.json[0].children[0].error).toMatchObject({
@@ -1260,22 +1272,18 @@ describe('the `tree` search param', () => {
       path: 'post',
       tree: {
         0: [
-          node(
-            'author',
-            [[['id'], ['authorId']]],
-            [
-              [
-                'team',
-                [[[], ['teamId']]],
-                [node('author', [[['id'], ['id']]])],
-              ],
+          node('author', [[['id'], ['authorId']]], {
+            c: [
+              node('team', [[[], ['teamId']]], {
+                c: [node('author', [[['id'], ['id']]])],
+              }),
             ],
-          ),
+          }),
           node('author', [[['id'], ['tags']]]),
         ],
       },
     });
-    const [team] = res.json[0].children[0].children;
+    const team = res.json[0].children[0].children[0];
     expect(team.result.data).toEqual({ id: 'team-of-u1' });
     expect(team.children[0].error).toMatchObject({
       message: 'This call is nested 4 deep, more than `maxDepth` (3) allows',
@@ -1334,7 +1342,7 @@ describe('the `tree` search param', () => {
       maxBatchSize: 3,
       tree: tagOfEach,
     });
-    expect(within.json[0].children[0]).toHaveLength(2);
+    expect(Object.keys(within.json[0].children[0])).toHaveLength(2);
     expect(within.calls).toHaveBeenCalledTimes(2);
 
     const over = await get({
@@ -1367,7 +1375,7 @@ describe('the `tree` search param', () => {
     expect(res.json[0].children[0].error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );
-    expect(res.json[0].children[1]).toHaveLength(2);
+    expect(Object.keys(res.json[0].children[1])).toHaveLength(2);
     expect(res.calls).toHaveBeenCalledTimes(2);
   });
 
@@ -1379,13 +1387,10 @@ describe('the `tree` search param', () => {
       tree: {
         0: [
           // The whole post as the input, and then its slug replaced
-          [
-            'post',
-            [
-              [[], []],
-              [['slug'], ['authorId']],
-            ],
-          ],
+          node('post', [
+            [[], []],
+            [['slug'], ['authorId']],
+          ]),
           node('post', [
             [['other'], ['authorId']],
             [['slug'], ['slug']],
@@ -1393,7 +1398,7 @@ describe('the `tree` search param', () => {
         ],
       },
     });
-    const [first, second] = res.json[0].children;
+    const { 0: first, 1: second } = res.json[0].children;
     expect(first.result.data.slug).toBe('u1');
     // Not `u1`: the post's data is as it was sent
     expect(second.result.data.slug).toBe('hello');
@@ -1406,21 +1411,19 @@ describe('the `tree` search param', () => {
       allowPipelining: { allowWholeValues: true },
       tree: {
         0: [
-          node(
-            'stamp',
-            [[['tags'], ['tags']]],
-            [
+          node('stamp', [[['tags'], ['tags']]], {
+            c: [
               // Reads the tags once the stamp has run
               node('tags', [
                 [['after'], []],
                 [['ids'], ['tags', null, 'id'], 2],
               ]),
             ],
-          ),
+          }),
         ],
       },
     });
-    const [stamp] = res.json[0].children;
+    const stamp = res.json[0].children[0];
     expect(stamp.result.data).toBe(3);
     expect(stamp.children[0].result.data).toEqual(['t1', 't2']);
   });
@@ -1441,24 +1444,31 @@ describe('the `tree` search param', () => {
                 [['id'], ['id'], 0],
                 [['tags'], ['tags']],
               ],
-              [
-                node('tags', [
-                  [['after'], []],
-                  [['ids'], ['tags', null, 'id'], 2],
-                ]),
-              ],
+              {
+                c: [
+                  node('tags', [
+                    [['after'], []],
+                    [['ids'], ['tags', null, 'id'], 2],
+                  ]),
+                ],
+              },
             ),
           ),
         ],
       },
     });
     expect(res.json[0].children[0]).toEqual(
-      Array.from({ length: 2 }, () => [
-        {
-          result: { data: 3 },
-          children: [{ result: { data: ['t1', 't2'] } }],
-        },
-      ]),
+      Object.fromEntries(
+        Array.from({ length: 2 }, (_it, index) => [
+          index,
+          {
+            0: {
+              result: { data: 3 },
+              children: { 0: { result: { data: ['t1', 't2'] } } },
+            },
+          },
+        ]),
+      ),
     );
   });
 
@@ -1468,15 +1478,18 @@ describe('the `tree` search param', () => {
       path: 'post',
       tree: {
         0: [
-          list([['tags']], ['stamp', [[['id'], ['id'], 0]], [], { tags: [] }]),
+          list(
+            [['tags']],
+            node('stamp', [[['id'], ['id'], 0]], { i: { tags: [] } }),
+          ),
         ],
       },
     });
     // Every run adds a tag to its own list
-    expect(res.json[0].children[0]).toEqual([
-      [{ result: { data: 1 } }],
-      [{ result: { data: 1 } }],
-    ]);
+    expect(res.json[0].children[0]).toEqual({
+      0: { 0: { result: { data: 1 } } },
+      1: { 0: { result: { data: 1 } } },
+    });
   });
 
   test('filling in an input keeps what the transformer made of it', async () => {
@@ -1512,7 +1525,7 @@ describe('the `tree` search param', () => {
     const res = await fetch(
       `${ctx.httpUrl}/start?batch=tree&tree=${encodeURIComponent(
         JSON.stringify({
-          0: [['span', [[['from'], ['at']]], [], { from: null, to: 5 }]],
+          0: [node('span', [[['from'], ['at']]], { i: { from: null, to: 5 } })],
         }),
       )}`,
     );
@@ -1607,7 +1620,7 @@ describe('the `tree` search param', () => {
       path: 'post',
       tree: { 0: [list([['slug']], node('tag', [[['id'], ['id'], 0]]))] },
     });
-    expect(noList.json[0].children[0]).toEqual([]);
+    expect(noList.json[0].children[0]).toEqual({});
     expect(noList.calls).not.toHaveBeenCalled();
   });
 
@@ -1666,7 +1679,7 @@ describe('the `tree` search param', () => {
     ],
     ['a call that is not in the batch', { 2: [author] }],
     ['paths that are not strings', { 0: [node('author', [[[1], []]])] }],
-    ['reads that are no reads', { 0: [['author', [[], []]]] }],
+    ['reads that are no reads', { 0: [{ p: 'author', r: [[], []] }] }],
     ['children that are no list', { 0: { author } }],
     ['something that is not an object', 'nope'],
   ])('rejects %s', async (_name, tree) => {
@@ -1899,7 +1912,7 @@ test('a follow-up does not start once the request is aborted', async () => {
       return { name: 'Ada' };
     }),
   });
-  const tree = { 0: [['author', [[['id'], ['authorId']]], [], {}]] };
+  const tree = { 0: [{ p: 'author', r: [[['id'], ['authorId']]], i: {} }] };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
@@ -1921,7 +1934,9 @@ test('a follow-up whose procedure fails to load fails by itself: the rest of the
     // A router that loads when it is first called, and fails to
     broken: lazy(() => Promise.reject(new Error('failed to load'))),
   });
-  const tree = { 0: [['broken.author', [[['id'], ['authorId']]], [], {}]] };
+  const tree = {
+    0: [{ p: 'broken.author', r: [[['id'], ['authorId']]], i: {} }],
+  };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(
@@ -1947,7 +1962,7 @@ test('a follow-up whose data JSON can not carry fails by itself: the rest of the
       .input(z.object({ id: z.string() }))
       .query(() => ({ followers: 1n })),
   });
-  const tree = { 0: [['author', [[['id'], ['authorId']]], [], {}]] };
+  const tree = { 0: [{ p: 'author', r: [[['id'], ['authorId']]], i: {} }] };
   const res = await fetchRequestHandler({
     endpoint: '/trpc',
     req: new Request(

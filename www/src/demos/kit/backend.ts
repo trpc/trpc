@@ -460,24 +460,24 @@ type TreeRead = readonly [
   up?: number,
 ];
 
-/** A follow-up call as it is in a request's tree: `[path, reads, children?, input?]`. */
-type TreeNode = readonly [
-  path: string,
-  reads: ReadonlyArray<TreeRead>,
-  children?: TreeChildren,
-  input?: unknown,
-];
+/** A follow-up call as it is in a request's tree: path, reads, children and input. */
+interface TreeNode {
+  readonly p: string;
+  readonly r: ReadonlyArray<TreeRead>;
+  readonly c?: TreeChildren;
+  readonly i?: unknown;
+}
 
-/** A list as it is in a request's tree: `[levels, nodes]`. */
-type TreeList = readonly [
-  levels: ReadonlyArray<ReadonlyArray<string>>,
-  nodes: ReadonlyArray<TreeNode>,
-];
+/** A list as it is in a request's tree: levels, and the nodes under it. */
+interface TreeList {
+  readonly l: ReadonlyArray<ReadonlyArray<string>>;
+  readonly c: ReadonlyArray<TreeNode>;
+}
 
 type TreeChildren = ReadonlyArray<TreeNode | TreeList>;
 
 function isTreeNode(child: TreeNode | TreeList): child is TreeNode {
-  return typeof child[0] === 'string';
+  return 'p' in child;
 }
 
 /** `input` with `value` at `to`, on copies of what is on the way there. */
@@ -550,15 +550,16 @@ function callsOf(url: URL) {
   ) => {
     for (const child of children) {
       if (!isTreeNode(child)) {
-        const [levels, nodes] = child;
+        const { l: levels, c: nodes } = child;
         const list = levels
           .map((level) => `${level.map((key) => `.${key}`).join('')}[]`)
           .join('');
         walk(nodes, { ...at, list: `${at.list}${list}` });
         continue;
       }
-      const [path, reads, kids = [], nodeInput] = child;
-      const input = reads.reduce((filled, [to, from, up = 1]) => {
+      const { p: path, r: reads, c: kids = [], i: nodeInput } = child;
+      const input = reads.reduce((filled, [to, from, up]) => {
+        up ??= 1;
         // Up from the parent for data, and 0 for the item it runs for
         const where =
           up <= 0

@@ -54,21 +54,21 @@ type PlannedChild =
   | { kind: 'node'; node: PlannedNode }
   | { kind: 'list'; levels: string[][]; nodes: PlannedNode[] };
 
-/** Children as a request has them: tuples, with what is empty left out */
+/**
+ * Children as a request has them. What a node doesn't have is a key left
+ * out, never `undefined`, which an array would make `null`
+ */
 function wireChildren(children: readonly PlannedChild[]): PipeChild[] {
-  const wireNode = (node: PlannedNode): PipeNode => {
-    const kids = wireChildren(node.children);
-    if (node.input !== undefined) {
-      return [node.path, node.reads, kids, node.input];
-    }
-    return kids.length > 0
-      ? [node.path, node.reads, kids]
-      : [node.path, node.reads];
-  };
-  return children.map((child) =>
+  const wireNode = (node: PlannedNode): PipeNode => ({
+    p: node.path,
+    r: node.reads,
+    ...(node.children.length > 0 && { c: wireChildren(node.children) }),
+    ...(node.input !== undefined && { i: node.input }),
+  });
+  return children.map((child): PipeChild =>
     child.kind === 'node'
       ? wireNode(child.node)
-      : [child.levels, child.nodes.map(wireNode)],
+      : { l: child.levels, c: child.nodes.map(wireNode) },
   );
 }
 
