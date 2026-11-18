@@ -70,9 +70,6 @@ export type EntryRequest =
       readonly serverReads: ReadonlySet<EntryInputRef>;
     };
 
-/** A request that can take part in pipelining */
-export type PipelinedRequest = Extract<EntryRequest, { kind: 'pipelined' }>;
-
 /**
  * The `trpc.context` of a query's options, if it has one of its own: one
  * with a key, symbol keys too, as a link may route by any of them. The one
