@@ -95,6 +95,7 @@ const PRIMITIVE_FLAGS =
   TypeFlags.String |
   TypeFlags.Number |
   TypeFlags.Boolean |
+  TypeFlags.TemplateLiteral |
   TypeFlags.StringLiteral |
   TypeFlags.NumberLiteral |
   TypeFlags.BooleanLiteral;
@@ -375,6 +376,10 @@ function convertPrimitiveOrLiteral(
   checker: Checker,
 ): SchemaObject | null {
   if (flags & TypeFlags.String) {
+    return { type: 'string' };
+  }
+  if (flags & TypeFlags.TemplateLiteral) {
+    // `user_${string}` and friends serialise as plain strings
     return { type: 'string' };
   }
   if (flags & TypeFlags.Number) {
