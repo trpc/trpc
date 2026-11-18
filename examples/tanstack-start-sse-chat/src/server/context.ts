@@ -1,4 +1,4 @@
-import { hasSlowQueriesCookie } from '~/lib/slow-queries';
+import { hasSlowQueriesCookie } from '~/lib/blog-settings';
 import { getSession } from './auth';
 
 /**

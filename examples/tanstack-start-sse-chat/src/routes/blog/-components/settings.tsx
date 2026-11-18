@@ -1,83 +1,21 @@
+import { Button } from '@shared/ui/components/button';
 import { Label } from '@shared/ui/components/label';
 import { Switch } from '@shared/ui/components/switch';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
-import { ChevronDownIcon } from 'lucide-react';
-import { createContext, use, useId, useState } from 'react';
-import { writeSlowQueries } from '~/lib/slow-queries';
-import { useTRPC } from '~/lib/trpc';
+import { ChevronDownIcon, RotateCcwIcon } from 'lucide-react';
+import { createContext, use, useId } from 'react';
+import type { BlogPreload, BlogSettings } from '~/lib/blog-settings';
+import { blogSettingsDefaults } from '~/lib/blog-settings';
 
-/**
- * The blog's settings, together: how slow its queries are, and when its links
- * load the page they go to
- */
-export function BlogSettings(
-  props: Readonly<{
-    slowQueries: boolean;
-    preload: BlogPreload;
-    onPreloadChange: (value: BlogPreload) => void;
-  }>,
-) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-lg border px-4 py-3">
-      <SlowQueriesSwitch initial={props.slowQueries} />
-      <BlogPreloadSelect
-        value={props.preload}
-        onChange={props.onPreloadChange}
-      />
-    </div>
-  );
-}
-
-/**
- * Makes the server wait 1 to 3 seconds in every query of the blog, so that you
- * can watch each one load
- */
-function SlowQueriesSwitch(props: Readonly<{ initial: boolean }>) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const [on, setOn] = useState(props.initial);
-  return (
-    <div className="flex items-center gap-3">
-      <Switch
-        id="slow-queries"
-        checked={on}
-        onCheckedChange={(checked) => {
-          setOn(checked);
-          writeSlowQueries(checked);
-          // Forget what the blog has loaded, and load the page again at the
-          // new speed: its loader starts its queries, in one request
-          queryClient.removeQueries(trpc.blog.pathFilter());
-          void router.invalidate();
-        }}
-      />
-      <Label htmlFor="slow-queries" className="flex flex-col items-start gap-1">
-        Slow queries
-        <span className="font-normal text-muted-foreground">
-          Every query of the blog takes 1 to 3 seconds
-        </span>
-      </Label>
-    </div>
-  );
-}
-
-/**
- * When the blog's links load the page they go to, as TanStack Router's
- * `preload` takes it. Off by default, so each page loads when it is opened
- * and its request is easy to find in the network panel.
- */
-export type BlogPreload = false | 'intent' | 'viewport' | 'render';
-
-const options: { value: BlogPreload; label: string }[] = [
+const preloadOptions: { value: BlogPreload; label: string }[] = [
   { value: false, label: 'Off' },
   { value: 'intent', label: 'On hover or focus' },
   { value: 'viewport', label: 'When in view' },
   { value: 'render', label: 'When rendered' },
 ];
 
-const PreloadContext = createContext<BlogPreload>(false);
+const PreloadContext = createContext<BlogPreload>(blogSettingsDefaults.preload);
 
+/** Gives the blog's links their `preload` */
 export const BlogPreloadProvider = PreloadContext;
 
 /** The `preload` for a link on a blog page */
@@ -85,41 +23,81 @@ export function useBlogPreload() {
   return use(PreloadContext);
 }
 
-/** Picks when the blog's links load the page they go to */
-function BlogPreloadSelect(
+/**
+ * The blog's settings, together: how slow its queries are, when its links
+ * load the page they go to, and a button to put both back as they were
+ */
+export function BlogSettingsBar(
   props: Readonly<{
-    value: BlogPreload;
-    onChange: (value: BlogPreload) => void;
+    value: BlogSettings;
+    onChange: (value: BlogSettings) => void;
   }>,
 ) {
-  const id = useId();
+  const { value, onChange } = props;
+  const preloadId = useId();
+  const isDefault =
+    value.slowQueries === blogSettingsDefaults.slowQueries &&
+    value.preload === blogSettingsDefaults.preload;
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <label htmlFor={id}>Preload links</label>
-      {/* Its own classes, so this app's styles have them */}
-      <div className="relative">
-        <select
-          id={id}
-          className="h-7 appearance-none rounded-md border bg-background py-0.5 pr-7 pl-2 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-          value={String(props.value)}
-          onChange={(event) => {
-            const picked = options.find(
-              (option) => String(option.value) === event.target.value,
-            );
-            props.onChange(picked?.value ?? false);
-          }}
-        >
-          {options.map((option) => (
-            <option key={String(option.value)} value={String(option.value)}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDownIcon
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2"
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-lg border px-4 py-3">
+      <div className="flex items-center gap-3">
+        <Switch
+          id="slow-queries"
+          checked={value.slowQueries}
+          onCheckedChange={(checked) =>
+            onChange({ ...value, slowQueries: checked })
+          }
         />
+        <Label
+          htmlFor="slow-queries"
+          className="flex flex-col items-start gap-1"
+        >
+          Slow queries
+          <span className="text-xs font-normal text-muted-foreground">
+            Every query of the blog takes 1 to 3 seconds
+          </span>
+        </Label>
       </div>
+      <div className="flex items-center gap-2 text-sm">
+        <label htmlFor={preloadId}>Preload links</label>
+        {/* Its own classes, so this app's styles have them */}
+        <div className="relative">
+          <select
+            id={preloadId}
+            className="h-7 appearance-none rounded-md border bg-background py-0.5 pr-7 pl-2 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+            value={String(value.preload)}
+            onChange={(event) => {
+              const picked = preloadOptions.find(
+                (option) => String(option.value) === event.target.value,
+              );
+              onChange({
+                ...value,
+                preload: picked?.value ?? blogSettingsDefaults.preload,
+              });
+            }}
+          >
+            {preloadOptions.map((option) => (
+              <option key={String(option.value)} value={String(option.value)}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2"
+          />
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="ml-auto"
+        disabled={isDefault}
+        onClick={() => onChange(blogSettingsDefaults)}
+      >
+        <RotateCcwIcon />
+        Reset
+      </Button>
     </div>
   );
 }
