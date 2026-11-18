@@ -29,6 +29,11 @@ function createBody(
       if (Buffer.isBuffer(req.body)) {
         return new Uint8Array(req.body);
       }
+      // `express.json()` turns an empty body into `{}`, which would reach
+      // the procedure as its input
+      if (req.headers['content-length'] === '0') {
+        return undefined;
+      }
       // If body exists but isn't a string, stringify it as JSON
       return JSON.stringify(req.body);
     } else if (req.readableEnded) {
