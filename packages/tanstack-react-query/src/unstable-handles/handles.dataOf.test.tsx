@@ -1,4 +1,5 @@
 import { testReactResource } from '../../test/__helpers';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   hashKey,
   InfiniteQueryObserver,
@@ -3918,8 +3919,7 @@ describe('experimental_useHandles', () => {
   test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
-    using _timers = makeResource({}, () => vi.useRealTimers());
+    using _timers = fakeTimersResource();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const seen: unknown[] = [];
     function Page(props: { fail: boolean }) {
