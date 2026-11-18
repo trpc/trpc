@@ -58,10 +58,11 @@ function getEndingLink(wsUrl: string) {
     });
   }
   // Lazy: React Strict Mode runs the `useState` initializer twice in dev,
-  // and the discarded client must not hold a socket open
+  // and the discarded client must not hold a socket open. The idle check
+  // re-arms while subscriptions are open, so give it a real interval.
   const client = createWSClient({
     url: wsUrl,
-    lazy: { enabled: true, closeMs: 0 },
+    lazy: { enabled: true, closeMs: 10_000 },
   });
   return wsLink<AppRouter>({
     client,
