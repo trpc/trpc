@@ -4,7 +4,10 @@
  * list it, the build doesn't prerender it, and the host sends every request
  * there, its endpoints too, to the function, which nothing caches.
  */
+import { readdirSync } from 'node:fs';
 import { describe, expect, it } from '@effect/vitest';
+
+import { showcases } from '../src/routes/kitchen-sink/-showcases.ts';
 
 import { kitchenSinkPath, unindexedPaths } from '../src/site.ts';
 import { unindexedPathProblems } from './hidden-paths.ts';
@@ -17,6 +20,7 @@ import {
   requestOnlyPaths,
 } from './on-demand.ts';
 import type { VercelRoute } from './old-routes.ts';
+import { pageCards } from './page-cards.ts';
 import { noindexRoute, routes } from './vercel-output.ts';
 
 const paths = [
@@ -110,5 +114,23 @@ describe('the kitchen sink', () => {
     expect(headerAt('/docs/client/links', 'Cache-Control')).toContain(
       's-maxage=',
     );
+  });
+});
+
+describe('the kitchen sink’s social cards', () => {
+  it('lists every showcase folder, and registers a card for each page', () => {
+    const folders = readdirSync(
+      new URL('../src/routes/kitchen-sink', import.meta.url),
+      { withFileTypes: true },
+    )
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('-'))
+      .map((entry) => `${kitchenSinkPath}/${entry.name}`);
+    expect(showcases.map((showcase) => showcase.path).toSorted()).toEqual(
+      folders.toSorted(),
+    );
+    const carded = pageCards.map((page) => page.path);
+    for (const path of [kitchenSinkPath, ...folders]) {
+      expect(carded).toContain(path);
+    }
   });
 });

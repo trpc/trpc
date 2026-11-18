@@ -12,6 +12,7 @@ import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer, prerenderFilter } from './build/on-demand.ts';
 import { ogCards } from './build/og-cards.ts';
+import { pageCards } from './build/page-cards.ts';
 import {
   sentryDefines,
   sentrySettings,
@@ -21,10 +22,6 @@ import { siteFiles } from './build/site-files.ts';
 import { samplesDir, twoslashCache } from './build/paths.ts';
 import type { DocCard } from './src/og/card.ts';
 import { mediaPage, searchPage } from './src/pages.ts';
-import {
-  kitchenSink,
-  showcases,
-} from './src/routes/kitchen-sink/-showcases.ts';
 import { absoluteUrl, copyPageUrl, deploymentOrigin } from './src/seo.ts';
 import {
   atTrpcIo,
@@ -190,9 +187,7 @@ export default defineConfig({
         absoluteUrl('/blog'),
       ),
       sponsorCard,
-      ...[mediaPage, searchPage, kitchenSink, ...showcases].map((page) =>
-        docCard(page, absoluteUrl(page.path)),
-      ),
+      ...pageCards.map((page) => docCard(page, absoluteUrl(page.path))),
       ...posts.map((post) => ({
         authors: post.authors,
         date: post.date,
