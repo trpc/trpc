@@ -2990,6 +2990,21 @@ describe('how long a value is, for what a request fills in', () => {
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
 
+  test('an array is as long as JSON reads it at the start, whatever a getter adds to it', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value: unknown[] = [];
+    Object.defineProperty(value, 0, {
+      enumerable: true,
+      get() {
+        value.push('x'.repeat(10));
+        return 0;
+      },
+    });
+
+    // JSON reads one item, as the array had one when it started: `[0]`
+    expect(sizeOf(value, Infinity)).toBe(3);
+  });
+
   test('a boxed primitive is as long as the primitive JSON writes for it', () => {
     const sizeOf = createPipelineSizeOf();
     const value = [Object(12345), Object('ab'), Object(true)];

@@ -376,8 +376,10 @@ function addParts(
 ) {
   let over = false;
   if (Array.isArray(value)) {
-    // By index, as JSON reads it, whatever its iterator gives
-    for (let index = 0; index < value.length; index++) {
+    // By index, as JSON reads it, whatever its iterator gives, and as long
+    // as it was at the start, whatever a getter adds to it
+    const length = value.length;
+    for (let index = 0; index < length; index++) {
       // A `,` before each but the first
       addSeparators(index === 0 ? 0 : 1);
       if ((over = add(asJSON(value[index], String(index))))) {
