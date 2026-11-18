@@ -270,7 +270,11 @@ interface HttpCall {
   /** Its first run, as code. */
   first: string | undefined;
   readonly id: number;
+  /** The indexes of the calls it reads its input from. */
+  readonly reads: readonly number[];
   runs: number;
+  /** How many of its runs succeeded. */
+  succeeded: number;
 }
 
 interface ServerContext {
@@ -323,9 +327,22 @@ function createAppRouter(network: Network) {
     });
     const result = await opts.next();
     call.finished++;
+    call.succeeded += result.ok ? 1 : 0;
     if (call.finished === call.runs) {
       network.served(call.id, 'end');
       arrives(result.ok ? 'done' : 'error');
+      if (call.succeeded === 0) {
+        // What reads it never runs, and fails with it
+        const calls = opts.ctx.calls ?? [];
+        const failed = new Set([opts.batchIndex]);
+        for (const [index, it] of calls.entries()) {
+          // A call reads only earlier ones, so theirs are known by its turn
+          if (it.reads.some((from) => failed.has(from))) {
+            failed.add(index);
+            network.after(opts.ctx.tripBack, () => network.end(it.id, 'error'));
+          }
+        }
+      }
     }
     return result;
   });
@@ -463,7 +480,7 @@ function parseParam(value: string | null): unknown {
  * another call's data shows as where it comes from, such as
  * `‹post›.authorId`, until the server has run the call.
  */
-function labelsOf(url: URL) {
+function callsOf(url: URL) {
   const paths = url.pathname.slice('/trpc/'.length).split(',');
   const inputs = (parseParam(url.searchParams.get('input')) ?? {}) as Record<
     number,
@@ -482,7 +499,10 @@ function labelsOf(url: URL) {
         .join('');
       return withValueAt(filled, read.to, new Unfilled(`‹${source}›${where}`));
     }, inputs[index]);
-    return formatCall(path, input);
+    return {
+      label: formatCall(path, input),
+      reads: (pipe[index] ?? []).map((read) => read.from),
+    };
   });
 }
 
@@ -520,18 +540,29 @@ export function createHttpDemoClient(
     const trip = network.delay(1);
     const tripThere = Math.round(trip / 2);
     const tripBack = trip - tripThere;
-    const calls = labelsOf(new URL(req.url)).map((label): HttpCall => ({
+    const calls = callsOf(new URL(req.url)).map((call): HttpCall => ({
       finished: 0,
       first: undefined,
-      id: network.request(label, origin, http),
+      id: network.request(call.label, origin, http),
+      reads: call.reads,
       runs: 0,
+      succeeded: 0,
     }));
     const endAll = (status: 'aborted' | 'done') => {
       for (const call of calls) {
         network.end(call.id, status);
       }
     };
-    req.signal.addEventListener('abort', () => endAll('aborted'));
+    /** Whether the server has sent all of the response */
+    let sentAll = false;
+    // The client also lets go of a request once it has read all of it, which
+    // is no cancellation. What is on its way arrives within a trip back, and
+    // ends its rows as it would have: a row still going after that was
+    // cancelled, unless the server had sent everything, as it has for a call
+    // that ran for no item
+    req.signal.addEventListener('abort', () => {
+      network.after(tripBack, () => endAll(sentAll ? 'done' : 'aborted'));
+    });
     await wait(tripThere);
     // Cancelled on its way there: the server never gets it
     req.signal.throwIfAborted();
@@ -554,6 +585,7 @@ export function createHttpDemoClient(
       new TransformStream<Uint8Array, Uint8Array>({
         // A call that ran for no item never finished: the response's end is its end.
         flush: () => {
+          sentAll = true;
           const arrived = wait(tripBack);
           return delivered.then(() => arrived).then(() => endAll('done'));
         },

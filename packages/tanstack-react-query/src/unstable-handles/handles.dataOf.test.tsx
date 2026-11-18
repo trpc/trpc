@@ -3,6 +3,7 @@ import {
   hashKey,
   InfiniteQueryObserver,
   skipToken,
+  useQuery,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
@@ -3197,6 +3198,44 @@ describe.each([
       1,
     );
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('an entry that stops skipping, or starts, is another load, though its query key is the same', async () => {
+    await using resource = pipeliningCtx(ctxOpts);
+    const skipped = vi.fn();
+    function Groups(props: { skip: boolean }) {
+      const trpc = resource.useTRPC();
+      const handles = experimental_useHandles(trpc, {
+        groups: props.skip
+          ? prefetchEntry(trpc.group.list, skipToken)
+          : prefetchEntry(trpc.group.list),
+      });
+      skipped(handles.groups.skipped === true);
+      const query = useQuery(fromHandle(trpc, handles.groups));
+      return (
+        <p>{query.data ? `groups ${query.data.groups.length}` : 'none'}</p>
+      );
+    }
+    const page = (skip: boolean) => (
+      <React.Suspense fallback="loading">
+        <Groups skip={skip} />
+      </React.Suspense>
+    );
+
+    const utils = resource.renderApp(page(true));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('none');
+    });
+    expect(resource.calls).not.toHaveBeenCalled();
+
+    resource.rerenderApp(utils, page(false));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('groups 2');
+    });
+    expect(skipped.mock.lastCall).toEqual([false]);
+
+    resource.rerenderApp(utils, page(true));
+    expect(skipped.mock.lastCall).toEqual([true]);
   });
 
   test('a query for every item of a list, a group, and a skipToken', async () => {
