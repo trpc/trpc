@@ -39,10 +39,11 @@ function loadedBy(type: 'navigate' | 'reload') {
 }
 
 /**
- * Renders a site whose home page throws `error`, until its error page shows.
- * Disposing unmounts it and empties the page.
+ * Renders a site whose home page throws `error`; `ready` resolves once its
+ * error page shows. Disposing unmounts it and empties the page, even if
+ * `ready` rejected.
  */
-async function renderThrowing(error: unknown, reload: () => void) {
+function renderThrowing(error: unknown, reload: () => void) {
   const rootRoute = createRootRoute({
     component: () =>
       createElement(
@@ -72,20 +73,22 @@ async function renderThrowing(error: unknown, reload: () => void) {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
-  await act(async () => {
-    // As `client.tsx` renders it: in development, effects run twice.
-    root.render(
-      createElement(
-        StrictMode,
-        null,
-        createElement(RouterProvider, { router }),
-      ),
-    );
-  });
-  await vi.waitFor(() => {
-    expect(container.querySelector('[role="alert"]')).not.toBeNull();
-  });
-  return makeAsyncResource({ container }, async () => {
+  const ready = (async () => {
+    await act(async () => {
+      // As `client.tsx` renders it: in development, effects run twice.
+      root.render(
+        createElement(
+          StrictMode,
+          null,
+          createElement(RouterProvider, { router }),
+        ),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="alert"]')).not.toBeNull();
+    });
+  })();
+  return makeAsyncResource({ container, ready }, async () => {
     await act(async () => {
       root.unmount();
     });
@@ -96,7 +99,8 @@ async function renderThrowing(error: unknown, reload: () => void) {
 }
 
 test("a route that throws keeps the site's shell and the page's title", async () => {
-  await using page = await renderThrowing(new Error('A bug'), () => {});
+  await using page = renderThrowing(new Error('A bug'), () => {});
+  await page.ready;
   expect(page.container.textContent).not.toContain('Something went wrong!');
   expect(page.container.querySelector('header')?.textContent).toBe('tRPC');
   expect(document.title).toBe('tRPC - Move Fast and Break Nothing.');
@@ -109,13 +113,15 @@ test('a chunk a deploy replaced reloads the page once, and not again after', asy
   const reload = vi.fn<() => void>();
   {
     using _load = loadedBy('navigate');
-    await using _page = await renderThrowing(staleChunk(), reload);
+    await using page = renderThrowing(staleChunk(), reload);
+    await page.ready;
     expect(reload).toHaveBeenCalledTimes(1);
   }
   // The reloaded page throws it too: it stays on the error page.
   {
     using _load = loadedBy('reload');
-    await using _page = await renderThrowing(staleChunk(), reload);
+    await using page = renderThrowing(staleChunk(), reload);
+    await page.ready;
     expect(reload).toHaveBeenCalledTimes(1);
   }
 });
@@ -124,7 +130,8 @@ test("another error doesn't reload the page", async () => {
   sessionStorage.clear();
   using _load = loadedBy('navigate');
   const reload = vi.fn<() => void>();
-  await using _page = await renderThrowing(new Error('A bug'), reload);
+  await using page = renderThrowing(new Error('A bug'), reload);
+  await page.ready;
   expect(reload).not.toHaveBeenCalled();
 });
 
@@ -137,7 +144,8 @@ test("the reloaded page doesn't reload again, however late its chunk fails", asy
   );
   using _load = loadedBy('reload');
   const reload = vi.fn<() => void>();
-  await using _page = await renderThrowing(staleChunk(), reload);
+  await using page = renderThrowing(staleChunk(), reload);
+  await page.ready;
   expect(reload).not.toHaveBeenCalled();
 });
 
@@ -150,6 +158,7 @@ test("a reload for an earlier visit doesn't stop this one's", async () => {
   );
   using _load = loadedBy('reload');
   const reload = vi.fn<() => void>();
-  await using _page = await renderThrowing(staleChunk(), reload);
+  await using page = renderThrowing(staleChunk(), reload);
+  await page.ready;
   expect(reload).toHaveBeenCalledTimes(1);
 });
