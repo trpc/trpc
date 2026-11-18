@@ -371,11 +371,23 @@ export const client = createTRPCClient<AppRouter>({
 
 The post page above makes this request:
 
+```http
+GET /post.bySlug,author.byId,post.list?batch=pipeline&input=…&pipe=…
 ```
-GET /post.bySlug,author.byId,post.list?batch=pipeline
-  &input={"0":{"slug":"hello"},"1":{},"2":{"direction":"forward"}}
-  &pipe={"1":[{"to":["id"],"from":0,"path":["authorId"]}],
-         "2":[{"to":["teamId"],"from":1,"path":["teamId"]}]}
+
+Its `input`, decoded, has an input for every call, by index:
+
+```json
+{ "0": { "slug": "hello" }, "1": {}, "2": { "direction": "forward" } }
+```
+
+Its `pipe`, decoded, has the blanks of every call that has any:
+
+```json
+{
+  "1": [{ "to": ["id"], "from": 0, "path": ["authorId"] }],
+  "2": [{ "to": ["teamId"], "from": 1, "path": ["teamId"] }]
+}
 ```
 
 - **`pipe`** lists the blanks: call 1's `id` is `authorId` from call 0's data. With [`methodOverride: 'POST'`](/docs/rpc#overriding-the-default-http-method), it is in the body, beside the inputs.
@@ -739,13 +751,23 @@ For a fetch or ensure entry, `data` has a list with every item's data.
 
 The list's handle knows what its items load. So the options that `fromHandle(trpc, handles.posts)` gives load the items' queries with every fetch of the list: the next page, or a refetch after an invalidation.
 
-```
+```http
 POST /post.list,author.byId?batch=pipeline
+Content-Type: application/json
 
 {
   "0": { "cursor": 10, "direction": "forward" },
   "1": {},
-  "pipe": { "1": [{ "to": ["id"], "from": 0, "path": ["items", null, "authorId"], "each": true }] }
+  "pipe": {
+    "1": [
+      {
+        "to": ["id"],
+        "from": 0,
+        "path": ["items", null, "authorId"],
+        "each": true
+      }
+    ]
+  }
 }
 ```
 
