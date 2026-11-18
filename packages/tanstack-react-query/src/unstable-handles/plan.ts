@@ -192,8 +192,29 @@ export function describeOption(value: unknown) {
 }
 
 /**
+ * Every symbol a context has had, by its number. A context's symbols are
+ * module constants, so the map stays small
+ */
+const symbolIds = new Map<symbol, number>();
+
+/** A symbol as a string that no other symbol and no string key has */
+function describeSymbol(symbol: symbol) {
+  const registered = Symbol.keyFor(symbol);
+  if (registered !== undefined) {
+    return `symbol.for:${registered}`;
+  }
+  let id = symbolIds.get(symbol);
+  if (id === undefined) {
+    id = symbolIds.size;
+    symbolIds.set(symbol, id);
+  }
+  return `symbol:${id}`;
+}
+
+/**
  * An entry's own `trpc.context` as a value with JSON, symbol keys and all.
- * A value with no JSON, such as a function, is described by its type
+ * Two symbols with the same description differ. A value with no JSON, such
+ * as a function, is described by its type
  */
 function describeContext(
   context: Readonly<Record<PropertyKey, unknown>> | null,
@@ -205,12 +226,19 @@ function describeContext(
     .map((key) => {
       const value = context[key];
       let described: unknown;
-      try {
-        described = hashKey([value]);
-      } catch {
-        described = describeOption(value);
+      if (typeof value === 'symbol') {
+        described = describeSymbol(value);
+      } else {
+        try {
+          described = hashKey([value]);
+        } catch {
+          described = describeOption(value);
+        }
       }
-      return [String(key), described] as const;
+      return [
+        typeof key === 'symbol' ? describeSymbol(key) : `string:${key}`,
+        described,
+      ] as const;
     })
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }

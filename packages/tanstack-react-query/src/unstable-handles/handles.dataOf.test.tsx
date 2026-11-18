@@ -4272,6 +4272,7 @@ describe('experimental_useHandles', () => {
     const trpc = resource.optionsProxyServer;
     const seen: unknown[] = [];
     const route = Symbol('route');
+    const otherRoute = Symbol('route');
     function Card(props: {
       context: Record<PropertyKey, unknown> | undefined;
     }) {
@@ -4291,11 +4292,14 @@ describe('experimental_useHandles', () => {
         <Card context={undefined} />
         <Card context={{ route: 'secondary' }} />
         <Card context={{ [route]: 'secondary' }} />
+        <Card context={{ [otherRoute]: 'secondary' }} />
+        <Card context={{ 'Symbol(route)': 'secondary' }} />
+        <Card context={{ route }} />
+        <Card context={{ route: null }} />
       </>,
     );
-    expect(seen[1]).not.toBe(seen[0]);
-    expect(seen[2]).not.toBe(seen[0]);
-    expect(seen[2]).not.toBe(seen[1]);
+    // Each is another load: no two contexts read alike
+    expect(new Set(seen).size).toBe(seen.length);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
