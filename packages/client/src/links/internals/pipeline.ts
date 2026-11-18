@@ -147,6 +147,16 @@ export function pipeCall(opts: {
   reads: PipelineCallReads<PipelineSource>;
 }): PipelinedCall | null {
   const { each } = opts.reads;
+  // It goes with the operation of its first read. Its read limit first,
+  // before anything goes through every read
+  const first =
+    each?.from ??
+    opts.reads.reads.find((read) => read.kind === 'whole')?.from ??
+    null;
+  const owner = first && (isCall(first) ? first.owner : first);
+  if (!owner || opts.reads.reads.length > owner.limits.maxReadsPerCall) {
+    return null;
+  }
   const sources: PipelineSource[] = [
     ...(each ? [each.from] : []),
     ...opts.reads.reads.flatMap((read) =>
@@ -164,19 +174,13 @@ export function pipeCall(opts: {
   ) {
     return null;
   }
-  const owners = sources.map((source) =>
-    isCall(source) ? source.owner : source,
-  );
-  // It goes with the operation of its first read
-  const [owner] = owners;
   if (
-    !owner ||
-    !owners.every((pipeline) => pipeline.open) ||
-    !sources.every((source) => !isCall(source) || source.status === 'waiting')
+    !sources.every((source) =>
+      isCall(source)
+        ? source.owner.open && source.status === 'waiting'
+        : source.open,
+    )
   ) {
-    return null;
-  }
-  if (opts.reads.reads.length > owner.limits.maxReadsPerCall) {
     return null;
   }
   // A loop, not a spread: a spread of many sources overflows the stack

@@ -35,6 +35,7 @@ import type {
   PipelinePath,
   PipeRead,
 } from './wire';
+import type * as Wire from './wire';
 import {
   bindPipelinePath,
   pipelineBatch,
@@ -43,6 +44,12 @@ import {
   pipelineListLevels,
   readPipelinePath,
 } from './wire';
+
+// The same function, watched: a test counts how often the server reads a path
+vi.mock('./wire', async (importOriginal) => {
+  const wire: typeof Wire = await importOriginal();
+  return { ...wire, readPipelinePath: vi.fn(wire.readPipelinePath) };
+});
 
 // ---------- a server that is a map of functions ----------
 
@@ -1747,6 +1754,46 @@ describe('a call for every item', () => {
         1: { items: { 0: { result: { data: { n: 3, page: 'two' } } } } },
       },
     });
+  });
+
+  test('a value that many runs read of the same run is read of its data once', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        list: () => [1, 2, 3],
+        settings: () => ({ theme: 'dark' }),
+        echo,
+      },
+    });
+    const list = sent('list', undefined);
+    const settings = sent('settings', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: list, path: [] },
+        { to: ['n'], path: [] },
+        { to: ['theme'], from: settings, path: ['theme'] },
+      ),
+    );
+    vi.mocked(readPipelinePath).mockClear();
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list, settings],
+      calls: [each],
+    });
+
+    expect(itemCount(res.of(each))).toBe(3);
+    // Once for the three runs
+    expect(
+      vi
+        .mocked(readPipelinePath)
+        .mock.calls.filter(([, path]) => JSON.stringify(path) === '["theme"]'),
+    ).toHaveLength(1);
   });
 
   test('a list too long for any call to run for every item is refused before anything is made for its items', async () => {
