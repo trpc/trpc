@@ -1,4 +1,5 @@
-import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
+import type { DataPath } from './path';
+import { dataPath } from './path';
 import { isPlainObject, nothing } from './utils';
 
 export const entryDataRef = Symbol('trpc.entryData');
@@ -7,21 +8,22 @@ export const entryDataRef = Symbol('trpc.entryData');
 export interface EntryDataRef {
   /** The entry `experimental_dataOf()` was called with */
   entry: object;
-  path: PipelinePath;
+  path: DataPath;
   /**
    * For a value read from the item of an `experimental_entryPerItem()`
    * callback: the list the item is of. A value with the same path that was
    * read from the list itself, such as with `.map()`, has `null`.
    */
   itemOf: EntryDataRef | null;
-  /** Whether `.map()` returned it: it is a value for every item of a list */
-  mapped: boolean;
   /**
-   * Whether `.flatMap()` returned it: the items of a list in every item. The
-   * wire can read no such list into an input, so it is only the list of an
-   * `experimental_entryPerItem()` entry
+   * What it is a list of, when it is the list of an entry per item:
+   * - `value`: a value as it is. As a list, its items are its elements.
+   * - `mapped`: what `.map()` returned, a value for every item of a list.
+   * - `flat`: what `.flatMap()` returned, the items of a list in every item.
+   *   The wire can read no such list into an input, so it is only the list
+   *   of an `experimental_entryPerItem()` entry.
    */
-  flat: boolean;
+  shape: 'value' | 'mapped' | 'flat';
 }
 
 export const onlyAsList =
@@ -51,16 +53,18 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
       if (typeof key === 'symbol') {
         return undefined;
       }
-      if (ref.flat && key !== 'toJSON') {
+      if (ref.shape === 'flat' && key !== 'toJSON') {
         throw new Error(onlyAsList);
       }
       return createEntryDataRef({
         entry: ref.entry,
-        path: [...ref.path, key],
+        path: dataPath([...ref.path, key]),
         itemOf: ref.itemOf,
         // Kept for `.map()` or `.flatMap()`, which is called next
-        mapped: (key === 'map' || key === 'flatMap') && ref.mapped,
-        flat: false,
+        shape:
+          (key === 'map' || key === 'flatMap') && ref.shape === 'mapped'
+            ? 'mapped'
+            : 'value',
       });
     },
     apply(_target, _thisArg, args: unknown[]) {
@@ -81,23 +85,22 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
       // The callback runs once, on a stand-in for every item. What an
       // earlier `.map()` returned already stands for every item
       const list = ref.path.slice(0, -1);
-      const item = ref.mapped ? list : [...list, null];
-      const mapped = entryDataRefOf(
+      const item = ref.shape === 'mapped' ? list : [...list, null];
+      const returned = entryDataRefOf(
         callback(
           createEntryDataRef({
             entry: ref.entry,
-            path: item,
+            path: dataPath(item),
             itemOf: ref.itemOf,
-            mapped: false,
-            flat: false,
+            shape: 'value',
           }),
         ),
       );
       if (
-        mapped?.entry !== ref.entry ||
-        mapped.itemOf !== ref.itemOf ||
-        mapped.flat ||
-        !item.every((segment, index) => mapped.path[index] === segment)
+        returned?.entry !== ref.entry ||
+        returned.itemOf !== ref.itemOf ||
+        returned.shape === 'flat' ||
+        !item.every((segment, index) => returned.path[index] === segment)
       ) {
         throw new Error(
           `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
@@ -106,8 +109,8 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
       // `.flatMap()`: every item's value is a list, whose items are the items
       return createEntryDataRef(
         method === 'flatMap'
-          ? { ...mapped, mapped: false, flat: true }
-          : { ...mapped, mapped: true, flat: false },
+          ? { ...returned, shape: 'flat' }
+          : { ...returned, shape: 'mapped' },
       );
     },
   });

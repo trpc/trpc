@@ -20,6 +20,7 @@ import {
   replaceEntryDataRefs,
 } from './dataRef';
 import { itemPathOf } from './list';
+import { dataPath } from './path';
 import type {
   AnyTRPCEntry,
   DataEntry,
@@ -233,7 +234,7 @@ export function entry(opts: {
   const ctx = readProxy(opts.procedure, opts.fn);
   const refs: EntryInputRef[] = [];
   replaceEntryDataRefs(opts.input, [], (ref) => refs.push(ref));
-  if (refs.some((ref) => ref.flat)) {
+  if (refs.some((ref) => ref.shape === 'flat')) {
     throw new Error(
       `${onlyAsList}, not a value in the input of \`${opts.fn}()\`. To read a part of every item, use \`.map()\``,
     );
@@ -340,10 +341,9 @@ export function experimental_dataOf(
   const source = entry as object;
   const data = createEntryDataRef({
     entry: source,
-    path: [],
+    path: dataPath([]),
     itemOf: null,
-    mapped: false,
-    flat: false,
+    shape: 'value',
   });
   if (entryFrom === undefined) {
     return data;
@@ -405,10 +405,9 @@ export function experimental_entryPerItem(
   const returned = entry(
     createEntryDataRef({
       entry: list.entry,
-      path: itemPathOf(list),
+      path: dataPath(itemPathOf(list)),
       itemOf: list,
-      mapped: false,
-      flat: false,
+      shape: 'value',
     }),
   );
   if (entryStateOf(returned)?.type !== 'query') {

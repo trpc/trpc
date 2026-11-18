@@ -4,6 +4,7 @@ import {
   readPipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { EntryDataRef } from './dataRef';
+import type { DataPath, ItemPath, RequestPath } from './path';
 import type { HandleType } from './types';
 
 /**
@@ -12,16 +13,19 @@ import type { HandleType } from './types';
  */
 export function requestPath(opts: {
   type: HandleType;
-  path: PipelinePath;
-  /** Whether it is the path of an item of a list that is flattened */
+  path: DataPath | ItemPath;
+  /**
+   * Whether it is the path of the items of a list in every page, which the
+   * request of any page has. Else only the first page's request has it
+   */
   item: boolean;
-}): PipelinePath | null {
+}): RequestPath | null {
   if (opts.type === 'query') {
-    return opts.path;
+    return opts.path as PipelinePath as RequestPath;
   }
   const [pages, page] = opts.path;
   return pages === 'pages' && (page === '0' || (opts.item && page === null))
-    ? opts.path.slice(2)
+    ? (opts.path.slice(2) as RequestPath)
     : null;
 }
 
@@ -30,8 +34,10 @@ export function requestPath(opts: {
  * for each level of lists, as the server walks it. What `.map()` returned is
  * a value for every item already. Any other list's items are its elements.
  */
-export function itemPathOf(list: EntryDataRef): PipelinePath {
-  return list.mapped ? list.path : [...list.path, null];
+export function itemPathOf(list: EntryDataRef): ItemPath {
+  return (
+    list.shape === 'mapped' ? list.path : [...list.path, null]
+  ) as ItemPath;
 }
 
 /**
@@ -40,10 +46,10 @@ export function itemPathOf(list: EntryDataRef): PipelinePath {
  * For `["posts", null, "authorId"]`, the list is `["posts"]` and the item is
  * each post's `["authorId"]`.
  */
-export function serverList(itemPath: PipelinePath) {
+export function serverList(itemPath: ItemPath) {
   const last = itemPath.lastIndexOf(null);
   return {
-    each: itemPath.slice(0, last),
+    each: itemPath.slice(0, last) as DataPath,
     itemRead: itemPath.slice(last + 1) as string[],
   };
 }
@@ -52,7 +58,7 @@ export function serverList(itemPath: PipelinePath) {
  * The list whose elements are the items at `itemPath`, if there is one
  * level of lists: `["items", null]` is the elements of `["items"]`
  */
-export function listOfElements(itemPath: PipelinePath): string[] | null {
+export function listOfElements(itemPath: RequestPath): string[] | null {
   return itemPath.indexOf(null) === itemPath.length - 1
     ? (itemPath.slice(0, -1) as string[])
     : null;
@@ -70,7 +76,7 @@ export interface ListItem {
  * What isn't a list where the path has a `null` has no items. A `null` item
  * is an item like any other.
  */
-export function itemsAt(data: unknown, itemPath: PipelinePath): ListItem[] {
+export function itemsAt(data: unknown, itemPath: ItemPath): ListItem[] {
   const at = itemPath.indexOf(null);
   if (at === -1) {
     return [{ indexes: [], path: itemPath as string[] }];
@@ -80,9 +86,11 @@ export function itemsAt(data: unknown, itemPath: PipelinePath): ListItem[] {
     return [];
   }
   return list.flatMap((_, index) =>
-    itemsAt(data, bindPipelinePath(itemPath, index)).map((item) => ({
-      indexes: [index, ...item.indexes],
-      path: item.path,
-    })),
+    itemsAt(data, bindPipelinePath(itemPath, index) as ItemPath).map(
+      (item) => ({
+        indexes: [index, ...item.indexes],
+        path: item.path,
+      }),
+    ),
   );
 }

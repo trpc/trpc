@@ -31,6 +31,7 @@ import {
   serverList,
 } from './list';
 import type { ListItem } from './list';
+import type { DataPath, RequestPath } from './path';
 import {
   dataOfCall,
   resultOfItem,
@@ -312,7 +313,7 @@ export function beginEntries(opts: {
      * For an entry for every item: the list, the load of its entry, and the
      * path of the list in the result of that entry's request
      */
-    list: { ref: EntryDataRef; source: EntryLoad; path: PipelinePath } | null;
+    list: { ref: EntryDataRef; source: EntryLoad; path: RequestPath } | null;
   }) {
     const { state, list } = pipelined;
     const { request } = state;
@@ -623,7 +624,7 @@ export function beginEntries(opts: {
     const itemsOf = (dataOfEntry: Map<object, unknown>) =>
       itemsAt(dataOfEntry.get(list.entry), itemPath);
     /** Where a value read from the item's stand-in is, for one item */
-    const pathOfItem = (path: PipelinePath, listItem: ListItem) => [
+    const pathOfItem = (path: DataPath, listItem: ListItem) => [
       ...listItem.path,
       ...path.slice(itemPath.length),
     ];
@@ -820,12 +821,11 @@ export function handlesOfLoads(opts: {
     }
     // The items in one request's result: a query's data, or any page
     const itemPath = itemPathOf(leaf.each);
-    const inRequest =
-      source.state.type === 'query'
-        ? itemPath
-        : itemPath[0] === 'pages' && itemPath[1] === null
-          ? itemPath.slice(2)
-          : null;
+    const inRequest = requestPath({
+      type: source.state.type,
+      path: itemPath,
+      item: true,
+    });
     // A later fetch reads the items there
     const list = inRequest ? listOfElements(inRequest) : null;
     if (list) {
