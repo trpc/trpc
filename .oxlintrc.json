@@ -21,7 +21,11 @@
     "react/purity": "error",
     "react/set-state-in-render": "error",
     "react/static-components": "error",
-    "react/unsupported-syntax": "warn"
+    "react/unsupported-syntax": "warn",
+
+    // A plugin rule, not `no-restricted-imports` options, so that an override
+    // setting `no-restricted-imports` can't drop it.
+    "trpc/no-testing-library-wait-for": "error"
   },
   "overrides": [
     {
@@ -130,18 +134,6 @@
         "no-restricted-imports": [
           "error",
           {
-            "paths": [
-              {
-                "name": "@testing-library/dom",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              },
-              {
-                "name": "@testing-library/react",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              }
-            ],
             "patterns": [
               {
                 "group": ["@trpc/*/src", "@trpc/*/src/**"],
@@ -212,22 +204,10 @@
     {
       "files": ["packages/server/src/adapters/**"],
       "rules": {
-        // Repeats the options above: an override replaces a rule's options.
+        // Repeats the `/src` pattern above: an override replaces a rule's options.
         "no-restricted-imports": [
           "error",
           {
-            "paths": [
-              {
-                "name": "@testing-library/dom",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              },
-              {
-                "name": "@testing-library/react",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              }
-            ],
             "patterns": [
               {
                 "group": ["@trpc/*/src", "@trpc/*/src/**"],
