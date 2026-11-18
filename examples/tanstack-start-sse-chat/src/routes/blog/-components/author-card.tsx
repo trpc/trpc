@@ -21,7 +21,7 @@ import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import type { PostPageHandles } from '../$slug';
 import { DevFallback, DevNote } from './dev-note';
-import { useBlogPreload } from './preload';
+import { useBlogPreload } from './settings';
 
 /**
  * The author of a post, and what else their team wrote. The author's id is in

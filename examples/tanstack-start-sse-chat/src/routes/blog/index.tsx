@@ -6,15 +6,12 @@ import {
   ItemGroup,
   ItemTitle,
 } from '@shared/ui/components/item';
-import { Label } from '@shared/ui/components/label';
 import { Skeleton } from '@shared/ui/components/skeleton';
-import { Switch } from '@shared/ui/components/switch';
 import {
-  useQueryClient,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   experimental_dataOf,
   experimental_entryPerItem,
@@ -31,12 +28,11 @@ import type {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { format } from 'date-fns';
 import { ChevronRightIcon } from 'lucide-react';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { readSlowQueries, writeSlowQueries } from '~/lib/slow-queries';
+import { Suspense, useEffect, useRef } from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { DevNote, DevNoteText } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
-import { useBlogPreload } from './-components/preload';
+import { useBlogPreload } from './-components/settings';
 
 /** Every query the list needs. The loader waits for none of them */
 function postListEntries(trpc: TRPC) {
@@ -62,7 +58,7 @@ export const Route = createFileRoute('/blog/')({
   loader: async (opts) => {
     const { trpc } = opts.context;
     const [handles] = await loadHandles(trpc, postListEntries(trpc));
-    return { handles, slowQueries: readSlowQueries() };
+    return { handles };
   },
   component: BlogIndex,
 });
@@ -76,7 +72,6 @@ function BlogIndex() {
         <p className="max-w-2xl text-lg text-muted-foreground">
           Notes on databases, frontends and keeping things running.
         </p>
-        <SlowQueriesSwitch initial={loaderData.slowQueries} />
         <OneRequestHint>
           Open your browser’s Network tab, then open a post you haven’t opened
           yet. The post, its author and the posts of the author’s team each need
@@ -102,40 +97,6 @@ function BlogIndex() {
         <PostList handles={loaderData.handles} />
       </Suspense>
     </>
-  );
-}
-
-/**
- * Makes the server wait 1 to 3 seconds in every query of the blog, so that you
- * can watch each one load
- */
-function SlowQueriesSwitch(props: Readonly<{ initial: boolean }>) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const [on, setOn] = useState(props.initial);
-  return (
-    <div className="flex items-center gap-3">
-      <Switch
-        id="slow-queries"
-        checked={on}
-        onCheckedChange={(checked) => {
-          setOn(checked);
-          writeSlowQueries(checked);
-          // Forget what the blog has loaded, and load the page again at the
-          // new speed: its loader starts the list and its authors, in one
-          // request
-          queryClient.removeQueries(trpc.blog.pathFilter());
-          void router.invalidate();
-        }}
-      />
-      <Label htmlFor="slow-queries" className="flex flex-col items-start gap-1">
-        Slow queries
-        <span className="font-normal text-muted-foreground">
-          Every query of the blog takes 1 to 3 seconds
-        </span>
-      </Label>
-    </div>
   );
 }
 

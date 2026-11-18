@@ -28,7 +28,7 @@ import { useTRPC, type TRPC } from '~/lib/trpc';
 import { AuthorCard } from './-components/author-card';
 import { DevFallback, DevNote } from './-components/dev-note';
 import { OneRequestHint } from './-components/one-request-hint';
-import { useBlogPreload } from './-components/preload';
+import { useBlogPreload } from './-components/settings';
 
 /**
  * Every query the post page needs, from the URL alone. The loader waits for
