@@ -1157,7 +1157,7 @@ describe('a list key', () => {
     expect(res.of(none)).toEqual([]);
   });
 
-  test('a list of lists, as one key or as a list key inside another: a level of lists for each', async () => {
+  test('a list of lists is one key: a level of lists for each `[]`', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -1215,7 +1215,8 @@ describe('a list key', () => {
     });
     expect(streamed.of(oneKey)).toEqual(res.of(oneKey));
 
-    // The same, as `pages[]` with `items[]` inside it
+    // Not `pages[]` with `items[]` inside it: one way to write it, which
+    // also keeps how deep a tree goes to what `maxDepth` allows
     const tree: PipeTree = {
       0: {
         'pages[]': {
@@ -1232,24 +1233,13 @@ describe('a list key', () => {
     const response = await fetch(
       `${server.url}/pages?batch=tree&tree=${encodeURIComponent(JSON.stringify(tree))}`,
     );
-    expect(await response.json()).toEqual([
-      {
-        result: expect.anything(),
-        children: {
-          'pages[]': [
-            {
-              'items[]': [
-                { echo: { result: { data: { id: 'a' } } } },
-                { echo: { result: { data: { id: 'b' } } } },
-              ],
-            },
-            {
-              'items[]': [{ echo: { result: { data: { id: 'c' } } } }],
-            },
-          ],
-        },
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      error: {
+        message:
+          'Invalid "tree": a list at 0 "pages[]" "items[]" is right under another: write them as one key, such as "pages[].items[]"',
       },
-    ]);
+    });
   });
 
   test('a follow-up of a follow-up that runs for every item runs for every item too, and a list key under it for every item of its data', async () => {
@@ -1303,7 +1293,7 @@ describe('a list key', () => {
     expect(ran.filter(([path]) => path === 'author')).toHaveLength(6);
   });
 
-  test('every run counts towards the most runs a request may have, and a node that is refused takes none', async () => {
+  test('every run counts towards the most runs a request may have, and a list whose runs would go over it takes none', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -1349,7 +1339,8 @@ describe('a list key', () => {
         message: 'A call for every item exceeds the maximum batch size',
       },
     };
-    expect(res.of(three)).toEqual([refused, refused, refused]);
+    // One error in place of its items, not one for each of them
+    expect(res.of(three)).toEqual({ failed: refused.error });
     // What three would have taken is still there
     expect(res.of(one)).toEqual({ data: { n: 1 } });
     expect(echo).toHaveBeenCalledTimes(3);
@@ -1399,6 +1390,7 @@ describe('the limits of a server', () => {
       maxFillSize: 100_000,
       maxDepth: 3,
       allowWholeValues: false,
+      maxRuns: 100,
     });
     expect(pipelineLimitsOf({ maxDepth: 5, allowWholeValues: true })).toEqual({
       ...pipelineLimitDefaults,
@@ -1412,6 +1404,7 @@ describe('the limits of a server', () => {
         maxFillSize: 3,
         maxDepth: 4,
         allowWholeValues: true,
+        maxRuns: 5,
       }),
     ).toEqual({
       maxValueLength: 1,
@@ -1419,6 +1412,7 @@ describe('the limits of a server', () => {
       maxFillSize: 3,
       maxDepth: 4,
       allowWholeValues: true,
+      maxRuns: 5,
     });
     expect(pipelineLimitsOf({})).toEqual(pipelineLimitDefaults);
     expect(pipelineLimitsOf(false)).toBeNull();
@@ -1458,6 +1452,123 @@ describe('the limits of a server', () => {
 
   const refused = (message: string) => ({
     error: { code: 'BAD_REQUEST', message },
+  });
+
+  describe('`maxRuns`', () => {
+    const list = sent('list', undefined);
+    const ofList = call({
+      parent: list,
+      path: 'echo',
+      input: {},
+      reads: [{ to: ['n'], item: [] }],
+      list: [['items']],
+    });
+    const fns = (length: number) => ({
+      list: () => ({ items: Array.from({ length }, (_it, index) => index) }),
+      echo: () => null,
+    });
+
+    test.each([
+      { limits: pipelineLimitDefaults, max: 100 },
+      { limits: { ...pipelineLimitDefaults, maxRuns: 10 }, max: 10 },
+    ])(
+      'a list whose follow-ups would make the batch run more than $max times has an error in place of its items, without `maxBatchSize`',
+      async ({ limits, max }) => {
+        // `list` is a run, and one more item would be one too many
+        const within = await sendWith({
+          limits,
+          fns: fns(max - 1),
+          sent: [list],
+          calls: [ofList],
+        });
+        expect(within.res.of(ofList)).toHaveLength(max - 1);
+
+        const over = await sendWith({
+          limits,
+          fns: fns(max),
+          sent: [list],
+          calls: [ofList],
+        });
+        expect(over.res.of(ofList)).toEqual({
+          failed: refused(
+            `This list would make the batch run ${max + 1} times, more than \`maxRuns\` (${max}) allows`,
+          ).error,
+        });
+        expect(over.ran).toEqual(['list']);
+      },
+    );
+
+    test('a follow-up under one for every item counts a run at each place, and is refused where it would go over', async () => {
+      const author = call({
+        parent: list,
+        path: 'author',
+        input: {},
+        reads: [{ to: ['id'], item: [] }],
+        list: [['items']],
+      });
+      const team = call({
+        parent: author,
+        path: 'team',
+        input: {},
+        reads: [{ to: ['id'], data: ['id'] }],
+        list: null,
+      });
+
+      const { res } = await sendWith({
+        // The list, two authors and one team
+        limits: { ...pipelineLimitDefaults, maxRuns: 4 },
+        fns: {
+          list: () => ({ items: ['a', 'b'] }),
+          author: (input: { id: string }) => ({ id: input.id }),
+          team: (input: { id: string }) => input.id,
+        },
+        sent: [list],
+        calls: [author, team],
+      });
+
+      expect(res.of(team)).toEqual([
+        { data: 'a' },
+        refused(
+          'This call would make the batch run 5 times, more than `maxRuns` (4) allows',
+        ),
+      ]);
+    });
+
+    test('a tree whose follow-ups would make the batch run more times than it allows runs none of them, and leaves the room to the next', async () => {
+      const first = sent('first', undefined);
+      const second = sent('second', undefined);
+      const third = sent('third', undefined);
+      const under = (parent: Sent) =>
+        call({
+          parent,
+          path: 'echo',
+          input: {},
+          reads: [{ to: ['id'], data: ['id'] }],
+          list: null,
+        });
+      const ofFirst = under(first);
+      const ofSecond = under(second);
+      const another = under(second);
+      const ofThird = under(third);
+      const fn = () => ({ id: 'x' });
+
+      const { res, ran } = await sendWith({
+        // Three calls and two follow-ups
+        limits: { ...pipelineLimitDefaults, maxRuns: 5 },
+        fns: { first: fn, second: fn, third: fn, echo: () => 'ran' },
+        sent: [first, second, third],
+        calls: [ofFirst, ofSecond, another, ofThird],
+      });
+
+      expect(res.of(ofFirst)).toEqual({ data: 'ran' });
+      const tooMany = refused(
+        'The follow-ups of this call would make the batch run at least 6 times, more than `maxRuns` (5) allows',
+      ).error;
+      expect(res.of(ofSecond)).toEqual({ error: tooMany });
+      expect(res.of(another)).toEqual({ error: tooMany });
+      expect(res.of(ofThird)).toEqual({ data: 'ran' });
+      expect(ran.filter((path) => path === 'echo')).toHaveLength(2);
+    });
   });
 
   describe('`maxReadsPerCall`', () => {
@@ -1970,6 +2081,98 @@ describe('the limits of a server', () => {
       expect(enough.outcome).toEqual([{ data: null }]);
       expect(enough.echo).toHaveBeenCalledWith({ longField: 'x' });
     });
+
+    test('a follow-up under one for every item counts its whole input at every place it runs', async () => {
+      const list = sent('list', undefined);
+      const author = call({
+        parent: list,
+        path: 'author',
+        input: {},
+        reads: [{ to: ['id'], item: [] }],
+        list: [['items']],
+      });
+      // It reads one short value, and its input is long: the server copies
+      // the input for every author
+      const team = call({
+        parent: author,
+        path: 'team',
+        input: { pad: 'x'.repeat(maxFillSize * 0.6) },
+        reads: [{ to: ['id'], data: ['id'] }],
+        list: null,
+      });
+      const teamFn = vi.fn(() => 'ran');
+
+      const { res } = await sendWith({
+        limits,
+        fns: {
+          list: () => ({ items: ['a', 'b'] }),
+          author: (input: { id: string }) => ({ id: input.id }),
+          team: teamFn,
+        },
+        sent: [list],
+        calls: [author, team],
+      });
+
+      expect(res.of(team)).toEqual([{ data: 'ran' }, over]);
+      expect(teamFn).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe('data that is still to come', () => {
+  test('can not be read: the follow-ups under it get an error, as what JSON makes of it is not what the client gets', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        // As a stream sends it: its `later` arrives after the rest
+        post: () => ({ id: 'ada', later: Promise.resolve('soon') }),
+        other: () => ({ id: 'lin' }),
+        author: () => ({ id: 'ada', later: Promise.resolve('soon') }),
+        echo,
+      },
+    });
+    const post = sent('post', undefined);
+    const underPost = call({
+      parent: post,
+      path: 'echo',
+      input: {},
+      reads: [{ to: ['id'], data: ['id'] }],
+      list: null,
+    });
+    const other = sent('other', undefined);
+    const author = call({
+      parent: other,
+      path: 'author',
+      input: {},
+      reads: [],
+      list: null,
+    });
+    const underAuthor = call({
+      parent: author,
+      path: 'echo',
+      input: {},
+      reads: [{ to: ['id'], data: ['id'] }],
+      list: null,
+    });
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [post, other],
+      calls: [underPost, author, underAuthor],
+    });
+
+    const unreadable = {
+      error: {
+        code: 'UNSUPPORTED_MEDIA_TYPE',
+        message: 'Cannot read the data of a stream-like response',
+      },
+    };
+    expect(res.of(underPost)).toEqual(unreadable);
+    expect(res.of(underAuthor)).toEqual(unreadable);
+    expect(echo).not.toHaveBeenCalled();
   });
 });
 
@@ -1977,6 +2180,13 @@ describe('how long a value is, for what a request fills in', () => {
   test('is how long it is in JSON', () => {
     const sizeOf = createPipelineSizeOf();
     const value = { a: ['x\ny', 1, true, null], b: { c: 'z' } };
+
+    expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
+  });
+
+  test('a value that JSON writes with `toJSON`, such as a `Date`, is as long as that', () => {
+    const sizeOf = createPipelineSizeOf();
+    const value = { at: new Date('2026-01-01T00:00:00Z') };
 
     expect(sizeOf(value, Infinity)).toBe(JSON.stringify(value).length);
   });
@@ -2558,10 +2768,14 @@ describe('a request the server refuses, before anything of it runs', () => {
       tree: { 0: { a: { path: 'a', reads: [], children: { b: 'anything' } } } },
       calls: 1,
       maxDepth: 1,
+      maxRuns: pipelineLimitDefaults.maxRuns,
     });
-    expect(plan.get(0)).toMatchObject([
-      { kind: 'node', node: { key: 'a', childKeys: ['b'], children: null } },
-    ]);
+    expect(plan.get(0)).toMatchObject({
+      ok: true,
+      children: [
+        { kind: 'node', node: { key: 'a', childKeys: ['b'], children: null } },
+      ],
+    });
   });
 
   test('a `tree` is in the search params of a request without a body, and beside the inputs in a body', () => {

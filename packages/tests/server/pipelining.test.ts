@@ -15,6 +15,7 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import {
   isObject,
@@ -1368,10 +1369,8 @@ describe('the `tree` search param', () => {
       message: 'A call for every item exceeds the maximum batch size',
       data: { code: 'BAD_REQUEST' },
     };
-    expect(over.json[0].children['tags[]']).toMatchObject([
-      { tag: { error: refused } },
-      { tag: { error: refused } },
-    ]);
+    // One error in place of the list's items
+    expect(over.json[0].children['tags[]']).toMatchObject({ error: refused });
     // It ran for no item
     expect(over.calls).not.toHaveBeenCalled();
   });
@@ -1386,7 +1385,7 @@ describe('the `tree` search param', () => {
       tree: { 0: { 'long[]': tag, 'short[]': tag } },
     });
     // The lists and four runs are over the limit. The lists and two are not
-    expect(res.json[0].children['long[]'][0].tag.error.message).toBe(
+    expect(res.json[0].children['long[]'].error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );
     expect(res.json[0].children['short[]']).toHaveLength(2);
@@ -1926,4 +1925,42 @@ describe.each([
       expect.stringMatching(/^<< query #\d+ post$/),
     ]);
   });
+});
+
+test('a follow-up does not start once the request is aborted', async () => {
+  const t = initTRPC.create();
+  const controller = new AbortController();
+  const ran = vi.fn();
+  const router = t.router({
+    // The client goes away while it runs
+    post: t.procedure.query(() => {
+      controller.abort();
+      return { authorId: 'u1' };
+    }),
+    author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+      ran();
+      return { name: 'Ada' };
+    }),
+  });
+  const tree = {
+    0: {
+      author: {
+        path: 'author',
+        input: {},
+        reads: [{ to: ['id'], data: ['authorId'] }],
+      },
+    },
+  };
+  const res = await fetchRequestHandler({
+    endpoint: '/trpc',
+    req: new Request(
+      `http://localhost/trpc/post?batch=tree&input=${encodeURIComponent('{}')}&tree=${encodeURIComponent(JSON.stringify(tree))}`,
+      { signal: controller.signal },
+    ),
+    router,
+    experimental_allowPipelining: true,
+  });
+  await res.text().catch(() => undefined);
+
+  expect(ran).not.toHaveBeenCalled();
 });

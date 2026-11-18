@@ -1,6 +1,7 @@
 import { TRPCError } from '../../error/TRPCError';
+import { isPromise } from '../../stream/jsonl';
 import type { CombinedDataTransformer } from '../../transformer';
-import { emptyObject, isObject } from '../../utils';
+import { emptyObject, isAsyncIterable, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipeChildrenResponse,
@@ -38,6 +39,7 @@ export function pipelineLimitsOf(
     maxDepth: option.maxDepth ?? pipelineLimitDefaults.maxDepth,
     allowWholeValues:
       option.allowWholeValues ?? pipelineLimitDefaults.allowWholeValues,
+    maxRuns: option.maxRuns ?? pipelineLimitDefaults.maxRuns,
   };
 }
 
@@ -106,6 +108,11 @@ export interface PipelinePlanNode {
   depth: number;
   /** Whether it runs once for every item of a list in its parent's data */
   perItem: boolean;
+  /**
+   * Whether it can run at more than one place: for every item, or under a
+   * node that does. Each of its runs then gets a copy of its input
+   */
+  repeated: boolean;
   /** The keys of its children, in order, which the response has too */
   childKeys: string[];
   /**
@@ -125,6 +132,14 @@ export type PipelinePlanChildren = (
       children: PipelinePlanChildren;
     }
 )[];
+
+/**
+ * The children of a top-level call, checked, or why none of them runs: the
+ * batch would run more times than `maxRuns` allows, if all of them ran once
+ */
+export type PipelinePlanTree =
+  | { ok: true; children: PipelinePlanChildren }
+  | { ok: false; keys: string[]; error: TRPCError };
 
 /** The keys of children, in order */
 function keysOf(children: PipelinePlanChildren) {
@@ -151,8 +166,17 @@ export function parsePipelineTree(opts: {
   calls: number;
   /** How deep the server goes: what is deeper isn't looked at */
   maxDepth: number;
-}): Map<number, PipelinePlanChildren> {
+  /**
+   * The most runs the batch may have. Each node runs at least once, so the
+   * children of a top-level call that would take the nodes over it don't
+   * run: a response then has a result for every node of no more trees than
+   * can run.
+   */
+  maxRuns: number;
+}): Map<number, PipelinePlanTree> {
   const { maxDepth } = opts;
+  /** The nodes of the tree being parsed, and the keys under too deep ones */
+  let nodes = 0;
   let parsed = opts.tree;
   if (parsed === undefined) {
     return new Map();
@@ -208,6 +232,8 @@ export function parsePipelineTree(opts: {
     /** The calls above it, nearest first */
     above: readonly PlanFrame[];
     perItem: boolean;
+    /** Whether a node above it runs at more than one place */
+    repeated: boolean;
     where: string;
   }): PipelinePlanNode {
     const { value, where } = opts;
@@ -224,6 +250,11 @@ export function parsePipelineTree(opts: {
     const frames = [{ hasItem: opts.perItem }, ...opts.above];
     const depth = frames.length;
     const children = value['children'];
+    const childKeys = children ? Object.keys(children) : [];
+    const goesDeeper = depth <= maxDepth;
+    // What isn't parsed still gets a result for each of its keys
+    nodes += 1 + (goesDeeper ? 0 : childKeys.length);
+    const repeated = opts.perItem || opts.repeated;
     return {
       key: opts.key,
       path: value['path'],
@@ -233,13 +264,15 @@ export function parsePipelineTree(opts: {
       ),
       depth,
       perItem: opts.perItem,
-      childKeys: children ? Object.keys(children) : [],
+      repeated,
+      childKeys,
       children:
-        children && depth <= maxDepth
+        children && goesDeeper
           ? parseChildren({
               value: children,
               above: frames,
               perItem: false,
+              repeated,
               where,
             })
           : null,
@@ -252,6 +285,8 @@ export function parsePipelineTree(opts: {
     above: readonly PlanFrame[];
     /** Whether they are under a list */
     perItem: boolean;
+    /** Whether the call they are under runs at more than one place */
+    repeated: boolean;
     where: string;
   }): PipelinePlanChildren {
     return Object.entries(opts.value).map(([key, value]) => {
@@ -268,9 +303,17 @@ export function parsePipelineTree(opts: {
             value,
             above: opts.above,
             perItem: opts.perItem,
+            repeated: opts.repeated,
             where,
           }),
         };
+      }
+      if (opts.perItem) {
+        // One way to write a list of lists, which also keeps how deep a tree
+        // can go to what `maxDepth` allows
+        throw invalidTree(
+          `a list at ${where} is right under another: write them as one key, such as "pages[].items[]"`,
+        );
       }
       if (!isRecord(value)) {
         throw invalidTree(`expected children at ${where}`);
@@ -283,37 +326,57 @@ export function parsePipelineTree(opts: {
           value,
           above: opts.above,
           perItem: true,
+          repeated: true,
           where,
         }),
       };
     });
   }
 
+  /** The nodes of the trees that run, which start with a run each */
+  let taken = opts.calls;
   return new Map(
-    Object.entries(parsed).map(([key, children]) => {
-      const index = Number(key);
-      if (
-        !Number.isInteger(index) ||
-        index < 0 ||
-        index >= opts.calls ||
-        // One key per call: `01` is not another way to write `1`
-        String(index) !== key
-      ) {
-        throw invalidTree(`no call at index ${key}`);
-      }
-      if (!isRecord(children)) {
-        throw invalidTree(`expected children at ${key}`);
-      }
-      return [
-        index,
-        parseChildren({
+    // Integer keys come in order, so which trees run doesn't depend on how
+    // the request lists them
+    Object.entries(parsed).map(
+      ([key, children]): [number, PipelinePlanTree] => {
+        const index = Number(key);
+        if (
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= opts.calls ||
+          // One key per call: `01` is not another way to write `1`
+          String(index) !== key
+        ) {
+          throw invalidTree(`no call at index ${key}`);
+        }
+        if (!isRecord(children)) {
+          throw invalidTree(`expected children at ${key}`);
+        }
+        nodes = 0;
+        const parsedChildren = parseChildren({
           value: children,
           above: [{ hasItem: false }],
           perItem: false,
+          repeated: false,
           where: key,
-        }),
-      ];
-    }),
+        });
+        if (taken + nodes > opts.maxRuns) {
+          return [
+            index,
+            {
+              ok: false,
+              keys: Object.keys(children),
+              error: overLimit(
+                `The follow-ups of this call would make the batch run at least ${taken + nodes} times, more than \`maxRuns\` (${opts.maxRuns}) allows`,
+              ),
+            },
+          ];
+        }
+        taken += nodes;
+        return [index, { ok: true, children: parsedChildren }];
+      },
+    ),
   );
 }
 
@@ -396,9 +459,75 @@ function overTheWire(
     : transformer.deserialize(JSON.parse(json));
 }
 
+/** What the children of a call that failed, or that can't be read, get */
+function sourceFailed(cause: unknown) {
+  return new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: 'The call this call reads its input from failed',
+    cause,
+  });
+}
+
+/** Thrown inside `readableData` for a part of the data that is still to come */
+class StillToCome extends Error {}
+
+/**
+ * A call's data as the client gets it, for the calls under it, or why it
+ * can't be read: some of it is still to come, as a stream sends it, and what
+ * JSON makes of that is `{}`, which isn't what the client gets. Data that
+ * can't go over the wire at all fails the call itself, so what is under it
+ * gets what it gets for a failed call.
+ */
+function readableData(
+  transformer: CombinedDataTransformer['output'],
+  data: unknown,
+): { ok: true; data: unknown } | { ok: false; error: TRPCError } {
+  try {
+    const json = JSON.stringify(
+      transformer.serialize(data),
+      (_key, value: unknown) => {
+        if (isPromise(value) || isAsyncIterable(value)) {
+          throw new StillToCome();
+        }
+        return value;
+      },
+    );
+    return {
+      ok: true,
+      data:
+        json === undefined
+          ? undefined
+          : transformer.deserialize(JSON.parse(json)),
+    };
+  } catch (cause) {
+    return {
+      ok: false,
+      error:
+        cause instanceof StillToCome
+          ? new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: 'Cannot read the data of a stream-like response',
+            })
+          : sourceFailed(cause),
+    };
+  }
+}
+
 /** A call refused for going over one of the server's limits */
 function overLimit(message: string) {
   return new TRPCError({ code: 'BAD_REQUEST', message });
+}
+
+/** How many items a list of `depth` levels of lists has, as `shape` makes them */
+function countItems(items: unknown[], depth: number): number {
+  if (depth <= 1) {
+    return items.length;
+  }
+  let count = 0;
+  for (const item of items) {
+    count += countItems(item as unknown[], depth - 1);
+  }
+  return count;
 }
 
 /**
@@ -438,6 +567,10 @@ export function createPipelineSizeOf() {
     }
     if (typeof value !== 'object' || value === null) {
       return 4;
+    }
+    if ('toJSON' in value && typeof value.toJSON === 'function') {
+      // As JSON has it, such as a `Date`'s string
+      return sizeOf(value.toJSON(), room);
     }
     const known = objects.get(value);
     if (known && (known.exact || known.size > room)) {
@@ -559,14 +692,34 @@ export function pipelineTree(opts: {
     tree: opts.tree,
     calls: opts.calls,
     maxDepth: limits.maxDepth,
+    maxRuns: limits.maxRuns,
   });
   const sizeOf = createPipelineSizeOf();
   let runs = opts.calls;
   let filledSize = 0;
 
-  /** A value as the client gets it, which is what a path refers to */
+  /**
+   * A call's data as the client gets it, which is what a path refers to, or
+   * why it can't be read
+   */
   function asRead(data: unknown) {
-    return overTheWire(opts.transformer.output, data);
+    return readableData(opts.transformer.output, data);
+  }
+  /** Why `count` more runs can't be taken, if they can't */
+  function overRuns(count: number, what: string) {
+    const total = runs + count;
+    if (opts.maxRuns !== null && total > opts.maxRuns) {
+      return new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `A call for every item exceeds the maximum batch size`,
+      });
+    }
+    if (total > limits.maxRuns) {
+      return overLimit(
+        `${what} would make the batch run ${total} times, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+      );
+    }
+    return null;
   }
   /**
    * A filled-in input as a call gets it when a client fills it in and sends
@@ -630,15 +783,9 @@ export function pipelineTree(opts: {
         node: { path: string; input: unknown } | null,
       ) => TError;
     }) {
-      const failed = (keys: readonly string[], cause: unknown) => {
-        const error = run.fail(
-          new TRPCError({
-            code: 'PRECONDITION_FAILED',
-            message: 'The call this call reads its input from failed',
-            cause,
-          }),
-          null,
-        );
+      /** Children that don't run, with `cause` as each one's error */
+      const failed = (keys: readonly string[], cause: TRPCError) => {
+        const error = run.fail(cause, null);
         return {
           entries: keys.map(
             (key): PipelineChildrenResult<TError>['entries'][number] => [
@@ -657,6 +804,24 @@ export function pipelineTree(opts: {
         for (const child of children) {
           if (child.kind === 'node') {
             runNode(child.node, places);
+            continue;
+          }
+          const lists = places.map((place) => ({
+            place,
+            items: readPipelineList(place.value, child.levels),
+          }));
+          // Every node under the list runs for every item: if they would be
+          // too many, the list has an error in place of its items
+          let items = 0;
+          for (const list of lists) {
+            items += countItems(list.items, child.levels.length);
+          }
+          const tooMany = overRuns(items * child.children.length, 'This list');
+          if (tooMany) {
+            const error = run.fail(tooMany, null);
+            for (const place of places) {
+              place.out.entries.push([child.key, { kind: 'failed', error }]);
+            }
             continue;
           }
           // The places the items make, a level of lists for each `[]`
@@ -680,16 +845,12 @@ export function pipelineTree(opts: {
               inner.push(itemPlace);
               return itemPlace.out;
             });
-          for (const place of places) {
-            place.out.entries.push([
+          for (const list of lists) {
+            list.place.out.entries.push([
               child.key,
               {
                 kind: 'list',
-                items: shape(
-                  readPipelineList(place.value, child.levels),
-                  child.levels.length,
-                  place,
-                ),
+                items: shape(list.items, child.levels.length, list.place),
               },
             ]);
           }
@@ -702,11 +863,11 @@ export function pipelineTree(opts: {
         index: number;
         frame:
           | { ok: true; frame: Frame; above: readonly Frame[] }
-          | { ok: false; cause: unknown };
+          | { ok: false; error: TRPCError };
       }): PipelineChildrenResult<TError> {
         const { frame } = of;
         if (!frame.ok) {
-          return failed(keysOf(of.children), frame.cause);
+          return failed(keysOf(of.children), frame.error);
         }
         const place: Place<TError> = {
           index: of.index,
@@ -747,7 +908,7 @@ export function pipelineTree(opts: {
             children:
               node.childKeys.length === 0
                 ? null
-                : Promise.resolve(failed(node.childKeys, error)),
+                : Promise.resolve(failed(node.childKeys, sourceFailed(error))),
           }));
         };
         const refusal = refusalOf(node);
@@ -782,25 +943,25 @@ export function pipelineTree(opts: {
                   read.path,
                 );
                 checkValue(value);
-                if (!node.perItem) {
+                // A node that runs once copies only its values: the rest of
+                // its input is what the client sent
+                if (!node.repeated) {
                   add(value);
                 }
                 return writePipelinePath({ input, to: read.to, value });
               }, base),
             );
-            // Every run of a node for an item gets a copy of its whole input.
-            // All of it counts, with the keys its values are written under,
-            // before the next is made
-            if (node.perItem) {
+            // Every run of a node that runs at more than one place gets a
+            // copy of its whole input. All of it counts, with the keys its
+            // values are written under, before the next is made
+            if (node.repeated) {
               add(input);
             }
             return input;
           });
-          if (opts.maxRuns !== null && runs + places.length > opts.maxRuns) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `A call for every item exceeds the maximum batch size`,
-            });
+          const tooMany = overRuns(places.length, 'This call');
+          if (tooMany) {
+            throw tooMany;
           }
           // Taken only once its inputs are made: a refused node takes none
           runs += places.length;
@@ -826,19 +987,18 @@ export function pipelineTree(opts: {
           }
           let frame:
             | { ok: true; frame: Frame; above: readonly Frame[] }
-            | { ok: false; cause: unknown };
+            | { ok: false; error: TRPCError };
           if (outcome.ok) {
-            try {
-              frame = {
-                ok: true,
-                frame: { data: asRead(outcome.data), item: place.item },
-                above: place.above,
-              };
-            } catch (cause) {
-              frame = { ok: false, cause };
-            }
+            const read = asRead(outcome.data);
+            frame = read.ok
+              ? {
+                  ok: true,
+                  frame: { data: read.data, item: place.item },
+                  above: place.above,
+                }
+              : read;
           } else {
-            frame = { ok: false, cause: null };
+            frame = { ok: false, error: sourceFailed(null) };
           }
           return {
             outcome,
@@ -858,25 +1018,31 @@ export function pipelineTree(opts: {
           index: number,
           outcome: Promise<{ ok: true; data: unknown } | { ok: false }>,
         ): Promise<PipelineChildrenResult<TError>> | null => {
-          const children = plan.get(index);
-          if (!children) {
+          const tree = plan.get(index);
+          if (!tree) {
             return null;
           }
+          if (!tree.ok) {
+            return Promise.resolve(failed(tree.keys, tree.error));
+          }
+          const { children } = tree;
           const keys = keysOf(children);
           return outcome.then((it) => {
             if (!it.ok) {
-              return failed(keys, null);
+              return failed(keys, sourceFailed(null));
             }
-            let data: unknown;
-            try {
-              data = asRead(it.data);
-            } catch (cause) {
-              return failed(keys, cause);
+            const read = asRead(it.data);
+            if (!read.ok) {
+              return failed(keys, read.error);
             }
             return childrenOf({
               children,
               index,
-              frame: { ok: true, frame: { data, item: undefined }, above: [] },
+              frame: {
+                ok: true,
+                frame: { data: read.data, item: undefined },
+                above: [],
+              },
             });
           });
         },

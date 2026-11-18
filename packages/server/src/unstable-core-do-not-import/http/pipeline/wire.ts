@@ -37,8 +37,9 @@
  * - The tree has the children of each top-level call that has any, by the
  *   call's index.
  * - **Children** are an object. A key that ends in `[]` is a list: a path
- *   into the data of the parent, with children of its own that run once for
- *   every item of the list. Any other key names a node.
+ *   into the data of the parent, with nodes of its own that run once for
+ *   every item of the list. Any other key names a node. A list's children
+ *   are nodes: a list of lists is one key, such as `pages[].items[]`.
  * - A **node** is a follow-up call: `path`, `input` (as a top-level call's
  *   input, through the transformer), `reads`, and `children` if it has any.
  * - A **read** fills a part of the node's input: `to` is where it goes in
@@ -51,7 +52,7 @@
  * segment means every item of the list there: `items[]`, `data.items[]`,
  * `pages[].items[]`. In a segment, `\` escapes `.`, `[`, `]` and `\`, so a
  * property named `a.b` is `a\.b`. The key is resolved in the data of the
- * call the children belong to, or, under a list, in the item.
+ * call the children belong to.
  *
  * A node's key is a name the client picks, taken as it is, such as
  * `author.byId`. It can be anything that doesn't end in `[]`.
@@ -186,6 +187,11 @@ export interface PipelineLimits {
   maxDepth: number;
   /** Whether a value a call reads can be an object or an array */
   allowWholeValues: boolean;
+  /**
+   * The most runs a batch has: each of its calls, and a call for every item
+   * once for each item. `maxBatchSize` caps them too, if it is lower
+   */
+  maxRuns: number;
 }
 
 /**
@@ -198,6 +204,7 @@ export const pipelineLimitDefaults: PipelineLimits = {
   maxFillSize: 100_000,
   maxDepth: 3,
   allowWholeValues: false,
+  maxRuns: 100,
 };
 
 /** A key that names a list: the path to follow for each level of lists */

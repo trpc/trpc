@@ -546,6 +546,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }): Promise<PipelineNodeOutcome<unknown>> => {
       const proc = await getProcedureAtPath(router, node.path);
       try {
+        // Its parent's data came after the client went away: nobody gets it
+        if (callSignal.aborted) {
+          throw new TRPCError({
+            code: 'CLIENT_CLOSED_REQUEST',
+            message: 'The request was aborted',
+          });
+        }
         if (!proc) {
           throw new TRPCError({
             code: 'NOT_FOUND',

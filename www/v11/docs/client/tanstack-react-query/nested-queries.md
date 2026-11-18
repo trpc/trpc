@@ -500,6 +500,7 @@ createHTTPServer({
     maxFillSize: 100_000,
     maxDepth: 4,
     allowWholeValues: true,
+    maxRuns: 100,
   },
 }).listen(3000);
 ```
@@ -539,7 +540,8 @@ This call is nested 4 deep, more than `maxDepth` (3) allows
 - **The rest of the request runs.** Only that follow-up fails, and each key under it gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
 - **The follow-up's query gets the error**, as it would get the procedure's own. A follow-up for every item runs for no item, and its items each ask by themselves.
 - **A follow-up that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
-- **Each limit applies to each follow-up**, and `maxFillSize` to the whole request.
+- **Each limit applies to each follow-up**, and `maxFillSize` and `maxRuns` to the whole request.
+- **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A follow-up under it gets an `UNSUPPORTED_MEDIA_TYPE`.
 
 #### What a value is {#limit-terms}
 
@@ -579,20 +581,28 @@ Whether a value can be an object or a list: `false` by default. Without it, a va
 
 #### `maxFillSize` {#limit-fill-size}
 
-The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a follow-up for every item, it counts the whole input of every run instead, keys and all, as each run gets its own copy.
+The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a follow-up that runs more than once, for every item or under one that does, it counts the whole input of every run instead, keys and all, as each run gets its own copy.
 
 - **Why 100,000:** the other limits keep a follow-up small. This one keeps the whole request small, as its trees can have many follow-ups, and a follow-up can run for many items.
 - **Raise it** with `maxValueLength` or `allowWholeValues`, if a request of yours fills in more.
+
+#### `maxRuns` {#limit-runs}
+
+The most times a request runs a procedure: 100 by default. Each top-level call is a run, and each follow-up is a run for every place in the tree it has: once for every item of the lists above it. A follow-up that would go over it is refused where it would, and a list whose follow-ups would go over it gets one error in place of its items: its items each ask by themselves. A tree with more follow-ups than it allows runs none of them, as each runs at least once.
+
+- **Why 100:** a follow-up under a list runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
+- **Raise it** for pages that load an entry for every item of long lists.
+- **`maxBatchSize` caps it too**, if it is lower.
 
 #### How they add up {#limits-together}
 
 At most, a follow-up for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
 
-Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) too. In a query tree, it counts every run: each top-level call, and each follow-up once for every item it runs for. A follow-up whose runs would go over it is refused. These limits cap how much each run carries.
+`maxRuns` caps how many times a request runs a procedure, and [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) caps them too, if it is lower. The other limits cap how much each run carries.
 
 #### Like a GraphQL query cost limit {#limits-graphql}
 
-A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxBatchSize` caps the calls and runs, and the others cap what each follow-up carries. Each is a plain count, with no cost to give to every procedure. A follow-up over one is refused by itself, not the whole request.
+A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each follow-up carries. Each is a plain count, with no cost to give to every procedure. A follow-up over one is refused by itself, not the whole request.
 
 ## The load doesn't wait {#without-waiting}
 
