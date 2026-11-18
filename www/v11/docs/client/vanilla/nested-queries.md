@@ -232,7 +232,7 @@ export const client = createTRPCClient<AppRouter>({
 - **The code that calls `experimental_nested()` doesn't change.**
 - **It saves round trips where there are any**: in a load that goes over HTTP. A link that [doesn't pipeline](#fallback) sends each query as before.
 - **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
-- **`true` sets the default [limits](#limits).** They take ids, slugs and cursors. To read objects and lists, such as a list made with `.map()`, set `allowWholeValues`.
+- **`true` sets the default [limits](#limits).** They take ids, slugs and cursors, and a [`.map()`](#map) over a list. To write an object or a list into an input, such as `{ tags: it.tags }`, set [`allowWholeValues`](#limit-whole-values).
 
 ### What goes over the wire {#wire}
 
@@ -359,7 +359,7 @@ createHTTPServer({
 }).listen(3000);
 ```
 
-The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower:
+The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower, and its `maxItems` to `maxBatchSize` or lower:
 
 ```ts twoslash title='client.ts'
 // @include: dq-router
@@ -376,6 +376,7 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
+      maxItems: 50,
       experimental_pipelining: experimental_pipelining({
         maxReadsPerCall: 16,
         maxDepth: 4,
