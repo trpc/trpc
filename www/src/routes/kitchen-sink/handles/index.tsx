@@ -6,6 +6,7 @@ import {
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
+import { z } from 'zod';
 
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
@@ -18,18 +19,20 @@ import { loaderTRPC, useRequestCount } from './-trpc.ts';
 
 const [showcase] = showcases;
 
+/** `?post=2`. Without it, or with a post that doesn't exist, the first post. */
+const searchSchema = z.object({
+  post: z
+    .number()
+    .int()
+    .refine((post) => postNumbers.includes(post))
+    .optional()
+    .catch(undefined),
+});
+
 export const Route = createFileRoute('/kitchen-sink/handles/')({
   head: () => pageHead({ ...showcase, noindex: true }),
   // The post comes from the URL, so the loader can start its queries.
-  // `?post=2` is read as a number. Anything else is the first post.
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { post?: number | undefined } => ({
-    post:
-      typeof search['post'] === 'number' && postNumbers.includes(search['post'])
-        ? search['post']
-        : undefined,
-  }),
+  validateSearch: searchSchema,
   loaderDeps: (opts) => ({ post: String(opts.search.post ?? 1) }),
   loader: async (opts) => {
     const { queryClient, trpc } = loaderTRPC();

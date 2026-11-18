@@ -3,6 +3,7 @@
  * never changes, so every request and server instance sees the same data.
  */
 import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.create();
 
@@ -45,23 +46,6 @@ const comments: Readonly<Record<string, ReadonlyArray<Comment>>> = {
   '3': [],
 };
 
-/** Reads `{ [key]: string }`; a tiny parser, so the showcase needs no zod. */
-const stringField =
-  <TKey extends string>(key: TKey) =>
-  (input: unknown): Record<TKey, string> => {
-    const value: unknown =
-      typeof input === 'object' && input !== null
-        ? (input as Record<string, unknown>)[key]
-        : undefined;
-    if (typeof value !== 'string') {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `${key} must be a string`,
-      });
-    }
-    return { [key]: value } as Record<TKey, string>;
-  };
-
 const findPost = (id: string) => {
   const post = posts.find((candidate) => candidate.id === id);
   if (post === undefined) {
@@ -73,10 +57,10 @@ const findPost = (id: string) => {
 export const appRouter = t.router({
   post: t.router({
     byId: t.procedure
-      .input(stringField('id'))
+      .input(z.object({ id: z.string() }))
       .query(({ input }) => findPost(input.id)),
     comments: t.procedure
-      .input(stringField('postId'))
+      .input(z.object({ postId: z.string() }))
       .query(({ input }) => comments[findPost(input.postId).id] ?? []),
   }),
 });

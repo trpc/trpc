@@ -8,7 +8,8 @@ import { kitchenSink } from './-showcases.ts';
  * The kitchen sink: small showcases of tRPC features, each in its own folder
  * here. They render on request (`build/on-demand.ts`), so their loaders run
  * on the server, and no search engine indexes them (`unindexedPaths` in
- * `src/site.ts`).
+ * `src/site.ts`). Showcases validate search params with a zod schema
+ * (`validateSearch`), as apps should.
  */
 export const Route = createFileRoute('/kitchen-sink')({
   head: () => pageHead({ ...kitchenSink, noindex: true }),
