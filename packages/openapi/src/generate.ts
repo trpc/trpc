@@ -95,6 +95,7 @@ const PRIMITIVE_FLAGS =
   TypeFlags.String |
   TypeFlags.Number |
   TypeFlags.Boolean |
+  TypeFlags.TemplateLiteral |
   TypeFlags.StringLiteral |
   TypeFlags.NumberLiteral |
   TypeFlags.BooleanLiteral;

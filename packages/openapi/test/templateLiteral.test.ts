@@ -42,4 +42,11 @@ describe('generateOpenAPIDocument template literal outputs', () => {
       type: 'string',
     });
   });
+
+  it('strips brand objects from branded template literals', () => {
+    // Like branded plain strings, only the string itself reaches the schema.
+    expect(requireEnvelopeDataSchema({ doc, procPath: 'branded' })).toEqual({
+      type: 'string',
+    });
+  });
 });
