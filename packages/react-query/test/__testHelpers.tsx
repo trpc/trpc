@@ -360,7 +360,11 @@ export function createAppRouter() {
   // resource still fits `konn()` contexts, which need an index signature.
   const resource: Simplify<typeof ctx & AsyncDisposable> = makeAsyncResource(
     ctx,
-    close,
+    async () => {
+      // A client left open keeps reconnecting after the server closes.
+      void wsClient.close().catch(() => null);
+      await close();
+    },
   );
   return resource;
 }
