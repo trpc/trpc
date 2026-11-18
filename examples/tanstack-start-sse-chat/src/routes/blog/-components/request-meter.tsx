@@ -55,8 +55,15 @@ function useBlogQueries() {
       }
     }
     // The run each query started fetching in, so data that comes after a
-    // navigation counts in the run that asked for it
+    // navigation counts in the run that asked for it. The loaders start
+    // their queries before this mounts: those are of the current run
     const runOf = new Map<string, number>();
+    for (const query of cache.findAll({
+      predicate: isBlogQuery,
+      fetchStatus: 'fetching',
+    })) {
+      runOf.set(query.queryHash, meter.get().id);
+    }
     const unsubscribeCache = cache.subscribe((event) => {
       if (!isBlogQuery(event.query)) {
         return;
