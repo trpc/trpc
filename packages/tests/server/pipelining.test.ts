@@ -1307,12 +1307,13 @@ describe('the `pipe` search param', () => {
       await get(
         `input=${encodeURIComponent('{}')}&pipe=${encodeURIComponent('{}')}`,
         {
-          path: Array.from({ length: count }, () => 'lists').join(','),
+          path: Array.from({ length: count }, () => 'unread').join(','),
           allowPipelining: { maxRuns: 2 },
         },
       );
     const within = await batch(2);
     expect(within.status).toBe(200);
+    expect(within.calls).toHaveBeenCalledTimes(2);
     expect(within.json).toHaveLength(2);
 
     const over = await batch(3);
@@ -1322,6 +1323,7 @@ describe('the `pipe` search param', () => {
         message: 'The batch has 3 calls, more than `maxRuns` (2) allows',
       },
     });
+    expect(over.calls).not.toHaveBeenCalled();
   });
 
   test('a call for every item counts each item towards `maxBatchSize`', async () => {

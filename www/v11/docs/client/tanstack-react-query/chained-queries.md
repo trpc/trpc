@@ -493,7 +493,7 @@ A call that would go over a limit is refused, with a `BAD_REQUEST` that names th
 This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 ```
 
-- **The rest of the request runs.** Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
+- **The rest of the request runs**, unless it has more calls than `maxRuns` allows: then it fails as a whole. Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
 - **The query of that call gets the error**, as it would get the procedure's own. A call for every item runs for no item, and its items each ask by themselves.
 - **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
@@ -558,7 +558,7 @@ At most, a call for every item fills in, for every run, as many values as `maxRe
 
 #### Like a GraphQL query cost limit {#limits-graphql}
 
-A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each call carries. Each is a plain count, with no cost to give to every procedure. A call over one is refused by itself, not the whole request.
+A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each call carries. Each is a plain count, with no cost to give to every procedure. A call over one is refused by itself, not the whole request, unless the request has more calls than `maxRuns`.
 
 ## The load doesn't wait {#without-waiting}
 
