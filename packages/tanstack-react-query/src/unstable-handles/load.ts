@@ -373,9 +373,11 @@ export function beginEntries(opts: {
       const { action } = event;
       for (const one of watched.get(event.query.queryHash) ?? []) {
         // Not a write, such as `setQueryData()`, while the request runs:
-        // what the entries read is what the request returns, or its failure
+        // what the entries read is what the request returns, or its failure.
+        // The action's data, not the query's: a listener told before this
+        // one may have written to the query since
         if (action.type === 'success' && !action.manual) {
-          one.data.settle(ok(event.query.state.data));
+          one.data.settle(ok(action.data));
         } else if (action.type === 'error') {
           one.data.settle(
             failed(ownFailure(one.leaf.label, one.leaf.state, action.error)),
