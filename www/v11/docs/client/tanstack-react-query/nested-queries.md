@@ -296,7 +296,7 @@ function MoreFromTeam(props: {
 ```
 
 - **Each part shows when its query has loaded**: the post, then the author, then the team's posts. Give each its own Suspense boundary.
-- **The components make no request of their own.** Each query is already on its way when its component asks for it.
+- **The components make no request of their own.** Each query is already on its way when its component asks for it. Data older than `staleTime` still refetches in the background, as with any query: set a `staleTime` above 0, as [the setup guides do](/docs/client/tanstack-react-query/handles#invalidation-and-staleness).
 - **A finished handle is an ordinary handle.** It reads the cache entry `trpc.author.byId.queryOptions({ id: 'u1' })` would.
 
 Then [turn on one request](/docs/client/vanilla/nested-queries#turn-on). Without it, the same code works, with one round trip per step.

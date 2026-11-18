@@ -55,7 +55,7 @@ export const meter = {
     };
   },
   get: () => current,
-  /** Starts a new run, for a navigation */
+  /** Starts a new run: the blog's route calls it before each navigation's loaders */
   start: () => {
     current = {
       id: current.id + 1,
@@ -65,9 +65,13 @@ export const meter = {
     };
     update(current.id, () => ({}));
   },
-  /** A query of the blog got its data: now, or at `at`, a `Date.now()` */
-  arrive: (path: string, at: number | null) => {
-    update(current.id, (run) => {
+  /**
+   * A query of the blog got its data: now, or at `at`, a `Date.now()`. It
+   * counts in the run it started in, `id`, and not in one a navigation began
+   * since
+   */
+  arrive: (id: number, path: string, at: number | null) => {
+    update(id, (run) => {
       const ms =
         at === null
           ? since(run)

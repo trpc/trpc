@@ -13,6 +13,7 @@ import {
   blogSettingsOf,
   setSlowQueries,
 } from '~/lib/blog-settings';
+import { meter } from '~/lib/request-meter';
 import { useTRPC } from '~/lib/trpc';
 import { RequestMeter } from './-components/request-meter';
 import { BlogPreloadProvider, BlogSettingsBar } from './-components/settings';
@@ -23,8 +24,13 @@ export const Route = createFileRoute('/blog')({
   search: { middlewares: [retainSearchParams([...blogSearchKeys])] },
   // Runs before the loaders below it start their queries, so those queries,
   // and the ones a preload starts, ask for the speed in the URL they load
-  beforeLoad: ({ search }) => {
+  beforeLoad: ({ search, preload }) => {
     setSlowQueries(search.slow === true);
+    // Each navigation into or inside the blog is a new run of the request
+    // meter. Not run when the page hydrates: the first run is the page load
+    if (!preload && typeof window !== 'undefined') {
+      meter.start();
+    }
   },
   component: BlogLayout,
 });

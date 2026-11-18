@@ -1,6 +1,5 @@
 import type { Query, QueryKey } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { Run } from '~/lib/request-meter';
 import { endMs, meter } from '~/lib/request-meter';
@@ -39,7 +38,6 @@ function colorsOf(run: Run) {
  */
 function useBlogQueries() {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const [fetching, setFetching] = useState(0);
   useEffect(() => {
     const cache = queryClient.getQueryCache();
@@ -48,33 +46,42 @@ function useBlogQueries() {
     if (meter.get().id === 0 && meter.get().arrivals.length === 0) {
       for (const query of cache.findAll({ predicate: isBlogQuery })) {
         if (query.state.status === 'success') {
-          meter.arrive(pathOf(query.queryKey) ?? '', query.state.dataUpdatedAt);
+          meter.arrive(
+            0,
+            pathOf(query.queryKey) ?? '',
+            query.state.dataUpdatedAt,
+          );
         }
       }
     }
+    // The run each query started fetching in, so data that comes after a
+    // navigation counts in the run that asked for it
+    const runOf = new Map<string, number>();
     const unsubscribeCache = cache.subscribe((event) => {
       if (!isBlogQuery(event.query)) {
         return;
       }
-      const path = pathOf(event.query.queryKey) ?? '';
+      const { queryHash } = event.query;
+      if (event.type === 'updated' && event.action.type === 'fetch') {
+        runOf.set(queryHash, meter.get().id);
+      }
       // A query that got its data: by itself, or in the page the server
       // streamed
       if (
         (event.type === 'updated' && event.action.type === 'success') ||
         (event.type === 'added' && event.query.state.status === 'success')
       ) {
-        meter.arrive(path, null);
+        meter.arrive(
+          runOf.get(queryHash) ?? meter.get().id,
+          pathOf(event.query.queryKey) ?? '',
+          null,
+        );
+        runOf.delete(queryHash);
       }
       setFetching(queryClient.isFetching({ predicate: isBlogQuery }));
     });
-    const unsubscribeRouter = router.subscribe('onBeforeNavigate', () =>
-      meter.start(),
-    );
-    return () => {
-      unsubscribeCache();
-      unsubscribeRouter();
-    };
-  }, [queryClient, router]);
+    return unsubscribeCache;
+  }, [queryClient]);
   return fetching;
 }
 
