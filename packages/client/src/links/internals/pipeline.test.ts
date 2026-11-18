@@ -101,20 +101,65 @@ describe('readPipelinedRun', () => {
   });
 });
 
+const link = {
+  ...resolveHTTPLinkOptions({ url: 'http://localhost' }),
+  maxItems: Infinity,
+  maxURLLength: Infinity,
+  streams: false,
+  read: (result: HTTPResult) => {
+    if ('error' in result.json) {
+      throw TRPCClientError.from(result.json);
+    }
+    return { data: result.json.result.data };
+  },
+};
+
 describe('a pipelined call', () => {
-  test('settles once: what a response says after its final state is ignored', async () => {
-    const link = {
-      ...resolveHTTPLinkOptions({ url: 'http://localhost' }),
-      maxItems: Infinity,
-      maxURLLength: Infinity,
-      streams: false,
-      read: (result: HTTPResult) => {
-        if ('error' in result.json) {
-          throw TRPCClientError.from(result.json);
-        }
-        return { data: result.json.result.data };
-      },
+  test('a malformed result fails its call by itself, and its siblings keep their data', async () => {
+    const pipelining = experimental_pipelining()(link);
+    const pipeline = createOperationPipeline();
+    const op = {
+      context: pipelineContext(pipeline),
+      type: 'query' as const,
+      path: 'post',
+      input: undefined,
     };
+    pipelining.open(op);
+    const reads = {
+      each: null,
+      reads: [
+        { kind: 'whole' as const, to: ['id'], from: pipeline, path: ['id'] },
+      ],
+    };
+    const malformed = pipeCall({ path: 'author', input: {}, reads });
+    const sibling = pipeCall({ path: 'team', input: {}, reads });
+    assert(malformed && sibling);
+    const taken = pipelining.take([op]);
+    assert(taken);
+
+    taken.settle(
+      Promise.resolve([
+        { json: { result: { data: { id: 'ada' } } }, meta },
+        { json: null as unknown as HTTPResult['json'], meta },
+        { json: { result: { data: 'Team' } }, meta },
+      ]),
+    );
+
+    // Bounded: a call left pending fails the test rather than hangs
+    const settled = vi.fn();
+    void malformed.settled.then(settled);
+    await vi.waitFor(() => expect(settled).toHaveBeenCalled());
+    expect(settled.mock.calls[0]![0]).toMatchObject({
+      status: 'ran',
+      outcome: { ok: false },
+    });
+    expect(await sibling.settled).toEqual({
+      status: 'ran',
+      outcome: { ok: true, data: { kind: 'once', data: 'Team' } },
+    });
+  });
+
+  test('settles once: what a response says after its final state is ignored', async () => {
     const pipelining = experimental_pipelining()(link);
     const pipeline = createOperationPipeline();
     const op = {
