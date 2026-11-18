@@ -4392,12 +4392,10 @@ describe('a run the link cannot read', () => {
     };
     const appRouter = t.router({
       list: t.procedure.query(() => ({ ids: ['u1', 'bad', 'u2'] })),
-      author: t.procedure
-        .input(z.object({ id: z.string() }))
-        .query((opts) => ({
-          id: opts.input.id,
-          unreadable: opts.input.id === 'bad',
-        })),
+      author: t.procedure.input(z.object({ id: z.string() })).query((opts) => ({
+        id: opts.input.id,
+        unreadable: opts.input.id === 'bad',
+      })),
     });
     await using resource = testReactResource(appRouter, {
       server: { experimental_allowPipelining: true },
