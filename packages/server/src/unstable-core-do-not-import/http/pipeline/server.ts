@@ -14,6 +14,7 @@ import type {
   PipelinePath,
 } from './wire';
 import {
+  markPipelineNotRun,
   pipelineFrameOf,
   pipelineLimitDefaults,
   readPipelinePath,
@@ -305,9 +306,28 @@ function readableData(
   }
 }
 
+/**
+ * The errors of the server's limits. A call refused with one before any of
+ * its runs ran can be asked for by itself: the limits are on what the server
+ * fills in, not on what a client sends
+ */
+const overLimitErrors = new WeakSet<TRPCError>();
+
 /** A call refused for going over one of the server's limits */
 function overLimit(message: string) {
-  return new TRPCError({ code: 'BAD_REQUEST', message });
+  const error = new TRPCError({ code: 'BAD_REQUEST', message });
+  overLimitErrors.add(error);
+  return error;
+}
+
+/** A call refused for having more runs than `maxBatchSize` allows */
+function overBatchSize() {
+  const error = new TRPCError({
+    code: 'BAD_REQUEST',
+    message: `A call for every item exceeds the maximum batch size`,
+  });
+  overLimitErrors.add(error);
+  return error;
 }
 
 /**
@@ -636,6 +656,17 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
      */
     started: boolean;
   }
+  /**
+   * The errors of calls refused for going over a limit before any of their
+   * runs ran, as the call's outcome: see `errorShape`
+   */
+  const refusedBeforeRunning = new WeakSet<TRPCError>();
+  /** Notes why a call doesn't run, before any of its runs ran */
+  const notRunBecause = (cause: unknown) => {
+    if (cause instanceof TRPCError && overLimitErrors.has(cause)) {
+      refusedBeforeRunning.add(cause);
+    }
+  };
   const newRun = (): Run => {
     const outcome = createDeferred<unknown>();
     // A failed run that nothing reads from isn't an unhandled rejection
@@ -845,6 +876,25 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     before: Places<Place>,
   ): Places<Place> {
     const { list, inItem } = frame;
+    /**
+     * How many items the lists of this level have together, so far. A place
+     * is made for each, for a level of a list of lists too, which no call may
+     * run for: they count against `maxRuns` all the same
+     */
+    let placed = 0;
+    const tooMany = (length: number) => {
+      const error = tooLong(length);
+      if (error) {
+        return error;
+      }
+      if (placed + length > limits.maxRuns) {
+        return overLimit(
+          `The lists at one level have ${placed + length} items together, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+        );
+      }
+      placed += length;
+      return null;
+    };
     return mapPlaces(before, async (place): Promise<PlacesNode<Place>> => {
       try {
         const items = inItem
@@ -856,7 +906,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               list.path,
               null,
             );
-        return itemsOf({ list: items, indexes: place.indexes, tooLong });
+        return itemsOf({
+          list: items,
+          indexes: place.indexes,
+          tooLong: tooMany,
+        });
       } catch (cause) {
         // The run the list is in failed, or the list can't be read: none
         // of its items run, and other lists are as they are
@@ -915,10 +969,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   function holdRuns(held: number, count: number) {
     const taken = runs - held + count;
     if (opts.maxRuns !== null && taken > opts.maxRuns) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `A call for every item exceeds the maximum batch size`,
-      });
+      throw overBatchSize();
     }
     if (taken > limits.maxRuns) {
       throw overLimit(
@@ -934,10 +985,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    */
   function tooLong(length: number) {
     if (opts.maxRuns !== null && length > opts.maxRuns) {
-      return new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `A call for every item exceeds the maximum batch size`,
-      });
+      return overBatchSize();
     }
     return length > limits.maxRuns
       ? overLimit(
@@ -1030,6 +1078,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         // Refused, or its own input can't be read: it runs for no item, and
         // gives back the place it holds
         runs -= 1;
+        notRunBecause(cause);
         throw cause;
       }
       /** Whether it still holds the place it held from the start */
@@ -1102,18 +1151,32 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         source.runs.resolve,
       );
       type Response = Awaited<PipelineRuns<TError>>;
-      const response = (places: Places<Ran>): PipelineRuns<TError> =>
+      const response = (
+        places: Places<Ran>,
+        /** Whether it is the call's outcome as a whole, not a list's in it */
+        whole: boolean,
+      ): PipelineRuns<TError> =>
         places.then((node): Response | Promise<Response> => {
           switch (node.kind) {
             case 'run':
               return node.value.envelope;
             case 'items':
-              return { items: node.items.map(response) };
-            case 'failed':
-              return { error: error(node.error, base) };
+              return {
+                items: node.items.map((item) => response(item, false)),
+              };
+            case 'failed': {
+              const shape = error(node.error, base);
+              // Refused as a whole, for a limit, so none of its runs ran
+              return {
+                error:
+                  whole && overLimitErrors.has(node.error)
+                    ? markPipelineNotRun(shape)
+                    : shape,
+              };
+            }
           }
         });
-      return response(ran);
+      return response(ran, true);
     };
   }
 
@@ -1154,6 +1217,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         // Refused, or its input can't be made: it doesn't run, and gives back
         // its place among the runs
         runs -= 1;
+        notRunBecause(cause);
         throw cause;
       }
     };
@@ -1183,6 +1247,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   return {
     /** The calls, with inputs that are filled in when they are read */
     calls: calls.map((it) => it.call),
+    /**
+     * The shape of a call's error as the response has it: marked if the
+     * server refused the call, for going over a limit, before any of its runs
+     * ran. A client can then ask for it by itself
+     */
+    errorShape: <TShape>(error: TRPCError, shape: TShape) =>
+      refusedBeforeRunning.has(error) ? markPipelineNotRun(shape) : shape,
     /**
      * Runs every call, and tells the calls that read a call's data how it
      * went. A call that reads values gets how it runs, which is `null` for

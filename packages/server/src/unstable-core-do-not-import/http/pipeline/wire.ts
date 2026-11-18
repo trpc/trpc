@@ -65,6 +65,9 @@
  *   with the code `PRECONDITION_FAILED`, in place of its items. What isn't a
  *   list has no items: `{ items: {} }`.
  * - A run fails by itself, and a run that reads a failed one doesn't run.
+ * - A call the server refused before any of its runs ran, for going over
+ *   one of its limits, has `pipeline: 'not-run'` in its error's `data`. A
+ *   client can ask for it by itself, as a call that wasn't sent.
  * - Streamed, the `items` of a level and each of its items are values of
  *   their own, so each run arrives when it is ready, in any order.
  */
@@ -74,6 +77,42 @@
  * batch has `1`.
  */
 export const pipelineBatch = 'pipeline';
+
+/**
+ * What the server puts in the `data` of the error of a call it refused before
+ * any of its runs ran: a separate query is worth a try
+ */
+const notRun = { key: 'pipeline', value: 'not-run' } as const;
+
+/**
+ * An error shape with the mark of a call the server refused before any of its
+ * runs ran. Added after the error formatter, so no formatter drops it. A
+ * shape that is no object is as it is
+ */
+export function markPipelineNotRun<TShape>(shape: TShape): TShape {
+  if (typeof shape !== 'object' || shape === null) {
+    return shape;
+  }
+  const data: unknown = (shape as Record<string, unknown>)['data'];
+  return {
+    ...shape,
+    data: {
+      ...(typeof data === 'object' && data !== null ? data : {}),
+      [notRun.key]: notRun.value,
+    },
+  };
+}
+
+/**
+ * Whether an error's `data` says the server refused its call before any of
+ * its runs ran
+ */
+export function isPipelineNotRun(data: unknown) {
+  return (
+    hasOwn(data, notRun.key) &&
+    (data as Record<string, unknown>)[notRun.key] === notRun.value
+  );
+}
 
 /**
  * Where a value is: the keys to follow. `null` stands for every item of a
@@ -133,7 +172,9 @@ export interface PipelineLimits {
   allowWholeValues: boolean;
   /**
    * The most runs a batch has: each of its calls, and a call for every item
-   * once for each item. `maxBatchSize` caps them too, if it is lower
+   * once for each item. `maxBatchSize` caps them too, if it is lower. The
+   * items of one level of a list of lists, together, can't be more than this
+   * either, whether or not a call runs for them
    */
   maxRuns: number;
 }

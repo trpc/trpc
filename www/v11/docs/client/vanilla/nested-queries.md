@@ -309,6 +309,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 - **A `null` in its path is a level of lists**: `["pages", null, "items"]` is every item of every page. `items` then has a level for each.
 - **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls whose frames don't nest, such as for the items of two different lists, is refused.
 - **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
+- **A call the server refused for a [limit](#limits) before any of it ran has `"pipeline": "not-run"` in its error's `data`**, beside what your error formatter puts there. The client then asks for it by itself. The error of a run, or of a list inside a call, has no such mark.
 - **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
 ### What your links see {#links}
@@ -330,6 +331,7 @@ A query that reads another's data then waits for that data, fills in its input i
 - **It doesn't fit in the request** of the query it reads, within `maxURLLength` and `maxItems`.
 - **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, is more than `maxDepth` calls deep in its chain, 3 by default, or would make the request more than `maxRuns` calls, 100 by default.
 - **The request failed as a whole**, such as on a network error. If a link sends it again, the query asks by itself.
+- **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
 
 With TanStack Query, some of these work differently: see [When the list is fetched again](/docs/client/tanstack-react-query/nested-queries#later-fetches).
@@ -393,7 +395,8 @@ This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 ```
 
 - **The rest of the request runs**, unless it has more calls than `maxRuns` allows: then it fails as a whole. Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
-- **The query of that call gets the error**, as it would get the procedure's own. A run of a call for every item fails by itself, and its item's query gets the error. A list whose runs would go over `maxRuns` runs for none of its items: the list loads, and each of its items' queries gets the `BAD_REQUEST`. The link can't see how long a list is before the server has it, so it doesn't send them again by themselves.
+- **A call refused before it runs asks by itself**, as in [the fallback](#fallback), and its query gets the data. A list whose runs would go over `maxRuns` runs for none of its items: the list loads, and its items' queries fall back to separate queries.
+- **A run that is refused fails by itself**, and its item's query gets the error, as it would get the procedure's own. The other runs of its call can run.
 - **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
 
@@ -444,7 +447,9 @@ The most a request fills in, in characters of JSON: 100,000 by default. It count
 
 #### `maxRuns` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and their queries get a `BAD_REQUEST`. In a list of lists, that is each inner list by itself, and no level can be longer than it allows, the outer ones too: each item of a level has a place before anything runs.
+The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and their queries fall back to separate queries. In a list of lists, that is each inner list by itself, and the queries of its items get a `BAD_REQUEST`.
+
+The lists at one level of a list of lists count together against it, even when no call runs for their items: each item of a level has a place before anything runs. So a middle level wider than `maxRuns` is refused, even when its leaves would fit.
 
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load a query for every item of long lists.
@@ -462,6 +467,11 @@ At most, a call for every item fills in, for every run, as many values as `maxRe
 A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each call carries. Each is a plain count, with no cost to give to every procedure. A call over one is refused by itself, not the whole request, unless the request has more calls than `maxRuns`.
 
 
+### Good to know {#good-to-know}
+
+- **An input the transformer can't read fails the batch's calls**, as in any batch.
+- **Don't change data another call returned.** A call that reads it may see a different value than the response sends.
+
 ## FAQ {#faq}
 
 #### How is this like GraphQL? How is it not? {#graphql}
@@ -474,7 +484,7 @@ A GraphQL server often gives a query a cost, from its depth and from how many it
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
-- **Set the link's `maxItems` to it, or lower**, and the link's `maxRuns` to the server's, if you change it. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items' queries get a `BAD_REQUEST`.
+- **Set the link's `maxItems` to it, or lower**, and the link's `maxRuns` to the server's, if you change it. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items' queries fall back to separate queries.
 - **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain of reads is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call or a run that would go over one is refused, and fails by itself.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, a call that reads it, or any other part of the data it is in, gets an `UNSUPPORTED_MEDIA_TYPE` before its procedure validates its input.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.

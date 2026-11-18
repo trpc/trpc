@@ -226,8 +226,17 @@ interface Call {
   frame: Scope[];
   /** The request of a call that reads nothing */
   sent: Promise<unknown> | null;
+  /** What the inputs of other calls read of its data */
+  reads: Segment[][];
   /** The data of each run, by its indexes */
-  runs: Map<string, Promise<unknown>>;
+  runs: Map<string, Promise<Run>>;
+}
+
+interface Run {
+  /** As the caller gets it, and can change it */
+  data: unknown;
+  /** A copy of what other calls' inputs read, as it arrived */
+  read: unknown;
 }
 
 type Shape =
@@ -302,6 +311,95 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
   });
 }
 
+/** A copy of data, also of the plain objects, arrays and Dates in it */
+function copyData(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(copyData);
+  }
+  if (isPlainObject(value)) {
+    const copy: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      setOwn(copy, key, copyData(value[key]));
+    }
+    return copy;
+  }
+  if (value instanceof Date) {
+    return new Date(Date.prototype.getTime.call(value));
+  }
+  return value;
+}
+
+/**
+ * A copy of what `paths` read of data, and nothing else: a later change to
+ * the data doesn't change what a query that asks by itself sends
+ */
+function copyReads(value: unknown, paths: readonly Segment[][]): unknown {
+  if (paths.some((path) => path.length === 0)) {
+    return copyData(value);
+  }
+  if (paths.length === 0 || typeof value !== 'object' || value === null) {
+    return value;
+  }
+  const array = Array.isArray(value);
+  const byKey = new Map<string, Segment[][]>();
+  for (const [segment, ...rest] of paths) {
+    const keys =
+      segment === undefined
+        ? []
+        : !isScope(segment)
+          ? [segment]
+          : array
+            ? Array.from(value.keys(), String)
+            : [];
+    for (const key of keys) {
+      if (hasOwn(value, key)) {
+        byKey.set(key, [...(byKey.get(key) ?? []), rest]);
+      }
+    }
+  }
+  // Read as `valueOf()` reads it: own keys, and each item by its index
+  const copy: Record<string, unknown> = array
+    ? (new Array(value.length) as unknown as Record<string, unknown>)
+    : {};
+  for (const [key, rest] of byKey) {
+    if (!(array && key === 'length')) {
+      setOwn(
+        copy,
+        key,
+        copyReads((value as Record<string, unknown>)[key], rest),
+      );
+    }
+  }
+  return copy;
+}
+
+/**
+ * Whether a value that isn't a plain object, an array or a Date has a
+ * stand-in in it. `seen` keeps a cycle from looping
+ */
+function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
+  if (shapeOf(value)) {
+    return true;
+  }
+  // A typed array or `DataView` holds bytes only
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    ArrayBuffer.isView(value) ||
+    seen.has(value)
+  ) {
+    return false;
+  }
+  seen.add(value);
+  const values =
+    value instanceof Map
+      ? [...value.keys(), ...value.values()]
+      : value instanceof Set
+        ? [...value]
+        : Object.values(value);
+  return values.some((it) => hasStandIn(it, seen));
+}
+
 /**
  * A copy of an input, with each stand-in in it replaced. `to` is where a
  * value is in the input: `null` in an array, where the server can't write
@@ -334,6 +432,12 @@ function mapInput(
     // The time it holds, as `structuredClone()` reads it, not an override
     return new Date(Date.prototype.getTime.call(value));
   }
+  // Sent as it is, with nothing filled in
+  if (isObject(value) && hasStandIn(value, new WeakSet())) {
+    throw new TypeError(
+      'experimental_nested(): an input can have stand-ins in plain objects, arrays and Dates, not in an instance of a class',
+    );
+  }
   return value;
 }
 
@@ -345,7 +449,7 @@ function mapInput(
  *
  * The callback runs once, at once, before any data is there: it can read
  * values and pass them to inputs, but can't branch on them or compute with
- * them.
+ * them. An input can have stand-ins in plain objects, arrays and Dates.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#without-tanstack-query
@@ -514,6 +618,7 @@ export function experimental_nested<
     const blanked = mapInput(input, [], (_standIn, hole) => {
       checkScopes(hole.ref, scopes);
       holes.push(hole);
+      hole.ref.call.reads.push(hole.ref.path);
       return undefined;
     });
     const call: Call = {
@@ -525,6 +630,7 @@ export function experimental_nested<
       source: null,
       frame: [],
       sent: null,
+      reads: [],
       runs: new Map(),
     };
     calls.push(call);
@@ -601,7 +707,11 @@ export function experimental_nested<
     const key = call.scopes.map((scope) => items.get(scope)).join();
     let run = call.runs.get(key);
     if (!run) {
-      run = startRun(call, items);
+      // Copied as it arrives, before the caller can change it
+      run = startRun(call, items).then((data) => ({
+        data,
+        read: copyReads(data, call.reads),
+      }));
       run.catch(nothing);
       call.runs.set(key, run);
     }
@@ -643,8 +753,9 @@ export function experimental_nested<
     );
   }
 
-  async function valueOf(ref: Ref, items: Items) {
-    let value = await runOf(ref.call, items);
+  /** `read` for what an input reads, `data` for what the caller gets */
+  async function valueOf(ref: Ref, items: Items, as: keyof Run) {
+    let value = (await runOf(ref.call, items))[as];
     for (const segment of ref.path) {
       const key = isScope(segment) ? String(items.get(segment)) : segment;
       value = hasOwn(value, key)
@@ -657,7 +768,7 @@ export function experimental_nested<
   async function fill(value: unknown, items: Items): Promise<unknown> {
     const shape = shapeOf(value);
     if (shape?.kind === 'value') {
-      return valueOf(shape.ref, items);
+      return valueOf(shape.ref, items, 'read');
     }
     if (Array.isArray(value)) {
       return Promise.all(value.map((item) => fill(item, items)));
@@ -679,10 +790,10 @@ export function experimental_nested<
   async function resolve(shape: Shape, items: Items): Promise<unknown> {
     switch (shape.kind) {
       case 'value':
-        return valueOf(shape.ref, items);
+        return valueOf(shape.ref, items, 'data');
       case 'node': {
         const node = {
-          node: await valueOf(shape.ref, items),
+          node: await valueOf(shape.ref, items, 'data'),
           edges: {} as Record<string, Promise<unknown>>,
         };
         for (const [key, edgeShape] of Object.entries(shape.edges)) {
@@ -695,7 +806,7 @@ export function experimental_nested<
         return node;
       }
       case 'list': {
-        const list = await valueOf(shape.scope.list, items);
+        const list = await valueOf(shape.scope.list, items, 'data');
         const resolved = await Promise.all(
           (Array.isArray(list) ? list : []).map((_item, index) =>
             resolve(shape.item, new Map(items).set(shape.scope, index)),

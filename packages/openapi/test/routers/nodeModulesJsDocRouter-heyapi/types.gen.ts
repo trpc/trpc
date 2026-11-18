@@ -69,7 +69,9 @@ export type PipelineLimits = {
   allowWholeValues: boolean;
   /**
    * The most runs a batch has: each of its calls, and a call for every item
-   * once for each item. `maxBatchSize` caps them too, if it is lower
+   * once for each item. `maxBatchSize` caps them too, if it is lower. The
+   * items of one level of a list of lists, together, can't be more than this
+   * either, whether or not a call runs for them
    */
   maxRuns: number;
 };

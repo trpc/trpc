@@ -7,6 +7,7 @@ import type {
 import {
   createDeferred,
   deserializePipelinedItems,
+  isPipelineNotRun,
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelinedCallsRan,
@@ -14,6 +15,7 @@ import {
   pipelineLimitDefaults,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
+import { TRPCClientError } from '../../TRPCClientError';
 import type { Operation } from '../types';
 import type {
   ContentOptions,
@@ -100,8 +102,9 @@ export interface PipelinedCall {
    * - `waiting`: the request hasn't gone yet
    * - `sent`: it is in a request
    * - `unresolved`: it didn't run. It wasn't sent, its request failed as a
-   *   whole, or a call it reads failed. Its `result` is then an error, and
-   *   what wants it makes a request
+   *   whole, a call it reads failed, or the server refused it before any of
+   *   its runs ran. Its `result` is then an error, and what wants it makes a
+   *   request
    */
   status: 'waiting' | 'sent' | 'unresolved';
   /** Rejects with what the call failed with */
@@ -232,8 +235,11 @@ function moveCall(
     | { kind: 'sent' }
     /** It didn't run, and its result is this error */
     | { kind: 'not-run'; error: unknown }
-    /** It didn't run, as its own result says: a call it reads failed */
-    | { kind: 'source-failed' },
+    /**
+     * It didn't run, as its own result says: a call it reads failed, or the
+     * server refused it before any of its runs ran
+     */
+    | { kind: 'source-failed' | 'refused' },
 ) {
   switch (to.kind) {
     case 'sent':
@@ -244,6 +250,7 @@ function moveCall(
       call.settle(Promise.reject(to.error));
       return;
     case 'source-failed':
+    case 'refused':
       call.status = 'unresolved';
       return;
   }
@@ -410,7 +417,19 @@ function settlePipelinedBatch(opts: {
                 ),
           };
         }
-        return opts.link.read(sent);
+        try {
+          return opts.link.read(sent);
+        } catch (error) {
+          // Refused before any of its runs ran, such as for a list longer
+          // than the server's limits: what wants it asks for it by itself
+          if (
+            error instanceof TRPCClientError &&
+            isPipelineNotRun(error.data)
+          ) {
+            moveCall(call, { kind: 'refused' });
+          }
+          throw error;
+        }
       },
     );
     result.catch(() => undefined);

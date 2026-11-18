@@ -180,9 +180,17 @@ export function pipelinedBatchUrl(opts: {
     /([?&])batch=1(?=&|$)/,
     `$1batch=${pipelineBatch}`,
   );
-  return opts.pipe
-    ? `${url}&pipe=${encodeURIComponent(JSON.stringify(opts.pipe))}`
-    : url;
+  if (!opts.pipe) {
+    return url;
+  }
+  // The server would read the link's, or both
+  const search = url.slice(url.indexOf('?') + 1).split('#')[0];
+  if (new URLSearchParams(search).has('pipe')) {
+    throw new Error(
+      `The link's URL has a "pipe" search param: "pipe" is reserved for pipelining, like "input" and "batch"`,
+    );
+  }
+  return `${url}&pipe=${encodeURIComponent(JSON.stringify(opts.pipe))}`;
 }
 
 /**
