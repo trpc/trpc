@@ -1371,17 +1371,19 @@ describe('the `tree` search param', () => {
         allowPipelining: { maxRuns: 2 },
         tree: {},
       });
-    const within = await batch(['lists', 'lists']);
+    const within = await batch(['unread', 'unread']);
     expect(within.status).toBe(200);
+    expect(within.calls).toHaveBeenCalledTimes(2);
     expect(within.json).toHaveLength(2);
 
-    const over = await batch(['lists', 'lists', 'lists']);
+    const over = await batch(['unread', 'unread', 'unread']);
     expect(over.status).toBe(400);
     expect(over.json).toMatchObject({
       error: {
         message: 'The batch has 3 calls, more than `maxRuns` (2) allows',
       },
     });
+    expect(over.calls).not.toHaveBeenCalled();
   });
 
   test('a follow-up that is refused takes none of `maxBatchSize` from the next', async () => {

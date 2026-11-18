@@ -526,7 +526,7 @@ A call that would go over a limit is refused, with a `BAD_REQUEST` that names th
 This call is nested 4 deep, more than `maxDepth` (3) allows
 ```
 
-- **The rest of the request runs.** Only that follow-up fails, and each of its children gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
+- **The rest of the request runs**, unless it has more top-level calls than `maxRuns` allows: then it fails as a whole. Only that follow-up fails, and each of its children gets a `PRECONDITION_FAILED`, as when it fails for any other reason.
 - **The follow-up's query gets the error**, as it would get the procedure's own. A follow-up for every item runs for no item, and its items each ask by themselves.
 - **A follow-up that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Each limit applies to each follow-up**, and `maxFillSize` and `maxRuns` to the whole request.
@@ -592,7 +592,7 @@ At most, a follow-up for every item fills in, for every run, as many values as `
 
 #### Like a GraphQL query cost limit {#limits-graphql}
 
-A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each follow-up carries. Each is a plain count, with no cost to give to every procedure. A follow-up over one is refused by itself, not the whole request.
+A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxRuns` caps the runs, and the others cap what each follow-up carries. Each is a plain count, with no cost to give to every procedure. A follow-up over one is refused by itself, not the whole request, unless the request has more top-level calls than `maxRuns`.
 
 ## The load doesn't wait {#without-waiting}
 

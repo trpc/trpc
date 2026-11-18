@@ -174,7 +174,8 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
 /**
  * The limits of `experimental_allowPipelining`: what a pipelined batch can make
  * the server do. A call that goes over one is refused with a `BAD_REQUEST`,
- * and the rest of the batch runs.
+ * and the rest of the batch runs. A batch with more calls than `maxRuns`
+ * fails as a whole.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#limits
@@ -262,7 +263,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    *
    * `true` accepts them with the default limits. An object sets limits,
    * and a call that goes over one is refused while the rest of the batch
-   * runs.
+   * runs. A batch with more calls than `maxRuns` fails as a whole.
    *
    * Experimental: it may change in a minor release.
    * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#one-request
