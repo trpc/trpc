@@ -513,6 +513,30 @@ describe('dataOf', () => {
     ).rejects.toMatchObject({ key: 'card.post', code: 'NOT_FOUND' });
   });
 
+  test('a `null` cursor read from data stays `null` in the handle, and when the handle is read again', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    // The last page: its `nextCursor` is `null`
+    const last = ensureEntry(trpc.post.paged, { cursor: 2 });
+    const [handles] = await loadHandles(trpc, {
+      last,
+      next: prefetchInfiniteEntry(trpc.post.cursorKind, {
+        cursor: experimental_dataOf(last).nextCursor,
+      }),
+    });
+    expect(handles.next.initialCursor).toBeNull();
+
+    // Read with nothing in the cache, as another page would
+    resource.queryClient.clear();
+    const data = await resource.queryClient.fetchInfiniteQuery(
+      fromHandle(trpc, handles.next, {
+        getNextPageParam: (page) => page.nextCursor,
+      }),
+    );
+    expect(data.pages).toEqual([{ cursor: 'null', nextCursor: null }]);
+  });
+
   test('throws for an entry that is not in the load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

@@ -79,7 +79,8 @@ export function toHandle(options: any, type: HandleType) {
     // `skipToken` is no value a handle can carry from a loader to a component
     ...(options.queryFn === skipToken && { skipped: true }),
   };
-  if (type === 'infinite' && options.initialPageParam != null) {
+  // `null` too, which is a cursor: no cursor is `undefined`
+  if (type === 'infinite' && options.initialPageParam !== undefined) {
     handle['initialCursor'] = options.initialPageParam;
   }
   return handle;
@@ -278,11 +279,12 @@ export function experimental_handleOfItem(
     ...withoutCursor
   }: Record<string, unknown> = infinite ? filled : {};
   const input = infinite ? withoutCursor : filled;
-  const initialCursor = perItem.initialCursor ?? cursor;
+  const initialCursor =
+    perItem.initialCursor !== undefined ? perItem.initialCursor : cursor;
   return {
     queryKey: [...perItem.queryKey.slice(0, -1), { ...args, input }],
     ...(input !== undefined && { input }),
-    ...(initialCursor != null && { initialCursor }),
+    ...(initialCursor !== undefined && { initialCursor }),
     // An item of an entry whose input is `skipToken` is skipped too
     ...(perItem.skipped && { skipped: true }),
     // What the items of its own list load, if it is a list
@@ -351,15 +353,17 @@ export function fromHandle(
   const procedure = handle.path
     .slice(ctx.path.length)
     .reduce((level, segment) => level[segment], ctx.proxy);
+  const firstCursor = (rawHandle as TRPCInfiniteQueryHandle).initialCursor;
   const readOpts =
-    handle.type === 'infinite'
-      ? {
-          initialCursor: (rawHandle as TRPCInfiniteQueryHandle).initialCursor,
-          ...opts,
-        }
-      : opts;
+    handle.type === 'infinite' ? { initialCursor: firstCursor, ...opts } : opts;
+  // `infiniteQueryOptions()` takes a `null` `initialCursor` for none. A `null`
+  // cursor goes in the input instead, which the query key leaves out
+  const input =
+    handle.type === 'infinite' && firstCursor === null
+      ? { ...(handle.input as object | undefined), cursor: null }
+      : handle.input;
   const options = optionsOf(procedure, handle.type)(
-    rawHandle.skipped ? skipToken : handle.input,
+    rawHandle.skipped ? skipToken : input,
     readOpts,
   );
   const perItem = rawHandle.experimental_perItem;
@@ -374,7 +378,7 @@ export function fromHandle(
             options,
             // The request of one fetch, which a link that pipelines marks
             optionsWith: (pipeline) =>
-              optionsOf(procedure, handle.type)(handle.input, {
+              optionsOf(procedure, handle.type)(input, {
                 ...readOpts,
                 trpc: {
                   ...readOpts?.trpc,
