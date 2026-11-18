@@ -464,6 +464,55 @@ describe.each([
     expect(since).toBe('1970-01-01T00:00:00.000Z');
   });
 
+  test('a query that asks by itself reads the data as it arrived, not as the caller changed it', async () => {
+    await using ctx = setup({ pipelining: false });
+    const gate = createDeferred();
+    ctx.gates.set('ada', gate.promise);
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.bySlug.query({ slug: 'a' }).with((it) => ({
+        // `team` asks once its author has arrived, after the change below
+        author: q.author.byId
+          .query({ id: it.authorId })
+          .with(() => ({ team: q.team.byId.query({ id: it.authorId }) })),
+      })),
+    );
+    post.node.authorId = 'bob';
+    gate.resolve();
+
+    const author = await post.edges.author;
+    expect(await author.edges.team).toMatchObject({ id: 'ada' });
+  });
+
+  test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
+    await using ctx = setup({ pipelining: true });
+    class AuthorInput {
+      constructor(public id: string | experimental_StandIn<string>) {}
+    }
+
+    expect(() =>
+      experimental_nested(ctx.client, (q) =>
+        q.post.bySlug.query({ slug: 'a' }).with((it) => ({
+          author: q.author.byId.query(new AuthorInput(it.authorId)),
+        })),
+      ),
+    ).toThrow('stand-ins in plain objects, arrays and Dates');
+    expect(ctx.ops).toEqual([]);
+  });
+
+  test('an instance of a class without a stand-in in it is sent as it is', async () => {
+    await using ctx = setup({ pipelining: true });
+    class AuthorInput {
+      constructor(public id: string) {}
+    }
+
+    const author = await experimental_nested(ctx.client, (q) =>
+      q.author.byId.query(new AuthorInput('ada')),
+    );
+
+    expect(author).toEqual({ id: 'ada', teamId: 'team-ada' });
+  });
+
   test('a stand-in of another `experimental_nested()` call can not be read', async () => {
     await using ctx = setup({ pipelining: true });
     let authorId: unknown = null;
