@@ -373,7 +373,7 @@ A request carries a **query tree** for each top-level call: the queries nested u
 
 - **A follow-up** is a query nested under the data it reads: the author is a follow-up of the post. In the request it is a node, with its procedure's `path`, its `input` and its `reads`.
 - **A key** says where a follow-up is in its tree. A follow-up's own key is a name, such as `author.byId`.
-- **A list key** ends in `[]`, such as `items[]`. What is under it runs once for every item of that list, in the data it is under. `pages[].items[]` is a list of lists. A `.`, `[` or `]` in a property's name is escaped with `\`.
+- **A list key** ends in `[]`, such as `items[]`. What is under it runs once for every item of that list, in the data it is under. `pages[].items[]` is a list of lists, and `[]` alone the data itself, for a query that returns a list. A `.`, `[` or `]` in a property's name is escaped with `\`.
 - **A read** fills in a part of a follow-up's input. `to` is where it goes, and `data` is where it comes from in the data of the query above, or `item` in the item a run is for. `up` reaches a query further up: 2 is the one above that.
 
 A chain, such as `post.bySlug` → `author.byId` → `post.list`, is a tree with one branch. A tree can also branch, and run once for every item of a list.
@@ -475,7 +475,7 @@ Pipelining is not enabled on the server. Set `experimental_allowPipelining: true
 ```
 
 - **The server says so itself.** The client doesn't guess from the answer, so an error formatter can't hide it, unless it changes the message.
-- **A server older than this option** doesn't know such a request, and runs nothing of it either. To `httpBatchLink` it answers "not found", for one procedure named after all of the batch's paths. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
+- **A server older than this option** doesn't know such a request, and reads it as one call, not a batch. With several paths, that is one procedure named after all of them, which `httpBatchLink` gets "not found" for, and nothing runs. With one path, its procedure runs, with the batch's inputs as its input, which its input parser normally refuses. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
 - **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
 - **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
@@ -794,7 +794,7 @@ function AuthorName(props: {
 - **Items with the same input share a query**, as two posts by one author do.
 - **The list can be a list of lists**, as above: the items of every page of an infinite entry.
 - **A `null` in the list is an item like any other**, a `null` in a list of lists too. Its query gets `null`, or `undefined` for a part of it, in its input: a type error, unless the procedure takes that. What isn't a list has no items.
-- **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as `'pending'` and idle. No call goes to the server, and it takes nothing from `maxBatchSize`.
+- **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as idle: `'pending'`, unless the cache has data for its key. No call goes to the server, and it takes nothing from `maxBatchSize`.
 - **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.

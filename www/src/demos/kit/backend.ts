@@ -637,7 +637,16 @@ export function createHttpDemoClient(
         network.end(call.id, status);
       }
     };
-    req.signal.addEventListener('abort', () => endAll('aborted'));
+    /** Whether the server has sent all of the response */
+    let sentAll = false;
+    // The client also lets go of a request once it has read all of it, which
+    // is no cancellation. What is on its way arrives within a trip back, and
+    // ends its rows as it would have: a row still going after that was
+    // cancelled, unless the server had sent everything, as it has for a call
+    // that ran for no item
+    req.signal.addEventListener('abort', () => {
+      network.after(tripBack, () => endAll(sentAll ? 'done' : 'aborted'));
+    });
     await wait(tripThere);
     // Cancelled on its way there: the server never gets it
     req.signal.throwIfAborted();
@@ -660,6 +669,7 @@ export function createHttpDemoClient(
       new TransformStream<Uint8Array, Uint8Array>({
         // A call that ran for no item never finished: the response's end is its end.
         flush: () => {
+          sentAll = true;
           const arrived = wait(tripBack);
           return delivered.then(() => arrived).then(() => endAll('done'));
         },

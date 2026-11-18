@@ -544,7 +544,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       input: unknown;
       index: number;
     }): Promise<PipelineNodeOutcome<unknown>> => {
-      const proc = await getProcedureAtPath(router, node.path);
+      let proc: Awaited<ReturnType<typeof getProcedureAtPath>> = null;
       try {
         // Its parent's data came after the client went away: nobody gets it
         if (callSignal.aborted) {
@@ -553,6 +553,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: 'The request was aborted',
           });
         }
+        // A lazy router loads here, and can fail to
+        proc = await getProcedureAtPath(router, node.path);
         if (!proc) {
           throw new TRPCError({
             code: 'NOT_FOUND',
@@ -981,9 +983,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         return { error: config.transformer.output.serialize(outcome.error) };
       }
       try {
-        return {
-          result: { data: config.transformer.output.serialize(outcome.data) },
-        };
+        const data = config.transformer.output.serialize(outcome.data);
+        // Checked here, as the whole response is written as one: what JSON
+        // can't carry would fail it, not only this call
+        JSON.stringify(data);
+        return { result: { data } };
       } catch (cause) {
         // What can't go in the response is that call's error
         return {

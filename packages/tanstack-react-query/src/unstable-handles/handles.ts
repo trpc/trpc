@@ -1924,6 +1924,8 @@ function describeEntries(opts: {
       kind: leaf.state.kind,
       type: leaf.state.type,
       queryKey: options.queryKey,
+      // `skipToken` and no input have the same query key
+      skipped: options.queryFn === skipToken,
       // Not all of the options: `meta` can hold what has no JSON, or what is
       // new on every render
       options: startOptions.map((name) => describeOption(options[name])),

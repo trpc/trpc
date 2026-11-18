@@ -455,6 +455,31 @@ describe('backend over HTTP', () => {
     expect(labels).toContain('author.byId({ id: ‹post›.posts[].authorId })');
   });
 
+  it('ends the row of a query for every row of an empty list as done, not cancelled', async () => {
+    const { network, trpc } = session();
+    // A trip back takes a while, so the response ends on the server well
+    // before the client has read the last of it
+    network.delay = () => 20;
+    const feed = prefetchEntry(trpc.post.feed, { page: 99 });
+    await loadHandles(trpc, {
+      authors: experimental_entryPerItem(
+        experimental_dataOf(feed).posts,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+      feed,
+    });
+    await vi.waitFor(() => {
+      const statuses = network
+        .getTrace()
+        .requests.map((request) => request.status);
+      expect(statuses).toHaveLength(2);
+      expect(statuses).not.toContain('pending');
+    });
+    expect(
+      network.getTrace().requests.map((request) => request.status),
+    ).toEqual(['done', 'done']);
+  });
+
   it('ends the rows of a failed call, and of the call that could not run after it, as failed', async () => {
     const { network, trpc } = session();
     const post = prefetchEntry(trpc.post.byId, { id: 99 });

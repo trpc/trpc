@@ -14,7 +14,7 @@ import {
   pipelineContext,
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, lazy, TRPCError } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -1963,4 +1963,70 @@ test('a follow-up does not start once the request is aborted', async () => {
   await res.text().catch(() => undefined);
 
   expect(ran).not.toHaveBeenCalled();
+});
+
+test('a follow-up whose procedure fails to load fails by itself: the rest of the batch has its results', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    post: t.procedure.query(() => ({ authorId: 'u1' })),
+    // A router that loads when it is first called, and fails to
+    broken: lazy(() => Promise.reject(new Error('failed to load'))),
+  });
+  const tree = {
+    0: {
+      author: {
+        path: 'broken.author',
+        input: {},
+        reads: [{ to: ['id'], data: ['authorId'] }],
+      },
+    },
+  };
+  const res = await fetchRequestHandler({
+    endpoint: '/trpc',
+    req: new Request(
+      `http://localhost/trpc/post?batch=tree&input=${encodeURIComponent('{}')}&tree=${encodeURIComponent(JSON.stringify(tree))}`,
+    ),
+    router,
+    experimental_allowPipelining: true,
+  });
+  const json = await res.json();
+
+  expect(json[0].result.data).toEqual({ authorId: 'u1' });
+  expect(json[0].children.author.error).toMatchObject({
+    message: 'failed to load',
+    data: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+});
+
+test('a follow-up whose data JSON can not carry fails by itself: the rest of the batch has its results', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    post: t.procedure.query(() => ({ authorId: 'u1' })),
+    author: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ followers: 1n })),
+  });
+  const tree = {
+    0: {
+      author: {
+        path: 'author',
+        input: {},
+        reads: [{ to: ['id'], data: ['authorId'] }],
+      },
+    },
+  };
+  const res = await fetchRequestHandler({
+    endpoint: '/trpc',
+    req: new Request(
+      `http://localhost/trpc/post?batch=tree&input=${encodeURIComponent('{}')}&tree=${encodeURIComponent(JSON.stringify(tree))}`,
+    ),
+    router,
+    experimental_allowPipelining: true,
+  });
+  const json = await res.json();
+
+  expect(json[0].result.data).toEqual({ authorId: 'u1' });
+  expect(json[0].children.author.error).toMatchObject({
+    data: { code: 'INTERNAL_SERVER_ERROR' },
+  });
 });

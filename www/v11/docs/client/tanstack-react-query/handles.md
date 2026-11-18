@@ -426,7 +426,7 @@ export const postRoute = createRoute({
 
 Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.post.byId, skipToken)`, or `prefetchInfiniteEntry` the same way. Nothing starts, and the entry still has a handle:
 
-- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: its `status` is `'pending'` and its `fetchStatus` `'idle'`. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
+- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: it never fetches, and its `fetchStatus` is `'idle'`. Its `status` is `'pending'`, unless the cache has data for its key: `skipToken` doesn't clear that, so a query without an input can show what an earlier fetch got. Check `handle.skipped` to tell a skipped entry apart. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
 - **Only a prefetch entry takes it.** A load waits for the data of an ensure or fetch entry, which would never come, so `ensureEntry(procedure, skipToken)` is a type error.
 - **An entry that reads its data with `experimental_dataOf()` fails**, as there is none: the load rejects, and says so.
 

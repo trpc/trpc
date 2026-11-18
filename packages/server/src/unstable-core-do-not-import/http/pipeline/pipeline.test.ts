@@ -1157,6 +1157,36 @@ describe('a list key', () => {
     expect(res.of(none)).toEqual([]);
   });
 
+  test('a list key can be the data itself, when the call returns a list', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: { list: () => [{ id: 'a' }, { id: 'b' }], echo },
+    });
+    const list = sent('list', undefined);
+    const each = call({
+      parent: list,
+      path: 'echo',
+      input: {},
+      reads: [{ to: ['id'], item: ['id'] }],
+      list: [[]],
+    });
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [list],
+      calls: [each],
+    });
+
+    expect(res.wire.body).toMatchObject({ tree: { 0: { '[]': {} } } });
+    expect(res.of(each)).toEqual([
+      { data: { id: 'a' } },
+      { data: { id: 'b' } },
+    ]);
+  });
+
   test('a list of lists is one key: a level of lists for each `[]`', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
@@ -2552,13 +2582,16 @@ describe('keys', () => {
     },
     { key: 'a\\.b[]', parsed: { kind: 'list', levels: [['a.b']] } },
     { key: 'a\\[\\]\\\\[]', parsed: { kind: 'list', levels: [['a[]\\']] } },
+    // A level with no segments: the value itself is the list
+    { key: '[]', parsed: { kind: 'list', levels: [[]] } },
+    { key: '[].items[]', parsed: { kind: 'list', levels: [[], ['items']] } },
+    { key: 'a[].[]', parsed: { kind: 'list', levels: [['a'], []] } },
     { key: '', parsed: null },
-    { key: '[]', parsed: null },
     { key: '.a[]', parsed: null },
     { key: 'a..b[]', parsed: null },
     { key: 'a.[]', parsed: null },
     { key: 'a[]b[]', parsed: null },
-    { key: 'a[].[]', parsed: null },
+    { key: '.[]', parsed: null },
     { key: 'a[x][]', parsed: null },
     { key: 'a]b[]', parsed: null },
     { key: 'a\\x[]', parsed: null },

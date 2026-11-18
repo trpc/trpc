@@ -50,7 +50,8 @@
  *
  * A list key is a path of segments separated by `.`, and `[]` after a
  * segment means every item of the list there: `items[]`, `data.items[]`,
- * `pages[].items[]`. In a segment, `\` escapes `.`, `[`, `]` and `\`, so a
+ * `pages[].items[]`. `[]` alone is every item of the data itself, for a call
+ * that returns a list. In a segment, `\` escapes `.`, `[`, `]` and `\`, so a
  * property named `a.b` is `a\.b`. The key is resolved in the data of the
  * call the children belong to.
  *
@@ -240,11 +241,16 @@ export function parsePipelineKey(key: string): PipelineKey | null {
       continue;
     }
     if (char === '.' || char === '[') {
-      // No empty segment: `a..b`, `.a`, `[]` or `a.[]`
-      if (segment === '') {
+      // No empty segment, `a..b`, `.a` or `a.[]`, but a level can have no
+      // segments: in `[]` or `a[].[]`, the value itself is the list
+      const noSegments =
+        char === '[' && segment === '' && segments.length === 0;
+      if (segment === '' && !noSegments) {
         return null;
       }
-      segments.push(segment);
+      if (!noSegments) {
+        segments.push(segment);
+      }
       segment = '';
       at += 1;
       if (char === '.') {
