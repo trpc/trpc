@@ -22,6 +22,7 @@ import { observable, share } from '@trpc/server/observable';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import superjson from 'superjson';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import {
@@ -4480,6 +4481,56 @@ describe('a run the link cannot read', () => {
     const failed = results.authors[1];
     const error = failed?.status === 'error' ? failed.error : null;
     expect(error?.cause.message).toContain('The link cannot read this author');
+  });
+});
+
+describe('a transformer that keeps `undefined`', () => {
+  test("a stale ensure entry's cursor without a key is not the server's one with the key as `undefined`", async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    type Cursor = { at?: number } | null | undefined;
+    const appRouter = t.router({
+      /** The last page: its next cursor has `at` as `undefined` */
+      last: t.procedure.query(() => ({ next: { at: undefined } as Cursor })),
+      /** Whether its cursor has the key `at`, though it is `undefined` */
+      cursorKey: t.procedure
+        .input((raw: unknown) => raw as { cursor: Cursor })
+        .query((opts) => ({
+          cursor:
+            opts.input.cursor && 'at' in opts.input.cursor ? 'has at' : 'no at',
+          nextCursor: null,
+        })),
+    });
+    await using resource = testReactResource(appRouter, {
+      // The cursor the server fills in is an object
+      server: { experimental_allowPipelining: { allowWholeValues: true } },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer: superjson,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cached last page's next cursor has no `at`. Its refetch has one
+    resource.queryClient.setQueryData(
+      trpc.last.queryKey(),
+      { next: {} },
+      { updatedAt: 1 },
+    );
+
+    const last = ensureEntry(trpc.last);
+    const [, data] = await loadHandles(trpc, {
+      last,
+      rest: ensureInfiniteEntry(trpc.cursorKey, {
+        cursor: experimental_dataOf(last).next,
+      }),
+    });
+
+    // The page is for the cursor the client has: no `at`
+    expect(data.rest.pages).toEqual([{ cursor: 'no at', nextCursor: null }]);
   });
 });
 

@@ -12,7 +12,8 @@ import { isPlainObject } from './utils';
  * primitives, of the same type, and plain objects and arrays of them. A date
  * is the same only as a date of the same time. Anything else, such as a
  * class instance a transformer keeps, is not, so the page is fetched by
- * itself rather than recorded with another cursor. No cursor isn't `null`.
+ * itself rather than recorded with another cursor. No cursor isn't `null`,
+ * and no key isn't a key whose value is `undefined`.
  */
 export function sameCursor(a: unknown, b: unknown): boolean {
   // `NaN` is the same cursor as `NaN`, and `-0` as `0`
@@ -33,12 +34,11 @@ export function sameCursor(a: unknown, b: unknown): boolean {
     );
   }
   if (isPlainObject(a) && isPlainObject(b)) {
-    // An `undefined` value is no key, as a query key reads it
-    const keysOf = (value: Record<string, unknown>) =>
-      Object.keys(value).filter((key) => value[key] !== undefined);
-    const keys = keysOf(a);
+    // A key whose value is `undefined` is not a missing key: a transformer
+    // that keeps it, such as superjson, lets a resolver tell them apart
+    const keys = Object.keys(a);
     return (
-      keys.length === keysOf(b).length &&
+      keys.length === Object.keys(b).length &&
       keys.every(
         (key) =>
           Object.prototype.hasOwnProperty.call(b, key) &&
