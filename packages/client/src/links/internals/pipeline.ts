@@ -1,12 +1,13 @@
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
+  PipelinedItem,
   PipelineFrame,
   PipelineLimits,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
-  deserializePipelinedItems,
+  hasOwn,
   isObject,
   isPipelineNotRun,
   pipelinedBatchBody,
@@ -15,7 +16,7 @@ import {
   pipelineLimitDefaults,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from '../../TRPCClientError';
+import { isTRPCClientError, TRPCClientError } from '../../TRPCClientError';
 import type { Operation } from '../types';
 import type {
   ContentOptions,
@@ -35,12 +36,56 @@ export { pipelineContext } from './pipelineContext';
  */
 
 /**
+ * What one unit, such as a call, a run of one or an item, ended with: its
+ * data or its error, never both.
+ */
+export type Outcome<TData> =
+  | { ok: true; data: TData }
+  | { ok: false; error: unknown };
+
+/**
+ * A promise that never rejects: a failure is in what it resolves to, as an
+ * `Outcome`. Only `settles()` makes one, so what awaits it can't be failed by
+ * a unit that isn't its own.
+ */
+export type Settles<TValue> = Promise<TValue> & {
+  readonly __brand: 'Settles';
+};
+
+/** What `run` returns, or what `onError` makes of what it threw or rejected with */
+export function settles<TValue>(
+  run: () => TValue | PromiseLike<TValue>,
+  onError: (cause: unknown) => TValue,
+): Settles<TValue> {
+  return new Promise<TValue>((resolve) => resolve(run())).then(
+    undefined,
+    onError,
+  ) as Settles<TValue>;
+}
+
+/** A failed outcome */
+export function failed(error: unknown): Outcome<never> {
+  return { ok: false, error };
+}
+
+/** The outcome of a promise that can reject, such as a request's */
+export function outcomeOf<TData>(
+  promise: PromiseLike<TData>,
+): Settles<Outcome<TData>> {
+  return settles(
+    async (): Promise<Outcome<TData>> => ({ ok: true, data: await promise }),
+    failed,
+  );
+}
+
+/**
  * Lets the server make more calls in an operation's request, with parts of
  * their inputs read from the operation's data. Put one in an operation's
  * context with `pipelineContext()`.
  *
  * A call isn't an operation, so no link sees one with a hole in its input.
- * Its result comes back with the operation's request, as the call's `result`.
+ * Its outcome comes back with the operation's request, as the call's
+ * `settled`.
  */
 export interface OperationPipeline {
   /**
@@ -85,6 +130,58 @@ type ClientPipelineLimits = Pick<
 export type PipelineSource = OperationPipeline | PipelinedCall;
 
 /**
+ * One level of the runs of a call for every item, decoded, in the shape the
+ * response has it, so that `readPipelinedItem()` reads it too: a list, with a
+ * level for each of its items by index, or a run's `{ result }` or
+ * `{ error }`. A list that couldn't run is an `{ error }` in place of its
+ * items. An error is as the server sent it, or a `TRPCClientError` for a run
+ * the link couldn't read. `{}` is no run.
+ */
+export type PipelinedRunsNode =
+  | { items: Readonly<Record<string, PipelinedRuns>> }
+  | { result: { data: unknown } }
+  | { error: unknown }
+  | Record<string, never>;
+
+/**
+ * The runs of a call for every item, decoded once by the link. Each level,
+ * and each run, settles by itself: a run that failed, or that the link can't
+ * read, fails only its own item.
+ */
+export type PipelinedRuns = Settles<PipelinedRunsNode>;
+
+/** A call's data, decoded once by the link */
+export type PipelinedData =
+  /** A call that ran once */
+  | { kind: 'once'; data: unknown }
+  /** A call that ran for every item: see `readPipelinedRun()` */
+  | { kind: 'each'; runs: PipelinedRuns };
+
+/**
+ * Where a call is. It goes from `waiting` to `sent` or `not-run`, and from
+ * `sent` to `ran` or `not-run`, once: `ran` and `not-run` are final.
+ */
+export type PipelinedCallState =
+  /** The request hasn't gone yet */
+  | { status: 'waiting' }
+  /** It is in a request */
+  | { status: 'sent' }
+  /** The server ran it: its data, or its own error */
+  | { status: 'ran'; outcome: Outcome<PipelinedData> }
+  /**
+   * It didn't run. It wasn't sent, its request failed as a whole, a call it
+   * reads failed, or the server refused it before any of its runs ran. What
+   * wants it asks for it by itself
+   */
+  | { status: 'not-run'; error: unknown };
+
+/** The final states of a call */
+export type PipelinedCallSettled = Extract<
+  PipelinedCallState,
+  { status: 'ran' | 'not-run' }
+>;
+
+/**
  * A query the server runs in the request of an operation, after the calls
  * whose data it reads.
  */
@@ -98,27 +195,27 @@ export interface PipelinedCall {
   depth: number;
   /** The items it runs for, or `null` if it runs once */
   frame: PipelineFrame<PipelineSource> | null;
+  /** Where it is. Only `moveCall()` changes it */
+  readonly state: PipelinedCallState;
+  /** Its final state, once it has one. It never rejects */
+  settled: Settles<PipelinedCallSettled>;
   /**
-   * - `waiting`: the request hasn't gone yet
-   * - `sent`: it is in a request
-   * - `unresolved`: it didn't run. It wasn't sent, its request failed as a
-   *   whole, a call it reads failed, or the server refused it before any of
-   *   its runs ran. Its `result` is then an error, and what wants it makes a
-   *   request
+   * `state`, as it was named before: `unresolved` is `not-run`, and `ran` is
+   * `sent`
    */
-  status: 'waiting' | 'sent' | 'unresolved';
-  /** Rejects with what the call failed with */
-  result: Promise<PipelinedCallResult>;
+  readonly status: 'waiting' | 'sent' | 'unresolved';
+  /**
+   * `settled`, as a promise that rejects with what the call failed with, or
+   * didn't run for. For a call for every item, its data is its runs
+   */
+  readonly result: Promise<PipelinedCallResult>;
   /** The pipeline of the operation whose request it goes in */
   owner: OperationPipeline;
-  /** Only for the link that sends it */
-  settle: (result: PipelinedCallResult | Promise<PipelinedCallResult>) => void;
 }
 
 export interface PipelinedCallResult {
   /**
-   * Its data. For a call for every item, its `items` as the response has
-   * them: see `readPipelinedItem()`
+   * Its data. For a call for every item, its runs: see `readPipelinedRun()`
    */
   data: unknown;
 }
@@ -145,6 +242,13 @@ export function createOperationPipeline(): OperationPipeline {
 function isCall(source: PipelineSource): source is PipelinedCall {
   return 'owner' in source;
 }
+
+/** A call's state, and what settles its `settled`: only `moveCall()` changes it */
+interface CallSettler {
+  state: PipelinedCallState;
+  settle: (to: PipelinedCallSettled) => void;
+}
+const settlers = /* @__PURE__ */ new WeakMap<PipelinedCall, CallSettler>();
 
 /**
  * Adds a call to the request of the operations it reads. `null` if that
@@ -188,7 +292,7 @@ export function pipeCall(opts: {
   if (
     !sources.every((source) =>
       isCall(source)
-        ? source.owner.open && source.status === 'waiting'
+        ? source.owner.open && source.state.status === 'waiting'
         : source.open,
     )
   ) {
@@ -204,55 +308,87 @@ export function pipeCall(opts: {
   if (depth > owner.limits.maxDepth) {
     return null;
   }
-  const settled = createDeferred<
-    PipelinedCallResult | Promise<PipelinedCallResult>
-  >();
-  const result: Promise<PipelinedCallResult> = settled.promise.then((it) => it);
-  // Read only by what wants the call's result
-  result.catch(() => undefined);
+  const settled = createDeferred<PipelinedCallSettled>();
+  const settler: CallSettler = {
+    state: { status: 'waiting' },
+    settle: settled.resolve,
+  };
   const call: PipelinedCall = {
     path: opts.path,
     input: opts.input,
     reads: opts.reads,
     depth,
     frame: framed.frame,
-    status: 'waiting',
-    result,
+    get state() {
+      return settler.state;
+    },
+    // Resolved only by `moveCall()`, with a final state
+    settled: settles(
+      () => settled.promise,
+      (error) => ({ status: 'not-run', error }),
+    ),
+    get status() {
+      const { status } = settler.state;
+      return status === 'not-run'
+        ? 'unresolved'
+        : status === 'ran'
+          ? 'sent'
+          : status;
+    },
+    get result() {
+      const result = settled.promise.then(
+        (it): PipelinedCallResult | Promise<never> =>
+          it.status === 'not-run'
+            ? Promise.reject(it.error)
+            : it.outcome.ok
+              ? {
+                  data:
+                    it.outcome.data.kind === 'once'
+                      ? it.outcome.data.data
+                      : it.outcome.data.runs,
+                }
+              : Promise.reject(it.outcome.error),
+      );
+      // Read only by what wants the call's result
+      result.catch(() => undefined);
+      return result;
+    },
     owner,
-    settle: settled.resolve,
   };
+  settlers.set(call, settler);
   owner.calls.push(call);
   return call;
 }
 
+/** The states a call can go to from each state */
+interface CallMoves {
+  waiting: 'sent' | 'not-run';
+  sent: 'ran' | 'not-run';
+  ran: never;
+  'not-run': never;
+}
+
+/** A step a call can take: from a state, to one `CallMoves` allows from it */
+type CallMove = {
+  [TFrom in keyof CallMoves]: {
+    from: TFrom;
+    to: Extract<PipelinedCallState, { status: CallMoves[TFrom] }>;
+  };
+}[keyof CallMoves];
+
 /**
- * The one place a call's status changes. A call goes from `waiting` to `sent`
- * or `unresolved`, and from `sent` to `unresolved`.
+ * The one place a call's state changes. It moves only from the state the
+ * move is from, so a call settles once: a second move to a final state is
+ * ignored.
  */
-function moveCall(
-  call: PipelinedCall,
-  to:
-    | { kind: 'sent' }
-    /** It didn't run, and its result is this error */
-    | { kind: 'not-run'; error: unknown }
-    /**
-     * It didn't run, as its own result says: a call it reads failed, or the
-     * server refused it before any of its runs ran
-     */
-    | { kind: 'source-failed' | 'refused' },
-) {
-  switch (to.kind) {
-    case 'sent':
-      call.status = 'sent';
-      return;
-    case 'not-run':
-      call.status = 'unresolved';
-      call.settle(Promise.reject(to.error));
-      return;
-    case 'source-failed':
-    case 'refused':
-      call.status = 'unresolved';
-      return;
+function moveCall(call: PipelinedCall, move: CallMove) {
+  const settler = settlers.get(call);
+  if (settler?.state.status !== move.from) {
+    return;
+  }
+  settler.state = move.to;
+  if (move.to.status !== 'sent') {
+    settler.settle(move.to);
   }
 }
 
@@ -267,12 +403,13 @@ function closePipeline(op: Pick<Operation, 'context'>) {
   }
   pipeline.open = false;
   for (const call of pipeline.calls) {
-    if (call.status === 'waiting') {
-      moveCall(call, {
-        kind: 'not-run',
+    moveCall(call, {
+      from: 'waiting',
+      to: {
+        status: 'not-run',
         error: new Error('The operation this call reads was not sent'),
-      });
-    }
+      },
+    });
   }
   // Nothing went, if its request didn't take the calls already
   pipeline.settleSent([]);
@@ -390,9 +527,165 @@ function pipelinedRequest(
   };
 }
 
+/** An error the client can throw, from one the server sent or anything thrown */
+function clientError(cause: unknown) {
+  return TRPCClientError.from(
+    cause instanceof Error ? cause : new Error(String(cause)),
+  );
+}
+
 /**
- * Gives the calls of a batch their results. A call that reads a failed one
- * didn't run, and is `unresolved`.
+ * The runs of a call for every item, as a response has them: its `items`, by
+ * index, one level for each level of lists, down to a `{ result }` or an
+ * `{ error }`. A streamed one has each level, and each run, as a promise of
+ * its own. `deserialize` is `null` for a response that streams, which has
+ * deserialized them already.
+ */
+function decodeRuns(
+  value: unknown,
+  deserialize: ((value: unknown) => unknown) | null,
+): PipelinedRuns {
+  const read = deserialize ?? ((it: unknown) => it);
+  return settles(
+    async (): Promise<PipelinedRunsNode> => {
+      const node: unknown = await value;
+      if (!isObject(node)) {
+        return {};
+      }
+      if ('items' in node) {
+        const items: unknown = await node['items'];
+        const decoded: Record<string, PipelinedRuns> = {};
+        if (isObject(items)) {
+          for (const [index, item] of Object.entries(items)) {
+            decoded[index] = decodeRuns(item, deserialize);
+          }
+        }
+        return { items: decoded };
+      }
+      const result = node['result'];
+      if (isObject(result)) {
+        return { result: { data: read(await result['data']) } };
+      }
+      return node['error'] ? { error: read(node['error']) } : {};
+    },
+    (cause) => ({ error: clientError(cause) }),
+  );
+}
+
+/**
+ * One run's outcome, from the runs of a call for every item: `indexes` has an
+ * index for each level of lists. A run in a list that couldn't run fails with
+ * that list's error. It waits only for the levels that lead to the run, and
+ * its error is a `TRPCClientError`.
+ */
+export function readPipelinedRun(
+  runs: PipelinedRuns,
+  indexes: readonly number[],
+): Settles<PipelinedItem> {
+  return settles(
+    async (): Promise<PipelinedItem> => {
+      let node = await runs;
+      for (const index of indexes) {
+        if (!('items' in node)) {
+          return 'error' in node ? errorItem(node.error) : { kind: 'missing' };
+        }
+        const item = hasOwn(node.items, String(index))
+          ? node.items[index]
+          : undefined;
+        if (!item) {
+          return { kind: 'missing' };
+        }
+        node = await item;
+      }
+      return 'result' in node
+        ? { kind: 'data', data: node.result.data }
+        : 'error' in node
+          ? errorItem(node.error)
+          : { kind: 'missing' };
+    },
+    (cause) => errorItem(clientError(cause)),
+  );
+}
+
+/** A run's error, as the client throws it */
+function errorItem(error: unknown): PipelinedItem {
+  return {
+    kind: 'error',
+    error: isTRPCClientError(error) ? error : TRPCClientError.from({ error }),
+  };
+}
+
+/**
+ * A call's final state from what the response has for it alone. It didn't
+ * run if the server says it refused it before any of its runs ran, such as
+ * for a list longer than the server's limits.
+ */
+function decodeCall(
+  received: Outcome<HTTPResult | undefined>,
+  link: PipeliningLink,
+): PipelinedCallSettled {
+  if (!received.ok) {
+    return { status: 'ran', outcome: received };
+  }
+  const sent = received.data;
+  if (!sent) {
+    return {
+      status: 'ran',
+      outcome: failed(
+        new Error('The server sent no result for a pipelined call'),
+      ),
+    };
+  }
+  if ('items' in sent.json) {
+    return {
+      status: 'ran',
+      outcome: {
+        ok: true,
+        data: {
+          kind: 'each',
+          runs: decodeRuns(
+            sent.json,
+            link.streams
+              ? null
+              : (value) => link.transformer.output.deserialize(value),
+          ),
+        },
+      },
+    };
+  }
+  try {
+    return {
+      status: 'ran',
+      outcome: { ok: true, data: { kind: 'once', data: link.read(sent).data } },
+    };
+  } catch (error) {
+    return isTRPCClientError(error) && isPipelineNotRun(error.data)
+      ? { status: 'not-run', error }
+      : { status: 'ran', outcome: failed(error) };
+  }
+}
+
+/**
+ * A call's final state, from its own and what has arrived of its sources:
+ * the server sends a source's result before the error of a call that reads
+ * it, so a failed source that has arrived is why the call failed, and one
+ * still to come isn't.
+ *
+ * @param sourcesOk whether each source succeeded, or `null` if it hasn't
+ * arrived
+ */
+export function settlePipelinedCall(
+  own: PipelinedCallSettled,
+  sourcesOk: readonly (boolean | null)[],
+): PipelinedCallSettled {
+  return own.status === 'ran' && !own.outcome.ok && sourcesOk.includes(false)
+    ? { status: 'not-run', error: own.outcome.error }
+    : own;
+}
+
+/**
+ * Gives the calls of a batch their final states, each as its own result
+ * arrives. Nothing waits for a result that isn't the call's own.
  */
 function settlePipelinedBatch(opts: {
   ops: readonly BatchOp[];
@@ -401,119 +694,33 @@ function settlePipelinedBatch(opts: {
   results: PipelinedBatch['results'];
   link: PipeliningLink;
 }) {
-  const calls = opts.plan.calls.map((call, index) => {
-    const result = Promise.resolve(opts.results[opts.ops.length + index]).then(
-      (sent) => {
-        if (!sent) {
-          throw new Error('The server sent no result for a pipelined call');
-        }
-        if ('items' in sent.json) {
-          // A call for every item: its runs, each as a call's result is
-          return {
-            data: opts.link.streams
-              ? sent.json
-              : deserializeRuns(sent.json, (value) =>
-                  opts.link.transformer.output.deserialize(value),
-                ),
-          };
-        }
-        try {
-          return opts.link.read(sent);
-        } catch (error) {
-          // Refused before any of its runs ran, such as for a list longer
-          // than the server's limits: what wants it asks for it by itself
-          if (
-            error instanceof TRPCClientError &&
-            isPipelineNotRun(error.data)
-          ) {
-            moveCall(call, { kind: 'refused' });
-          }
-          throw error;
-        }
-      },
-    );
-    result.catch(() => undefined);
-    return { call, result };
-  });
-  /** Whether the result at each index of the request has arrived */
-  const arrived = opts.results.map(() => false);
-  for (const [index, result] of opts.results.entries()) {
-    const mark = () => {
-      arrived[index] = true;
-    };
-    Promise.resolve(result).then(mark, mark);
+  /** Whether what is at each index of the request succeeded, once it arrived */
+  const ok: (boolean | null)[] = opts.results.map(() => null);
+  // The same steps for an operation and a call, so that each is marked in
+  // the order the results arrive
+  for (const [index] of opts.ops.entries()) {
+    void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
+      ok[index] =
+        received.ok && !!received.data && !('error' in received.data.json);
+    });
   }
-  /** Whether what is at each index of the request succeeded */
-  const succeeded = [
-    ...opts.ops.map((_op, index) =>
-      Promise.resolve(opts.results[index]).then(
-        (result) => !!result && !('error' in result.json),
-        () => false,
-      ),
-    ),
-    ...calls.map((it) =>
-      it.result.then(
-        () => true,
-        () => false,
-      ),
-    ),
-  ];
-  for (const [index, { call, result }] of calls.entries()) {
-    const piped = opts.plan.pipe[opts.ops.length + index];
+  for (const [offset, call] of opts.plan.calls.entries()) {
+    const index = opts.ops.length + offset;
+    const piped = opts.plan.pipe[index];
     const sources = [
       ...(piped?.each ? [piped.each.from] : []),
       ...(piped?.reads ?? []).flatMap((read) =>
         read.from === undefined ? [] : [read.from],
       ),
     ];
-    call.settle(
-      // Settled by its own result, without waiting for a source still to come
-      result.catch(async (error: unknown) => {
-        // It didn't run if a source failed: the server sends a source's
-        // result before the error of a call that reads it, so a source whose
-        // result hasn't arrived isn't why it failed
-        const ran = await Promise.all(
-          sources.flatMap((source) => {
-            const ok = succeeded[source];
-            return ok && arrived[source] ? [ok] : [];
-          }),
-        );
-        if (ran.includes(false)) {
-          moveCall(call, { kind: 'source-failed' });
-        }
-        throw error;
-      }),
-    );
-  }
-}
-
-/**
- * The runs of a call for every item, from a response that doesn't stream,
- * each deserialized by itself: a run the transformer can't read rejects by
- * itself, as an operation of a batch does, and the other runs keep their data
- */
-function deserializeRuns(
-  value: unknown,
-  deserialize: (value: unknown) => unknown,
-): unknown {
-  if (isObject(value) && isObject(value['items'])) {
-    const items: Record<string, unknown> = {};
-    for (const [index, item] of Object.entries(value['items'])) {
-      items[index] = deserializeRuns(item, deserialize);
-    }
-    return { items };
-  }
-  try {
-    return deserializePipelinedItems(value, deserialize);
-  } catch (cause) {
-    // A promise, as a streamed run is: `readPipelinedItem()` awaits it
-    const failed = Promise.reject(
-      TRPCClientError.from(
-        cause instanceof Error ? cause : new Error(String(cause)),
-      ),
-    );
-    failed.catch(() => undefined);
-    return failed;
+    void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
+      const settled = settlePipelinedCall(
+        decodeCall(received, opts.link),
+        sources.map((source) => ok[source] ?? null),
+      );
+      ok[index] = settled.status === 'ran' && settled.outcome.ok;
+      moveCall(call, { from: 'sent', to: settled });
+    });
   }
 }
 
@@ -545,7 +752,7 @@ export function experimental_pipelining(
         sent: pipelines,
         calls: pipelines
           .flatMap((pipeline) => pipeline?.calls ?? [])
-          .filter((call) => call.status === 'waiting'),
+          .filter((call) => call.state.status === 'waiting'),
         fits: (next) => {
           const sent = [...ops, ...next.calls];
           if (sent.length > Math.min(link.maxItems, limits.maxRuns)) {
@@ -589,9 +796,7 @@ export function experimental_pipelining(
       },
       close: closePipeline,
       settled: (op) =>
-        Promise.allSettled(
-          pipelineOf(op)?.calls.map((call) => call.result) ?? [],
-        ),
+        Promise.all(pipelineOf(op)?.calls.map((call) => call.settled) ?? []),
       splits(ops) {
         if (ops.length < 2) {
           return false;
@@ -615,14 +820,17 @@ export function experimental_pipelining(
           }
         }
         for (const call of planned.calls) {
-          moveCall(call, { kind: 'sent' });
+          moveCall(call, { from: 'waiting', to: { status: 'sent' } });
         }
         for (const call of planned.left) {
           moveCall(call, {
-            kind: 'not-run',
-            error: new Error(
-              'The call did not fit in the request of what it reads',
-            ),
+            from: 'waiting',
+            to: {
+              status: 'not-run',
+              error: new Error(
+                'The call did not fit in the request of what it reads',
+              ),
+            },
           });
         }
         for (const op of ops) {
@@ -653,7 +861,10 @@ export function experimental_pipelining(
                 // link can send the operations again, and what wants a call
                 // then asks for it
                 for (const call of planned.calls) {
-                  moveCall(call, { kind: 'not-run', error });
+                  moveCall(call, {
+                    from: 'sent',
+                    to: { status: 'not-run', error },
+                  });
                 }
               },
             );
