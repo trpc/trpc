@@ -1,3 +1,5 @@
+'use client';
+
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import {
@@ -12,13 +14,12 @@ import {
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { Spinner } from '@shared/ui/components/spinner';
 import { ArrowLeftIcon } from 'lucide-react';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useTRPC } from '~/utils/trpc';
+import { useTRPC } from '~/trpc/client';
 import { useSubscription } from '@trpc/tanstack-react-query';
 
-export default function AboutPage() {
+export function RandomNumbers() {
   const trpc = useTRPC();
   const [num, setNumber] = useState<number>();
   const randomNumber = useSubscription(
@@ -31,9 +32,6 @@ export default function AboutPage() {
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-muted/40 p-6">
-      <Head>
-        <title>Random numbers · tRPC WebSocket Starter</title>
-      </Head>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Random numbers</CardTitle>
