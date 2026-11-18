@@ -1,10 +1,12 @@
 import {
+  dehydrate,
   useIsMutating,
   useQueryClient,
   useMutation,
   useQuery,
 } from '@tanstack/react-query';
 import type { inferProcedureOutput } from '@trpc/server';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import clsx from 'clsx';
 import type {
   GetStaticPaths,
@@ -14,11 +16,14 @@ import type {
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import superjson from 'superjson';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
 import { InfoFooter } from '../components/footer';
+import { createInnerTRPCContext } from '../server/context';
 import type { AppRouter } from '../server/routers/_app';
-import { ssgInit } from '../server/ssg-init';
+import { appRouter } from '../server/routers/_app';
+import { makeQueryClient } from '../utils/query-client';
 import { useTRPC } from '../utils/trpc';
 import { useClickOutside } from '../utils/use-click-outside';
 
@@ -333,14 +338,23 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+/**
+ * @see https://trpc.io/docs/client/nextjs/pages-router/ssg
+ */
 export const getStaticProps = async (context: GetStaticPropsContext) => {
-  const ssg = await ssgInit(context);
+  const queryClient = makeQueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    // There's no request at build time, so use the inner context
+    ctx: await createInnerTRPCContext({}),
+    queryClient,
+  });
 
-  await ssg.todo.all.prefetch();
+  await queryClient.prefetchQuery(trpc.todo.all.queryOptions());
 
   return {
     props: {
-      trpcState: ssg.dehydrate(),
+      trpcState: superjson.serialize(dehydrate(queryClient)),
       filter: (context.params?.filter as string) ?? 'all',
     },
     revalidate: 1,
