@@ -468,7 +468,8 @@ export function experimental_pipelining(
           // what it reads and goes on its own, and the request goes without it
           try {
             for (const call of next.calls) {
-              link.transformer.input.serialize(call.input);
+              // As the request encodes it: what JSON can't carry fails too
+              JSON.stringify(link.transformer.input.serialize(call.input));
             }
           } catch {
             return false;

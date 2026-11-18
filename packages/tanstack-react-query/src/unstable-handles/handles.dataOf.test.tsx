@@ -29,6 +29,7 @@ import {
   experimental_entryPerItem,
   ensureInfiniteEntry,
   fetchEntry,
+  fetchInfiniteEntry,
   fromHandle,
   experimental_handleOfItem,
   experimental_useHandles,
@@ -2249,6 +2250,20 @@ describe.each([
         trpc.author.byId.queryKey({ id: 'u2' }),
       ),
     ).toMatchObject({ id: 'u2' });
+    // The server ran the authors with the groups, and `u2`, whose place it
+    // ran `u3` at, was fetched by itself
+    const paths = resource.onRequestSpy.mock.calls.map(
+      ([req]) => new URL(req.url!, 'http://localhost').pathname,
+    );
+    expect(paths.some((path) => path.endsWith('/group.list,author.byId'))).toBe(
+      true,
+    );
+    expect(
+      resource.calls.mock.calls.filter(
+        ([path, input]) =>
+          path === 'author.byId' && (input as { id: string }).id === 'u2',
+      ),
+    ).toHaveLength(2);
   });
 
   test("an entry per page of an infinite entry does not break the entry's request", async () => {
@@ -2449,14 +2464,16 @@ describe.each([
       staleTime: Infinity,
     });
     using _subscription = makeResource({}, observer.subscribe(vi.fn()));
-    await observer.fetchNextPage();
+    const data = await observer.fetchNextPage();
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
 
-    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
-      'post.paged',
-    ]);
+    // The next page, by its cursor, and no author for it
+    expect(
+      data.data?.pages.map((page) => page.items.map((item) => item.id)),
+    ).toEqual([['p0'], ['p1']]);
+    expect(resource.calls.mock.calls).toEqual([['post.paged', { cursor: 1 }]]);
   });
 
   test("a later page loads its items' queries in the same request", async () => {
@@ -2690,6 +2707,39 @@ describe.each([
       pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
       pageParams: [2],
     });
+  });
+
+  test('an infinite entry whose cached pages start at another cursor fetches by itself: its page and its param agree', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cache has the pages from cursor 2, from an entry made before
+    resource.queryClient.setQueryData(
+      trpc.post.paged.infiniteQueryKey({}),
+      {
+        pages: [{ items: [{ id: 'p2', authorId: 'u2' }], nextCursor: null }],
+        pageParams: [2],
+      },
+      { updatedAt: 1 },
+    );
+
+    const first = fetchEntry(trpc.post.paged, { cursor: 0 });
+    const [, data] = await loadHandles(trpc, {
+      first,
+      // The server fetches its first page from cursor 1. A refetch of the
+      // cached pages starts from 2
+      rest: fetchInfiniteEntry(trpc.post.paged, {
+        cursor: experimental_dataOf(first).nextCursor,
+      }),
+    });
+
+    const [page] = data.rest.pages;
+    expect(page?.items[0]?.id).toBe(`p${String(data.rest.pageParams[0])}`);
   });
 
   test('an entry that keeps its cached data makes the entry that reads it fetch with the input the client filled in', async () => {

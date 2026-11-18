@@ -7,6 +7,7 @@
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import superjson from 'superjson';
 import { TRPCError } from '../../error/TRPCError';
+import { makeResource } from '../../stream/utils/disposable';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isObject } from '../../utils';
 import {
@@ -1756,6 +1757,119 @@ describe('a call for every item', () => {
     });
   });
 
+  /**
+   * Data as a server reads it, where an object with `trap` has an `items`
+   * that throws when it is read, as an output transformer could make
+   */
+  const trapping: CombinedDataTransformer = {
+    input: transformers.none.input,
+    output: {
+      serialize: (it: unknown) => it,
+      deserialize: function revive(it: unknown): unknown {
+        if (Array.isArray(it)) {
+          return it.map(revive);
+        }
+        if (!isObject(it)) {
+          return it;
+        }
+        if ('trap' in it) {
+          return Object.defineProperty({}, 'items', {
+            get: () => {
+              throw new Error('Can not read it');
+            },
+          });
+        }
+        return Object.fromEntries(
+          Object.entries(it).map(([key, value]) => [key, revive(value)]),
+        );
+      },
+    },
+  };
+
+  test('an inner list that can not be read fails by itself: the other lists run', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      transformer: trapping,
+      fns: {
+        groups: () => ({ groups: [{ items: [1] }, { trap: true }] }),
+        echo,
+      },
+    });
+    const groups = sent('groups', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: groups, path: ['groups', null, 'items'] },
+        { to: ['n'], path: [] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: trapping,
+      url: server.url,
+      method: 'GET',
+      sent: [groups],
+      calls: [each],
+    });
+
+    expect(res.of(each)).toEqual({
+      items: {
+        0: { items: { 0: { result: { data: { n: 1 } } } } },
+        1: {
+          error: { code: 'INTERNAL_SERVER_ERROR', message: 'Can not read it' },
+        },
+      },
+    });
+  });
+
+  test('a run whose item can not be read fails by itself, and what else it reads is still waited for', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    using _listener = makeResource({}, () =>
+      process.off('unhandledRejection', unhandled),
+    );
+    await using server = serve({
+      ...defaults,
+      transformer: trapping,
+      fns: {
+        list: () => [{ trap: true }],
+        broken: () => {
+          throw new Error('Broken');
+        },
+        echo: (input: unknown) => input,
+      },
+    });
+    const list = sent('list', undefined);
+    const broken = sent('broken', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads(
+        { from: list, path: [] },
+        // Read first: it fails once the item read has already thrown
+        { to: ['b'], from: broken, path: [] },
+        { to: ['n'], path: ['items'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: trapping,
+      url: server.url,
+      method: 'GET',
+      sent: [list, broken],
+      calls: [each],
+    });
+    // A turn for a rejection nothing waits for to be reported
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(itemCount(res.of(each))).toBe(1);
+    expect(unhandled).not.toHaveBeenCalled();
+  });
+
   test('a value that many runs read of the same run is read of its data once', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
@@ -3228,7 +3342,8 @@ describe('what a client puts in a request', () => {
     expect(inner.fits).toBe(true);
     expect(inner.frame).toMatchObject({
       parent: frameOf.get(1),
-      list: { from: 0, path: ['a', null, 'b'] },
+      // Only its own part of the path: the rest is its parent's
+      list: { from: 0, path: ['b'] },
       inItem: ['b'],
       depth: 2,
     });

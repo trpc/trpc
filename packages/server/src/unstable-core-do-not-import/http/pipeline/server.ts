@@ -699,22 +699,21 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             }),
         async (place): Promise<PlacesNode<Place>> => {
           const { inItem } = frame;
-          let items: unknown;
-          if (inItem) {
-            // A level after the first: its list is in the item of the one before
-            items = readPipelinePath(place.item, inItem);
-          } else {
-            try {
-              items = readPipelinePath(
-                await dataOf(list.from, place.indexes),
-                list.path,
-              );
-            } catch (cause) {
-              // The run the list is in failed: none of its items run
-              return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
-            }
+          try {
+            const items = inItem
+              ? // A level after the first: its list is in the item of the one
+                // before
+                readPipelinePath(place.item, inItem)
+              : readPipelinePath(
+                  await dataOf(list.from, place.indexes),
+                  list.path,
+                );
+            return itemsOf({ list: items, indexes: place.indexes, tooLong });
+          } catch (cause) {
+            // The run the list is in failed, or the list can't be read: none
+            // of its items run, and other lists are as they are
+            return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
           }
-          return itemsOf({ list: items, indexes: place.indexes, tooLong });
         },
       );
       placesOfFrames.set(key, places);
@@ -798,7 +797,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     perItem: boolean;
   }) {
     const values = await Promise.all(
-      run.reads.reads.map((read) =>
+      // Async: a read that throws is a rejection, so every read is waited for
+      run.reads.reads.map(async (read) =>
         read.kind === 'whole'
           ? valueOf({
               source: read.from,

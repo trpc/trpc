@@ -7,11 +7,7 @@
  */
 import { fc, test } from '@fast-check/vitest';
 import { encodePipelineReads, readPipelinedItem } from './client';
-import {
-  createPipelineSizeOf,
-  parsePipelineReads,
-  pipelineCalls,
-} from './server';
+import { parsePipelineReads, pipelineCalls } from './server';
 import type { PipelineCallReads, PipelineLimits, PipelinePipe } from './wire';
 import { pipelineLimitDefaults } from './wire';
 
@@ -68,7 +64,8 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
       maxRuns: batch.maxRuns,
       maxFillSize: batch.maxFillSize,
     };
-    const sizeOf = createPipelineSizeOf();
+    /** Measured apart from the server's own count: the inputs are JSON */
+    const sizeOf = (value: unknown) => JSON.stringify(value)?.length ?? 0;
     const pipe: PipelinePipe = {};
     for (const [index, call] of batch.calls.entries()) {
       switch (call.read.kind) {
@@ -119,7 +116,7 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
               item: async (input) => {
                 ran += 1;
                 // Each run's whole input counts
-                filled += sizeOf(input, Infinity);
+                filled += sizeOf(input);
                 return data();
               },
               error: () => 'error',
@@ -131,7 +128,7 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
           const read = batch.calls[index]?.read;
           if (read?.kind === 'whole') {
             // Only the value it reads counts
-            filled += sizeOf(onceData.get(read.from)?.v, Infinity);
+            filled += sizeOf(onceData.get(read.from)?.v);
           }
           const result = await data();
           onceData.set(index, result);
@@ -148,12 +145,40 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
       },
     });
 
-    // Every call ends, whatever the order
-    await s.waitFor(Promise.all(results));
+    // Every call ends, whatever the order, and every run of every list
+    await s.waitFor(
+      Promise.all(results.map(async (result) => settled(await result))),
+    );
     expect(ran).toBeLessThanOrEqual(limits.maxRuns);
     expect(filled).toBeLessThanOrEqual(limits.maxFillSize);
   },
 );
+
+/** Once every run of a call for every item is done, at every level */
+async function settled(value: unknown): Promise<void> {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'data' in value &&
+    typeof value.data === 'object' &&
+    value.data !== null &&
+    'items' in value.data
+  ) {
+    await settledNode(value.data);
+  }
+}
+async function settledNode(node: object): Promise<void> {
+  if ('items' in node && Array.isArray(node.items)) {
+    await Promise.all(
+      node.items.map(async (item: unknown) => {
+        const next = await item;
+        if (typeof next === 'object' && next !== null) {
+          await settledNode(next);
+        }
+      }),
+    );
+  }
+}
 
 const keyArbitrary = fc.oneof(
   fc.constantFrom('a', 'b', 'items', '__proto__', '0', ''),

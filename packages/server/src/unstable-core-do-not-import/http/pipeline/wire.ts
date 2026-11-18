@@ -215,11 +215,16 @@ export function pipelineListLevels(
 export interface PipelineFrame<TFrom> {
   /** The frame the list is in: of the call it is in, or of the level before */
   parent: PipelineFrame<TFrom> | null;
-  /** The list, as its call and its path down to this level */
+  /**
+   * The list's call, and the path to this level's list: in the call's data
+   * for the first level, and in the item of the level before for the others.
+   * Each level has its own part of the path, so frames take as much as the
+   * path does, however many levels it has
+   */
   list: PipelineList<TFrom>;
   /**
    * For a level after the first: where its list is in the item of the level
-   * before. `null` for the first, whose list is in the data of `list.from`
+   * before, as `list.path` is. `null` for the first
    */
   inItem: string[] | null;
   /** How many indexes a run has: one for every level of lists, the parent's too */
@@ -278,12 +283,10 @@ export function pipelineFrameOf<TFrom>(opts: {
   if (each) {
     // A frame for each level, in the one before
     frame = opts.frameOf(each.from);
-    let path: PipelinePath = [];
     for (const [at, level] of pipelineListLevels(each.path).entries()) {
-      path = at === 0 ? level : [...path, null, ...level];
       frame = {
         parent: frame,
-        list: { from: each.from, path },
+        list: { from: each.from, path: level },
         inItem: at === 0 ? null : level,
         depth: (frame?.depth ?? 0) + 1,
       };

@@ -440,7 +440,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 
 - **`each: { from, path }`** runs a call once for every item of the list at `path` in call `from`'s data. A read without `from` reads the item.
 - **A `null` in its path is a level of lists**: `["pages", null, "items"]` is every item of every page. `items` then has a level for each.
-- **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls for the items of two different lists is refused.
+- **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls whose frames don't nest, such as for the items of two different lists, is refused.
 - **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
 - **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
@@ -580,7 +580,7 @@ The most a request fills in, in characters of JSON: 100,000 by default. It count
 
 #### `maxRuns` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and they each ask by themselves. In a list of lists, that is each inner list by itself.
+The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and they each ask by themselves. In a list of lists, that is each inner list by itself, and no level can be longer than it allows, the outer ones too: each item of a level has a place before anything runs.
 
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load an entry for every item of long lists.
@@ -793,7 +793,7 @@ function AuthorName(props: {
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server runs the call for none of the list's items, and each item asks by itself.
 - **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](#limits).
-- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page. If each page has one flat list, such as `pages.map((page) => page.items)`, the items of a later page load with that page, as [below](#later-fetches). If a page has a list of lists, they load when they are read.
+- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page. If each page has one flat list, such as `pages.map((page) => page.items)`, and the item's query reads the item, the items of a later page load with that page, as [below](#later-fetches). If a page has a list of lists, they load when they are read.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
@@ -1128,7 +1128,7 @@ The server runs nothing of the request, and every query in it fails with a `BAD_
 Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
 ```
 
-A server older than this option reads the request as one call to a procedure named after all its paths: "not found" with `httpBatchLink`, or that streaming requests must be batched with `httpBatchStreamLink`. Turn it on, or update the server.
+A server older than this option reads the request as one call to a procedure named after all its paths: "not found" with `httpBatchLink`, or that streaming requests must be batched with `httpBatchStreamLink`. Update the server and turn it on, or remove `experimental_pipelining` from the link.
 
 #### Does it work with mutations and subscriptions? {#mutations}
 
@@ -1136,7 +1136,7 @@ No. Only queries can be sent this way, and such a batch of mutations is rejected
 
 #### Can a later page of an infinite list load its authors in the same request? {#later-pages}
 
-Yes, if the component reads the list through its handle, and each page has one flat list. See [When the list is fetched again](#later-fetches).
+Yes, if the component reads the list through its handle, each page has one flat list, and the author's query reads the post. A query that reads nothing of its item, such as a fixed id, loads when a row reads it. See [When the list is fetched again](#later-fetches).
 
 #### What does `createContext` see? {#create-context}
 

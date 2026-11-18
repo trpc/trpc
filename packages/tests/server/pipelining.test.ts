@@ -1047,22 +1047,51 @@ describe.each([
 });
 
 describe.each([
-  { name: 'httpBatchLink', link: httpBatchLink, maxURLLength: Infinity },
-  { name: 'httpBatchLink', link: httpBatchLink, maxURLLength: 2000 },
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: Infinity,
+    refuses: 'throws',
+  },
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: 2000,
+    refuses: 'throws',
+  },
   {
     name: 'httpBatchStreamLink',
     link: httpBatchStreamLink,
     maxURLLength: Infinity,
+    refuses: 'throws',
+  },
+  // What it makes of the input is something JSON can't carry
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: Infinity,
+    refuses: 'cyclic',
+  },
+  {
+    name: 'httpBatchLink',
+    link: httpBatchLink,
+    maxURLLength: 2000,
+    refuses: 'cyclic',
   },
 ] as const)(
-  '$name, with a `maxURLLength` of $maxURLLength, and a transformer that refuses an input still missing a value',
+  '$name, with a `maxURLLength` of $maxURLLength, and a transformer that refuses an input still missing a value ($refuses)',
   (scenario) => {
     test('the call that reads it is not added: the request of what it reads goes without it', async () => {
       /** Refuses an input with an `id` that is `undefined` */
       const strict = {
         serialize: (value: unknown) => {
           if (isObject(value) && 'id' in value && value['id'] === undefined) {
-            throw new Error('An id is missing');
+            if (scenario.refuses === 'throws') {
+              throw new Error('An id is missing');
+            }
+            const cyclic: Record<string, unknown> = {};
+            cyclic['self'] = cyclic;
+            return cyclic;
           }
           return value;
         },
@@ -2407,7 +2436,8 @@ describe('a call of a pipelined batch, on its own', () => {
     });
     const text = await res.text();
 
-    // The second run's result, after the first run's error
+    // The first run's error, and the second run's result after it
+    expect(text).toContain('INTERNAL_SERVER_ERROR');
     expect(text).toContain('"data":{"id":"t1"}');
     expect(text.indexOf('INTERNAL_SERVER_ERROR')).toBeLessThan(
       text.indexOf('"data":{"id":"t1"}'),
