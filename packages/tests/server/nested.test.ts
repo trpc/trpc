@@ -85,6 +85,10 @@ function createRouter() {
     since: t.procedure
       .input(z.object({ at: z.coerce.date() }))
       .query((opts) => opts.input.at.toISOString()),
+    // A hole in an array goes as `null`, as JSON writes it
+    ids: t.procedure
+      .input(z.object({ ids: z.array(z.string().nullable()) }))
+      .query((opts) => opts.input.ids),
     rename: t.procedure.input(z.string()).mutation((opts) => opts.input),
   });
   return { appRouter, gates, calls };
@@ -517,6 +521,21 @@ describe.each([
     });
 
     expect(since).toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  test('a sparse array in an input that reads a stand-in reaches the procedure, each hole in its place', async () => {
+    await using ctx = setup({ pipelining: true });
+
+    const post = await experimental_settle(
+      experimental_nested(ctx.client, (q) =>
+        q.post.bySlug.query({ slug: 'a' }).with((it) => {
+          const ids = [it.authorId, , 'x', ,] as (string | null)[];
+          return { ids: q.ids.query({ ids }) };
+        }),
+      ),
+    );
+
+    expect(post.edges.ids).toEqual(['ada', null, 'x', null]);
   });
 
   test('a query that asks by itself reads the data as it arrived, not as the caller changed it', async () => {

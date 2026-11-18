@@ -3078,10 +3078,11 @@ describe('a call the server refuses before any of its runs ran', () => {
     const decodesInPlace = initTRPC.create({
       transformer: {
         serialize: (value: unknown) => value,
-        // Makes a `BigInt` of `big`, in the input the request has
+        // Makes a number of `big`, in the input the request has: JSON can
+        // carry it, so only a snapshot taken before this tells it apart
         deserialize: (value: unknown) => {
           if (isObject(value) && typeof value['big'] === 'string') {
-            value['big'] = BigInt(value['big']);
+            value['big'] = Number(value['big']);
           }
           return value;
         },
@@ -3121,6 +3122,100 @@ describe('a call the server refuses before any of its runs ran', () => {
       error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
     });
     expect(ran).not.toHaveBeenCalled();
+  });
+
+  test('is marked for an inner list a limit refuses, when none of its runs started', async () => {
+    const lists = initTRPC.create();
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'pages,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: ['pages', null, 'items'] },
+            reads: [{ to: [], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        pages: lists.procedure.query(() => ({
+          pages: [{ items: ['a', 'b', 'c'] }],
+        })),
+        author: lists.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return opts.input;
+        }),
+      }),
+      experimental_allowPipelining: { maxRuns: 3 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toEqual({
+      error: {
+        message:
+          'This call would make the batch run 4 times, more than `maxRuns` (3) allows',
+        code: -32600,
+        data: expect.objectContaining({
+          code: 'BAD_REQUEST',
+          pipeline: 'not-run',
+        }),
+      },
+    });
+    expect(author).not.toHaveBeenCalled();
+  });
+});
+
+describe('a value a call reads, with a getter that gives something else each time', () => {
+  test('is written into the input as it was measured', async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({
+      transformer: {
+        input: identity,
+        output: {
+          serialize: (value: unknown) => value,
+          // Gives `v` an `id` that is short the first time it is read, and
+          // longer than `maxValueLength` allows after
+          deserialize: (value: unknown) => {
+            if (!isObject(value) || !isObject(value['v'])) {
+              return value;
+            }
+            let reads = 0;
+            return {
+              v: {
+                get id() {
+                  reads += 1;
+                  return reads === 1 ? 'short' : 'x'.repeat(2000);
+                },
+              },
+            };
+          },
+        },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,author',
+        pipe: { 1: { reads: [{ to: ['v'], from: 0, path: ['v'] }] } },
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ v: { id: 'ada' } })),
+        author: t.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return 'ran';
+        }),
+      }),
+      experimental_allowPipelining: { allowWholeValues: true },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toEqual({ result: { data: 'ran' } });
+    expect(author).toHaveBeenCalledExactlyOnceWith({ v: { id: 'short' } });
   });
 });
 

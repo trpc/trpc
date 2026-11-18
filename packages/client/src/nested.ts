@@ -932,7 +932,8 @@ export function experimental_nested<
         return valueOf(shape.ref, items, 'read');
       }
       if (Array.isArray(value)) {
-        return allOk(value.map((item) => fill(item, items)));
+        // Every index, a hole too: it is sent as `undefined` is
+        return allOk(Array.from(value, (item) => fill(item, items)));
       }
       if (isPlainObject(value)) {
         const keys = Object.keys(value);

@@ -628,7 +628,9 @@ function decodeCall(
     return { status: 'ran', outcome: received };
   }
   const sent = received.data;
-  if (!sent) {
+  // What isn't an object is no envelope: the call fails, and its siblings
+  // keep theirs
+  if (!sent || !isObject(sent.json)) {
     return {
       status: 'ran',
       outcome: failed(

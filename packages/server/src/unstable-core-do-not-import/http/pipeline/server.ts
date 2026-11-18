@@ -8,7 +8,6 @@ import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipelineCallReads,
   PipelineFrame,
-  PipelineItemEnvelope,
   PipelineLimits,
   PipelineList,
   PipelinePath,
@@ -665,13 +664,22 @@ export interface PipelineServerCall {
 }
 
 /**
+ * The outcome of one run, as a response has it: what the run's `item` gave,
+ * or what `error` made of why it failed
+ */
+export type PipelineRunEnvelope<TError, TData> =
+  | { result: { data: TData } }
+  | { error: TError };
+
+/**
  * The runs of a call that runs for every item, as a response has them: by
  * the item's index, one level for each level of lists, down to the outcome
- * of each run. A list that can't run is an `{ error }`. Each level, and each
- * run, is a promise of its own, ready when it is.
+ * of each run. A list that can't run is an `{ error }`, and so is a call
+ * none of whose runs started as the server refused its lists. Each level,
+ * and each run, is a promise of its own, ready when it is.
  */
-export type PipelineRuns<TError> = Promise<
-  PipelineItemEnvelope<TError> | { items: PipelineRuns<TError>[] }
+export type PipelineRuns<TError, TData> = Promise<
+  PipelineRunEnvelope<TError, TData> | { items: PipelineRuns<TError, TData>[] }
 >;
 
 /**
@@ -679,8 +687,11 @@ export type PipelineRuns<TError> = Promise<
  * outcome: what `item` returned, or what `error` made of why it failed. A
  * list that can't run gets what `error` makes of why.
  */
-export type PipelineEach = <TError>(run: {
-  item: (input: unknown) => Promise<unknown>;
+export type PipelineEach = <TError, TData>(run: {
+  /** Runs it for one item: what the response has for the run */
+  item: (input: unknown) => Promise<TData>;
+  /** The run's data, for the calls that read it, from what `item` gave */
+  read: (result: TData) => unknown;
   /**
    * What the response has for a run that failed, or for a list that can't
    * run. `notRun` is whether the server refused the whole call before any of
@@ -692,7 +703,7 @@ export type PipelineEach = <TError>(run: {
     input: unknown;
     notRun: boolean;
   }) => TError;
-}) => PipelineRuns<TError>;
+}) => PipelineRuns<TError, TData>;
 
 /**
  * How a call of a pipelined batch that reads values runs: once, with an input
@@ -936,8 +947,47 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     overLimit(
       `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
     );
-  /** Checks a value before it is written into an input */
-  function checkValue(value: unknown) {
+  /**
+   * A value as it is read once: each array and object in it copied with what
+   * its own properties are now, so what checks it and what is written into
+   * an input see the same, whatever a getter gives the next time. What keeps
+   * its state out of its properties, such as a `Date`, is as it is. Refused
+   * once it has more parts than a value `maxValueLength` allows can have
+   */
+  function readOnce(value: unknown): unknown {
+    let parts = 0;
+    const copy = (it: unknown): unknown => {
+      if (typeof it !== 'object' || it === null || !isRecordLike(it)) {
+        return it;
+      }
+      // Each is a `[]` or a `{}` at least. One in itself is refused here too
+      parts += 1;
+      if (parts > limits.maxValueLength) {
+        throw valueTooLong();
+      }
+      if (Array.isArray(it)) {
+        // By index, as JSON reads it
+        return Array.from({ length: it.length }, (_item, at) => copy(it[at]));
+      }
+      const copied: object = Object.create(Object.getPrototypeOf(it));
+      for (const key of Object.keys(it)) {
+        // Not an assignment, which would set the prototype for `__proto__`
+        Object.defineProperty(copied, key, {
+          value: copy((it as Record<string, unknown>)[key]),
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
+      }
+      return copied;
+    };
+    return copy(value);
+  }
+  /**
+   * A value as it is written into an input, once it is checked: read once,
+   * so the input has what was measured
+   */
+  function checkedValue(value: unknown) {
     if (
       !limits.allowWholeValues &&
       typeof value === 'object' &&
@@ -945,9 +995,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     ) {
       throw wholeValueRefused();
     }
-    if (sizeOf(value, limits.maxValueLength) > limits.maxValueLength) {
+    const once = readOnce(value);
+    if (sizeOf(once, limits.maxValueLength) > limits.maxValueLength) {
       throw valueTooLong();
     }
+    return once;
   }
   /**
    * The value at `path` in `data`, for a call to read. Refused before it
@@ -1255,8 +1307,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const count = (value: unknown) => charge(sizeOf(value, room - size));
     let input = run.base.value;
     for (const [at, read] of run.reads.reads.entries()) {
-      const value = values[at];
-      checkValue(value);
+      const value = checkedValue(values[at]);
       if (!run.perItem) {
         count(value);
       }
@@ -1277,14 +1328,15 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }): PipelineEach {
     const { source, frame, reads } = each;
     const refusal = refusalOf(source, reads);
-    return async function runEach<TError>(run: {
-      item: (input: unknown) => Promise<unknown>;
+    return async function runEach<TError, TData>(run: {
+      item: (input: unknown) => Promise<TData>;
+      read: (result: TData) => unknown;
       error: (failure: {
         cause: unknown;
         input: unknown;
         notRun: boolean;
       }) => TError;
-    }): PipelineRuns<TError> {
+    }): PipelineRuns<TError, TData> {
       const { error } = run;
       let base: PipelineDecodedInput;
       try {
@@ -1301,12 +1353,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       }
       interface Ran {
         run: Run;
-        envelope: Promise<PipelineItemEnvelope<TError>>;
+        envelope: Promise<PipelineRunEnvelope<TError, TData>>;
       }
+      /** Whether any of its runs started: it holds a place for each */
+      let started = false;
+      const firstStarted = createDeferred<void>();
       /** A run, which holds a place of `lease` */
       const start = (place: Place, lease: PipelineLease): Ran => {
+        started = true;
+        firstStarted.resolve();
         const ran = newRun();
-        const envelope = (async (): Promise<PipelineItemEnvelope<TError>> => {
+        const envelope = (async (): Promise<
+          PipelineRunEnvelope<TError, TData>
+        > => {
           let input: unknown;
           try {
             input = await fill({ base, reads, place, perItem: true });
@@ -1320,7 +1379,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           }
           try {
             const data = await run.item(input);
-            ran.outcome.resolve({ ok: true, data });
+            ran.outcome.resolve({ ok: true, data: run.read(data) });
             return { result: { data } };
           } catch (cause) {
             ran.outcome.resolve({ ok: false });
@@ -1372,32 +1431,53 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       void mapPlaces(ran, (it) => ({ kind: 'run', value: it.run })).then(
         source.runs.resolve,
       );
-      type Response = Awaited<PipelineRuns<TError>>;
-      const response = (
-        places: Places<Ran>,
-        /** Whether it is the call's outcome as a whole, not a list's in it */
-        whole: boolean,
-      ): PipelineRuns<TError> =>
+      type Response = Awaited<PipelineRuns<TError, TData>>;
+      const response = (places: Places<Ran>): PipelineRuns<TError, TData> =>
         places.then((node): Response | Promise<Response> => {
           switch (node.kind) {
             case 'run':
               return node.value.envelope;
             case 'items':
-              return {
-                items: node.items.map((item) => response(item, false)),
-              };
+              return { items: node.items.map(response) };
             case 'failed':
               return {
                 error: error({
                   cause: node.error,
                   input: base.value,
-                  // Refused as a whole, for a limit, so none of its runs ran
-                  notRun: whole && refusalErrors.has(node.error),
+                  notRun: false,
                 }),
               };
           }
         });
-      return response(ran, true);
+      /** Why each list of it that can't run can't, once every list is ready */
+      const failures = async (places: Places<Ran>): Promise<TRPCError[]> => {
+        const node = await places;
+        switch (node.kind) {
+          case 'run':
+            return [];
+          case 'items':
+            return (await Promise.all(node.items.map(failures))).flat();
+          case 'failed':
+            return [node.error];
+        }
+      };
+      const failed = failures(ran);
+      // Once a run starts, or every list is ready without one
+      await Promise.race([firstStarted.promise, failed]);
+      const refused = started ? [] : await failed;
+      // None of its runs started, as the server refused its lists for its
+      // limits: a client can ask for it by itself, as for a call refused as
+      // a whole. One with a list that can't run for another reason, or with
+      // no list refused, is as it is
+      if (
+        refused.length > 0 &&
+        refused.every((cause) => refusalErrors.has(cause))
+      ) {
+        return {
+          error: error({ cause: refused[0], input: base.value, notRun: true }),
+        };
+      }
+      return response(ran);
     };
   }
 
