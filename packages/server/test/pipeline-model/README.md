@@ -41,3 +41,11 @@ It models the steps, not the code: a value's size is 1 or 2, and reading the
 values of a run, filling in its input and failing are each one step. When
 `server.ts` changes how a call or a run takes from either budget, change the
 model too.
+
+The model checks every order for a small batch, but not the code itself. The
+property tests in
+[`pipeline.prop.test.ts`](../../src/unstable-core-do-not-import/http/pipeline/pipeline.prop.test.ts)
+check the code: they run `pipelineCalls` on random batches, with fast-check's
+scheduler choosing the order each procedure's data arrives in, and check the
+same limits. Each of the two bugs above makes them fail, with the smallest
+batch that shows it.

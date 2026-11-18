@@ -195,6 +195,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@fast-check/vitest": "catalog:",
     "@fastify/websocket": "catalog:",
     "@oxc-project/runtime": "0.157.0",
     "@tanstack/intent": "catalog:",
@@ -208,6 +209,7 @@
     "@types/ws": "^8.18.2",
     "devalue": "catalog:",
     "express": "catalog:",
+    "fast-check": "catalog:",
     "fastify": "catalog:",
     "fastify-plugin": "catalog:",
     "hash-sum": "catalog:",
