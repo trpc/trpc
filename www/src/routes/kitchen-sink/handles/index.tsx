@@ -88,6 +88,8 @@ function HandlesPage() {
           <Link
             className="rounded-md border px-3 py-1 hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold"
             key={id}
+            // Switching posts keeps the page where it is.
+            resetScroll={false}
             search={{ post: id === 1 ? undefined : id }}
             to="/kitchen-sink/handles"
           >
