@@ -337,6 +337,16 @@ export type PipelineEach = <TError>(run: {
 }) => Promise<PipelineItemEnvelope<TError>[]>;
 
 /**
+ * How a call of a pipelined batch that reads values runs: once, with an input
+ * that is filled in before it runs, or once for every item of a list. It runs
+ * after its input is filled in even when nothing of it reads its input: a
+ * procedure without an input parser is refused, or doesn't run, as any other.
+ */
+export type PipelineCallRun =
+  | { kind: 'once'; input: () => Promise<unknown> }
+  | { kind: 'each'; each: PipelineEach };
+
+/**
  * Makes the calls of a batch read parts of their input from the data of
  * earlier calls, as its `pipe` says. Throws if the `pipe` is invalid.
  */
@@ -386,7 +396,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       if (reads.kind === 'each') {
         from.push(reads.list.from);
       }
-      source.depth = 1 + Math.max(...from.map((it) => it.depth));
+      // 1 for a call whose reads are empty, as for one that has none
+      source.depth = 1 + Math.max(0, ...from.map((it) => it.depth));
     }
   }
   /** Why a call is refused before it reads anything, if it is */
@@ -506,12 +517,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     /** What a value that is the same for every run is */
     const wholes = new Map<PipelineWholeRead<Source>, unknown>();
     const counter = fillCounter();
-    const valuesOfRuns: unknown[][] = [];
+    const inputs: unknown[] = [];
     try {
       // By index: a list with holes has a run for each of them too
       for (const index of items.keys()) {
-        counter.add(base);
-        const values: unknown[] = [];
+        let input = base;
         for (const read of reads.reads) {
           if (read.kind === 'whole' && !wholes.has(read)) {
             const value = readPipelinePath(await dataOf(read.from), read.path);
@@ -525,21 +535,15 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           } else {
             value = wholes.get(read);
           }
-          counter.add(value);
-          values.push(value);
+          input = writePipelinePath({ input, to: read.to, value });
         }
-        valuesOfRuns.push(values);
+        // Every run has an input of its own, as calls the client sends do.
+        // All of it counts, with the keys its values are written under, and
+        // before the next is made
+        const sent = asSent(input);
+        counter.add(sent);
+        inputs.push(sent);
       }
-      // Every run has an input of its own, as calls the client sends do
-      const inputs = valuesOfRuns.map((values) =>
-        asSent(
-          reads.reads.reduce(
-            (input, read, at) =>
-              writePipelinePath({ input, to: read.to, value: values[at] }),
-            base,
-          ),
-        ),
-      );
       counter.take();
       return inputs;
     } catch (cause) {
@@ -554,25 +558,28 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     call: TCall,
     source: Source,
     reads: PipelineCallReads<Source> | undefined,
-  ): { call: TCall; each: PipelineEach | null } {
+  ): { call: TCall; run: PipelineCallRun | null } {
     if (!reads) {
-      return { call, each: null };
+      return { call, run: null };
     }
     const refusal = refusalOf(source, reads);
     if (reads.kind === 'each') {
       return {
         call,
-        each: async (run) => {
-          const inputs = await inputsOfEach(call, reads, refusal);
-          return Promise.all(
-            inputs.map(async (input) => {
-              try {
-                return { result: { data: await run.item(input) } };
-              } catch (cause) {
-                return { error: run.error(cause, input) };
-              }
-            }),
-          );
+        run: {
+          kind: 'each',
+          each: async (run) => {
+            const inputs = await inputsOfEach(call, reads, refusal);
+            return Promise.all(
+              inputs.map(async (input) => {
+                try {
+                  return { result: { data: await run.item(input) } };
+                } catch (cause) {
+                  return { error: run.error(cause, input) };
+                }
+              }),
+            );
+          },
         },
       };
     }
@@ -603,13 +610,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       read = [input];
       return input;
     };
+    const getRawInput = () => (reading ??= fill());
     return {
       call: {
         ...call,
-        getRawInput: () => (reading ??= fill()),
+        getRawInput,
         result: () => (read ? read[0] : call.result()),
       },
-      each: null,
+      run: { kind: 'once', input: getRawInput },
     };
   }
   const calls = sent.map((it, index) => ({
@@ -622,16 +630,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     calls: calls.map((it) => it.call),
     /**
      * Runs every call, and tells the calls that read a call's data how it
-     * went. A call that runs once per item of a list gets `each` to run
-     * with.
+     * went. A call that reads values gets how it runs, which is `null` for
+     * one that reads none.
      */
     run: <TResult>(run: {
-      call: (call: TCall, each: PipelineEach | null) => Promise<TResult>;
+      call: (call: TCall, run: PipelineCallRun | null) => Promise<TResult>;
       /** A call's data, from what `call` gave. Throws if it has none to read */
       data: (result: TResult) => unknown;
     }): Promise<TResult>[] =>
       calls.map((it) => {
-        const result = run.call(it.call, it.each);
+        const result = run.call(it.call, it.run);
         result.then(run.data).then(it.outcome.resolve, it.outcome.reject);
         return result;
       }),

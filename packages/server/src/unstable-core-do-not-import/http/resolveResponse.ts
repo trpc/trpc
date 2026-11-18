@@ -25,7 +25,7 @@ import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
-import type { PipelineEach } from './pipeline/server';
+import type { PipelineCallRun } from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -431,8 +431,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     ]);
     const runCall = async (
       call: TRPCRequestInfo['calls'][number],
-      /** For a call of a pipelined batch that runs once per item of a list */
-      each: PipelineEach | null,
+      /** For a call of a pipelined batch that reads values: how it runs */
+      piped: PipelineCallRun | null,
     ): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
@@ -478,43 +478,51 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             signal: combinedAbort.signal,
             batchIndex: call.batchIndex,
           });
-        const data = each
-          ? // Once per item of an earlier call's list. Every run validates its
-            // input and has its own result or error
-            await each({
-              item: async (input) => {
-                const itemData = await callProcedure(async () => input);
-                if (isDataStream(itemData)) {
-                  // It would be inside a list, where nothing streams it
-                  throw new TRPCError({
-                    code: 'UNSUPPORTED_MEDIA_TYPE',
-                    message:
-                      'A call for every item cannot return a stream-like response',
+        const data =
+          piped?.kind === 'each'
+            ? // Once per item of an earlier call's list. Every run validates its
+              // input and has its own result or error
+              await piped.each({
+                item: async (input) => {
+                  const itemData = await callProcedure(async () => input);
+                  if (isDataStream(itemData)) {
+                    // It would be inside a list, where nothing streams it
+                    throw new TRPCError({
+                      code: 'UNSUPPORTED_MEDIA_TYPE',
+                      message:
+                        'A call for every item cannot return a stream-like response',
+                    });
+                  }
+                  return itemData;
+                },
+                error: (cause, input) => {
+                  const error = getTRPCErrorFromUnknown(cause);
+                  opts.onError?.({
+                    error,
+                    path: call.path,
+                    input,
+                    ctx: ctxManager.valueOrUndefined(),
+                    type: proc._def.type,
+                    req: opts.req,
                   });
-                }
-                return itemData;
-              },
-              error: (cause, input) => {
-                const error = getTRPCErrorFromUnknown(cause);
-                opts.onError?.({
-                  error,
-                  path: call.path,
-                  input,
-                  ctx: ctxManager.valueOrUndefined(),
-                  type: proc._def.type,
-                  req: opts.req,
-                });
-                return getErrorShape({
-                  config,
-                  ctx: ctxManager.valueOrUndefined(),
-                  error,
-                  input,
-                  path: call.path,
-                  type: proc._def.type,
-                });
-              },
-            })
-          : await callProcedure(call.getRawInput);
+                  return getErrorShape({
+                    config,
+                    ctx: ctxManager.valueOrUndefined(),
+                    error,
+                    input,
+                    path: call.path,
+                    type: proc._def.type,
+                  });
+                },
+              })
+            : piped
+              ? // Its input is filled in first, so a procedure that never reads
+                // it is refused, or doesn't run, as any other
+                await run(async () => {
+                  const input = await piped.input();
+                  return callProcedure(async () => input);
+                })
+              : await callProcedure(call.getRawInput);
         return [
           undefined,
           {

@@ -76,6 +76,11 @@ const createRouter = (transformer: 'none' | 'superjson') => {
     })),
     // Data that JSON has no word for
     nothing: t.procedure.query(() => undefined),
+    // No input parser: nothing reads its input but the pipeline
+    unread: t.procedure.query(() => {
+      calls('unread', undefined);
+      return 3;
+    }),
     // Two lists in one call's data
     lists: t.procedure.query(() => ({
       long: [{ id: 't1' }, { id: 't1' }, { id: 't1' }, { id: 't1' }],
@@ -1191,6 +1196,37 @@ describe('the `pipe` search param', () => {
       data: { code: 'BAD_REQUEST' },
     });
     expect(over.calls).not.toHaveBeenCalled();
+  });
+
+  test('a call to a procedure without an input parser is refused, or does not run, as any other', async () => {
+    const over = await get(
+      pipe({
+        1: [
+          { to: ['a'], from: 0, path: ['authorId'] },
+          { to: ['b'], from: 0, path: ['authorId'] },
+        ],
+      }),
+      { path: 'post,unread', allowPipelining: { maxReadsPerCall: 1 } },
+    );
+    expect(over.json[1].error).toMatchObject({
+      message:
+        'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
+      data: { code: 'BAD_REQUEST' },
+    });
+    expect(over.calls).not.toHaveBeenCalled();
+
+    const afterFailed = await get(
+      `input=${encodeURIComponent(
+        JSON.stringify({ 0: { slug: 'missing' }, 1: {} }),
+      )}&pipe=${encodeURIComponent(
+        JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
+      )}`,
+      { path: 'post,unread', allowPipelining: true },
+    );
+    expect(afterFailed.json[1].error).toMatchObject({
+      data: { code: 'PRECONDITION_FAILED' },
+    });
+    expect(afterFailed.calls).not.toHaveBeenCalled();
   });
 
   test('`true` refuses a call more than 3 calls deep, or that reads an object, and the rest of the batch runs', async () => {

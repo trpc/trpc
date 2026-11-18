@@ -460,7 +460,7 @@ createHTTPServer({
 }).listen(3000);
 ```
 
-The link keeps to the server's `maxReadsPerCall` and `maxDepth`, so it doesn't send a call that the server would refuse. If you raise them on the server, raise them on the link too:
+The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall` and `maxDepth`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower:
 
 ```ts twoslash title='client.ts'
 // @include: dq-router
@@ -534,7 +534,7 @@ Whether a value can be an object or a list: `false` by default. Without it, a va
 
 #### `maxFillSize` {#limit-fill-size}
 
-The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call for every item, it counts the whole input of every run too, as each run gets its own copy.
+The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call for every item, it counts the whole input of every run instead, keys and all, as each run gets its own copy.
 
 - **Why 100,000:** the other limits keep a call small. This one keeps the whole request small, as it can have many calls, and a call can run for many items.
 - **Raise it** with `maxValueLength` or `allowWholeValues`, if a request of yours fills in more.

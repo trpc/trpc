@@ -115,7 +115,7 @@ function serve(opts: {
     }
     // As a request handler does: a call gives how it went, and never rejects
     const results = pipeline.run({
-      call: async (call, each): Promise<[cause: unknown, data: unknown]> => {
+      call: async (call, run): Promise<[cause: unknown, data: unknown]> => {
         try {
           const fn = opts.fns[call.path];
           if (!fn) {
@@ -123,8 +123,8 @@ function serve(opts: {
           }
           return [
             undefined,
-            await (each
-              ? each({ item: async (input) => fn(input), error: wireError })
+            await (run?.kind === 'each'
+              ? run.each({ item: async (input) => fn(input), error: wireError })
               : fn(await call.getRawInput())),
           ];
         } catch (cause) {
@@ -1333,6 +1333,36 @@ describe('the limits of a server', () => {
       expect(res.of(each)).toEqual(deep(3, 2));
       expect(ran).toEqual(['post', 'list']);
     });
+
+    test('a call that reads no values is 1 deep, as one the client sends itself', async () => {
+      // `none` 1, `second` 2, `third` 3 and `fourth` 4
+      const none = call('none', {}, []);
+      const second = call('second', {}, [
+        { to: ['id'], from: none, path: ['id'], each: false },
+      ]);
+      const third = call('third', {}, [
+        { to: ['id'], from: second, path: ['id'], each: false },
+      ]);
+      const fourth = call('fourth', {}, [
+        { to: ['id'], from: third, path: ['id'], each: false },
+      ]);
+
+      const { res, ran } = await sendWith({
+        limits: pipelineLimitDefaults,
+        fns: {
+          none: () => ({ id: 'a' }),
+          second: () => ({ id: 'b' }),
+          third: () => ({ id: 'c' }),
+          fourth: () => ({ id: 'd' }),
+        },
+        sent: [],
+        calls: [none, second, third, fourth],
+      });
+
+      expect(res.of(third)).toEqual({ data: { id: 'c' } });
+      expect(res.of(fourth)).toEqual(deep(4, 3));
+      expect(ran).toEqual(['none', 'second', 'third']);
+    });
   });
 
   describe('`maxValueLength`', () => {
@@ -1654,6 +1684,44 @@ describe('`maxFillSize`: what a request fills in', () => {
       data: [{ result: { data: 1 } }, { result: { data: 2 } }],
     });
     expect(echo).toHaveBeenCalledTimes(2);
+  });
+
+  test('the keys a run of a call for every item writes its values under count too', async () => {
+    // `{"longField":"x"}` is 17 characters of JSON, though the value is 3
+    const run = async (max: number) => {
+      const echo = vi.fn(() => null);
+      await using server = serve({
+        ...defaults,
+        limits: { ...pipelineLimitDefaults, maxFillSize: max },
+        fns: { list: () => ['x'], echo },
+      });
+      const list = sent('list', undefined);
+      const each = call('echo', {}, [
+        { to: ['longField'], from: list, path: [null], each: true },
+      ]);
+      const res = await send({
+        ...defaults,
+        url: server.url,
+        method: 'POST',
+        sent: [list],
+        calls: [each],
+      });
+      return { outcome: res.of(each), echo };
+    };
+
+    const over = await run(16);
+    expect(over.outcome).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+      },
+    });
+    expect(over.echo).not.toHaveBeenCalled();
+
+    const within = await run(17);
+    expect(within.outcome).toEqual({ data: [{ result: { data: null } }] });
+    expect(within.echo).toHaveBeenCalledWith({ longField: 'x' });
   });
 });
 
