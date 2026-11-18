@@ -36,7 +36,7 @@ import {
 } from './pipelined';
 import type { EntryLeaf, EntryTree } from './plan';
 import { leavesOf, mapEntryTree, readEntries, waitedByHandle } from './plan';
-import { nothing } from './utils';
+import { nothing, startOwn } from './utils';
 
 export function startEntry(opts: {
   queryClient: QueryClient;
@@ -379,6 +379,12 @@ export function beginEntries(opts: {
         }
       }
     });
+  }
+
+  /** Stops listening to the query cache for prefetch entries */
+  function stopWatching() {
+    unwatch?.();
+    unwatch = null;
   }
 
   const loads = new Map<EntryLeaf, EntryLoad>();
@@ -736,31 +742,31 @@ export function beginEntries(opts: {
           serverKeys?.catch(nothing);
 
           resolve(
-            itemsOf(data).map((listItem, index) => {
-              const place = placeOf(listItem);
-              let options = optionsOfItem(data, listItem);
-              if (call && serverKeys) {
-                const key = hashKey(options.queryKey);
-                const item = resultOfItem(
-                  dataOfCall(call),
-                  serverIndexes(listItem),
-                );
-                options = withPipelinedResult({
-                  options,
-                  result: item.result,
-                  unresolved: () =>
-                    call.status === 'unresolved' || item.missing(),
-                  // The server ran the same query at the item's place
-                  sameInput: async () => (await serverKeys).get(place) === key,
-                });
-              }
-              const itemKey = `${leaf.label}.${index}`;
-              return startEntry({ queryClient, state, options }).catch(
-                (error: unknown) => {
-                  throw toEntryError(itemKey, state, error);
-                },
-              );
-            }),
+            itemsOf(data).map((listItem, index) =>
+              startOwn(() => {
+                const place = placeOf(listItem);
+                let options = optionsOfItem(data, listItem);
+                if (call && serverKeys) {
+                  const key = hashKey(options.queryKey);
+                  const item = resultOfItem(
+                    dataOfCall(call),
+                    serverIndexes(listItem),
+                  );
+                  options = withPipelinedResult({
+                    options,
+                    result: item.result,
+                    unresolved: () =>
+                      call.status === 'unresolved' || item.missing(),
+                    // The server ran the same query at the item's place
+                    sameInput: async () =>
+                      (await serverKeys).get(place) === key,
+                  });
+                }
+                return startEntry({ queryClient, state, options });
+              }).catch((error: unknown) => {
+                throw toEntryError(`${leaf.label}.${index}`, state, error);
+              }),
+            ),
           );
         } catch (error) {
           reject(error);
@@ -797,10 +803,18 @@ export function beginEntries(opts: {
     };
   }
 
-  const allLoads = leaves.map(loadOf);
+  let allLoads: EntryLoad[];
+  try {
+    allLoads = leaves.map(loadOf);
+  } catch (error) {
+    // An entry that threw as it started: nothing waits for the ones before
+    // it, so nothing would stop listening for them
+    stopWatching();
+    throw error;
+  }
   // Until every entry has settled. An entry that starts later can watch too
-  void Promise.allSettled(allLoads.map((load) => load.promise)).then(() =>
-    unwatch?.(),
+  void Promise.allSettled(allLoads.map((load) => load.promise)).then(
+    stopWatching,
   );
   return { tree, leafOfEntry, allLoads, isSettledFailure };
 }

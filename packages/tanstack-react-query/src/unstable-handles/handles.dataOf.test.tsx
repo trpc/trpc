@@ -187,6 +187,8 @@ const createAppRouter = () => {
     big: t.router({
       /** Ids that no query key can hold */
       ids: t.procedure.query(() => ({ first: 1n, all: [1n, 2n] })),
+      /** Ids of which the second is one no query key can hold */
+      mixed: t.procedure.query(() => ({ ids: ['u1', 1n] as unknown[] })),
       byId: t.procedure
         .input(z.object({ id: z.bigint() }))
         .query((opts) => opts.input.id),
@@ -1045,6 +1047,63 @@ describe('edges of a load', () => {
       first: 1n,
       all: [1n, 2n],
     });
+  });
+
+  test("an item whose query can't start fails by itself, and the items after it still load", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const mixed = ensureEntry(trpc.big.mixed);
+    const [, results] = await loadHandlesSettled(trpc, {
+      mixed,
+      authors: experimental_entryPerItem(experimental_dataOf(mixed).ids, (id) =>
+        ensureEntry(trpc.author.byId, { id: id as string }),
+      ),
+    });
+    expect(results.authors).toMatchObject([
+      { status: 'success', data: { id: 'u1' } },
+      { status: 'error' },
+    ]);
+  });
+
+  test('a load that throws while it starts its entries leaves no listener on the query cache', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const cache = resource.queryClient.getQueryCache();
+    resource.queryClient.setQueryData(trpc.author.byId.queryKey({ id: 'u1' }), {
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team1',
+    });
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    await expect(
+      loadHandles(trpc, {
+        post,
+        // A prefetch entry another reads: the load listens to the cache for it
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+        // Its `staleTime` runs, and throws, as the load starts it
+        cached: prefetchEntry(
+          trpc.author.byId,
+          { id: 'u1' },
+          {
+            staleTime: () => {
+              throw new Error('staleTime threw');
+            },
+          },
+        ),
+      }),
+    ).rejects.toThrow('staleTime threw');
+    expect(cache.hasListeners()).toBe(false);
+  });
+
+  test('an index into a list from `.map()` throws: it would read the index of every item', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    expect(
+      () => experimental_dataOf(post).tags.map((tag) => tag.id)[0],
+    ).toThrow('`.map()`');
   });
 
   test('experimental_handleOfItem() throws for a handle that has nothing to fill in', async () => {
@@ -2848,7 +2907,12 @@ describe.each([
       staleTime: Infinity,
     });
     using _subscription = makeResource({}, observer.subscribe(vi.fn()));
-    await observer.fetchNextPage();
+    const next = await observer.fetchNextPage();
+    // The row that can't start came first on the page
+    expect(next.data?.pages[1]?.items).toMatchObject([
+      { id: 'big', authorId: 1n },
+      { id: 'p1', authorId: 'u1' },
+    ]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

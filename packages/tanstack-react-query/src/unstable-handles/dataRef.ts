@@ -56,6 +56,17 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
       if (ref.shape === 'flat' && key !== 'toJSON') {
         throw new Error(onlyAsList);
       }
+      if (
+        ref.shape === 'mapped' &&
+        key !== 'map' &&
+        key !== 'flatMap' &&
+        key !== 'toJSON'
+      ) {
+        // Its path's last `null` is every item: `[0]` would read each item's `0`
+        throw new Error(
+          `${notData}. A \`.map()\` value is a value for every item: pass it as it is, or read the part of the item in the callback`,
+        );
+      }
       return createEntryDataRef({
         entry: ref.entry,
         path: dataPath([...ref.path, key]),

@@ -42,7 +42,7 @@ import type {
   experimental_TRPCInfiniteQueryHandlePerItem,
   experimental_TRPCQueryHandlePerItem,
 } from './types';
-import { isPlainObject, nothing } from './utils';
+import { isPlainObject, nothing, startOwn } from './utils';
 
 export const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
@@ -458,26 +458,24 @@ export function withItemQueries(opts: {
             : []) {
             const item = readPipelinePath(element, [...queries.itemRead], null);
             const itemResult = resultOfItem(dataOfCall(call), [index]);
-            try {
-              const options = withPipelinedResult({
-                options: optionsOf(procedure, 'query')(
-                  experimental_handleOfItem(queries, item).input,
-                  undefined,
-                ),
-                result: itemResult.result,
-                unresolved: () =>
-                  call.status === 'unresolved' || itemResult.missing(),
-                // The server filled in the inputs from the same list
-                sameInput: () => Promise.resolve(true),
-              });
-              // Built for a query, as `prefetchQuery()` takes it
-              void queryClient.prefetchQuery(
-                options as unknown as FetchQueryOptions,
-              );
-            } catch {
-              // Its query can't start, such as for an input no query key can
-              // hold. The row that reads it gets that error. The others load
-            }
+            // A row whose query can't start, such as for an input no query
+            // key can hold, fails by itself: the row that reads it gets that
+            // error, and the others load
+            void startOwn(() =>
+              queryClient.prefetchQuery(
+                withPipelinedResult({
+                  options: optionsOf(procedure, 'query')(
+                    experimental_handleOfItem(queries, item).input,
+                    undefined,
+                  ),
+                  result: itemResult.result,
+                  unresolved: () =>
+                    call.status === 'unresolved' || itemResult.missing(),
+                  // The server filled in the inputs from the same list
+                  sameInput: () => Promise.resolve(true),
+                }) as unknown as FetchQueryOptions,
+              ),
+            ).catch(nothing);
           }
         }, nothing);
       }

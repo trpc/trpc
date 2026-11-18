@@ -10,3 +10,15 @@ export function isPlainObject(
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 }
+
+/**
+ * Starts one unit of work, such as one item's query, with a throw as its
+ * rejection: one unit's failure is its own, and the units after it start
+ */
+export function startOwn<TResult>(start: () => Promise<TResult>) {
+  try {
+    return start();
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
