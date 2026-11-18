@@ -674,6 +674,26 @@ describe('review regressions', () => {
     );
   });
 
+  test("a list's handle doesn't load an entry per item with a `trpc.context` of its own in its later fetches", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const posts = ensureEntry(trpc.post.byAuthor, { authorId: 'u1' });
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (id) =>
+          prefetchEntry(
+            trpc.author.byId,
+            { id },
+            { trpc: { context: { route: 'authors' } } },
+          ),
+      ),
+    });
+    expect(handles.posts.experimental_perItem).toBeUndefined();
+  });
+
   test('an unfinished handle has no undefined in it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
@@ -2178,6 +2198,78 @@ describe.each([
       id: 'u1',
       name: 'KATT',
       teamId: 'team1',
+    });
+  });
+
+  test('an entry with a `trpc.context` of its own goes to the links with it, not in the request of the entry it reads', async () => {
+    const ops: Pick<Operation, 'path' | 'input' | 'context'>[] = [];
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [
+        () => (linkOpts) => {
+          const { path, input, context } = linkOpts.op;
+          ops.push({ path, input, context });
+          return linkOpts.next(linkOpts.op);
+        },
+      ],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(
+        trpc.author.byId,
+        { id: experimental_dataOf(post).authorId },
+        { trpc: { context: { route: 'authors' } } },
+      ),
+    });
+
+    expect(data.author).toMatchObject({ id: 'u1' });
+    expect(ops).toContainEqual({
+      path: 'author.byId',
+      input: { id: 'u1' },
+      context: expect.objectContaining({ route: 'authors' }),
+    });
+  });
+
+  test('an entry with a `trpc.context` of its own carries no call of an entry that reads it', async () => {
+    const ops: Pick<Operation, 'path' | 'input' | 'context'>[] = [];
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [
+        () => (linkOpts) => {
+          const { path, input, context } = linkOpts.op;
+          ops.push({ path, input, context });
+          return linkOpts.next(linkOpts.op);
+        },
+      ],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(
+      trpc.post.bySlug,
+      { slug: 'hello' },
+      { trpc: { context: { route: 'posts' } } },
+    );
+    const [, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+
+    expect(data.author).toMatchObject({ id: 'u1' });
+    // The author went to the links as a request of its own
+    expect(ops.map(({ path, input }) => ({ path, input }))).toContainEqual({
+      path: 'author.byId',
+      input: { id: 'u1' },
     });
   });
 

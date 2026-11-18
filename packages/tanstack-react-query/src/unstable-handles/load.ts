@@ -297,16 +297,6 @@ export function beginEntries(opts: {
     ).then((resolved) => new Map(resolved));
 
   /**
-   * Whether the server fills in what a `experimental_dataOf()` value in an
-   * entry's input reads. Not a cursor that `initialCursor` takes the place of,
-   * nor an infinite query's direction, which is TanStack Query's: the page
-   * would be another
-   */
-  const filledByServer = (state: EntryState, ref: EntryInputRef) =>
-    !(ref.to[0] === 'cursor' && state.request().cursorFromOptions) &&
-    !(ref.to[0] === 'direction' && state.type === 'infinite');
-
-  /**
    * Has the server make an entry's request in the request of the entries it
    * reads, if those just went to a link that pipelines. The server fills in
    * its input
@@ -322,9 +312,12 @@ export function beginEntries(opts: {
     list: { ref: EntryDataRef; source: EntryLoad; path: PipelinePath } | null;
   }) {
     const { state, list } = pipelined;
-    const { cursorFromOptions: _, ...request } = state.request();
+    const { request } = state;
+    if (!request.pipelines) {
+      return null;
+    }
     const read = pipelined.reads.filter(({ ref }) =>
-      filledByServer(state, ref),
+      request.serverReads.has(ref),
     );
     // Not by its path: the whole list, read with `.map()`, has the same one
     const readsItem = (ref: EntryDataRef) => !!list && ref.itemOf === list.ref;
@@ -352,16 +345,14 @@ export function beginEntries(opts: {
     const each = list?.source.pipeline
       ? { from: list.source.pipeline, path: list.path }
       : null;
-    if (
-      reads.length !== read.length ||
-      (list && !each) ||
-      // An infinite query's request adds the cursor to its input, an object
-      (state.type === 'infinite' &&
-        state.refs.some((ref) => ref.to.length === 0))
-    ) {
+    if (reads.length !== read.length || (list && !each)) {
       return null;
     }
-    return pipeCall({ ...request, reads: { each, reads } });
+    return pipeCall({
+      path: request.path,
+      input: request.input,
+      reads: { each, reads },
+    });
   }
 
   /** The prefetch entries whose data another entry reads, by their query's hash */
@@ -432,7 +423,11 @@ export function beginEntries(opts: {
     let promise: Promise<unknown>;
     if (sources.size === 0) {
       let built = state.options({ dataOfRef: nothing, pipeline: null });
-      if (readLeaves.has(leaf) && typeof built.queryFn === 'function') {
+      if (
+        readLeaves.has(leaf) &&
+        state.request.pipelines &&
+        typeof built.queryFn === 'function'
+      ) {
         // Another entry reads this one: its request can take part in pipelining
         const sent = createOperationPipeline();
         pipeline = sent;
@@ -513,7 +508,9 @@ export function beginEntries(opts: {
                       // client's, and an entry the cache had made no request
                       const serverRead = new Set(
                         reads
-                          .filter(({ ref }) => filledByServer(state, ref))
+                          .filter(({ ref }) =>
+                            state.request.serverReads.has(ref),
+                          )
                           .map(({ ref }) => ref.entry),
                       );
                       const sent = fill(
@@ -830,7 +827,12 @@ export function handlesOfLoads(opts: {
   for (const [leaf, handle] of handleOfLeaf) {
     const source = leaf.each && opts.leafOfEntry.get(leaf.each.entry);
     const sourceHandle = source && handleOfLeaf.get(source);
-    if (!leaf.each || !source || !sourceHandle) {
+    if (
+      !leaf.each ||
+      !source ||
+      !sourceHandle ||
+      !leaf.state.request.pipelines
+    ) {
       continue;
     }
     // The list in one request's result: a query's data, or any page

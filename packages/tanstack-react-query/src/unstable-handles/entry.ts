@@ -34,6 +34,74 @@ import type {
 } from './types';
 import { nothing } from './utils';
 
+/**
+ * An entry's first request, as the server can make it in another's request:
+ * for an infinite query, the request of the first page.
+ */
+export interface EntryRequest {
+  /** The procedure's path, joined by dots */
+  path: string;
+  /** The input, with `undefined` for every value the server fills in */
+  input: unknown;
+  /**
+   * The `experimental_dataOf()` values the server fills in. Not a cursor that
+   * `initialCursor` takes the place of, nor an infinite query's direction:
+   * TanStack Query sets those, and the page would be another
+   */
+  serverReads: ReadonlySet<EntryInputRef>;
+  /**
+   * Whether its request can go in another's, or carry others' in it. Not with
+   * a `trpc.context` of its own, which a link may route by; nor for an
+   * infinite query that reads its whole input, to which the request adds the
+   * cursor
+   */
+  pipelines: boolean;
+}
+
+/** Builds an entry's `EntryRequest`. Pure: it reads only what the entry was built with */
+function planRequest(opts: {
+  type: HandleType;
+  path: string[];
+  input: unknown;
+  opts: unknown;
+  refs: EntryInputRef[];
+}): EntryRequest {
+  const entryOpts = opts.opts as
+    | (TRPCQueryBaseOptions & { initialCursor?: unknown })
+    | undefined;
+  const ownContext = Object.keys(entryOpts?.trpc?.context ?? {}).length > 0;
+  let input = replaceEntryDataRefs(opts.input, [], nothing);
+  let cursorFromOptions = false;
+  if (opts.type === 'infinite') {
+    // The first page's request, as `infiniteQueryOptions()` makes it
+    const initialCursor = entryOpts?.initialCursor;
+    cursorFromOptions = initialCursor != null;
+    const cursor =
+      initialCursor ?? (input as { cursor?: unknown } | null)?.cursor;
+    input = {
+      ...(input as object),
+      ...(cursor !== undefined ? { cursor } : {}),
+      direction: 'forward',
+    };
+  }
+  return {
+    path: opts.path.join('.'),
+    input,
+    serverReads: new Set(
+      opts.refs.filter(
+        (ref) =>
+          !(ref.to[0] === 'cursor' && cursorFromOptions) &&
+          !(ref.to[0] === 'direction' && opts.type === 'infinite'),
+      ),
+    ),
+    pipelines:
+      !ownContext &&
+      !(
+        opts.type === 'infinite' && opts.refs.some((ref) => ref.to.length === 0)
+      ),
+  };
+}
+
 export const entryState = Symbol('trpc.handleEntry');
 export interface EntryState {
   kind: TRPCEntryKind;
@@ -50,20 +118,8 @@ export interface EntryState {
     dataOfRef: (ref: EntryDataRef) => unknown;
     pipeline: OperationPipeline | null;
   }) => any;
-  /**
-   * The query's request, with `undefined` for every `experimental_dataOf()`
-   * value in the input: the server fills them in. For an infinite query, it is
-   * the request of the first page.
-   */
-  request: () => {
-    path: string;
-    input: unknown;
-    /**
-     * Whether the first page's cursor is `initialCursor`, which takes the place
-     * of a cursor in the input
-     */
-    cursorFromOptions: boolean;
-  };
+  /** What the entry's first request is, decided when the entry is built */
+  request: EntryRequest;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -199,25 +255,13 @@ export function entry(opts: {
             replaceEntryDataRefs(opts.input, [], optionsOpts.dataOfRef),
             optionsOpts.pipeline,
           ),
-    request: () => {
-      let input = replaceEntryDataRefs(opts.input, [], nothing);
-      let cursorFromOptions = false;
-      if (opts.type === 'infinite') {
-        // The first page's request, as `infiniteQueryOptions()` makes it
-        const initialCursor = (
-          opts.opts as { initialCursor?: unknown } | undefined
-        )?.initialCursor;
-        cursorFromOptions = initialCursor != null;
-        const cursor =
-          initialCursor ?? (input as { cursor?: unknown } | null)?.cursor;
-        input = {
-          ...(input as object),
-          ...(cursor !== undefined ? { cursor } : {}),
-          direction: 'forward',
-        };
-      }
-      return { path: ctx.path.join('.'), input, cursorFromOptions };
-    },
+    request: planRequest({
+      type: opts.type,
+      path: ctx.path,
+      input: opts.input,
+      opts: opts.opts,
+      refs,
+    }),
     queryClient: queryClientOf(ctx),
   });
 }

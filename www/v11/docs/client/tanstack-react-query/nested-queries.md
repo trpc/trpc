@@ -314,6 +314,8 @@ The browser can't ask for the author before it has the post. It doesn't know the
 
 It is a feature of the client and the server, not of TanStack Query, so it has its own page: [Nested queries in one request](/docs/client/vanilla/nested-queries#one-request). There you'll find how to [turn it on](/docs/client/vanilla/nested-queries#turn-on), [what goes over the wire](/docs/client/vanilla/nested-queries#wire), [what your links see](/docs/client/vanilla/nested-queries#links), [when it isn't one request](/docs/client/vanilla/nested-queries#fallback) and its [limits](/docs/client/vanilla/nested-queries#limits).
 
+An entry with a `trpc.context` of its own takes no part: a link may route by that context. It loads in a request of its own, and so does an entry that reads its data.
+
 ## The load doesn't wait {#without-waiting}
 
 `experimental_dataOf(entry, (data) => entry)` builds an entry from another entry's data. The load doesn't wait for that data. This is the form [In short](#gist) uses.
