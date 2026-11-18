@@ -1,4 +1,4 @@
-import { trpc } from '../utils/trpc';
+import { useTRPC } from '../utils/trpc';
 import type { NextPageWithLayout } from './_app';
 import {
   Alert,
@@ -39,6 +39,11 @@ import { ChevronRightIcon, CircleAlertIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { AppRouter } from '~/server/routers/_app';
 import type { RouterOutput } from '~/utils/trpc';
+import {
+  useQueryClient,
+  useInfiniteQuery,
+  useMutation,
+} from '@tanstack/react-query';
 
 type Post = RouterOutput['post']['list']['items'][number];
 
@@ -71,15 +76,18 @@ function PostItem(props: { post: Post }) {
 }
 
 function PostsCard() {
-  const postsQuery = trpc.post.list.useInfiniteQuery(
-    {
-      limit: 5,
-    },
-    {
-      getNextPageParam(lastPage) {
-        return lastPage.nextCursor;
+  const trpc = useTRPC();
+  const postsQuery = useInfiniteQuery(
+    trpc.post.list.infiniteQueryOptions(
+      {
+        limit: 5,
       },
-    },
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.nextCursor;
+        },
+      },
+    ),
   );
 
   // prefetch all posts for instant navigation
@@ -181,13 +189,16 @@ function PostsCard() {
 }
 
 function AddPostCard() {
-  const utils = trpc.useUtils();
-  const addPost = trpc.post.add.useMutation({
-    async onSuccess() {
-      // refetches posts after a post is added
-      await utils.post.list.invalidate();
-    },
-  });
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const addPost = useMutation(
+    trpc.post.add.mutationOptions({
+      async onSuccess() {
+        // refetches posts after a post is added
+        await queryClient.invalidateQueries(trpc.post.list.pathFilter());
+      },
+    }),
+  );
   const pending = addPost.status === 'pending';
 
   return (
