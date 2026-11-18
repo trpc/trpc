@@ -15,8 +15,15 @@ function BlogLayout() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
-  // From the cookies, then kept here as you change them
-  const [settings, setSettings] = useState<BlogSettings>(Route.useLoaderData());
+  // From the cookies, then kept here as you change them. Each load of the
+  // cookies replaces it, also of a page shown from the router's cache first
+  const loaded = Route.useLoaderData();
+  const [settings, setSettings] = useState<BlogSettings>(loaded);
+  const [seen, setSeen] = useState(loaded);
+  if (loaded !== seen) {
+    setSeen(loaded);
+    setSettings(loaded);
+  }
   return (
     <div className="flex-1 overflow-y-auto">
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
@@ -30,6 +37,12 @@ function BlogLayout() {
               // the new speed: its loader starts its queries, in one request
               queryClient.removeQueries(trpc.blog.pathFilter());
               void router.invalidate();
+            } else {
+              // Only this route reads the cookies again, so the router keeps
+              // no older settings to show
+              void router.invalidate({
+                filter: (match) => match.routeId === Route.id,
+              });
             }
           }}
         />

@@ -153,40 +153,47 @@ function PostList(
       </DevNote>
       <ItemGroup>
         {posts.map((post) => (
+          // The link covers the row, under the author's note: a link can't
+          // hold the note, which can be focused
           <Item
             key={post.slug}
             variant="outline"
-            render={
-              <Link
-                to="/blog/$slug"
-                params={{ slug: post.slug }}
-                preload={preload}
-              />
-            }
+            className="relative transition-colors hover:bg-muted has-[a:focus-visible]:ring-[3px] has-[a:focus-visible]:ring-ring/50"
           >
             <ItemContent>
-              <ItemTitle>{post.title}</ItemTitle>
-              <ItemDescription>
-                <Suspense
-                  fallback={
-                    <DevNoteText text="…">
-                      <p>
-                        <span className="font-medium">Suspense:</span> waiting
-                        for this post’s run of <code>blog.authorById</code>, in
-                        the list’s request.
-                      </p>
-                    </DevNoteText>
-                  }
+              <ItemTitle>
+                <Link
+                  to="/blog/$slug"
+                  params={{ slug: post.slug }}
+                  preload={preload}
+                  className="outline-none after:absolute after:inset-0"
                 >
-                  {/* The post gives the handle of its author's query, also for
+                  {post.title}
+                </Link>
+              </ItemTitle>
+              <ItemDescription>
+                <span className="relative z-10">
+                  <Suspense
+                    fallback={
+                      <DevNoteText text="…">
+                        <p>
+                          <span className="font-medium">Suspense:</span> waiting
+                          for this post’s run of <code>blog.authorById</code>,
+                          in the list’s request.
+                        </p>
+                      </DevNoteText>
+                    }
+                  >
+                    {/* The post gives the handle of its author's query, also for
                       a post on a page that loaded after the loader ran */}
-                  <AuthorName
-                    author={experimental_handleOfItem(
-                      props.handles.authors,
-                      post,
-                    )}
-                  />
-                </Suspense>
+                    <AuthorName
+                      author={experimental_handleOfItem(
+                        props.handles.authors,
+                        post,
+                      )}
+                    />
+                  </Suspense>
+                </span>
                 {' · '}
                 {format(post.publishedAt, 'd MMMM yyyy')}
               </ItemDescription>
