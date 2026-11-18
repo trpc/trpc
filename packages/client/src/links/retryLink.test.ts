@@ -112,7 +112,7 @@ describe.each([1, 3])('after %i retries', (failures) => {
 });
 
 test('unsubscribing during the retry delay cancels the next attempt', () => {
-  using _timers = fakeTimersResource();
+  using timers = fakeTimersResource();
   const cleanup = vi.fn();
   const retry = vi.fn(() => true);
   const client = createTRPCUntypedClient({
@@ -130,7 +130,7 @@ test('unsubscribing during the retry delay cancels the next attempt', () => {
   expect(retry).toHaveBeenCalledTimes(1);
   expect(cleanup).toHaveBeenCalledTimes(1);
   ac.abort();
-  vi.runAllTimers();
+  timers.runAllTimers();
   expect(retry).toHaveBeenCalledTimes(1);
   expect(cleanup).toHaveBeenCalledTimes(1);
 });
@@ -177,7 +177,7 @@ test('unsubscribing from a synchronous retried result cleans up that attempt', (
 test.each(['retry', 'retryDelayMs'] as const)(
   'unsubscribing from %s does not schedule another attempt',
   (callback) => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const cleanup = vi.fn();
     let attempts = 0;
     const ac = new AbortController();
@@ -206,8 +206,8 @@ test.each(['retry', 'retryDelayMs'] as const)(
     });
     client.subscription('messages', undefined, { signal: ac.signal });
     fail();
-    expect(vi.getTimerCount()).toBe(0);
-    vi.runAllTimers();
+    expect(timers.getTimerCount()).toBe(0);
+    timers.runAllTimers();
     expect(attempts).toBe(1);
     expect(cleanup).toHaveBeenCalledTimes(1);
   },
