@@ -625,23 +625,6 @@ function asJSON(value: unknown, key: string): unknown {
   return value;
 }
 
-/**
- * Whether JSON calls a `toJSON` of `value` that isn't a `Date`'s: one that
- * runs code of the data's own, which can give something else each time. A
- * `Date`'s gives the same, and a transformer reads the `Date` itself
- */
-function hasOwnToJSON(value: unknown) {
-  if (
-    (typeof value !== 'object' && typeof value !== 'function') ||
-    value === null
-  ) {
-    return false;
-  }
-  // Read once
-  const toJSON: unknown = (value as { toJSON?: unknown }).toJSON;
-  return typeof toJSON === 'function' && toJSON !== Date.prototype.toJSON;
-}
-
 /** The primitive JSON writes for a boxed one, such as `Object(1)` */
 function unboxed(value: unknown): unknown {
   if (value instanceof Number) {
@@ -965,111 +948,62 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
     );
   /**
-   * A value as it is read once: each array and object in it copied with what
-   * its own properties are now, so what checks it and what is written into
-   * an input see the same, whatever a getter gives the next time. What has a
-   * `toJSON` of its own is what that gives, as JSON reads it, with its parts
-   * as JSON writes them: nothing calls it again. What keeps its state out of
-   * its properties, such as a `Date`, is as it is. Refused once it has more
-   * parts than a value `maxValueLength` allows can have
+   * A value as a call gets it written into its input: serialized once through
+   * the transformer of inputs, as a client would send it, and read back from
+   * that one serialization. The value it was read from isn't read again, so
+   * what its getters, its `toJSON` or a proxy give is read once: what is
+   * measured is what is written, and nothing runs its code after. Refused
+   * first if it is an object or an array and `allowWholeValues` is false,
+   * as it was read
    */
-  function readOnce(value: unknown): unknown {
-    let parts = 0;
-    /** Counts a part, and refuses the value once it has too many */
-    const part = () => {
-      parts += 1;
-      if (parts > limits.maxValueLength) {
-        throw valueTooLong();
-      }
-    };
-    /**
-     * What JSON writes for `it` at `key`, read back: it calls a `toJSON` once,
-     * and what it gives is plain data, each of whose parts is counted
-     */
-    const asWritten = (it: unknown, key: string): unknown => {
-      // Under its key, so its `toJSON` is told the key, as JSON tells it
-      const holder: Record<string, unknown> = {};
-      Object.defineProperty(holder, key, { value: it, enumerable: true });
-      const json = JSON.stringify(holder, (_key, written: unknown) => {
-        part();
-        return written;
-      });
-      return (JSON.parse(json) as Record<string, unknown>)[key];
-    };
-    const copy = (it: unknown, key: string): unknown => {
-      if (hasOwnToJSON(it)) {
-        return asWritten(it, key);
-      }
-      if (typeof it !== 'object' || it === null || !isRecordLike(it)) {
-        return it;
-      }
-      // Each is a `[]` or a `{}` at least. One in itself is refused here too
-      part();
-      if (Array.isArray(it)) {
-        // By index, as JSON reads it
-        return Array.from({ length: it.length }, (_item, at) =>
-          copy(it[at], String(at)),
-        );
-      }
-      const copied: object = Object.create(Object.getPrototypeOf(it));
-      for (const property of Object.keys(it)) {
-        // Not an assignment, which would set the prototype for `__proto__`
-        Object.defineProperty(copied, property, {
-          value: copy((it as Record<string, unknown>)[property], property),
-          writable: true,
-          enumerable: true,
-          configurable: true,
-        });
-      }
-      return copied;
-    };
-    // As JSON reads a value at the top
-    return copy(value, '');
-  }
-  /**
-   * A value as it is written into an input, once it is checked: read once,
-   * so the input has what was measured
-   */
-  function checkedValue(value: unknown) {
+  function asWritten(value: unknown): unknown {
     if (
       !limits.allowWholeValues &&
       typeof value === 'object' &&
       value !== null
     ) {
-      throw wholeValueRefused();
+      throw new Refused(wholeValueRefused);
     }
-    const once = readOnce(value);
-    if (sizeOf(once, limits.maxValueLength) > limits.maxValueLength) {
+    const json = JSON.stringify(opts.transformer.input.serialize(value));
+    return json === undefined
+      ? undefined
+      : opts.transformer.input.deserialize(JSON.parse(json));
+  }
+  /** Checks a value, as it is written, before it goes into an input */
+  function checkValue(value: unknown) {
+    if (sizeOf(value, limits.maxValueLength) > limits.maxValueLength) {
       throw valueTooLong();
     }
-    return once;
   }
   /**
-   * The value at `path` in `data`, for a call to read. Refused before it
-   * makes a list of items that `checkValue` would refuse: the list is as long
-   * as the one it is of, which can be long
+   * The value at `path` in `data`, for a call to read, as it is written: see
+   * `asWritten`. Refused before it makes a list of items that would be
+   * refused: the list is as long as the one it is of, which can be long
    */
   function readValue(data: unknown, path: PipelinePath): Read<unknown> {
     let room = limits.maxValueLength;
     try {
       return {
         ok: true,
-        value: readPipelinePath(data, path, (length) => {
-          if (!limits.allowWholeValues) {
-            throw new Refused(wholeValueRefused);
-          }
-          // At least its brackets, and a `,` between each two of its items.
-          // An item that is a list counts for itself as it is made
-          room -= Math.max(length + 1, 2);
-          if (room < 0) {
-            throw new Refused(valueTooLong);
-          }
-        }),
+        value: asWritten(
+          readPipelinePath(data, path, (length) => {
+            if (!limits.allowWholeValues) {
+              throw new Refused(wholeValueRefused);
+            }
+            // At least its brackets, and a `,` between each two of its items.
+            // An item that is a list counts for itself as it is made
+            room -= Math.max(length + 1, 2);
+            if (room < 0) {
+              throw new Refused(valueTooLong);
+            }
+          }),
+        ),
       };
     } catch (cause) {
       return {
         ok: false,
-        // What else throws, such as a getter, fails each run that reads it
+        // What else throws, such as a getter or what JSON can't carry, fails
+        // each run that reads it
         error:
           cause instanceof Refused
             ? cause.refusal
@@ -1350,7 +1284,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const count = (value: unknown) => charge(sizeOf(value, room - size));
     let input = run.base.value;
     for (const [at, read] of run.reads.reads.entries()) {
-      const value = checkedValue(values[at]);
+      const value = values[at];
+      checkValue(value);
       if (!run.perItem) {
         count(value);
       }
