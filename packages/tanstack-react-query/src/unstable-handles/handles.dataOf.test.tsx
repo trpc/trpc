@@ -2214,6 +2214,43 @@ describe.each([
     });
   });
 
+  test("a stale list of lists: an item's result is used only if the server ran the same item at its place", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The cache has the groups as they were: the server now has `u2` in the
+    // first group, and `u3` where `u2` was
+    resource.queryClient.setQueryData(
+      trpc.group.list.queryKey(),
+      { groups: [{ members: ['u1'] }, { members: ['u2'] }] },
+      { updatedAt: 1 },
+    );
+
+    const groups = ensureEntry(trpc.group.list);
+    const [, data] = await loadHandles(trpc, {
+      groups,
+      members: experimental_entryPerItem(
+        experimental_dataOf(groups).groups.map((group) => group.members),
+        (id) => ensureEntry(trpc.author.byId, { id }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    expect(data.members.map((member) => member.id)).toEqual(['u1', 'u2']);
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 'u2' }),
+      ),
+    ).toMatchObject({ id: 'u2' });
+  });
+
   test("an entry per page of an infinite entry does not break the entry's request", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
@@ -2374,6 +2411,52 @@ describe.each([
     });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
     expect(resource.calls).toHaveBeenCalledTimes(3);
+  });
+
+  test('a later page does not run, for every item, a query that reads nothing of its item', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      // The same author for every row
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.map((page) => page.items),
+        () => prefetchEntry(trpc.author.byId, { id: 'u1' }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
+    resource.calls.mockClear();
+
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.paged',
+    ]);
   });
 
   test("a later page loads its items' queries in the same request", async () => {

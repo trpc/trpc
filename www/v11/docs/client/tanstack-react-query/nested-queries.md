@@ -440,7 +440,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 
 - **`each: { from, path }`** runs a call once for every item of the list at `path` in call `from`'s data. A read without `from` reads the item.
 - **A `null` in its path is a level of lists**: `["pages", null, "items"]` is every item of every page. `items` then has a level for each.
-- **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call that reads calls for the items of two different lists is refused.
+- **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls for the items of two different lists is refused.
 - **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
 - **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
@@ -469,20 +469,6 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
 
 An entry that is sent this way always asks the server, also when the cache has its query: its key isn't known until the entry it reads has loaded.
-
-### If the server doesn't allow it {#not-allowed}
-
-A server without `experimental_allowPipelining` runs nothing of such a request. It answers with a `BAD_REQUEST`, and every query in the request fails with it:
-
-```
-Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
-```
-
-- **The server says so itself.** The client doesn't guess from the answer, so an error formatter can't hide it, unless it changes the message.
-- **A server older than this option** doesn't know such a request, and reads it as one call, not a batch: one procedure named after all of its paths. Such a request always has at least two, so `httpBatchLink` gets "not found", and nothing runs. To `httpBatchStreamLink` it answers that streaming requests must be batched. Update the server.
-- **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
-- **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
-- **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
 
 ### Limits {#limits}
 
@@ -806,7 +792,7 @@ function AuthorName(props: {
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server runs the call for none of the list's items, and each item asks by itself.
 - **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](#limits).
-- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page: the items of a later page load with that page, as [below](#later-fetches).
+- **A list of lists loads in one request too.** The server runs the call for every item of every inner list, as `each` with a `null` in its path. Of an infinite entry, the request has the first page. If each page has one flat list, such as `pages.map((page) => page.items)`, the items of a later page load with that page, as [below](#later-fetches). If a page has a list of lists, they load when they are read.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
@@ -1133,13 +1119,23 @@ Such a request does what the browser could do in two. Each call validates its in
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
+#### What if the link pipelines and the server doesn't? {#not-allowed}
+
+The server runs nothing of the request, and every query in it fails with a `BAD_REQUEST`:
+
+```
+Pipelining is not enabled on the server. Set `experimental_allowPipelining: true` on its handler, or remove `experimental_pipelining` from the link
+```
+
+A server older than this option reads the request as one call to a procedure named after all its paths: "not found" with `httpBatchLink`, or that streaming requests must be batched with `httpBatchStreamLink`. Turn it on, or update the server.
+
 #### Does it work with mutations and subscriptions? {#mutations}
 
 No. Only queries can be sent this way, and such a batch of mutations is rejected.
 
 #### Can a later page of an infinite list load its authors in the same request? {#later-pages}
 
-Yes, if the component reads the list through its handle. See [When the list is fetched again](#later-fetches).
+Yes, if the component reads the list through its handle, and each page has one flat list. See [When the list is fetched again](#later-fetches).
 
 #### What does `createContext` see? {#create-context}
 

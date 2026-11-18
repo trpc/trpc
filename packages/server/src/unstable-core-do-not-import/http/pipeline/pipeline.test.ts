@@ -1196,6 +1196,37 @@ describe('a call for every item', () => {
     expect(ran.map(([path]) => path)).toEqual(['posts']);
   });
 
+  test('a list longer than the most runs a request may have is refused before anything is made for its items', async () => {
+    const { fns, ran } = blog();
+    // Room for the batch's two calls, not for the list's three items
+    await using server = serve({ ...defaults, fns, maxRuns: 2 });
+    const list = sent('posts', undefined);
+    const authorOfEach = call(
+      'author',
+      {},
+      reads(
+        { from: list, path: ['items'] },
+        { to: ['id'], path: ['authorId'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [authorOfEach],
+    });
+
+    expect(res.of(authorOfEach)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'A call for every item exceeds the maximum batch size',
+      },
+    });
+    expect(ran.map(([path]) => path)).toEqual(['posts']);
+  });
+
   test('a call that is refused takes none of the runs: a later one that fits still runs', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
@@ -1578,8 +1609,9 @@ describe('a call for every item', () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
-      // The groups, and one more call: not the runs of `members`
-      limits: { ...pipelineLimitDefaults, maxRuns: 2 },
+      // The batch's three calls, but not the two runs of `members` in
+      // place of its own
+      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
       fns: {
         groups: () => [{ id: 'a' }, { id: 'b' }],
         members: () => ({ ids: ['x'] }),
@@ -1661,6 +1693,131 @@ describe('a call for every item', () => {
     });
     expect(itemCount(res.of(tags))).toBe(2);
     expect(ran.filter(([path]) => path === 'author')).toHaveLength(3);
+  });
+
+  test("a call for the items of a list of lists can read a call over its outer list: its run for an item reads the run for the item's list", async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      fns: {
+        book: () => ({
+          pages: [
+            { title: 'one', items: [1, 2] },
+            { title: 'two', items: [3] },
+          ],
+        }),
+        echo,
+      },
+    });
+    const book = sent('book', undefined);
+    const titles = call(
+      'echo',
+      {},
+      reads(
+        { from: book, path: ['pages'] },
+        { to: ['title'], path: ['title'] },
+      ),
+    );
+    const items = call(
+      'echo',
+      {},
+      reads(
+        { from: book, path: ['pages', null, 'items'] },
+        { to: ['n'], path: [] },
+        { to: ['page'], from: titles, path: ['title'] },
+      ),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: [book],
+      calls: [titles, items],
+    });
+
+    expect(res.of(items)).toEqual({
+      items: {
+        0: {
+          items: {
+            0: { result: { data: { n: 1, page: 'one' } } },
+            1: { result: { data: { n: 2, page: 'one' } } },
+          },
+        },
+        1: { items: { 0: { result: { data: { n: 3, page: 'two' } } } } },
+      },
+    });
+  });
+
+  test('a list too long for any call to run for every item is refused before anything is made for its items', async () => {
+    const echo = vi.fn(() => null);
+    await using server = serve({
+      ...defaults,
+      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      fns: { list: () => [1, 2, 3, 4], echo },
+    });
+    const list = sent('list', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [each],
+    });
+
+    expect(res.of(each)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'A list has 4 items, more than `maxRuns` (3) allows',
+      },
+    });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
+  test('a call that fails before it begins to read, such as for a procedure that is not there, gives back its place', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      // The list, the call that isn't there, and the two runs below
+      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      fns: {
+        list: async () => {
+          // Ready after the call below has failed
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          return [1, 2];
+        },
+        echo,
+      },
+    });
+    const list = sent('list', undefined);
+    const missing = call(
+      'missing',
+      {},
+      reads(null, { to: ['n'], from: list, path: ['0'] }),
+    );
+    const each = call(
+      'echo',
+      {},
+      reads({ from: list, path: [] }, { to: ['n'], path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [missing, each],
+    });
+
+    expect(res.of(missing)).toMatchObject({ error: { code: 'NOT_FOUND' } });
+    expect(itemCount(res.of(each))).toBe(2);
+    expect(echo).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -2981,6 +3138,7 @@ describe('what a client puts in a request', () => {
       {
         parent: null,
         list: { from: 0, path: ['a'] },
+        inItem: null,
         depth: 1,
       },
     );
@@ -3014,6 +3172,19 @@ describe('what a client puts in a request', () => {
         reads: [whole(1), whole(4)],
       }).fits,
     ).toBe(true);
+    // A level of lists is a frame of its own: the items of every `a` are in
+    // the frame of the `a`s, which call 1 runs in
+    const inner = add(10, {
+      each: { from: 0, path: ['a', null, 'b'] },
+      reads: [whole(1)],
+    });
+    expect(inner.fits).toBe(true);
+    expect(inner.frame).toMatchObject({
+      parent: frameOf.get(1),
+      list: { from: 0, path: ['a', null, 'b'] },
+      inItem: ['b'],
+      depth: 2,
+    });
   });
 
   test('the URL of a batch, pipelined', () => {

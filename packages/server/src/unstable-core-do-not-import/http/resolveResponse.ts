@@ -556,10 +556,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                         'A call for every item cannot return a stream-like response',
                     });
                   }
-                  if (!isStreamCall) {
-                    // What JSON can't carry fails the run, not the response
-                    assertJSON(config.transformer.output.serialize(itemData));
-                  }
+                  // What JSON can't carry fails the run, not the response or
+                  // the stream
+                  assertJSON(config.transformer.output.serialize(itemData));
                   return itemData;
                 },
                 error: (cause, input) => {
@@ -956,9 +955,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             undefined,
           ];
         }
-        if (pipeline) {
+        if (pipeline && !result.items) {
           // In a pipelined batch, what JSON can't carry fails the call, not
-          // the response
+          // the response. A call for every item has no data of its own: each
+          // run's was checked as it ran
           try {
             assertJSON(config.transformer.output.serialize(result.data));
           } catch (cause) {
@@ -995,8 +995,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const call = info.calls[index]!;
         const items = settled[index];
         if (items) {
-          // Not a response of its own, but the runs of one: `{ items }`
-          return items.json as TRPCResponse<unknown, inferRouterError<TRouter>>;
+          // What `responseMeta` gets: a result, with the runs as its data.
+          // The response has the runs in place of it, as `{ items }`
+          return { result: { data: items.json } };
         }
         if (error) {
           return {

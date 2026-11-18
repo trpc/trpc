@@ -71,7 +71,8 @@ ReleasePlaceholder(c) ==
          /\ IF ReleaseEarly THEN runs' = runs - 1 ELSE UNCHANGED runs
     ELSE UNCHANGED <<placeholder, runs>>
 
-\* Refused, or its own input can't be read, before it reads anything
+\* Refused, its procedure isn't there, or its own input can't be read,
+\* before it reads anything
 FailBeforeRuns(c) ==
   /\ pc[c] = "start"
   /\ pc' = [pc EXCEPT ![c] = "refused"]

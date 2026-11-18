@@ -206,13 +206,22 @@ export function pipelineListLevels(
 }
 
 /**
- * The items a call runs for: the levels of a list, in the frame of what the
- * list is in. `null`, as a frame, is the one run of a call that runs once.
+ * The items a call runs for: one level of a list, in the frame of what the
+ * list is in. A list of lists is a frame for each level, each in the one
+ * before, so a call over `["pages"]` and one over `["pages", null, "items"]`
+ * of the same call share the frame of the pages. `null`, as a frame, is the
+ * one run of a call that runs once.
  */
 export interface PipelineFrame<TFrom> {
-  /** The frame of the call the list is in */
+  /** The frame the list is in: of the call it is in, or of the level before */
   parent: PipelineFrame<TFrom> | null;
+  /** The list, as its call and its path down to this level */
   list: PipelineList<TFrom>;
+  /**
+   * For a level after the first: where its list is in the item of the level
+   * before. `null` for the first, whose list is in the data of `list.from`
+   */
+  inItem: string[] | null;
   /** How many indexes a run has: one for every level of lists, the parent's too */
   depth: number;
 }
@@ -267,12 +276,18 @@ export function pipelineFrameOf<TFrom>(opts: {
   }
   let frame: PipelineFrame<TFrom> | null = null;
   if (each) {
-    const parent = opts.frameOf(each.from);
-    frame = {
-      parent,
-      list: each,
-      depth: (parent?.depth ?? 0) + pipelineListLevels(each.path).length,
-    };
+    // A frame for each level, in the one before
+    frame = opts.frameOf(each.from);
+    let path: PipelinePath = [];
+    for (const [at, level] of pipelineListLevels(each.path).entries()) {
+      path = at === 0 ? level : [...path, null, ...level];
+      frame = {
+        parent: frame,
+        list: { from: each.from, path },
+        inItem: at === 0 ? null : level,
+        depth: (frame?.depth ?? 0) + 1,
+      };
+    }
   } else {
     // The deepest of them, which the others have to be the start of
     for (const source of sources) {

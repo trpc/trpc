@@ -176,13 +176,17 @@ export function pipeCall(opts: {
   ) {
     return null;
   }
-  const depth =
-    1 +
-    Math.max(...sources.map((source) => (isCall(source) ? source.depth : 1)));
-  if (
-    opts.reads.reads.length > owner.limits.maxReadsPerCall ||
-    depth > owner.limits.maxDepth
-  ) {
+  if (opts.reads.reads.length > owner.limits.maxReadsPerCall) {
+    return null;
+  }
+  // A loop, not a spread: a spread of many sources overflows the stack
+  let depth = 2;
+  for (const source of sources) {
+    if (isCall(source)) {
+      depth = Math.max(depth, source.depth + 1);
+    }
+  }
+  if (depth > owner.limits.maxDepth) {
     return null;
   }
   const settled = createDeferred<
@@ -439,16 +443,28 @@ export function experimental_pipelining(
           .filter((call) => call.status === 'waiting'),
         fits: (next) => {
           const sent = [...ops, ...next.calls];
+          if (sent.length > link.maxItems) {
+            return false;
+          }
+          // An input the transformer can't take before the server fills it
+          // in, such as one still without an id it reads: the call waits for
+          // what it reads and goes on its own, and the request goes without it
+          try {
+            for (const call of next.calls) {
+              link.transformer.input.serialize(call.input);
+            }
+          } catch {
+            return false;
+          }
           return (
-            sent.length <= link.maxItems &&
-            (link.maxURLLength === Infinity ||
-              pipelinedRequest(next.pipe).getUrl({
-                ...link,
-                type: 'query',
-                path: sent.map((it) => it.path).join(','),
-                inputs: sent.map((it) => it.input),
-                signal: null,
-              }).length <= link.maxURLLength)
+            link.maxURLLength === Infinity ||
+            pipelinedRequest(next.pipe).getUrl({
+              ...link,
+              type: 'query',
+              path: sent.map((it) => it.path).join(','),
+              inputs: sent.map((it) => it.input),
+              signal: null,
+            }).length <= link.maxURLLength
           );
         },
       });

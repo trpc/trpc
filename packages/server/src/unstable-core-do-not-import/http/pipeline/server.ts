@@ -16,7 +16,6 @@ import type {
 import {
   pipelineFrameOf,
   pipelineLimitDefaults,
-  pipelineListLevels,
   readPipelinePath,
 } from './wire';
 
@@ -457,33 +456,35 @@ function mapPlaces<TFrom, TTo>(
   });
 }
 
-/** The places of the items of a list in `value`, and of the lists in them */
-function itemsAt(opts: {
-  value: unknown;
-  /** Where the list is in `value` */
-  path: string[];
-  /** Where the list of the next level is in each item, and so on */
-  inner: string[][];
+/** The places of the items of a list, in the place the list is in */
+function itemsOf(opts: {
+  list: unknown;
   /** The indexes of the place the list is in */
   indexes: readonly number[];
+  /**
+   * Why a list this long can't run, or `null` if it can. Nothing is made for
+   * its items then: no call could hold a place for each
+   */
+  tooLong: (length: number) => TRPCError | null;
 }): PlacesNode<Place> {
-  const list = readPipelinePath(opts.value, opts.path);
+  const { list } = opts;
   // What is no list has no items
   if (!Array.isArray(list)) {
     return { kind: 'items', items: [] };
   }
-  const [next, ...inner] = opts.inner;
+  const error = opts.tooLong(list.length);
+  if (error) {
+    return { kind: 'failed', error };
+  }
   // By index: a list with holes has a run for each of them too
   return {
     kind: 'items',
-    items: Array.from(list.keys(), (index) => {
-      const indexes = [...opts.indexes, index];
-      return Promise.resolve<PlacesNode<Place>>(
-        next
-          ? itemsAt({ value: list[index], path: next, inner, indexes })
-          : { kind: 'run', value: { indexes, item: list[index] } },
-      );
-    }),
+    items: Array.from(list.keys(), (index) =>
+      Promise.resolve<PlacesNode<Place>>({
+        kind: 'run',
+        value: { indexes: [...opts.indexes, index], item: list[index] },
+      }),
+    ),
   };
 }
 
@@ -525,6 +526,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     runs: Deferred<PlacesNode<Run>>;
     /** Whether what it reads runs for the items of different lists */
     framesDiffer: boolean;
+    /**
+     * Whether it has begun to read: from then on, it gives back its own
+     * place if it doesn't run
+     */
+    started: boolean;
   }
   const newRun = (): Run => {
     const outcome = createDeferred<unknown>();
@@ -539,6 +545,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       frame: null,
       runs: createDeferred<PlacesNode<Run>>(),
       framesDiffer: false,
+      started: false,
     };
     return { call, source };
   });
@@ -618,11 +625,42 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     );
     return run.clientData;
   }
+  /** What runs read of each run, by path: each value is read once */
+  const valuesOfRuns = new WeakMap<Run, Map<string, Promise<unknown>>>();
+  /**
+   * The value at `path` of the run at `indexes` of a call that `source` is
+   * read by. Rejects as `dataOf` does
+   */
+  async function valueOf(read: {
+    source: Source;
+    indexes: readonly number[];
+    path: PipelinePath;
+  }) {
+    const run = await runOf(read.source, read.indexes);
+    let values = valuesOfRuns.get(run);
+    if (!values) {
+      values = new Map();
+      valuesOfRuns.set(run, values);
+    }
+    const key = JSON.stringify(read.path);
+    let value = values.get(key);
+    if (!value) {
+      value = dataOfRun(run).then((data) => readPipelinePath(data, read.path));
+      // Read only by the runs that ask for it
+      value.catch(() => undefined);
+      values.set(key, value);
+    }
+    return value;
+  }
   /**
    * The data that the run at `indexes` of a call reads of `source`: its run
    * at the start of those indexes, as its frame is the start of the call's
    */
   async function dataOf(source: Source, indexes: readonly number[]) {
+    return dataOfRun(await runOf(source, indexes));
+  }
+  /** The run of `source` at the start of `indexes` */
+  async function runOf(source: Source, indexes: readonly number[]) {
     let node = await source.runs.promise;
     for (const index of indexes) {
       if (node.kind !== 'items') {
@@ -637,7 +675,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     if (node.kind !== 'run') {
       throw sourceFailed();
     }
-    return dataOfRun(node.value);
+    return node.value;
   }
 
   /** The places of each frame, by what the frame is */
@@ -660,15 +698,23 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               value: { indexes: [], item: null },
             }),
         async (place): Promise<PlacesNode<Place>> => {
-          let data: unknown;
-          try {
-            data = await dataOf(list.from, place.indexes);
-          } catch (cause) {
-            // The run the list is in failed: none of its items run
-            return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
+          const { inItem } = frame;
+          let items: unknown;
+          if (inItem) {
+            // A level after the first: its list is in the item of the one before
+            items = readPipelinePath(place.item, inItem);
+          } else {
+            try {
+              items = readPipelinePath(
+                await dataOf(list.from, place.indexes),
+                list.path,
+              );
+            } catch (cause) {
+              // The run the list is in failed: none of its items run
+              return { kind: 'failed', error: getTRPCErrorFromUnknown(cause) };
+            }
           }
-          const [path, ...inner] = pipelineListLevels(list.path);
-          return itemsAt({ value: data, path, inner, indexes: place.indexes });
+          return itemsOf({ list: items, indexes: place.indexes, tooLong });
         },
       );
       placesOfFrames.set(key, places);
@@ -713,6 +759,24 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     runs = taken;
   }
 
+  /**
+   * Why a list can't run, if it is too long for any call to hold a place for
+   * each of its items, whatever else the batch has
+   */
+  function tooLong(length: number) {
+    if (opts.maxRuns !== null && length > opts.maxRuns) {
+      return new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `A call for every item exceeds the maximum batch size`,
+      });
+    }
+    return length > limits.maxRuns
+      ? overLimit(
+          `A list has ${length} items, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+        )
+      : null;
+  }
+
   let filledSize = 0;
   /**
    * The input of a run: the call's own, with what it reads written in. It
@@ -734,13 +798,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     perItem: boolean;
   }) {
     const values = await Promise.all(
-      run.reads.reads.map(async (read) =>
-        readPipelinePath(
-          read.kind === 'whole'
-            ? await dataOf(read.from, run.place.indexes)
-            : run.place.item,
-          read.path,
-        ),
+      run.reads.reads.map((read) =>
+        read.kind === 'whole'
+          ? valueOf({
+              source: read.from,
+              indexes: run.place.indexes,
+              path: read.path,
+            })
+          : readPipelinePath(run.place.item, read.path),
       ),
     );
     let size = 0;
@@ -784,6 +849,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       error: (cause: unknown, input: unknown) => TError;
     }): PipelineRuns<TError> {
       const { error } = run;
+      source.started = true;
       let base: unknown;
       try {
         if (refusal) {
@@ -901,6 +967,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
     const fillOnce = async () => {
+      source.started = true;
       try {
         if (refusal) {
           throw refusal;
@@ -964,6 +1031,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             it.once?.outcome.reject(cause);
             // A call for every item that failed as a whole has no runs
             it.source.runs.resolve({ kind: 'failed', error: sourceFailed() });
+            // It failed before it began to read, such as for a procedure that
+            // isn't there: its procedure didn't run
+            if (it.run && !it.source.started) {
+              runs -= 1;
+            }
           },
         );
         return result;

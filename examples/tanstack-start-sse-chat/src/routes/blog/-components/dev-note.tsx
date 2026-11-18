@@ -31,7 +31,7 @@ export function DevNote(
       <HoverCardTrigger
         // A span, not a link: a note can be inside one, such as a list's row
         render={<span tabIndex={0} />}
-        className="inline-flex w-fit cursor-help items-center gap-1 rounded-full border border-dashed px-2 py-0.5 align-middle font-mono text-[11px] leading-none text-muted-foreground hover:text-foreground focus-visible:text-foreground focus-visible:outline-none"
+        className="inline-flex w-fit cursor-help items-center gap-1 rounded-full border border-dashed px-2 py-0.5 align-middle font-mono text-[11px] leading-none text-muted-foreground hover:text-foreground focus-visible:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
         <InfoIcon className="size-3" />
         {props.label}
@@ -54,7 +54,7 @@ export function DevNoteText(
     <HoverCard>
       <HoverCardTrigger
         render={<span tabIndex={0} />}
-        className="cursor-help underline decoration-dotted underline-offset-4 focus-visible:outline-none"
+        className="cursor-help underline decoration-dotted underline-offset-4 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
       >
         {props.text}
       </HoverCardTrigger>

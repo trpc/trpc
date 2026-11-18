@@ -1702,6 +1702,10 @@ function beginEntries(opts: {
         : null;
     };
 
+    /** Where an item is in the list, as a key */
+    const placeOf = (listItem: ListItem) =>
+      `${listItem.element}:${listItem.indexes.join(',')}`;
+
     /** The input without the item's parts, and where they go */
     const unfinished = (dataOfEntry: Map<object, unknown>) => ({
       ...toHandle(
@@ -1733,12 +1737,18 @@ function beginEntries(opts: {
         }
         try {
           const { data } = result;
-          /** The key of every item's query, with the input the server filled in */
+          /**
+           * The key of every item's query, with the input the server filled
+           * in, by where the item is: the place it reads its result from
+           */
           const serverKeys = call
             ? dataOfSources(sources, (source) => source.requestData).then(
                 (serverData) =>
-                  itemsOf(serverData).map((listItem) =>
-                    hashKey(optionsOfItem(serverData, listItem).queryKey),
+                  new Map(
+                    itemsOf(serverData).map((listItem) => [
+                      placeOf(listItem),
+                      hashKey(optionsOfItem(serverData, listItem).queryKey),
+                    ]),
                   ),
               )
             : null;
@@ -1746,6 +1756,7 @@ function beginEntries(opts: {
 
           resolve(
             itemsOf(data).map((listItem, index) => {
+              const place = placeOf(listItem);
               let options = optionsOfItem(data, listItem);
               if (call && serverKeys) {
                 const key = hashKey(options.queryKey);
@@ -1758,7 +1769,8 @@ function beginEntries(opts: {
                   result: item.result,
                   unresolved: () =>
                     call.status === 'unresolved' || item.missing(),
-                  sameInput: async () => (await serverKeys)[index] === key,
+                  // The server ran the same query at the item's place
+                  sameInput: async () => (await serverKeys).get(place) === key,
                 });
               }
               const itemKey = `${leaf.key}.${index}`;
@@ -2932,6 +2944,9 @@ function withItemQueries(opts: {
         if (
           // Its input is `skipToken`: an item has nothing to load
           queries.skipped ||
+          // It reads nothing of its item: every row has the same query,
+          // which the rows load once, when they read it
+          queries.itemInputs.length === 0 ||
           // The items' procedure isn't in this part of the router
           !ctx.path.every((segment, index) => path[index] === segment)
         ) {
