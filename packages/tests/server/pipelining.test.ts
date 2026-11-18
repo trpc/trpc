@@ -1138,7 +1138,8 @@ describe.each([
     });
     const post = createOperationPipeline();
     let attempts = 0;
-    let author: ReturnType<typeof pipeCall> = null;
+    // Set in a callback, so TypeScript can't narrow it from its first value
+    let author = null as ReturnType<typeof pipeCall>;
     /** Adds the call once the operation is sent again, as it is sent */
     const addOnRetry: TRPCLink<AnyRouter> = () => (linkOpts) =>
       observable((observer) => {
