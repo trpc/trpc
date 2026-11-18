@@ -178,7 +178,7 @@
               "limits"
             ],
             "additionalProperties": false,
-            "description": "Only on a pipelined batch: the limits the server sets on it, and a\nfunction that reads its `pipe`, which says which parts of the calls'\ninputs to fill in from earlier calls' data. The `pipe` isn't validated."
+            "description": "Only on a pipelined batch: the limits the server sets on it."
           },
           "calls": {
             "type": "array",

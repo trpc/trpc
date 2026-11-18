@@ -393,7 +393,7 @@ This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 ```
 
 - **The rest of the request runs**, unless it has more calls than `maxRuns` allows: then it fails as a whole. Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
-- **The query of that call gets the error**, as it would get the procedure's own. A run of a call for every item fails by itself, and its item's query gets the error. A list whose runs would go over `maxRuns` runs for none of its items, and they each ask by themselves.
+- **The query of that call gets the error**, as it would get the procedure's own. A run of a call for every item fails by itself, and its item's query gets the error. A list whose runs would go over `maxRuns` runs for none of its items: the list loads, and each of its items' queries gets the `BAD_REQUEST`. The link can't see how long a list is before the server has it, so it doesn't send them again by themselves.
 - **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
 - **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
 
@@ -444,7 +444,7 @@ The most a request fills in, in characters of JSON: 100,000 by default. It count
 
 #### `maxRuns` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and they each ask by themselves. In a list of lists, that is each inner list by itself, and no level can be longer than it allows, the outer ones too: each item of a level has a place before anything runs.
+The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and their queries get a `BAD_REQUEST`. In a list of lists, that is each inner list by itself, and no level can be longer than it allows, the outer ones too: each item of a level has a place before anything runs.
 
 - **Why 100:** a call for every item runs a procedure once per item of a list that the server reads, not one that the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
 - **Raise it** for pages that load a query for every item of long lists.
@@ -474,9 +474,9 @@ A GraphQL server often gives a query a cost, from its depth and from how many it
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
-- **Set the link's `maxItems` to it, or lower**, and the link's `maxRuns` to the server's, if you change it. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items each ask by themselves.
+- **Set the link's `maxItems` to it, or lower**, and the link's `maxRuns` to the server's, if you change it. A request with more calls than either fails as a whole, the query it belongs to included. A list whose runs would go over it runs for none of its items: the list loads, and its items' queries get a `BAD_REQUEST`.
 - **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain of reads is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call or a run that would go over one is refused, and fails by itself.
-- **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
+- **A value in a promise or a stream can't be read.** Its type has no such path. Without types, a call that reads it, or any other part of the data it is in, gets an `UNSUPPORTED_MEDIA_TYPE` before its procedure validates its input.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 
 #### What if the link pipelines and the server doesn't? {#not-allowed}

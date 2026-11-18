@@ -172,13 +172,16 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             );
           }
 
-          return sent.map((): Promise<HTTPResult> =>
-            Promise.resolve({
-              json,
-              meta: {
-                response: res,
-              },
-            }),
+          // An error is every call's, and anything else only the operations',
+          // as without pipelining: it has no result for a call the server makes
+          return ('error' in json ? sent : batchOps).map(
+            (): Promise<HTTPResult> =>
+              Promise.resolve({
+                json,
+                meta: {
+                  response: res,
+                },
+              }),
           );
         }
 

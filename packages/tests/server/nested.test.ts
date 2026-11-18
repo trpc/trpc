@@ -377,6 +377,39 @@ describe.each([
     ]);
   });
 
+  test("a list whose runs would go over the server's `maxRuns` loads, and its items' queries get the `BAD_REQUEST`", async () => {
+    const { appRouter } = createRouter();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: { maxRuns: 2 } },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining({ maxRuns: 2 }),
+          }),
+        ],
+      }),
+    });
+
+    const list = await experimental_nested(ctx.client, (q) =>
+      q.post.list.query({ limit: 2 }).items.map((it) => ({
+        author: q.author.byId.query({ id: it.authorId }),
+      })),
+    );
+
+    // The link counts the list and its call as two runs. The server counts
+    // three once the list has arrived, and runs the call for none of its items
+    expect(list.map((it) => it.node)).toEqual(posts.slice(0, 2));
+    for (const it of list) {
+      await expect(it.edges.author).rejects.toMatchObject({
+        message:
+          'This call would make the batch run 3 times, more than `maxRuns` (2) allows',
+        data: { code: 'BAD_REQUEST' },
+      });
+    }
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
     await using ctx = setup({ pipelining: false });
 
@@ -511,6 +544,20 @@ describe.each([
         return leaked as ReturnType<typeof post.with>;
       }),
     ).toThrow('outside the `.map()` callback');
+    expect(ctx.ops).toEqual([]);
+  });
+
+  test('an edge with a symbol for its key is refused before anything is sent', async () => {
+    await using ctx = setup({ pipelining: true });
+    const key = Symbol('author');
+
+    expect(() =>
+      experimental_nested(ctx.client, (q) =>
+        q.post.bySlug.query({ slug: 'a' }).with((it) => ({
+          [key]: q.author.byId.query({ id: it.authorId }),
+        })),
+      ),
+    ).toThrow('the key of an edge is a string');
     expect(ctx.ops).toEqual([]);
   });
 

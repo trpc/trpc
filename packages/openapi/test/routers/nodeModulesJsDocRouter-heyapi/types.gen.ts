@@ -22,9 +22,7 @@ export type TrpcRequestInfo = {
    */
   isBatchCall: boolean;
   /**
-   * Only on a pipelined batch: the limits the server sets on it, and a
-   * function that reads its `pipe`, which says which parts of the calls'
-   * inputs to fill in from earlier calls' data. The `pipe` isn't validated.
+   * Only on a pipelined batch: the limits the server sets on it.
    */
   experimental_pipeline?: {
     limits: PipelineLimits;

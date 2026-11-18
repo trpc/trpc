@@ -152,9 +152,17 @@ export function pipelinedCallsRan<
     ];
     return {
       call,
-      ran: Promise.all(
-        from.map(async (source) => (await succeeded[source]) === true),
-      ).then((sources) => sources.every(Boolean)),
+      // `false` once a source fails, without waiting for the others: the
+      // server has the call's error ready then. `true` once all succeed
+      ran: new Promise<boolean>((resolve) => {
+        void Promise.all(
+          from.map(async (source) => {
+            if ((await succeeded[source]) !== true) {
+              resolve(false);
+            }
+          }),
+        ).then(() => resolve(true));
+      }),
     };
   });
 }

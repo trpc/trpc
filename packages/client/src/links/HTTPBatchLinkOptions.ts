@@ -39,12 +39,13 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
     /**
      * Lets the server run more queries in a query's request, with parts of
      * their inputs read from its data, so a query that depends on another
-     * costs no extra round trip. `loadHandles()` uses it for entries built
-     * with `experimental_dataOf()`. The server must set
+     * costs no extra round trip. `experimental_nested()` uses it for the
+     * queries of a page. The server must set
      * `experimental_allowPipelining: true`, or such a request fails.
      *
-     * Pass `experimental_pipelining()` from `@trpc/client`. Its code is only in
-     * the bundle of an app that does.
+     * Pass `experimental_pipelining()` from `@trpc/client`. This link's module
+     * has none of its code, so a bundler that tree-shakes leaves it out of an
+     * app that doesn't import it.
      *
      * Such a query is no operation of its own, so the links before this one
      * don't see it. Batches without one are sent as they are without this

@@ -548,7 +548,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 item: async (input) => {
                   throwIfAborted();
                   const itemData = await callProcedure(async () => input);
-                  if (isDataStream(itemData)) {
+                  if (isDataStream(itemData) || isObservable(itemData)) {
                     // It would be inside a list, where nothing streams it
                     throw new TRPCError({
                       code: 'UNSUPPORTED_MEDIA_TYPE',
@@ -939,7 +939,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
-      (res): RPCResult => {
+      (res, index): RPCResult => {
         const [error, result] = res;
         if (error) {
           return res;
@@ -962,7 +962,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           try {
             assertJSON(config.transformer.output.serialize(result.data));
           } catch (cause) {
-            return [getTRPCErrorFromUnknown(cause), undefined];
+            const error = getTRPCErrorFromUnknown(cause);
+            const call = info.calls[index]!;
+            opts.onError?.({
+              error,
+              path: call.path,
+              input: call.result(),
+              ctx: ctxManager.valueOrUndefined(),
+              type: call.procedure?._def.type ?? 'unknown',
+              req: opts.req,
+            });
+            return [error, undefined];
           }
         }
         return res;

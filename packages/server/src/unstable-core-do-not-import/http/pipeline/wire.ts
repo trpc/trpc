@@ -330,18 +330,25 @@ export function hasOwn(value: unknown, key: string) {
 /**
  * Reads `path` in `value`, through own properties of objects and arrays only.
  * The client and the server read with this, so both get the same value.
+ *
+ * `beforeList` is told how long each list a `null` makes is, before anything
+ * of it is made, and throws to make none of it: a list of a large list's
+ * items is as large. `null` makes every list.
  */
 export function readPipelinePath(
   value: unknown,
   path: readonly (string | null)[],
+  beforeList: ((length: number) => void) | null,
 ): unknown {
   let current = value;
   for (const [index, segment] of path.entries()) {
     if (segment === null) {
+      if (!Array.isArray(current)) {
+        return undefined;
+      }
+      beforeList?.(current.length);
       const rest = path.slice(index + 1);
-      return Array.isArray(current)
-        ? current.map((item) => readPipelinePath(item, rest))
-        : undefined;
+      return current.map((item) => readPipelinePath(item, rest, beforeList));
     }
     if (!hasOwn(current, segment)) {
       return undefined;

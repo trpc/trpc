@@ -425,6 +425,12 @@ export function experimental_nested<
         'experimental_nested(): `.with()` and `.map()` callbacks return an object of edges',
       );
     }
+    // Its type would have the edge, and the result would not
+    if (Object.getOwnPropertySymbols(value).length > 0) {
+      throw new TypeError(
+        'experimental_nested(): the key of an edge is a string, not a symbol',
+      );
+    }
     for (const key of Object.keys(value)) {
       const edge = shapeOf(value[key]);
       if (!edge) {

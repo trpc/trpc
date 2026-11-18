@@ -25,6 +25,7 @@ import type {
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  createDeferred,
   isObject,
   pipelineLimitDefaults,
   readPipelinedItem,
@@ -59,8 +60,11 @@ const createRouter = (transformer: 'none' | 'superjson') => {
       ? initTRPC.create({ transformer: superjson })
       : initTRPC.create();
   const calls = vi.fn();
+  /** The runs of `post`, which most requests start with */
+  const posts = vi.fn();
   const appRouter = t.router({
     post: t.procedure.input(z.object({ slug: z.string() })).query((opts) => {
+      posts(opts.input);
       if (opts.input.slug === 'missing') {
         throw new TRPCError({ code: 'NOT_FOUND' });
       }
@@ -131,7 +135,7 @@ const createRouter = (transformer: 'none' | 'superjson') => {
       .input(z.object({ tags: z.array(z.unknown()) }))
       .query((opts) => opts.input.tags.length),
   });
-  return { appRouter, calls };
+  return { appRouter, calls, posts };
 };
 
 describe.each([
@@ -156,7 +160,7 @@ describe.each([
     maxURLLength?: number;
     fetch?: typeof fetch;
   }) {
-    const { appRouter, calls } = createRouter(scenario.transformer);
+    const { appRouter, calls, posts } = createRouter(scenario.transformer);
     /** What the links before the batch link see */
     const ops: Pick<Operation, 'path' | 'input'>[] = [];
     const recordLink: TRPCLink<AnyRouter> = () => (linkOpts) => {
@@ -193,6 +197,7 @@ describe.each([
     });
     return Object.assign(ctx, {
       calls,
+      posts,
       ops,
       untyped: getUntypedClient(ctx.client),
     });
@@ -415,7 +420,8 @@ describe.each([
         { status: 'rejected', reason },
       ]);
       expect(author.status).toBe('unresolved');
-      // No call ran with a hole in its input
+      // Nothing ran: not the post, and no call with a hole in its input
+      expect(ctx.posts).not.toHaveBeenCalled();
       expect(ctx.calls).not.toHaveBeenCalled();
     },
   );
@@ -900,6 +906,32 @@ describe.each([
     },
   );
 
+  test('an answer that is no error and not by index is no result of a call the server makes', async () => {
+    await using ctx = setup({
+      allowPipelining: true,
+      pipelining: true,
+      fetch: async () =>
+        Response.json({ result: { data: 'maintenance' } }, { status: 503 }),
+    });
+    const post = createOperationPipeline();
+    const postResult = ctx.untyped.query(
+      'post',
+      { slug: 'hello' },
+      { context: pipelineContext(post) },
+    );
+    const author = pipeCall({
+      path: 'author',
+      input: { id: undefined },
+      reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+    });
+    assert(author);
+
+    await postResult.catch(() => undefined);
+    await expect(author.result).rejects.toThrow(
+      'The server sent no result for a pipelined call',
+    );
+  });
+
   test('a batch is not split when that lets no more calls go', async () => {
     await using ctx = setup({
       allowPipelining: true,
@@ -1234,6 +1266,75 @@ describe.each([
       data: { id: 'u1' },
     });
   });
+
+  test('a `loggerLink` after `retryLink` names the calls of each attempt', async () => {
+    const t = initTRPC.create();
+    let postRuns = 0;
+    const appRouter = t.router({
+      post: t.procedure.query(() => {
+        postRuns += 1;
+        if (postRuns === 1) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }
+        return { authorId: 'u1' };
+      }),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+    });
+    const post = createOperationPipeline();
+    let attempts = 0;
+    /** Adds the call once the operation is sent again, as it is sent */
+    const addOnRetry: TRPCLink<AnyRouter> = () => (linkOpts) =>
+      observable((observer) => {
+        const subscription = linkOpts.next(linkOpts.op).subscribe(observer);
+        attempts += 1;
+        if (attempts === 2) {
+          assert(
+            pipeCall({
+              path: 'author',
+              input: { id: undefined },
+              reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+            }),
+          );
+        }
+        return subscription;
+      });
+    /** The first line of every log */
+    const lines: string[] = [];
+    const log = (line: string) => {
+      lines.push(line);
+    };
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          retryLink({ retry: (opts) => opts.attempts <= 1 }),
+          loggerLink({
+            console: { log, error: log },
+            colorMode: 'none',
+            withContext: false,
+          }),
+          addOnRetry,
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    await getUntypedClient(ctx.client).query('post', undefined, {
+      context: pipelineContext(post),
+    });
+
+    expect(lines).toEqual([
+      expect.stringMatching(/^>> query #\d+ post$/),
+      expect.stringMatching(/^<< query #\d+ post$/),
+      expect.stringMatching(/^>> query #\d+ post \(\+ author\)$/),
+      expect.stringMatching(/^<< query #\d+ post \(\+ author\)$/),
+    ]);
+  });
 });
 
 describe('httpBatchStreamLink, when an operation fails', () => {
@@ -1247,25 +1348,25 @@ describe('httpBatchStreamLink, when an operation fails', () => {
         .input(z.object({ id: z.string() }))
         .query((opts) => ({ id: opts.input.id })),
     });
-    /** The server's response, a line at a time, as a slow network has it */
-    const lineByLine: typeof fetch = async (url, init) => {
+    /** Lets the line with the author's error through */
+    const release = createDeferred<void>();
+    // Set in a callback, so TypeScript can't narrow it from its first value
+    let signal = null as AbortSignal | null;
+    /** The server's response, held back from the author's error on */
+    const heldBack: typeof fetch = async (url, init) => {
       const res = await fetch(url, init);
       const lines = (await res.text()).split('\n');
       const encoder = new TextEncoder();
-      const signal = init?.signal;
+      signal = init?.signal ?? null;
       const body = new ReadableStream<Uint8Array>({
         async start(controller) {
-          signal?.addEventListener('abort', () => {
-            controller.error(signal.reason);
-          });
           for (const [index, line] of lines.entries()) {
-            if (signal?.aborted) {
-              return;
+            if (line.includes('PRECONDITION_FAILED')) {
+              await release.promise;
             }
             controller.enqueue(
               encoder.encode(index < lines.length - 1 ? `${line}\n` : line),
             );
-            await new Promise((resolve) => setTimeout(resolve, 20));
           }
           controller.close();
         },
@@ -1278,7 +1379,7 @@ describe('httpBatchStreamLink, when an operation fails', () => {
         links: [
           httpBatchStreamLink({
             url: clientOpts.httpUrl,
-            fetch: lineByLine,
+            fetch: heldBack,
             experimental_pipelining: experimental_pipelining(),
           }),
         ],
@@ -1295,15 +1396,16 @@ describe('httpBatchStreamLink, when an operation fails', () => {
     });
     assert(author);
 
-    expect(await Promise.allSettled([postResult, author.result])).toMatchObject(
-      [
-        { status: 'rejected', reason: { data: { code: 'NOT_FOUND' } } },
-        {
-          status: 'rejected',
-          reason: { data: { code: 'PRECONDITION_FAILED' } },
-        },
-      ],
-    );
+    await expect(postResult).rejects.toMatchObject({
+      data: { code: 'NOT_FOUND' },
+    });
+    assert(signal);
+    // The post's error didn't end the response
+    expect(signal.aborted).toBe(false);
+    release.resolve();
+    await expect(author.result).rejects.toMatchObject({
+      data: { code: 'PRECONDITION_FAILED' },
+    });
   });
 });
 
@@ -1352,7 +1454,7 @@ describe('a server without `experimental_allowPipelining`, whose error formatter
 
 describe('a server without `experimental_allowPipelining`', () => {
   test('answers an ordinary batch as it did before: `pipe` means nothing. A pipelined batch is a bad request', async () => {
-    const { appRouter, calls } = createRouter('none');
+    const { appRouter, calls, posts } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
       server: { allowMethodOverride: true },
     });
@@ -1381,6 +1483,7 @@ describe('a server without `experimental_allowPipelining`', () => {
 
     // A pipelined batch: nothing of it runs, and the answer says why
     calls.mockClear();
+    posts.mockClear();
     const pipelined = await fetch(
       `${ctx.httpUrl}/post,author?batch=pipeline&input=${input}&pipe=${pipe}`,
     );
@@ -1397,6 +1500,7 @@ describe('a server without `experimental_allowPipelining`', () => {
       },
     );
     expect(pipelinedPost.status).toBe(400);
+    expect(posts).not.toHaveBeenCalled();
     expect(calls).not.toHaveBeenCalled();
   });
 
