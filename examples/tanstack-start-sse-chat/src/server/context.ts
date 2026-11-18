@@ -1,4 +1,4 @@
-import { hasSlowQueriesCookie } from '~/lib/blog-settings';
+import { hasSlowQueries } from '~/lib/blog-settings';
 import { getSession } from './auth';
 
 /**
@@ -13,7 +13,7 @@ export const createContext = async (opts: { req: Request }) => {
   return {
     session,
     /** The blog's "Slow queries" switch is on */
-    slowQueries: hasSlowQueriesCookie(opts.req.headers.get('cookie')),
+    slowQueries: hasSlowQueries(opts.req),
   };
 };
 

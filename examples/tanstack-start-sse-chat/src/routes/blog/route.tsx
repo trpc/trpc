@@ -1,16 +1,30 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Outlet, useRouter } from '@tanstack/react-router';
-import { useState } from 'react';
-import type { BlogSettings } from '~/lib/blog-settings';
-import { readBlogSettings, writeBlogSettings } from '~/lib/blog-settings';
+import {
+  createFileRoute,
+  Outlet,
+  retainSearchParams,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router';
+import {
+  blogSearchKeys,
+  blogSearchOf,
+  blogSearchSchema,
+  blogSettingsOf,
+  setSlowQueries,
+} from '~/lib/blog-settings';
 import { useTRPC } from '~/lib/trpc';
 import { BlogPreloadProvider, BlogSettingsBar } from './-components/settings';
 
 export const Route = createFileRoute('/blog')({
-  loader: () => readBlogSettings(),
-  // Read the cookies again each time the blog opens: the router keeps no
-  // older settings to show once you leave it
-  gcTime: 0,
+  validateSearch: blogSearchSchema,
+  // Every link inside the blog keeps its settings
+  search: { middlewares: [retainSearchParams([...blogSearchKeys])] },
+  // Runs before the loaders below it start their queries, so those queries,
+  // and the ones a preload starts, ask for the speed in the URL they load
+  beforeLoad: ({ search }) => {
+    setSlowQueries(search.slow === true);
+  },
   component: BlogLayout,
 });
 
@@ -18,29 +32,25 @@ function BlogLayout() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
-  // From the cookies, then kept here as you change them. Each load of the
-  // cookies replaces it
-  const loaded = Route.useLoaderData();
-  const [settings, setSettings] = useState<BlogSettings>(loaded);
-  const [seen, setSeen] = useState(loaded);
-  if (loaded !== seen) {
-    setSeen(loaded);
-    setSettings(loaded);
-  }
+  const navigate = useNavigate();
+  const settings = blogSettingsOf(Route.useSearch());
   return (
     <div className="flex-1 overflow-y-auto">
       <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
         <BlogSettingsBar
           value={settings}
           onChange={(next) => {
-            setSettings(next);
-            writeBlogSettings(next);
-            if (next.slowQueries !== settings.slowQueries) {
-              // Forget what the blog has loaded, and load the page again at
-              // the new speed: its loader starts its queries, in one request
+            const slowChanged = next.slowQueries !== settings.slowQueries;
+            if (slowChanged) {
+              // Forget what the blog has loaded: the page loads again at the
+              // new speed, and its loader starts its queries, in one request
               queryClient.removeQueries(trpc.blog.pathFilter());
-              void router.invalidate();
             }
+            void navigate({
+              to: '.',
+              search: (prev) => ({ ...prev, ...blogSearchOf(next) }),
+              replace: true,
+            }).then(() => (slowChanged ? router.invalidate() : undefined));
           }}
         />
         <BlogPreloadProvider value={settings.preload}>

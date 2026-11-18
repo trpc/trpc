@@ -15,6 +15,7 @@ import {
   type TRPCOptionsProxy,
 } from '@trpc/tanstack-react-query';
 import SuperJSON from 'superjson';
+import { slowQueriesHeaders } from '~/lib/blog-settings';
 import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
@@ -63,6 +64,8 @@ const getLinks = createIsomorphicFn()
           experimental_pipelining: experimental_pipelining(),
           // Queries go as POST, so the Network tab shows their inputs as JSON
           methodOverride: 'POST',
+          // The blog's "Slow queries" setting, from its search params
+          headers: () => slowQueriesHeaders(),
         }),
       }),
     ];

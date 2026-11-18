@@ -1,9 +1,9 @@
-import { createIsomorphicFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 
 /**
- * The blog's settings. They are cookies, so the server sees them when it
- * renders a page as well as when the browser calls a procedure.
+ * The blog's settings. They are search params of the blog's pages, such as
+ * `/blog?slow=true&preload=intent`, and the blog's links keep them, so a page
+ * you share or reload shows what you see.
  */
 export interface BlogSettings {
   /** Every query of the blog takes 1 to 3 seconds */
@@ -19,50 +19,67 @@ export const blogSettingsDefaults: BlogSettings = {
   preload: false,
 };
 
-const cookies = {
-  slowQueries: 'blog-slow-queries',
-  preload: 'blog-preload',
-} as const;
+/**
+ * The blog's search params. One that is left out is its default, and one with
+ * a value the blog doesn't know is left out too
+ */
+export const blogSearchSchema = z.object({
+  slow: z.literal(true).optional().catch(undefined),
+  preload: z.enum(['intent', 'viewport', 'render']).optional().catch(undefined),
+});
 
-const preloads: readonly BlogPreload[] = [
-  false,
-  'intent',
-  'viewport',
-  'render',
-];
+export type BlogSearch = z.infer<typeof blogSearchSchema>;
 
-/** The value of a cookie in a `cookie` header, or `null` if it has none */
-function cookieOf(header: string | null, name: string) {
-  const prefix = `${name}=`;
-  const found = (header ?? '')
-    .split('; ')
-    .find((cookie) => cookie.startsWith(prefix));
-  return found === undefined ? null : found.slice(prefix.length);
-}
+/** The search params the blog keeps across its links */
+export const blogSearchKeys = blogSearchSchema.keyof().options;
 
-export function hasSlowQueriesCookie(header: string | null) {
-  return cookieOf(header, cookies.slowQueries) === '1';
-}
-
-/** The blog's settings in a `cookie` header, or their defaults */
-export function blogSettingsOf(header: string | null): BlogSettings {
-  const preload = cookieOf(header, cookies.preload);
+export function blogSettingsOf(search: BlogSearch): BlogSettings {
   return {
-    slowQueries: hasSlowQueriesCookie(header),
-    preload:
-      preloads.find((value) => String(value) === preload) ??
-      blogSettingsDefaults.preload,
+    slowQueries: search.slow === true,
+    preload: search.preload ?? blogSettingsDefaults.preload,
   };
 }
 
-export const readBlogSettings = createIsomorphicFn()
-  .server(() => blogSettingsOf(getRequest().headers.get('cookie')))
-  .client(() => blogSettingsOf(document.cookie));
-
-export function writeBlogSettings(settings: BlogSettings) {
-  const write = (name: string, value: string) => {
-    document.cookie = `${name}=${value}; path=/; max-age=31536000; samesite=lax`;
+/** The search params of `settings`: `undefined` for a default, so its param goes */
+export function blogSearchOf(settings: BlogSettings): BlogSearch {
+  return {
+    slow: settings.slowQueries ? (true as const) : undefined,
+    preload: settings.preload === false ? undefined : settings.preload,
   };
-  write(cookies.slowQueries, settings.slowQueries ? '1' : '0');
-  write(cookies.preload, String(settings.preload));
+}
+
+/**
+ * The header the browser sends "Slow queries" in. Its requests go to
+ * `/api/trpc`, not to the page, so they don't have the page's search params
+ */
+const slowQueriesHeader = 'x-blog-slow-queries';
+
+/**
+ * Whether "Slow queries" is on for a request: in the header of one from the
+ * browser, or in the URL of a page the server renders
+ */
+export function hasSlowQueries(req: Request) {
+  return (
+    req.headers.get(slowQueriesHeader) === '1' ||
+    new URL(req.url).searchParams.get('slow') === 'true'
+  );
+}
+
+/**
+ * In the browser, what the blog's route last read from its search params.
+ * `null` until it runs, when the page's URL has them
+ */
+let slowQueries: boolean | null = null;
+
+/** Called by the blog's route before its loaders start their queries */
+export function setSlowQueries(on: boolean) {
+  slowQueries = on;
+}
+
+/** The headers of a request from the browser */
+export function slowQueriesHeaders(): Record<string, string> {
+  const on =
+    slowQueries ??
+    new URL(window.location.href).searchParams.get('slow') === 'true';
+  return on ? { [slowQueriesHeader]: '1' } : {};
 }
