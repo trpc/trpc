@@ -10,9 +10,12 @@ import {
 } from '@tanstack/react-router';
 import { act, createElement, Fragment, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { afterEach, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
+import {
+  makeAsyncResource,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import';
 
 import { errorOptions } from './error-page.tsx';
 
@@ -21,26 +24,24 @@ declare global {
 }
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-afterEach(() => {
-  document.body.replaceChildren();
-  document.head.replaceChildren();
-  vi.restoreAllMocks();
-});
-
 /** What a page rendered by an older deploy throws once a newer one has replaced its route's chunk. */
 const staleChunk = () =>
   new TypeError(
     'Failed to fetch dynamically imported module: https://trpc.io/assets/routes-C86Wg_2-.js',
   );
 
-/** Makes this page load look like one by `type`: `navigate` or `reload`. */
+/** Makes this page load look like one by `type`, `navigate` or `reload`, until disposed. */
 function loadedBy(type: 'navigate' | 'reload') {
-  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
-    { type } as PerformanceNavigationTiming,
-  ]);
+  const spy = vi
+    .spyOn(performance, 'getEntriesByType')
+    .mockReturnValue([{ type } as PerformanceNavigationTiming]);
+  return makeResource({}, () => spy.mockRestore());
 }
 
-/** Renders a site whose home page throws `error`, until its error page shows. */
+/**
+ * Renders a site whose home page throws `error`, until its error page shows.
+ * Disposing unmounts it and empties the page.
+ */
 async function renderThrowing(error: unknown, reload: () => void) {
   const rootRoute = createRootRoute({
     component: () =>
@@ -68,7 +69,7 @@ async function renderThrowing(error: unknown, reload: () => void) {
     routeTree: rootRoute.addChildren([home]),
   });
   // React logs what a boundary catches.
-  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
   await act(async () => {
@@ -88,6 +89,9 @@ async function renderThrowing(error: unknown, reload: () => void) {
     await act(async () => {
       root.unmount();
     });
+    logged.mockRestore();
+    document.body.replaceChildren();
+    document.head.replaceChildren();
   });
 }
 
@@ -102,15 +106,15 @@ test("a route that throws keeps the site's shell and the page's title", async ()
 // stopped at the error page until the reader pressed Reload.
 test('a chunk a deploy replaced reloads the page once, and not again after', async () => {
   sessionStorage.clear();
-  loadedBy('navigate');
   const reload = vi.fn<() => void>();
   {
+    using _load = loadedBy('navigate');
     await using _page = await renderThrowing(staleChunk(), reload);
     expect(reload).toHaveBeenCalledTimes(1);
   }
   // The reloaded page throws it too: it stays on the error page.
-  loadedBy('reload');
   {
+    using _load = loadedBy('reload');
     await using _page = await renderThrowing(staleChunk(), reload);
     expect(reload).toHaveBeenCalledTimes(1);
   }
@@ -118,7 +122,7 @@ test('a chunk a deploy replaced reloads the page once, and not again after', asy
 
 test("another error doesn't reload the page", async () => {
   sessionStorage.clear();
-  loadedBy('navigate');
+  using _load = loadedBy('navigate');
   const reload = vi.fn<() => void>();
   await using _page = await renderThrowing(new Error('A bug'), reload);
   expect(reload).not.toHaveBeenCalled();
@@ -131,7 +135,7 @@ test("the reloaded page doesn't reload again, however late its chunk fails", asy
     'trpc-docs:reloaded-for:route:/',
     String(performance.timeOrigin - 50),
   );
-  loadedBy('reload');
+  using _load = loadedBy('reload');
   const reload = vi.fn<() => void>();
   await using _page = await renderThrowing(staleChunk(), reload);
   expect(reload).not.toHaveBeenCalled();
@@ -144,7 +148,7 @@ test("a reload for an earlier visit doesn't stop this one's", async () => {
     'trpc-docs:reloaded-for:route:/',
     String(performance.timeOrigin - 60_000),
   );
-  loadedBy('reload');
+  using _load = loadedBy('reload');
   const reload = vi.fn<() => void>();
   await using _page = await renderThrowing(staleChunk(), reload);
   expect(reload).toHaveBeenCalledTimes(1);
