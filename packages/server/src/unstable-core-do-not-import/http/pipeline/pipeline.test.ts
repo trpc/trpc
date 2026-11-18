@@ -4709,7 +4709,7 @@ describe('the mark of a call refused before it ran', () => {
 });
 
 describe('a value a call reads that is in itself', () => {
-  test('is refused as longer than `maxValueLength` allows, and the call can be sent by itself', async () => {
+  test("fails its call, as JSON can't carry it: the client couldn't send it by itself either", async () => {
     // Reads the data of `post` back with its `v` in itself
     const inItself: CombinedDataTransformer = {
       input: transformers.none.input,
@@ -4748,14 +4748,11 @@ describe('a value a call reads that is in itself', () => {
       calls: [reader],
     });
 
-    expect(res.of(reader)).toEqual({
-      error: {
-        code: 'BAD_REQUEST',
-        message:
-          'A value this call reads is longer than `maxValueLength` (1024 characters of JSON) allows',
-        data: { pipeline: 'not-run' },
-      },
+    const outcome = res.of(reader);
+    expect(outcome).toMatchObject({
+      error: { code: 'INTERNAL_SERVER_ERROR' },
     });
+    expect(outcome).not.toHaveProperty(['error', 'data']);
     expect(echo).not.toHaveBeenCalled();
   });
 });

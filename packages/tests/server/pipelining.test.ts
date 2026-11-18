@@ -3282,6 +3282,110 @@ describe('a value a call reads, with a `toJSON` of its own', () => {
   });
 });
 
+describe('a value a call reads, made of code that runs when it is read', () => {
+  /**
+   * Sends a batch whose second call reads `v` of the first one's data, which
+   * the server reads back with `v` as `make` makes it
+   */
+  async function insert(make: () => unknown) {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({
+      transformer: {
+        input: identity,
+        output: {
+          serialize: (value: unknown) => value,
+          deserialize: (value: unknown) =>
+            isObject(value) && isObject(value['v']) ? { v: make() } : value,
+        },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,author',
+        pipe: { 1: { reads: [{ to: ['v'], from: 0, path: ['v'] }] } },
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ v: {} })),
+        author: t.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return 'ran';
+        }),
+      }),
+      experimental_allowPipelining: { allowWholeValues: true },
+    });
+    return { json: (await res.json()) as unknown[], author };
+  }
+
+  test('with an inherited `toJSON` getter that is a method only after its first lookup, has the input as it was measured', async () => {
+    let lookups = 0;
+    let calls = 0;
+    const { json, author } = await insert(() =>
+      Object.create({
+        get toJSON() {
+          lookups += 1;
+          if (lookups === 1) {
+            return undefined;
+          }
+          return () => {
+            calls += 1;
+            return calls <= 2 ? 'x' : 'x'.repeat(2048);
+          };
+        },
+      }),
+    );
+
+    expect(json[1]).toEqual({ result: { data: 'ran' } });
+    // An object without properties, as JSON wrote it the one time
+    expect(author).toHaveBeenCalledExactlyOnceWith({ v: {} });
+    expect(lookups).toBe(1);
+    expect(calls).toBe(0);
+  });
+
+  test('is read once in the whole request: each of its properties, and its `toJSON`', async () => {
+    const accesses = new Map<string, number>();
+    const count = (what: string) =>
+      accesses.set(what, (accesses.get(what) ?? 0) + 1);
+    const { json, author } = await insert(
+      () =>
+        new Proxy(
+          { id: 'ada', tags: ['t1'] },
+          {
+            get: (target, key, receiver) => {
+              count(`get ${String(key)}`);
+              return Reflect.get(target, key, receiver);
+            },
+            getOwnPropertyDescriptor: (target, key) => {
+              count(`describe ${String(key)}`);
+              return Reflect.getOwnPropertyDescriptor(target, key);
+            },
+            ownKeys: (target) => {
+              count('keys');
+              return Reflect.ownKeys(target);
+            },
+            has: (target, key) => {
+              count(`has ${String(key)}`);
+              return Reflect.has(target, key);
+            },
+          },
+        ),
+    );
+
+    expect(json[1]).toEqual({ result: { data: 'ran' } });
+    expect(author).toHaveBeenCalledExactlyOnceWith({
+      v: { id: 'ada', tags: ['t1'] },
+    });
+    expect(accesses.size).toBeGreaterThan(0);
+    expect(Object.fromEntries(accesses)).toEqual(
+      Object.fromEntries([...accesses.keys()].map((what) => [what, 1])),
+    );
+  });
+});
+
 describe('the calls that read the same failed call or refused value', () => {
   const t = initTRPC.create();
   const router = t.router({
