@@ -57,8 +57,11 @@ function getEndingLink(wsUrl: string) {
       url: `${vercelHost ? `https://${vercelHost}` : process.env.APP_URL}/api/trpc`,
     });
   }
+  // Lazy: React Strict Mode runs the `useState` initializer twice in dev,
+  // and the discarded client must not hold a socket open
   const client = createWSClient({
     url: wsUrl,
+    lazy: { enabled: true, closeMs: 0 },
   });
   return wsLink<AppRouter>({
     client,
