@@ -24,7 +24,7 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
-import { pipelineCalls } from './pipeline/server';
+import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
 import type { PipelineEach } from './pipeline/server';
 import type {
   HTTPBaseHandlerOptions,
@@ -312,7 +312,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
-          allowPipelining: opts.experimental_allowPipelining ?? false,
+          pipelineLimits: pipelineLimitsOf(opts.experimental_allowPipelining),
         }),
       ];
     } catch (cause) {
@@ -391,8 +391,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     // Only a pipelined batch has this, which the server only accepts with
     // `experimental_allowPipelining`
-    const getPipe = info.experimental_getPipe;
-    const pipeline = getPipe
+    const pipelined = info.experimental_pipeline;
+    const pipeline = pipelined
       ? await run(async () => {
           if (info.type === 'mutation') {
             throw new TRPCError({
@@ -402,8 +402,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           return pipelineCalls({
             calls: info.calls,
-            pipe: await getPipe(),
+            pipe: await pipelined.getPipe(),
             transformer: config.transformer,
+            limits: pipelined.limits,
             // Every run of a procedure counts towards `maxBatchSize`
             maxRuns:
               typeof opts.maxBatchSize === 'number' ? opts.maxBatchSize : null,

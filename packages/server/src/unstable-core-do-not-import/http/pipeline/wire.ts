@@ -42,11 +42,38 @@ export interface PipeRead {
 export type PipelineReads = Record<number, PipeRead[]>;
 
 /**
- * The most values one call can read. Each is copied for the call, so this
- * keeps what a small request can make the server do in proportion to it. The
- * client fills in the input of a call that would read more.
+ * What a server lets a pipelined batch make it do. Each value a call reads is
+ * copied into its input, so these keep what a small request can make the
+ * server do in proportion to it. A call that goes over one is refused, and the
+ * rest of the batch runs.
  */
-export const pipelineReadsLimit = 64;
+export interface PipelineLimits {
+  /** The longest value a call reads, in characters of JSON */
+  maxValueLength: number;
+  /** The most values one call reads */
+  maxReadsPerCall: number;
+  /**
+   * The most a batch fills in, in characters of JSON: every value written
+   * into an input, and the whole input of every run of a call for every item
+   */
+  maxFillSize: number;
+  /** The most calls in a chain. A call that reads none is 1 */
+  maxDepth: number;
+  /** Whether a value a call reads can be an object or an array */
+  allowWholeValues: boolean;
+}
+
+/**
+ * The limits of a server whose `experimental_allowPipelining` is `true`.
+ * Pipelining normally reads small values, such as ids, slugs and cursors.
+ */
+export const pipelineLimitDefaults: PipelineLimits = {
+  maxValueLength: 1024,
+  maxReadsPerCall: 16,
+  maxFillSize: 100_000,
+  maxDepth: 3,
+  allowWholeValues: false,
+};
 
 /**
  * A read as code writes it. `TFrom` names what it reads from: an index in a

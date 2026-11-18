@@ -252,7 +252,8 @@ const client = createTRPCClient<AppRouter>({
 
 - You pass it in, so only an app that uses it has its code in its bundle.
 
-- The server must set `experimental_allowPipelining: true`. Without it, the server runs nothing of such a request.
+- The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
+- The server [limits](/docs/client/tanstack-react-query/chained-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, and how long they are. `experimental_pipelining({ maxReadsPerCall, maxDepth })` keeps to the server's, 16 and 3 by default, and a call that would go over them waits for the data it reads and goes in a request of its own.
 - Other requests are sent as they are without the option.
 - A query that is sent this way isn't an operation of its own, so the links before this one don't see it. See [What your links see](/docs/client/tanstack-react-query/chained-queries#links).
 - `httpBatchStreamLink` takes the same option, and sends each result back when it is ready.

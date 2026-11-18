@@ -22,16 +22,21 @@ import {
   createPipelineSizeOf,
   parsePipelineReads,
   pipelineCalls,
+  pipelineLimitsOf,
   pipeOfBody,
-  pipelineFillLimit,
   pipeOfSearchParams,
 } from './server';
-import type { PipelineCallReads, PipelineRead, PipeRead } from './wire';
+import type {
+  PipelineCallReads,
+  PipelineLimits,
+  PipelineRead,
+  PipeRead,
+} from './wire';
 import {
   bindPipelinePath,
   groupPipelineReads,
   pipelineBatch,
-  pipelineReadsLimit,
+  pipelineLimitDefaults,
   readPipelinePath,
 } from './wire';
 
@@ -71,6 +76,7 @@ function serve(opts: {
   maxRuns: number | null;
   /** Sends each call's result as a line of its own, when it is ready */
   stream: boolean;
+  limits: PipelineLimits;
 }) {
   return fetchServerResource(async (request) => {
     const url = new URL(request.url);
@@ -102,6 +108,7 @@ function serve(opts: {
         pipe: hasBody ? pipeOfBody(body) : pipeOfSearchParams(url.searchParams),
         transformer: opts.transformer,
         maxRuns: opts.maxRuns,
+        limits: opts.limits,
       });
     } catch (cause) {
       return Response.json({ error: wireError(cause) }, { status: 400 });
@@ -397,10 +404,17 @@ function blog() {
 const defaults = {
   transformer: transformers.none,
   maxRuns: null,
+  limits: pipelineLimitDefaults,
   stream: false,
   fits: () => true,
   onError: () => undefined,
 } as const;
+
+/** For reads of objects and arrays, which a server takes only with `allowWholeValues` */
+const wholeValues: PipelineLimits = {
+  ...pipelineLimitDefaults,
+  allowWholeValues: true,
+};
 
 // ---------- the tests ----------
 
@@ -478,7 +492,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
 
   test('`null` in a path reads a value of every item of a list', async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
+    await using server = serve({ ...defaults, limits: wholeValues, fns });
     const post = sent('post', { slug: 'hello' });
     const tags = call('tags', {}, [
       { to: ['ids'], from: post, path: ['tags', null, 'id'], each: false },
@@ -588,7 +602,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
 describe('what a call reads', () => {
   test('several values, from several calls, anywhere in its input', async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
+    await using server = serve({ ...defaults, limits: wholeValues, fns });
     const hello = sent('post', { slug: 'hello' });
     const again = sent('post', { slug: 'again' });
     const echo = call('echo', { authors: [null, null], nested: { deep: {} } }, [
@@ -666,6 +680,7 @@ describe('what a call reads', () => {
     const seen: unknown[] = [];
     await using server = serve({
       ...defaults,
+      limits: wholeValues,
       transformer: transformers.superjson,
       fns: {
         post: () => ({
@@ -796,6 +811,7 @@ describe('what a call reads', () => {
     const seen: unknown[] = [];
     await using server = serve({
       ...defaults,
+      limits: wholeValues,
       fns: {
         post: () => ({ author: { name: 'Ada' } }),
         rename: (input) => {
@@ -856,7 +872,7 @@ describe('what a call reads', () => {
 describe('a call for every item', () => {
   test('reads values of the item and values that are the same for every run, in the order they are written', async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
+    await using server = serve({ ...defaults, limits: wholeValues, fns });
     const list = sent('posts', undefined);
     const hello = sent('post', { slug: 'hello' });
     const echo = call('echo', { item: {} }, [
@@ -920,6 +936,7 @@ describe('a call for every item', () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
+      limits: wholeValues,
       fns: {
         list: () => [{ tags: [{ id: 'a' }, { id: 'b' }] }, { tags: [] }],
         echo,
@@ -943,7 +960,7 @@ describe('a call for every item', () => {
 
   test('a call can read the list of results of a call for every item', async () => {
     const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
+    await using server = serve({ ...defaults, limits: wholeValues, fns });
     const list = sent('posts', undefined);
     const authorOfEach = call('author', {}, [
       { to: ['id'], from: list, path: ['items', null, 'authorId'], each: true },
@@ -1093,17 +1110,422 @@ describe('a call for every item', () => {
   });
 });
 
-describe('what a request fills in', () => {
+describe('the limits of a server', () => {
+  test('`true` is the defaults, and an object sets the ones it has', () => {
+    expect(pipelineLimitsOf(true)).toEqual({
+      maxValueLength: 1024,
+      maxReadsPerCall: 16,
+      maxFillSize: 100_000,
+      maxDepth: 3,
+      allowWholeValues: false,
+    });
+    expect(pipelineLimitsOf({ maxDepth: 5, allowWholeValues: true })).toEqual({
+      ...pipelineLimitDefaults,
+      maxDepth: 5,
+      allowWholeValues: true,
+    });
+    expect(
+      pipelineLimitsOf({
+        maxValueLength: 1,
+        maxReadsPerCall: 2,
+        maxFillSize: 3,
+        maxDepth: 4,
+        allowWholeValues: true,
+      }),
+    ).toEqual({
+      maxValueLength: 1,
+      maxReadsPerCall: 2,
+      maxFillSize: 3,
+      maxDepth: 4,
+      allowWholeValues: true,
+    });
+    expect(pipelineLimitsOf({})).toEqual(pipelineLimitDefaults);
+    expect(pipelineLimitsOf(false)).toBeNull();
+    expect(pipelineLimitsOf(undefined)).toBeNull();
+  });
+
+  /** Sends a batch to a server with `limits`, and what ran */
+  async function sendWith(opts: {
+    limits: PipelineLimits;
+    fns: Record<string, Fn>;
+    sent: Sent[];
+    calls: Call[];
+  }) {
+    const ran: string[] = [];
+    await using server = serve({
+      ...defaults,
+      limits: opts.limits,
+      fns: Object.fromEntries(
+        Object.entries(opts.fns).map(([path, fn]) => [
+          path,
+          (input: unknown) => {
+            ran.push(path);
+            return fn(input);
+          },
+        ]),
+      ),
+    });
+    const res = await send({
+      ...defaults,
+      url: server.url,
+      method: 'POST',
+      sent: opts.sent,
+      calls: opts.calls,
+    });
+    return { res, ran };
+  }
+
+  const refused = (message: string) => ({
+    error: { code: 'BAD_REQUEST', message },
+  });
+
+  describe('`maxReadsPerCall`', () => {
+    const post = sent('post', undefined);
+    const reading = (path: string, count: number) =>
+      call(
+        path,
+        {},
+        Array.from({ length: count }, (_it, index) => ({
+          to: [`k${index}`],
+          from: post,
+          path: ['id'],
+          each: false,
+        })),
+      );
+    const fns = { post: () => ({ id: 'ada' }), over: () => 1, within: () => 2 };
+
+    test.each([
+      { limits: pipelineLimitDefaults, max: 16 },
+      { limits: { ...pipelineLimitDefaults, maxReadsPerCall: 20 }, max: 20 },
+      { limits: { ...pipelineLimitDefaults, maxReadsPerCall: 1 }, max: 1 },
+    ])(
+      'a call that reads more than $max values is refused, and the rest of the batch runs',
+      async ({ limits, max }) => {
+        const over = reading('over', max + 1);
+        const within = reading('within', max);
+
+        const { res, ran } = await sendWith({
+          limits,
+          fns,
+          sent: [post],
+          calls: [over, within],
+        });
+
+        expect(res.of(over)).toEqual(
+          refused(
+            `This call reads ${max + 1} values, more than \`maxReadsPerCall\` (${max}) allows`,
+          ),
+        );
+        expect(res.of(within)).toEqual({ data: 2 });
+        expect(ran).toEqual(['post', 'within']);
+      },
+    );
+
+    test('a call for every item counts its reads too, and runs for no item', async () => {
+      const list = sent('list', undefined);
+      const each = call('each', {}, [
+        { to: ['a'], from: list, path: ['items', null], each: true },
+        { to: ['b'], from: list, path: ['id'], each: false },
+      ]);
+
+      const { res, ran } = await sendWith({
+        limits: { ...pipelineLimitDefaults, maxReadsPerCall: 1 },
+        fns: { list: () => ({ id: 'x', items: [1, 2] }), each: () => 1 },
+        sent: [list],
+        calls: [each],
+      });
+
+      expect(res.of(each)).toEqual(
+        refused(
+          'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
+        ),
+      );
+      expect(ran).toEqual(['list']);
+    });
+  });
+
+  describe('`maxDepth`', () => {
+    // `post` is 1, `author` 2, `team` 3 and `teamPosts` 4
+    const post = sent('post', undefined);
+    const author = call('author', {}, [
+      { to: ['id'], from: post, path: ['authorId'], each: false },
+    ]);
+    const team = call('team', {}, [
+      { to: ['id'], from: author, path: ['teamId'], each: false },
+    ]);
+    const teamPosts = call('teamPosts', {}, [
+      { to: ['id'], from: team, path: ['id'], each: false },
+    ]);
+    // 5: it reads a call that is refused
+    const first = call('first', {}, [
+      { to: ['slug'], from: teamPosts, path: ['0'], each: false },
+    ]);
+    // 3, from the deepest call it reads, which is 2
+    const both = call('both', {}, [
+      { to: ['slug'], from: post, path: ['slug'], each: false },
+      { to: ['id'], from: author, path: ['id'], each: false },
+    ]);
+    const fns = {
+      post: () => ({ slug: 'hello', authorId: 'ada' }),
+      author: () => ({ id: 'ada', teamId: 'infra' }),
+      team: () => ({ id: 'infra' }),
+      teamPosts: () => ['hello'],
+      first: () => 'first',
+      both: () => 'both',
+    };
+    const deep = (depth: number, max: number) =>
+      refused(
+        `This call is ${depth} calls deep in a chain, more than \`maxDepth\` (${max}) allows`,
+      );
+
+    test('a call more than 3 calls deep is refused, and the rest of the batch runs', async () => {
+      const { res, ran } = await sendWith({
+        limits: pipelineLimitDefaults,
+        fns,
+        sent: [post],
+        calls: [author, team, teamPosts, first, both],
+      });
+
+      expect(res.of(team)).toEqual({ data: { id: 'infra' } });
+      expect(res.of(both)).toEqual({ data: 'both' });
+      expect(res.of(teamPosts)).toEqual(deep(4, 3));
+      expect(res.of(first)).toEqual(deep(5, 3));
+      expect(ran).toEqual(['post', 'author', 'team', 'both']);
+    });
+
+    test('raised, a longer chain runs, and lowered, a shorter one is refused', async () => {
+      const raised = await sendWith({
+        limits: { ...pipelineLimitDefaults, maxDepth: 5 },
+        fns,
+        sent: [post],
+        calls: [author, team, teamPosts, first],
+      });
+      expect(raised.res.of(first)).toEqual({ data: 'first' });
+
+      const lowered = await sendWith({
+        limits: { ...pipelineLimitDefaults, maxDepth: 2 },
+        fns,
+        sent: [post],
+        calls: [author, team, both],
+      });
+      expect(lowered.res.of(author)).toEqual({
+        data: { id: 'ada', teamId: 'infra' },
+      });
+      expect(lowered.res.of(team)).toEqual(deep(3, 2));
+      expect(lowered.res.of(both)).toEqual(deep(3, 2));
+    });
+
+    test('a call for every item is as deep as the list it runs for', async () => {
+      const list = call('list', {}, [
+        { to: ['id'], from: post, path: ['authorId'], each: false },
+      ]);
+      const each = call('each', {}, [
+        { to: ['n'], from: list, path: ['items', null], each: true },
+      ]);
+
+      const { res, ran } = await sendWith({
+        limits: { ...pipelineLimitDefaults, maxDepth: 2 },
+        fns: { post: fns.post, list: () => ({ items: [1] }), each: () => 1 },
+        sent: [post],
+        calls: [list, each],
+      });
+
+      expect(res.of(each)).toEqual(deep(3, 2));
+      expect(ran).toEqual(['post', 'list']);
+    });
+  });
+
+  describe('`maxValueLength`', () => {
+    const post = sent('post', undefined);
+    const reads = (path: string) =>
+      call(path, {}, [{ to: ['v'], from: post, path: [path], each: false }]);
+    // Its quotes count: `"xx"` is 4 characters of JSON
+    const ofLength = (length: number) => 'x'.repeat(length - 2);
+
+    test.each([
+      { limits: pipelineLimitDefaults, max: 1024 },
+      { limits: { ...pipelineLimitDefaults, maxValueLength: 2000 }, max: 2000 },
+      { limits: { ...pipelineLimitDefaults, maxValueLength: 10 }, max: 10 },
+    ])(
+      'a call that reads a value longer than $max characters of JSON is refused, and the rest of the batch runs',
+      async ({ limits, max }) => {
+        const over = reads('over');
+        const within = reads('within');
+
+        const { res, ran } = await sendWith({
+          limits,
+          fns: {
+            post: () => ({ over: ofLength(max + 1), within: ofLength(max) }),
+            over: () => 1,
+            within: () => 2,
+          },
+          sent: [post],
+          calls: [over, within],
+        });
+
+        expect(res.of(over)).toEqual(
+          refused(
+            `A value this call reads is longer than \`maxValueLength\` (${max} characters of JSON) allows`,
+          ),
+        );
+        expect(res.of(within)).toEqual({ data: 2 });
+        expect(ran).toEqual(['post', 'within']);
+      },
+    );
+
+    test('a value of an item counts, and a call for every item runs for none if one is too long', async () => {
+      const list = sent('list', undefined);
+      const each = call('each', {}, [
+        { to: ['v'], from: list, path: ['items', null, 'v'], each: true },
+      ]);
+
+      const { res, ran } = await sendWith({
+        limits: { ...pipelineLimitDefaults, maxValueLength: 10 },
+        fns: {
+          list: () => ({ items: [{ v: 'short' }, { v: ofLength(11) }] }),
+          each: () => 1,
+        },
+        sent: [list],
+        calls: [each],
+      });
+
+      expect(res.of(each)).toEqual(
+        refused(
+          'A value this call reads is longer than `maxValueLength` (10 characters of JSON) allows',
+        ),
+      );
+      expect(ran).toEqual(['list']);
+    });
+  });
+
+  describe('`allowWholeValues`', () => {
+    const post = sent('post', undefined);
+    const reads = (path: string) =>
+      call(path, {}, [{ to: ['v'], from: post, path: [path], each: false }]);
+    const fns = {
+      post: () => ({
+        author: { id: 'ada' },
+        tags: ['a'],
+        text: 'a',
+        number: 1,
+        boolean: false,
+        nothing: null,
+      }),
+      author: (input: { v: unknown }) => input.v,
+      tags: (input: { v: unknown }) => input.v,
+      text: (input: { v: unknown }) => input.v,
+      number: (input: { v: unknown }) => input.v,
+      boolean: (input: { v: unknown }) => input.v,
+      nothing: (input: { v: unknown }) => input.v,
+      missing: (input: { v?: unknown }) => 'v' in input,
+    };
+    const whole = refused(
+      'A value this call reads is an object or an array, and `allowWholeValues` is false',
+    );
+
+    test('a read that lands on an object or an array is refused by default, and the rest of the batch runs', async () => {
+      const calls = [
+        'author',
+        'tags',
+        'text',
+        'number',
+        'boolean',
+        'nothing',
+        'missing',
+      ].map(reads);
+
+      const { res, ran } = await sendWith({
+        limits: pipelineLimitDefaults,
+        fns,
+        sent: [post],
+        calls,
+      });
+
+      expect(calls.map((it) => res.of(it))).toEqual([
+        whole,
+        whole,
+        { data: 'a' },
+        { data: 1 },
+        { data: false },
+        { data: null },
+        // What isn't there is left out of the input, as JSON leaves it out
+        { data: false },
+      ]);
+      expect(ran).toEqual([
+        'post',
+        'text',
+        'number',
+        'boolean',
+        'nothing',
+        'missing',
+      ]);
+    });
+
+    test('`allowWholeValues: true` lets a read land on an object or an array', async () => {
+      const author = reads('author');
+      const tags = reads('tags');
+
+      const { res } = await sendWith({
+        limits: { ...pipelineLimitDefaults, allowWholeValues: true },
+        fns,
+        sent: [post],
+        calls: [author, tags],
+      });
+
+      expect(res.of(author)).toEqual({ data: { id: 'ada' } });
+      expect(res.of(tags)).toEqual({ data: ['a'] });
+    });
+
+    test('an item itself is a whole value, and a value of it is not', async () => {
+      const list = sent('list', undefined);
+      const items = call('items', {}, [
+        { to: ['v'], from: list, path: ['items', null], each: true },
+      ]);
+      const ids = call('ids', {}, [
+        { to: ['v'], from: list, path: ['items', null, 'id'], each: true },
+      ]);
+
+      const { res } = await sendWith({
+        limits: pipelineLimitDefaults,
+        fns: {
+          list: () => ({ items: [{ id: 'a' }] }),
+          items: () => 1,
+          ids: (input: { v: unknown }) => input.v,
+        },
+        sent: [list],
+        calls: [items, ids],
+      });
+
+      expect(res.of(items)).toEqual(whole);
+      expect(res.of(ids)).toEqual({ data: [{ result: { data: 'a' } }] });
+    });
+  });
+});
+
+describe('`maxFillSize`: what a request fills in', () => {
   // A value is copied into every input it goes in. Without a limit, a small
   // request could make the server copy a large result many times over
-  const big = 'x'.repeat(Math.ceil(pipelineFillLimit * 0.4));
+  const maxFillSize = 1000;
+  const limits: PipelineLimits = {
+    ...pipelineLimitDefaults,
+    maxFillSize,
+    maxValueLength: maxFillSize,
+  };
+  const big = 'x'.repeat(Math.ceil(maxFillSize * 0.4));
+  const refused = {
+    error: {
+      code: 'BAD_REQUEST',
+      message: `What this call fills in goes over \`maxFillSize\` (${maxFillSize} characters of JSON for the batch)`,
+    },
+  };
 
-  test(`its values are ${pipelineFillLimit} characters at most: a call that would go over is refused, and takes none of it`, async () => {
+  test('a call that would go over `maxFillSize` is refused, and takes none of it', async () => {
     const echo = vi.fn((input: unknown) =>
       isObject(input) ? input['n'] : null,
     );
     await using server = serve({
       ...defaults,
+      limits,
       fns: { post: () => ({ big, id: 'ada' }), echo },
     });
     const post = sent('post', undefined);
@@ -1127,13 +1549,7 @@ describe('what a request fills in', () => {
     });
 
     expect(res.of(fits)).toEqual({ data: 1 });
-    expect(res.of(tooMuch)).toEqual({
-      error: {
-        code: 'BAD_REQUEST',
-        message:
-          'The values a call fills in exceed the most a batch may fill in',
-      },
-    });
+    expect(res.of(tooMuch)).toEqual(refused);
     expect(res.of(small)).toEqual({ data: 3 });
     expect(
       echo.mock.calls.map(([input]) => (input as { n: number }).n),
@@ -1142,10 +1558,11 @@ describe('what a request fills in', () => {
 
   test('a string counts as long as it is in JSON, escapes included', async () => {
     // Twice as long in JSON: each `\n` is two characters there
-    const lines = '\n'.repeat(Math.ceil(pipelineFillLimit * 0.3));
+    const lines = '\n'.repeat(Math.ceil(maxFillSize * 0.3));
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
+      limits,
       fns: { post: () => ({ lines }), echo },
     });
     const post = sent('post', undefined);
@@ -1162,7 +1579,7 @@ describe('what a request fills in', () => {
       calls: [reader],
     });
 
-    expect(res.of(reader)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
+    expect(res.of(reader)).toEqual(refused);
     expect(echo).not.toHaveBeenCalled();
   });
 
@@ -1170,7 +1587,8 @@ describe('what a request fills in', () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
-      fns: { post: () => ({ big: 'x'.repeat(pipelineFillLimit * 0.6) }), echo },
+      limits,
+      fns: { post: () => ({ big: 'x'.repeat(maxFillSize * 0.6) }), echo },
     });
     const post = sent('post', undefined);
     const broken = call('echo', { id: 'text' }, [
@@ -1198,6 +1616,7 @@ describe('what a request fills in', () => {
     );
     await using server = serve({
       ...defaults,
+      limits,
       // A refused call takes none of the runs either
       maxRuns: 6,
       fns: {
@@ -1230,13 +1649,7 @@ describe('what a request fills in', () => {
       calls: [ofThree, ofTwo],
     });
 
-    expect(res.of(ofThree)).toEqual({
-      error: {
-        code: 'BAD_REQUEST',
-        message:
-          'The values a call fills in exceed the most a batch may fill in',
-      },
-    });
+    expect(res.of(ofThree)).toEqual(refused);
     expect(res.of(ofTwo)).toEqual({
       data: [{ result: { data: 1 } }, { result: { data: 2 } }],
     });
@@ -1716,11 +2129,6 @@ describe('a request the server refuses, before anything of it runs', () => {
       },
       message: 'call 1 reads each item of more than one list',
     },
-    {
-      name: `more than ${pipelineReadsLimit} reads`,
-      pipe: { 1: Array.from({ length: pipelineReadsLimit + 1 }, () => read) },
-      message: `call 1 reads more than ${pipelineReadsLimit} values`,
-    },
   ])('$name', async (scenario) => {
     const { fns, ran } = blog();
     await using server = serve({ ...defaults, fns });
@@ -1741,32 +2149,6 @@ describe('a request the server refuses, before anything of it runs', () => {
       },
     });
     expect(ran).toEqual([]);
-  });
-
-  test(`${pipelineReadsLimit} reads are not too many`, async () => {
-    const { fns, ran } = blog();
-    await using server = serve({ ...defaults, fns });
-    const post = sent('post', { slug: 'hello' });
-    const echo = call(
-      'echo',
-      {},
-      Array.from({ length: pipelineReadsLimit }, (_it, index) => ({
-        to: [`k${index}`],
-        from: post,
-        path: ['slug'],
-        each: false,
-      })),
-    );
-
-    await send({
-      ...defaults,
-      url: server.url,
-      method: 'POST',
-      sent: [post],
-      calls: [echo],
-    });
-
-    expect(Object.keys(ran[1]?.[1] as object)).toHaveLength(pipelineReadsLimit);
   });
 });
 
@@ -1857,6 +2239,7 @@ describe('a place in an input that a read cannot write to', () => {
     const seen: unknown[] = [];
     await using server = serve({
       ...defaults,
+      limits: wholeValues,
       fns: {
         post: () => ({ authorId: 'ada', evil: { polluted: true } }),
         echo: (input) => {

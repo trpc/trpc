@@ -1,6 +1,7 @@
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
+  PipelineLimits,
   PipelineRead,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -9,7 +10,7 @@ import {
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelinedCallsRan,
-  pipelineReadsLimit,
+  pipelineLimitDefaults,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { Operation } from '../types';
@@ -45,6 +46,8 @@ export interface OperationPipeline {
    * as the operation's request goes.
    */
   open: boolean;
+  /** The limits of the server, as the link that opens it says */
+  limits: ClientPipelineLimits;
   /**
    * The calls added to the operation's request, with `pipeCall()`. They stay
    * here once the request has gone, for a link that logs the context.
@@ -62,6 +65,12 @@ export interface OperationPipeline {
   toJSON: () => unknown;
 }
 
+/** What a client keeps to of a server's limits, so the server takes its calls */
+type ClientPipelineLimits = Pick<
+  PipelineLimits,
+  'maxReadsPerCall' | 'maxDepth'
+>;
+
 /** What a call reads the data of: an operation, or another call */
 type PipelineSource = OperationPipeline | PipelinedCall;
 
@@ -75,6 +84,8 @@ export interface PipelinedCall {
   /** The input, with `undefined` in place of what the server fills in */
   input: unknown;
   reads: PipelineCallReads<PipelineSource>;
+  /** Its place in its chain: a call that reads an operation is 2 */
+  depth: number;
   /**
    * - `waiting`: the request hasn't gone yet
    * - `sent`: it is in a request
@@ -102,6 +113,7 @@ export function createOperationPipeline(): OperationPipeline {
   const sent = createDeferred<readonly string[]>();
   const pipeline: OperationPipeline = {
     open: false,
+    limits: pipelineLimitDefaults,
     calls: [],
     sent: sent.promise,
     settleSent: sent.resolve,
@@ -122,7 +134,8 @@ function isCall(source: PipelineSource): source is PipelinedCall {
 /**
  * Adds a call to the request of the operations it reads. `null` if that
  * request has gone, no link that pipelines took those operations, or the
- * server would refuse its reads: more than it takes, or items of two lists.
+ * server would refuse it: more reads or a longer chain than it takes, or
+ * items of two lists.
  */
 export function pipeCall(opts: {
   path: string;
@@ -130,7 +143,7 @@ export function pipeCall(opts: {
   reads: PipelinedCallRead[];
 }): PipelinedCall | null {
   const grouped = groupPipelineReads(opts.reads);
-  if (!grouped.ok || opts.reads.length > pipelineReadsLimit) {
+  if (!grouped.ok) {
     return null;
   }
   const owners = opts.reads.map((read) =>
@@ -147,6 +160,17 @@ export function pipeCall(opts: {
   ) {
     return null;
   }
+  const depth =
+    1 +
+    Math.max(
+      ...opts.reads.map((read) => (isCall(read.from) ? read.from.depth : 1)),
+    );
+  if (
+    opts.reads.length > owner.limits.maxReadsPerCall ||
+    depth > owner.limits.maxDepth
+  ) {
+    return null;
+  }
   const settled = createDeferred<
     PipelinedCallResult | Promise<PipelinedCallResult>
   >();
@@ -157,6 +181,7 @@ export function pipeCall(opts: {
     path: opts.path,
     input: opts.input,
     reads: grouped.reads,
+    depth,
     status: 'waiting',
     result,
     owner,
@@ -261,6 +286,27 @@ export interface BatchPipelining {
 }
 
 /**
+ * What a client keeps to of the server's `experimental_allowPipelining`
+ * limits. A call that would go over one isn't pipelined: it waits for the
+ * data it reads, and goes in a request of its own.
+ *
+ * Experimental: it may change in a minor release.
+ * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#limits
+ */
+export interface experimental_PipeliningLinkOptions {
+  /**
+   * The server's `maxReadsPerCall`, or a lower number
+   * @default 16
+   */
+  maxReadsPerCall?: number;
+  /**
+   * The server's `maxDepth`, or a lower number
+   * @default 3
+   */
+  maxDepth?: number;
+}
+
+/**
  * The value of a batch link's `experimental_pipelining` option. Make one with
  * `experimental_pipelining()`.
  */
@@ -344,7 +390,14 @@ function settlePipelinedBatch(opts: {
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/tanstack-react-query/chained-queries#one-request
  */
-export function experimental_pipelining(): experimental_Pipelining {
+export function experimental_pipelining(
+  opts?: experimental_PipeliningLinkOptions,
+): experimental_Pipelining {
+  const limits: ClientPipelineLimits = {
+    maxReadsPerCall:
+      opts?.maxReadsPerCall ?? pipelineLimitDefaults.maxReadsPerCall,
+    maxDepth: opts?.maxDepth ?? pipelineLimitDefaults.maxDepth,
+  };
   return (link) => {
     /** The calls that go in the request of a batch, within the link's limits */
     const plan = (ops: readonly BatchOp[]) => {
@@ -376,6 +429,7 @@ export function experimental_pipelining(): experimental_Pipelining {
         // Only queries: the server makes no more calls in a mutation's request
         if (pipeline && op.type === 'query') {
           pipeline.open = true;
+          pipeline.limits = limits;
         }
       },
       close: closePipeline,

@@ -7,6 +7,7 @@ import {
   httpBatchStreamLink,
   loggerLink,
 } from '@trpc/client';
+import type { experimental_PipeliningLinkOptions } from '@trpc/client';
 import {
   createOperationPipeline,
   pipeCall,
@@ -14,9 +15,10 @@ import {
 } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import {
   isObject,
-  pipelineReadsLimit,
+  pipelineLimitDefaults,
 } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -113,7 +115,7 @@ describe.each([
 ] as const)('$name with $transformer transformer', (scenario) => {
   function setup(opts: {
     allowPipelining: boolean;
-    pipelining: boolean;
+    pipelining: boolean | experimental_PipeliningLinkOptions;
     methodOverride?: 'POST';
     maxItems?: number;
     maxURLLength?: number;
@@ -128,7 +130,10 @@ describe.each([
     };
     const ctx = testServerAndClientResource(appRouter, {
       server: {
-        experimental_allowPipelining: opts.allowPipelining,
+        // Some calls here read a whole value, such as a list of tags
+        experimental_allowPipelining: opts.allowPipelining && {
+          allowWholeValues: true,
+        },
         allowMethodOverride: opts.methodOverride === 'POST',
       },
       client: (clientOpts) => ({
@@ -138,7 +143,9 @@ describe.each([
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
             experimental_pipelining: opts.pipelining
-              ? experimental_pipelining()
+              ? experimental_pipelining(
+                  opts.pipelining === true ? undefined : opts.pipelining,
+                )
               : undefined,
             methodOverride: opts.methodOverride,
             maxItems: opts.maxItems,
@@ -540,13 +547,13 @@ describe.each([
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: reads(pipelineReadsLimit + 1),
+        reads: reads(pipelineLimitDefaults.maxReadsPerCall + 1),
       }),
     ).toBeNull();
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: reads(pipelineReadsLimit),
+      reads: reads(pipelineLimitDefaults.maxReadsPerCall),
     });
     assert(author);
     await postResult;
@@ -556,6 +563,47 @@ describe.each([
     // What a link that logs an operation's context gets of it
     expect(JSON.parse(JSON.stringify(pipelineContext(post)))).toEqual({
       '~pipeline': { calls: [{ path: 'author', status: 'sent' }] },
+    });
+  });
+
+  test('a call deeper in a chain than a server takes is not added, unless the link raises it', async () => {
+    /** A chain of 4: post, author, team and team again. What the 4th is */
+    async function chain(
+      pipelining: true | experimental_PipeliningLinkOptions,
+    ) {
+      await using ctx = setup({ allowPipelining: true, pipelining });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: [{ to: ['id'], from: post, path: ['authorId'], each: false }],
+      });
+      assert(author);
+      const team = pipeCall({
+        path: 'team',
+        input: undefined,
+        reads: [{ to: [], from: author, path: ['teamId'], each: false }],
+      });
+      assert(team);
+      const fourth = pipeCall({
+        path: 'team',
+        input: undefined,
+        reads: [{ to: [], from: team, path: ['id'], each: false }],
+      });
+      await postResult;
+      expect(await team.result).toEqual({ data: { id: 'team-of-u1' } });
+      return fourth && (await fourth.result.catch((error: Error) => error));
+    }
+    expect(await chain(true)).toBeNull();
+    // The server's `maxDepth` is 3, so it refuses it
+    expect(await chain({ maxDepth: 4 })).toMatchObject({
+      message:
+        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
     });
   });
 
@@ -970,10 +1018,16 @@ describe('a server without `experimental_allowPipelining`', () => {
 });
 
 describe('the `pipe` search param', () => {
-  async function get(search: string, opts: { path: string }) {
+  async function get(
+    search: string,
+    opts: {
+      path: string;
+      allowPipelining: true | experimental_PipeliningOptions;
+    },
+  ) {
     const { appRouter, calls } = createRouter('none');
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: true },
+      server: { experimental_allowPipelining: opts.allowPipelining },
     });
     const res = await fetch(
       `${ctx.httpUrl}/${opts.path}?batch=pipeline&${search}`,
@@ -989,7 +1043,7 @@ describe('the `pipe` search param', () => {
   test('fills in the input of a later call', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
-      { path: 'post,author' },
+      { path: 'post,author', allowPipelining: true },
     );
     expect(res.json[1]).toEqual({
       result: { data: { id: 'u1', teamId: 'team-of-u1' } },
@@ -1006,7 +1060,7 @@ describe('the `pipe` search param', () => {
           1: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }],
         }),
       )}`,
-      { path: 'post,tags' },
+      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
     );
     expect(res.json[1]).toEqual({ result: { data: ['t1', 't2'] } });
 
@@ -1017,7 +1071,7 @@ describe('the `pipe` search param', () => {
           1: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }],
         }),
       )}`,
-      { path: 'post,tags' },
+      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
     );
     expect(notAnArray.json[1].error.data.code).toBe('BAD_REQUEST');
   });
@@ -1029,7 +1083,7 @@ describe('the `pipe` search param', () => {
     const each = (reads: unknown) =>
       get(
         `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: reads }))}`,
-        { path: 'post,tags' },
+        { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
       );
 
     const res = await each([
@@ -1070,7 +1124,7 @@ describe('the `pipe` search param', () => {
           1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
         }),
       )}`,
-      { path: 'post,ticks' },
+      { path: 'post,ticks', allowPipelining: true },
     );
     // Not `{}`, which is what a stream inside a list would be sent as
     expect(
@@ -1084,7 +1138,10 @@ describe('the `pipe` search param', () => {
     )}&pipe=${encodeURIComponent(
       JSON.stringify({ 1: [{ to: ['id'], from: 0, path: ['authorId'] }] }),
     )}`;
-    const res = await get(search, { path: 'feed,author' });
+    const res = await get(search, {
+      path: 'feed,author',
+      allowPipelining: true,
+    });
     expect(res.json[0].error.data.code).toBe('UNSUPPORTED_MEDIA_TYPE');
     expect(res.json[1].error.data.code).toBe('PRECONDITION_FAILED');
     expect(res.calls).not.toHaveBeenCalled();
@@ -1099,7 +1156,7 @@ describe('the `pipe` search param', () => {
           1: [{ to: ['ids', 'length'], from: 0, path: ['authorId'] }],
         }),
       )}`,
-      { path: 'post,tags' },
+      { path: 'post,tags', allowPipelining: true },
     );
     expect(res.json[1].error).toMatchObject({
       message: 'Invalid "pipe": the input has nothing at "ids.length"',
@@ -1116,19 +1173,97 @@ describe('the `pipe` search param', () => {
           path: ['authorId'],
         })),
       });
-    const within = await get(reads(pipelineReadsLimit), {
+    const within = await get(reads(pipelineLimitDefaults.maxReadsPerCall), {
       path: 'post,author',
+      allowPipelining: true,
     });
     expect(within.json[1].result.data.id).toBe('u1');
 
-    const over = await get(reads(pipelineReadsLimit + 1), {
+    const over = await get(reads(pipelineLimitDefaults.maxReadsPerCall + 1), {
       path: 'post,author',
+      allowPipelining: true,
     });
-    expect(over.status).toBe(400);
-    expect(over.json.error.message).toBe(
-      `Invalid "pipe": call 1 reads more than ${pipelineReadsLimit} values`,
-    );
+    // The call is refused, and the rest of the batch runs
+    expect(over.status).toBe(207);
+    expect(over.json[0].result.data.slug).toBe('hello');
+    expect(over.json[1].error).toMatchObject({
+      message: `This call reads ${pipelineLimitDefaults.maxReadsPerCall + 1} values, more than \`maxReadsPerCall\` (${pipelineLimitDefaults.maxReadsPerCall}) allows`,
+      data: { code: 'BAD_REQUEST' },
+    });
     expect(over.calls).not.toHaveBeenCalled();
+  });
+
+  test('`true` refuses a call more than 3 calls deep, or that reads an object, and the rest of the batch runs', async () => {
+    // post 1, author 2, team 3, author 4
+    const search = `input=${encodeURIComponent(
+      JSON.stringify({ 0: { slug: 'hello' }, 1: {}, 4: {} }),
+    )}&pipe=${encodeURIComponent(
+      JSON.stringify({
+        1: [{ to: ['id'], from: 0, path: ['authorId'] }],
+        2: [{ to: [], from: 1, path: ['teamId'] }],
+        3: [{ to: ['id'], from: 2, path: ['id'] }],
+        4: [{ to: ['id'], from: 0, path: ['tags'] }],
+      }),
+    )}`;
+    const res = await get(search, {
+      path: 'post,author,team,author,author',
+      allowPipelining: true,
+    });
+    expect(res.json[2].result.data).toEqual({ id: 'team-of-u1' });
+    expect(res.json[3].error).toMatchObject({
+      message:
+        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
+      data: { code: 'BAD_REQUEST' },
+    });
+    expect(res.json[4].error).toMatchObject({
+      message:
+        'A value this call reads is an object or an array, and `allowWholeValues` is false',
+      data: { code: 'BAD_REQUEST' },
+    });
+    expect(res.calls.mock.calls).toEqual([
+      ['author', { id: 'u1' }],
+      ['team', 'team-of-u1'],
+    ]);
+  });
+
+  test('an object sets the limits it has, raised or lowered', async () => {
+    const reads = (count: number) =>
+      pipe({
+        1: Array.from({ length: count }, () => ({
+          to: ['id'],
+          from: 0,
+          path: ['authorId'],
+        })),
+      });
+    const raised = await get(reads(20), {
+      path: 'post,author',
+      allowPipelining: { maxReadsPerCall: 20 },
+    });
+    expect(raised.json[1].result.data.id).toBe('u1');
+
+    const lowered = await get(reads(2), {
+      path: 'post,author',
+      allowPipelining: { maxReadsPerCall: 1, maxValueLength: 2 },
+    });
+    expect(lowered.json[1].error.message).toBe(
+      'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
+    );
+    // `"u1"` is 4 characters of JSON
+    const short = await get(reads(1), {
+      path: 'post,author',
+      allowPipelining: { maxValueLength: 3 },
+    });
+    expect(short.json[1].error.message).toBe(
+      'A value this call reads is longer than `maxValueLength` (3 characters of JSON) allows',
+    );
+    // Two of them are 8
+    const small = await get(reads(2), {
+      path: 'post,author',
+      allowPipelining: { maxFillSize: 6 },
+    });
+    expect(small.json[1].error.message).toBe(
+      'What this call fills in goes over `maxFillSize` (6 characters of JSON for the batch)',
+    );
   });
 
   test('a call for every item counts each item towards `maxBatchSize`', async () => {
@@ -1205,7 +1340,10 @@ describe('the `pipe` search param', () => {
         ],
       }),
     )}`;
-    const res = await get(search, { path: 'post,post,post' });
+    const res = await get(search, {
+      path: 'post,post,post',
+      allowPipelining: { allowWholeValues: true },
+    });
     expect(res.json[1].result.data.slug).toBe('u1');
     // Not `u1`: the first call's data is as it was sent
     expect(res.json[2].result.data.slug).toBe('hello');
@@ -1225,7 +1363,7 @@ describe('the `pipe` search param', () => {
           ],
         }),
       )}`,
-      { path: 'post,stamp,tags' },
+      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
     );
     expect(res.json[1].result.data).toBe(3);
     expect(res.json[2].result.data).toEqual(['t1', 't2']);
@@ -1248,7 +1386,7 @@ describe('the `pipe` search param', () => {
           ],
         }),
       )}`,
-      { path: 'post,stamp,tags' },
+      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
     );
     expect(res.json[1].result.data).toEqual([
       { result: { data: 3 } },
@@ -1266,7 +1404,7 @@ describe('the `pipe` search param', () => {
           1: [{ to: ['id'], from: 0, path: ['tags', null, 'id'], each: true }],
         }),
       )}`,
-      { path: 'post,stamp' },
+      { path: 'post,stamp', allowPipelining: true },
     );
     // Every run adds a tag to its own list
     expect(res.json[1].result.data).toEqual([
@@ -1377,7 +1515,7 @@ describe('the `pipe` search param', () => {
       `input=${encodeURIComponent(
         JSON.stringify({ 0: { slug: 'hello' }, 1: { id: 'u2' } }),
       )}`,
-      { path: 'post,author' },
+      { path: 'post,author', allowPipelining: true },
     );
     expect(res.json[0].result.data.slug).toBe('hello');
     expect(res.json[1].result.data.id).toBe('u2');
@@ -1393,7 +1531,7 @@ describe('the `pipe` search param', () => {
             1: [{ to: ['id'], from: 0, path: [list, null, 'id'], each: true }],
           }),
         )}`,
-        { path },
+        { path, allowPipelining: true },
       );
     const failed = await eachOf('post,tag', { slug: 'missing' }, 'tags');
     expect(failed.json[0].error.data.code).toBe('NOT_FOUND');
@@ -1410,7 +1548,7 @@ describe('the `pipe` search param', () => {
       `input=${encodeURIComponent(JSON.stringify({ 1: {} }))}&pipe=${encodeURIComponent(
         JSON.stringify({ 1: [{ to: ['id'], from: 0, path: [] }] }),
       )}`,
-      { path: 'nothing,author' },
+      { path: 'nothing,author', allowPipelining: true },
     );
     // The author's input has no id, and fails to validate
     expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
@@ -1420,7 +1558,7 @@ describe('the `pipe` search param', () => {
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: [{ to: ['id'], from: 0, path: ['tags'] }] }),
-      { path: 'post,author' },
+      { path: 'post,author', allowPipelining: { allowWholeValues: true } },
     );
     expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
@@ -1435,7 +1573,7 @@ describe('the `pipe` search param', () => {
           { to: ['__proto__'], from: 0, path: ['constructor'] },
         ],
       }),
-      { path: 'post,author' },
+      { path: 'post,author', allowPipelining: true },
     );
     expect(res.json[1].result.data).toEqual({ id: 'u1', teamId: 'team-of-u1' });
     expect(res.calls.mock.calls[0]![1]).toEqual({ id: 'u1' });
@@ -1461,7 +1599,10 @@ describe('the `pipe` search param', () => {
     ],
     ['something that is not an object', 'nope'],
   ])('rejects %s', async (_name, value) => {
-    const res = await get(pipe(value), { path: 'post,author' });
+    const res = await get(pipe(value), {
+      path: 'post,author',
+      allowPipelining: true,
+    });
     expect(res.status).toBe(400);
     expect(res.json.error.message).toMatch(/^Invalid "pipe"/);
     expect(res.calls).not.toHaveBeenCalled();
@@ -1470,6 +1611,7 @@ describe('the `pipe` search param', () => {
   test('rejects a `pipe` that is not JSON', async () => {
     const res = await get(`input=${input}&pipe=%7Bnope`, {
       path: 'post,author',
+      allowPipelining: true,
     });
     expect(res.status).toBe(400);
     expect(res.json.error.message).toBe('Invalid "pipe": not JSON');

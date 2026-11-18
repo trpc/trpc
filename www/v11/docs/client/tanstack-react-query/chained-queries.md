@@ -365,6 +365,7 @@ export const client = createTRPCClient<AppRouter>({
 - **The loader and the components don't change.**
 - **It saves round trips where there are any**: in a load that goes over HTTP, such as a loader that runs in the browser. A proxy that [calls the router directly](#fallback), on the server, makes no request.
 - **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
+- **`true` sets the default [limits](#limits).** They take ids, slugs and cursors. To read objects and lists, such as a list made with `.map()`, set `allowWholeValues`.
 
 ### What goes over the wire {#wire}
 
@@ -402,7 +403,7 @@ The load then fills in the input in the browser, and asks again. It gives the sa
 - **The entry it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **The proxy calls the router directly**, as in a server component. There is no request to save.
 - **It doesn't fit in the request** of the entry it reads, within `maxURLLength` and `maxItems`.
-- **Its input reads more than 64 values.** The server takes no more for one call.
+- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, or is more than `maxDepth` calls deep in its chain, 3 by default.
 - **The request failed as a whole**, such as on a network error. If a link sends it again, the entry asks by itself.
 - **It reads an infinite entry's later pages.** The first page is one request's result, which the server can read: `experimental_dataOf(posts).pages[0]`.
 - **The cache had another value** than the server read. The load keeps the cache's, which the handle's input is from, and fetches with it.
@@ -422,6 +423,119 @@ Pipelining is not enabled on the server. Set `experimental_allowPipelining: true
 - **A load that waits for one of them rejects**, with `ensureEntry` or `fetchEntry`.
 - **A prefetch entry doesn't make the load reject**, and its error shows where the component reads the query.
 - **Unless another entry reads its data with `experimental_dataOf(entry)`.** The load waits for it then, and rejects with its error, also with `loadHandlesSettled()`.
+
+### Limits {#limits}
+
+A call that reads another's data makes the server copy that data into its input. `true` turns pipelining on with limits that keep that small. An object sets them, and any you leave out keep their default:
+
+```ts twoslash title='server.ts'
+// @include: dq-router
+// @filename: server.ts
+// ---cut---
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from '~/server/router';
+
+createHTTPServer({
+  router: appRouter,
+  maxBatchSize: 50,
+  experimental_allowPipelining: {
+    maxValueLength: 1024,
+    maxReadsPerCall: 16,
+    maxFillSize: 100_000,
+    maxDepth: 4,
+    allowWholeValues: true,
+  },
+}).listen(3000);
+```
+
+The link keeps to the server's `maxReadsPerCall` and `maxDepth`, so it doesn't send a call that the server would refuse. If you raise them on the server, raise them on the link too:
+
+```ts twoslash title='client.ts'
+// @include: dq-router
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchStreamLink,
+} from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchStreamLink({
+      url: 'http://localhost:3000',
+      experimental_pipelining: experimental_pipelining({
+        maxReadsPerCall: 16,
+        maxDepth: 4,
+      }),
+    }),
+  ],
+});
+```
+
+A call that would go over a limit is refused, with a `BAD_REQUEST` that names the limit and its value:
+
+```
+This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
+```
+
+- **The rest of the request runs.** Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
+- **The query of that call gets the error**, as it would get the procedure's own. A call for every item runs for no item, and its items each ask by themselves.
+- **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
+
+#### What a value is {#limit-terms}
+
+A **value** is one place in an input that the server fills in from another call's data: `{ id: experimental_dataOf(post).authorId }` reads one. A call for every item reads its values again for every item.
+
+**Characters of JSON** are how long a value is as JSON, as JavaScript counts a string: `"abc"` is 5, with its quotes, `1024` is 4 and `null` is 4. Escapes count, so a line break in a string is 2. A character is up to 3 bytes in UTF-8, and an emoji counts as 2.
+
+#### `maxDepth` {#limit-depth}
+
+The most calls in a chain, 3 by default. A query that reads nothing is 1, and a call is 1 more than the deepest call it reads. `post.bySlug` → `author.byId` → `post.list` is 3: the post page above.
+
+- **Why 3:** a page rarely needs more steps than that, and every step waits for the one before it.
+- **Raise it** for a page that really chains more, and set the link's `maxDepth` to the same.
+- **Lower it to 2** to allow one step: the author of a post, but not the author's team.
+
+#### `maxReadsPerCall` {#limit-reads}
+
+The most values one call reads, 16 by default.
+
+- **Why 16:** an input usually reads one or two values, such as an id and a cursor.
+- **Raise it** for an input that is built from many parts of other data, and set the link's `maxReadsPerCall` to the same.
+
+#### `maxValueLength` {#limit-value-length}
+
+The longest value a call reads, in characters of JSON: 1,024 by default. Every value is measured before it is written into an input, the value of each item too.
+
+- **Why 1,024:** what a call reads is normally an id, a slug or a cursor, which are much shorter.
+- **Raise it** to read longer text or, with `allowWholeValues`, objects and lists.
+
+#### `allowWholeValues` {#limit-whole-values}
+
+Whether a value can be an object or a list: `false` by default. Without it, a value has to be a string, a number, a boolean or `null`. A value that isn't there is left out of the input, as JSON leaves it out.
+
+- **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
+- **Set it** to read a list made with `.map()`, such as `ids: experimental_dataOf(post).tags.map((tag) => tag.id)`, or a whole result, such as `experimental_dataOf(post).author`. A value that a transformer makes, such as a `Date`, is an object too.
+- **Not needed for a list that an entry for every item reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
+
+#### `maxFillSize` {#limit-fill-size}
+
+The most a request fills in, in characters of JSON: 100,000 by default. It counts every value written into an input. For a call for every item, it counts the whole input of every run too, as each run gets its own copy.
+
+- **Why 100,000:** the other limits keep a call small. This one keeps the whole request small, as it can have many calls, and a call can run for many items.
+- **Raise it** with `maxValueLength` or `allowWholeValues`, if a request of yours fills in more.
+
+#### How they add up {#limits-together}
+
+At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
+
+Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) too. It caps how many calls a request has, and how many times they run. These limits cap how much each one carries.
+
+#### Like a GraphQL query cost limit {#limits-graphql}
+
+A GraphQL server often gives a query a cost, from its depth and from how many items its lists can have, and refuses a query over a budget. These limits are the same idea, split into separate caps: `maxDepth` is a depth limit, `maxBatchSize` caps the calls and runs, and the others cap what each call carries. Each is a plain count, with no cost to give to every procedure. A call over one is refused by itself, not the whole request.
 
 ## The load doesn't wait {#without-waiting}
 
@@ -494,7 +608,8 @@ const moreFromTeam = prefetchInfiniteEntry(trpc.post.list, {
   teamId: experimental_dataOf(author).teamId,
 });
 
-// A part of every item of a list
+// A part of every item of a list. With one request, that is a list: the
+// server takes it only with `allowWholeValues`
 const tags = prefetchEntry(trpc.tag.byIds, {
   ids: experimental_dataOf(post).tags.map((tag) => tag.id),
 });
@@ -504,7 +619,7 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 ```
 
 - **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
-- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it.
+- **`.map()` is the one array method that works.** Its callback runs once, on a stand-in for every item, and must return the item or a part of it. With [one request](#one-request), the list it makes is a whole value, which the server takes only with [`allowWholeValues`](#limit-whole-values).
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
@@ -615,7 +730,7 @@ function AuthorName(props: {
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server refuses the call, and each item asks by itself.
-- **A request fills in about a million characters of JSON.** Each run gets its own copy of what it reads, and of the rest of its input. A call for more than that is refused too. See [Is it safe to turn on?](#safe)
+- **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A call for more than that is refused too. See [Limits](#limits).
 - **One list at a time.** The server runs a call for the items of one list. The items of a list inside a list load in a second request. The pages of an infinite entry are the exception: their items load with the first page.
 
 For a fetch or ensure entry, `data` has a list with every item's data.
@@ -933,7 +1048,7 @@ Such a request does what the browser could do in two. Each call validates its in
 
 - **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs a procedure once for every item of a list the server returned. `maxBatchSize` counts every run of a request. Without it, there is no limit.
 - **Set the link's `maxItems` to it, or lower.** A request with more calls than `maxBatchSize` fails as a whole, the query it belongs to included. A call whose runs for items would go over it is refused by itself: the list loads, and its items each ask by themselves.
-- **A call reads 64 values at most, and a request fills in about a million characters of JSON.** Each value is copied into every input it goes in. The server estimates how long every copy is in JSON, escapes included, and counts the whole input of every run of a call for every item. A call that would go over that is refused: it fails, or its items each ask by themselves. It counts characters as JavaScript does, which are up to 3 bytes each in UTF-8: an emoji is two.
+- **Keep the [limits](#limits) low.** By default a call reads 16 values of 1,024 characters of JSON at most, only strings, numbers, booleans and `null`, a chain is 3 calls deep at most, and a request fills in 100,000 characters of JSON. Each value is copied into every input it goes in, so a call that would go over one is refused: it fails, or its items each ask by themselves.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, the call gets nothing in its place: its input fails to validate, unless that part is optional or has a default.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 

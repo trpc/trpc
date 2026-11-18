@@ -5,6 +5,7 @@ import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import { pipeOfBody, pipeOfSearchParams } from './pipeline/server';
 import { pipelineBatch } from './pipeline/wire';
+import type { PipelineLimits } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
@@ -38,8 +39,11 @@ type GetRequestInfoOptions = {
   headers: Headers;
   router: AnyRouter;
   maxBatchSize?: number;
-  /** Whether to accept a pipelined batch, `?batch=pipeline`. Without it, that is a bad request */
-  allowPipelining: boolean;
+  /**
+   * What a pipelined batch, `?batch=pipeline`, can make the server do, or
+   * `null` if it isn't accepted: it is then a bad request
+   */
+  pipelineLimits: PipelineLimits | null;
 };
 
 type ContentTypeHandler = {
@@ -108,7 +112,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const batch = opts.searchParams.get('batch');
     // A batch whose calls read their inputs from each other's data
     const isPipelined = batch === pipelineBatch;
-    if (isPipelined && !opts.allowPipelining) {
+    const { pipelineLimits } = opts;
+    if (isPipelined && !pipelineLimits) {
       // Before anything of it runs: its calls have holes in their inputs
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -248,17 +253,21 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
       url: opts.url,
-      ...(isPipelined && {
-        experimental_getPipe: async () => {
-          // A GET has it in the URL. Any other request has it in its body,
-          // beside the inputs
-          if (req.method === 'GET') {
-            return pipeOfSearchParams(opts.searchParams);
-          }
-          await getInputs.read();
-          return bodyPipe;
-        },
-      }),
+      ...(isPipelined &&
+        pipelineLimits && {
+          experimental_pipeline: {
+            limits: pipelineLimits,
+            getPipe: async () => {
+              // A GET has it in the URL. Any other request has it in its body,
+              // beside the inputs
+              if (req.method === 'GET') {
+                return pipeOfSearchParams(opts.searchParams);
+              }
+              await getInputs.read();
+              return bodyPipe;
+            },
+          },
+        }),
     };
     return info;
   },

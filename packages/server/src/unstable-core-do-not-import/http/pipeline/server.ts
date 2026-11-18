@@ -2,18 +2,45 @@ import { TRPCError } from '../../error/TRPCError';
 import { createDeferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isObject } from '../../utils';
+import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipelineCallReads,
   PipelineItemEnvelope,
+  PipelineLimits,
   PipelinePath,
   PipelineRead,
   PipelineWholeRead,
 } from './wire';
 import {
   groupPipelineReads,
-  pipelineReadsLimit,
+  pipelineLimitDefaults,
   readPipelinePath,
 } from './wire';
+
+/**
+ * The limits a handler's `experimental_allowPipelining` sets, or `null` if it
+ * doesn't accept pipelined batches
+ */
+export function pipelineLimitsOf(
+  option: boolean | experimental_PipeliningOptions | undefined,
+): PipelineLimits | null {
+  if (!option) {
+    return null;
+  }
+  if (option === true) {
+    return pipelineLimitDefaults;
+  }
+  return {
+    maxValueLength:
+      option.maxValueLength ?? pipelineLimitDefaults.maxValueLength,
+    maxReadsPerCall:
+      option.maxReadsPerCall ?? pipelineLimitDefaults.maxReadsPerCall,
+    maxFillSize: option.maxFillSize ?? pipelineLimitDefaults.maxFillSize,
+    maxDepth: option.maxDepth ?? pipelineLimitDefaults.maxDepth,
+    allowWholeValues:
+      option.allowWholeValues ?? pipelineLimitDefaults.allowWholeValues,
+  };
+}
 
 /** The `pipe` of a request that has no body, not yet checked */
 export function pipeOfSearchParams(searchParams: URLSearchParams) {
@@ -88,11 +115,6 @@ export function parsePipelineReads<TSource extends object | number>(opts: {
       }
       if (!Array.isArray(reads)) {
         throw invalidPipe(`expected an array at ${key}`);
-      }
-      if (reads.length > pipelineReadsLimit) {
-        throw invalidPipe(
-          `call ${key} reads more than ${pipelineReadsLimit} values`,
-        );
       }
       const grouped = groupPipelineReads(
         reads.map((read: unknown): PipelineRead<TSource> => {
@@ -211,17 +233,14 @@ function overTheWire(
     : transformer.deserialize(JSON.parse(json));
 }
 
-/**
- * The most a batch fills in, in characters of JSON: every value it writes
- * into an input, and the whole input of every run of a call for every item.
- * A value is copied for every input it goes in, so without this a small
- * request could make the server copy a large result many times over.
- */
-export const pipelineFillLimit = 1_000_000;
+/** A call refused for going over one of the server's limits */
+function overLimit(message: string) {
+  return new TRPCError({ code: 'BAD_REQUEST', message });
+}
 
 /**
- * Measures about how long values are as JSON, for the limit on what a batch
- * fills in. It stops once a value is longer than `room`, and gives a length
+ * Measures about how long values are as JSON, for the limits on how long a
+ * value is and on what a batch fills in. It stops once a value is longer than `room`, and gives a length
  * over `room` then: what is that long isn't filled in, so its exact length
  * doesn't matter, and it reads no more of it than the room there is. Only
  * listing an object's keys takes as long as the object. That is once for
@@ -332,25 +351,75 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    * that are over it together, the one whose list is ready first runs.
    */
   maxRuns: number | null;
+  /** What the server lets the batch make it do */
+  limits: PipelineLimits;
 }) {
+  const { limits } = opts;
+  const sizeOf = createPipelineSizeOf();
   /** A call, as the calls that read its data see it */
   interface Source {
     /** How the call went: its data, or a rejection if it has none to read */
     outcome: ReturnType<typeof createDeferred<unknown>>;
     /** Its data as the client gets it, which is what a path refers to */
     clientData: Promise<unknown> | null;
+    /** Its place in its chain: 1 for a call that reads none */
+    depth: number;
   }
   const sent = opts.calls.map((call) => {
     const outcome = createDeferred<unknown>();
     // A failed call that nothing reads from isn't an unhandled rejection
     outcome.promise.catch(() => undefined);
-    const source: Source = { outcome, clientData: null };
+    const source: Source = { outcome, clientData: null, depth: 1 };
     return { call, source };
   });
   const plan = parsePipelineReads({
     pipe: opts.pipe,
     sources: sent.map((it) => it.source),
   });
+  // A call reads only earlier calls, so theirs are known by its turn
+  for (const [index, { source }] of sent.entries()) {
+    const reads = plan.get(index);
+    if (reads) {
+      const from = reads.reads.flatMap((read) =>
+        read.kind === 'whole' ? [read.from] : [],
+      );
+      if (reads.kind === 'each') {
+        from.push(reads.list.from);
+      }
+      source.depth = 1 + Math.max(...from.map((it) => it.depth));
+    }
+  }
+  /** Why a call is refused before it reads anything, if it is */
+  function refusalOf(source: Source, reads: PipelineCallReads<Source>) {
+    if (reads.reads.length > limits.maxReadsPerCall) {
+      return overLimit(
+        `This call reads ${reads.reads.length} values, more than \`maxReadsPerCall\` (${limits.maxReadsPerCall}) allows`,
+      );
+    }
+    if (source.depth > limits.maxDepth) {
+      return overLimit(
+        `This call is ${source.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
+      );
+    }
+    return null;
+  }
+  /** Checks a value before it is written into an input */
+  function checkValue(value: unknown) {
+    if (
+      !limits.allowWholeValues &&
+      typeof value === 'object' &&
+      value !== null
+    ) {
+      throw overLimit(
+        `A value this call reads is an object or an array, and \`allowWholeValues\` is false`,
+      );
+    }
+    if (sizeOf(value, limits.maxValueLength) > limits.maxValueLength) {
+      throw overLimit(
+        `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
+      );
+    }
+  }
 
   /** The data of a call that another reads. Rejects if that call failed */
   function dataOf(source: Source) {
@@ -390,7 +459,6 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     runs = taken;
   }
 
-  const sizeOf = createPipelineSizeOf();
   let filledSize = 0;
   /**
    * Counts what a call fills in. It takes it from what the batch may fill in
@@ -403,13 +471,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return {
       /** Counts a value. Throws if the call fills in more than is left */
       add: (value: unknown) => {
-        size += sizeOf(value, pipelineFillLimit - filledSize - size);
-        if (filledSize + size > pipelineFillLimit) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message:
-              'The values a call fills in exceed the most a batch may fill in',
-          });
+        size += sizeOf(value, limits.maxFillSize - filledSize - size);
+        if (filledSize + size > limits.maxFillSize) {
+          throw overLimit(
+            `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
+          );
         }
       },
       take: () => {
@@ -422,7 +488,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   async function inputsOfEach(
     call: TCall,
     reads: Extract<PipelineCallReads<Source>, { kind: 'each' }>,
+    refusal: TRPCError | null,
   ) {
+    if (refusal) {
+      // It runs for no item: it takes no place among the runs
+      runs -= 1;
+      throw refusal;
+    }
     const base = await call.getRawInput();
     const found = readPipelinePath(
       await dataOf(reads.list.from),
@@ -442,15 +514,17 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         const values: unknown[] = [];
         for (const read of reads.reads) {
           if (read.kind === 'whole' && !wholes.has(read)) {
-            wholes.set(
-              read,
-              readPipelinePath(await dataOf(read.from), read.path),
-            );
+            const value = readPipelinePath(await dataOf(read.from), read.path);
+            checkValue(value);
+            wholes.set(read, value);
           }
-          const value =
-            read.kind === 'item'
-              ? readPipelinePath(items[index], read.path)
-              : wholes.get(read);
+          let value: unknown;
+          if (read.kind === 'item') {
+            value = readPipelinePath(items[index], read.path);
+            checkValue(value);
+          } else {
+            value = wholes.get(read);
+          }
           counter.add(value);
           values.push(value);
         }
@@ -478,16 +552,18 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   /** A call with its input filled in when it is read, or its runs per item */
   function pipelined(
     call: TCall,
+    source: Source,
     reads: PipelineCallReads<Source> | undefined,
   ): { call: TCall; each: PipelineEach | null } {
     if (!reads) {
       return { call, each: null };
     }
+    const refusal = refusalOf(source, reads);
     if (reads.kind === 'each') {
       return {
         call,
         each: async (run) => {
-          const inputs = await inputsOfEach(call, reads);
+          const inputs = await inputsOfEach(call, reads, refusal);
           return Promise.all(
             inputs.map(async (input) => {
               try {
@@ -503,11 +579,17 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     let reading: Promise<unknown> | null = null;
     let read: [input: unknown] | null = null;
     const fill = async () => {
+      if (refusal) {
+        // It doesn't run: it takes no place among the runs
+        runs -= 1;
+        throw refusal;
+      }
       let input = await call.getRawInput();
       const counter = fillCounter();
       try {
         for (const read of reads.reads) {
           const value = readPipelinePath(await dataOf(read.from), read.path);
+          checkValue(value);
           counter.add(value);
           input = writePipelinePath({ input, to: read.to, value });
         }
@@ -531,7 +613,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     };
   }
   const calls = sent.map((it, index) => ({
-    ...pipelined(it.call, plan.get(index)),
+    ...pipelined(it.call, it.source, plan.get(index)),
     outcome: it.source.outcome,
   }));
 

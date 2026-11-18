@@ -17,6 +17,7 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
+import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -177,13 +178,15 @@ const pipeliningCtx = (ctxOpts: {
   latency: number;
   /** The server's `maxBatchSize` */
   maxBatchSize: number | undefined;
+  /** The server's `experimental_allowPipelining` */
+  allowPipelining: true | experimental_PipeliningOptions;
   /** The links before the batch link */
   before: TRPCLink<AnyRouter>[];
 }) => {
   const { appRouter, calls } = createAppRouter();
   const resource = testReactResource(appRouter, {
     server: {
-      experimental_allowPipelining: true,
+      experimental_allowPipelining: ctxOpts.allowPipelining,
       maxBatchSize: ctxOpts.maxBatchSize,
     },
     client: (opts) => ({
@@ -1573,6 +1576,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1598,6 +1602,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1635,6 +1640,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1663,6 +1669,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1715,6 +1722,8 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      // It reads a list of ids, a whole value
+      allowPipelining: { allowWholeValues: true },
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1733,11 +1742,46 @@ describe.each([
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
+  test('a list read with .map() is refused by a server without `allowWholeValues`, which says so', async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, results] = await loadHandlesSettled(trpc, {
+      post,
+      tags: fetchEntry(trpc.tag.byIds, {
+        ids: experimental_dataOf(post).tags.map((tag) => tag.id),
+      }),
+    });
+    expect(results.post).toMatchObject({ status: 'success' });
+    expect(results.tags).toMatchObject({
+      status: 'error',
+      error: {
+        code: 'BAD_REQUEST',
+        cause: {
+          message:
+            'A value this call reads is an object or an array, and `allowWholeValues` is false',
+        },
+      },
+    });
+    expect(resource.calls).not.toHaveBeenCalledWith(
+      'tag.byIds',
+      expect.anything(),
+    );
+  });
+
   test('an entry per item is one call that the server runs for every item', async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1777,6 +1821,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1806,6 +1851,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1840,6 +1886,7 @@ describe.each([
       link: scenario.link,
       latency: 20,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -1915,6 +1962,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [
         () => (linkOpts) => {
           ops.push({ path: linkOpts.op.path, input: linkOpts.op.input });
@@ -1956,6 +2004,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [dedupeLink()],
     });
     const trpc = resource.optionsProxyClient;
@@ -1997,6 +2046,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2026,6 +2076,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2048,6 +2099,8 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      // It reads a list of ids, a whole value
+      allowPipelining: { allowWholeValues: true },
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2080,6 +2133,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2129,6 +2183,7 @@ describe.each([
       latency: 0,
       // The post's call and a run for each of its two tags are three
       maxBatchSize: 2,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2150,6 +2205,7 @@ describe.each([
       link: scenario.link,
       latency: 20,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2182,6 +2238,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2244,6 +2301,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2282,6 +2340,7 @@ describe.each([
       link: scenario.link,
       latency: 50,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2318,6 +2377,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2347,6 +2407,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2379,6 +2440,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2409,6 +2471,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2439,6 +2502,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2468,6 +2532,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2539,6 +2604,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2581,6 +2647,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2605,6 +2672,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2649,6 +2717,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2741,6 +2810,7 @@ describe.each([
       latency: 0,
       // The first page and its one item fit. The second page has two
       maxBatchSize: 2,
+      allowPipelining: true,
       before: [],
     });
     const calls = await laterPage(resource, { authorId: 'a', proxy: 'root' });
@@ -2758,6 +2828,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const calls = await laterPage(resource, {
@@ -2775,6 +2846,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const calls = await laterPage(resource, { authorId: 'a', proxy: 'post' });
@@ -2790,6 +2862,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2816,6 +2889,7 @@ describe.each([
       link: scenario.link,
       latency: 0,
       maxBatchSize: undefined,
+      allowPipelining: true,
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -2889,6 +2963,7 @@ describe.each([
     link: scenario.link,
     latency: 0,
     maxBatchSize: undefined,
+    allowPipelining: true as const,
     before: [],
   };
 
