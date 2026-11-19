@@ -110,10 +110,13 @@ export function whenAll<TKey, TData, TError>(
       return;
     }
     const data = new Map<TKey, TData>();
+    let pending = false;
+    // Every unit, also after a pending one: a later one can have failed
     for (const [key, unit] of units) {
       const state = unit.state();
       if (state.status === 'pending') {
-        return;
+        pending = true;
+        continue;
       }
       if (!state.outcome.ok) {
         done = true;
@@ -121,6 +124,9 @@ export function whenAll<TKey, TData, TError>(
         return;
       }
       data.set(key, state.outcome.data);
+    }
+    if (pending) {
+      return;
     }
     done = true;
     run(ok(data));
