@@ -2,10 +2,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Suspense, useEffect, useState } from 'react';
 
 import { pageHead } from '~/seo.ts';
-import { site } from '~/site.ts';
 
 import { Note, SeeItYourself } from '../-components/note.tsx';
 import { showcases } from '../-showcases.ts';
+import { showcaseFileUrl } from '../-source.ts';
 import { LiveBar } from './-components/live-bar.tsx';
 import { Failed, PostList, PostsSkeleton } from './-components/posts.tsx';
 import { meter, type Mode, searchSchema } from './-meter.ts';
@@ -19,12 +19,6 @@ export const Route = createFileRoute('/kitchen-sink/nested/')({
   validateSearch: searchSchema,
   component: NestedPage,
 });
-
-/**
- * The commit this build is from, so the links show the code that runs. It
- * changes this route's own chunk on each deploy, and no other.
- */
-const source = `${site.github}/blob/${__TRPC_SENTRY_RELEASE__ || 'main'}/www/src/routes/kitchen-sink/nested`;
 
 /** Starts a load in `mode`, and counts its requests in the live bar. */
 const load = (mode: Mode) =>
@@ -63,11 +57,14 @@ function NestedPage() {
         . Each author's query reads the post's <code>authorId</code>, and each
         team's query reads the author's <code>teamId</code>: the server fills in
         those inputs itself, so nothing waits for a round trip.{' '}
-        <a className="underline" href={`${source}/-trpc.ts`}>
+        <a className="underline" href={showcaseFileUrl(showcase, '-trpc.ts')}>
           How it works
         </a>{' '}
         ·{' '}
-        <a className="underline" href={`${source}/-server/router.ts`}>
+        <a
+          className="underline"
+          href={showcaseFileUrl(showcase, '-server/router.ts')}
+        >
           The router
         </a>
       </p>
