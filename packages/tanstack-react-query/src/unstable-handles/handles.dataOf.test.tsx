@@ -2366,6 +2366,88 @@ describe('a list fetch that streams its items', () => {
       run: staleRun,
     });
   });
+  test("an item's result that comes after its list's fetch got its data and another started is not written", async () => {
+    const releaser = { release: (): void => undefined };
+    const released = new Promise<void>((resolve) => {
+      releaser.release = resolve;
+    });
+    await using resource = pipeliningCtx({
+      link: httpBatchStreamLink,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
+      ),
+    });
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The next run for `u0` waits: its result streams after its list's
+    let staleRun: number | null = null;
+    resource.held.mockImplementation((id, run) => {
+      if (id !== 'u0' || staleRun !== null) {
+        return Promise.resolve();
+      }
+      staleRun = run;
+      return released;
+    });
+    const authorKey = trpc.author.held.queryKey({ id: 'u0' });
+    const u0Runs = () =>
+      resource.held.mock.calls.filter(([id]) => id === 'u0').length;
+
+    // The first refetch gets its data while `u0`'s query waits for its result
+    await observer.refetch();
+    expect(staleRun).not.toBeNull();
+    expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
+      'fetching',
+    );
+
+    // A second refetch has the same row: its query for `u0` joins the one
+    // that waits, and the server runs its own call for `u0`
+    const runsBefore = u0Runs();
+    await observer.refetch();
+    await vi.waitFor(() => {
+      expect(u0Runs()).toBe(runsBefore + 1);
+    });
+    expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
+      'fetching',
+    );
+
+    releaser.release();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The second refetch's result, not the first's, and no request of its own
+    expect(resource.queryClient.getQueryData(authorKey)).toMatchObject({
+      id: 'u0',
+    });
+    expect(resource.queryClient.getQueryData(authorKey)).not.toMatchObject({
+      run: staleRun,
+    });
+    expect(u0Runs()).toBe(runsBefore + 1);
+  });
 });
 
 describe('satisfies TRPCLoadEntries', () => {

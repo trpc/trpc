@@ -33,6 +33,7 @@ import type { EntryQueryOptions, ProxyContext } from './entry';
 import { optionsOf, ownContextOf, queryClientOf, readProxy } from './entry';
 import type { ErrorOf } from './entryError';
 import { attempt } from './outcome';
+import type { PipelinedOutcome } from './pipelined';
 import { notRun, outcomeOfItem, withPipelinedResult } from './pipelined';
 import type {
   AnyTRPCHandle,
@@ -486,6 +487,14 @@ function readItemQueries(
 }
 
 /**
+ * The result of an item's query from the latest list fetch that loaded it.
+ * A later fetch of the list that has the same item joins the item's query if
+ * it is still waiting for an earlier fetch's result: the item then takes the
+ * later fetch's result
+ */
+const latestItemResults = new WeakMap<object, Promise<PipelinedOutcome>>();
+
+/**
  * Makes every fetch of a list also load what its items load, in the same
  * request, when the link pipelines. Each item's query is then in the cache
  * when the item's component reads it.
@@ -561,24 +570,37 @@ export function withItemQueries(opts: {
             // A row whose query can't start, such as for an input no query
             // key can hold, fails by itself: the row that reads it gets that
             // error, and the others load
-            void attempt(() =>
-              queryClient.prefetchQuery(
+            void attempt(() => {
+              const options = optionsOf(queries.procedure, 'query')(
+                finishInput(queries, item),
+                undefined,
+              );
+              const itemQuery = queryClient
+                .getQueryCache()
+                .build(queryClient, options);
+              const result: Promise<PipelinedOutcome> = outcomeOfItem(call, [
+                index,
+              ]).then((outcome) => {
+                // A later list fetch that has the item joined its query,
+                // which waited for this result: the later one is the item's
+                const latest = latestItemResults.get(itemQuery);
+                if (latest !== undefined && latest !== result) {
+                  return latest;
+                }
+                // Of a list fetch that another replaced since, it is not
+                // the item's: the item's query makes its own request
+                return isCurrent() ? outcome : notRun;
+              });
+              latestItemResults.set(itemQuery, result);
+              return queryClient.prefetchQuery(
                 withPipelinedResult({
-                  options: optionsOf(queries.procedure, 'query')(
-                    finishInput(queries, item),
-                    undefined,
-                  ),
-                  // Of a list fetch that another replaced since, it is
-                  // not the item's: the item's query makes its own request,
-                  // also for a fetch of a later list that joined it
-                  result: outcomeOfItem(call, [index]).then((outcome) =>
-                    isCurrent() ? outcome : notRun,
-                  ),
+                  options,
+                  result,
                   // The server filled in the inputs from the same list
                   sameInput: () => Promise.resolve(true),
                 }) as unknown as FetchQueryOptions,
-              ),
-            );
+              );
+            });
           }
         }, nothing);
       }
