@@ -1,3 +1,4 @@
+import { Button } from '@shared/ui/components/button';
 import {
   Item,
   ItemActions,
@@ -91,12 +92,23 @@ function PostList(props: { readonly handles: PostListHandles }) {
   );
   const posts = postsQuery.data.pages.flatMap((page) => page.items);
 
-  // Loads the next page when the end of the list scrolls into view
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
+  // Loads the next page when the end of the list scrolls into view. Not
+  // after it failed: that waits for "Try again"
+  const {
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  } = postsQuery;
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const end = endRef.current;
-    if (end === null || !hasNextPage || isFetchingNextPage) {
+    if (
+      end === null ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      isFetchNextPageError
+    ) {
       return;
     }
     const observer = new IntersectionObserver((entries) => {
@@ -106,7 +118,7 @@ function PostList(props: { readonly handles: PostListHandles }) {
     });
     observer.observe(end);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
   return (
     <>
@@ -182,7 +194,22 @@ function PostList(props: { readonly handles: PostListHandles }) {
         ))}
       </ItemGroup>
       <div className="text-center text-sm text-muted-foreground" ref={endRef}>
-        {hasNextPage ? 'Loading more…' : 'That’s all of them.'}
+        {isFetchNextPageError && !isFetchingNextPage ? (
+          <span className="inline-flex items-center gap-2">
+            The next page didn’t load.
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void fetchNextPage()}
+            >
+              Try again
+            </Button>
+          </span>
+        ) : hasNextPage ? (
+          'Loading more…'
+        ) : (
+          'That’s all of them.'
+        )}
       </div>
     </>
   );
