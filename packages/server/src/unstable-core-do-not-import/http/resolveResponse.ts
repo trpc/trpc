@@ -395,8 +395,18 @@ function streamedShape(
   return value === notReadBack ? shape.plain : value;
 }
 
+/**
+ * The error of a run or a list of a call that runs for every item, or of the
+ * whole call: its shape as the response sends it, and the error it is of, for
+ * the status and `responseMeta`
+ */
+interface PipelinedRunError {
+  error: TRPCError;
+  shape: SentShape;
+}
+
 /** The runs of a call that runs for every item, as far as they are ready */
-type PipelineItemsNode = Awaited<PipelineRuns<SentShape, SentValue>>;
+type PipelineItemsNode = Awaited<PipelineRuns<PipelinedRunError, SentValue>>;
 
 /**
  * The runs of a call for every item, for a response that streams: the items
@@ -762,11 +772,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                     type: proc._def.type,
                     req: opts.req,
                   });
-                  return pipelinedErrorShape({
+                  return {
                     error,
-                    input: failure.input,
-                    call,
-                  });
+                    shape: pipelinedErrorShape({
+                      error,
+                      input: failure.input,
+                      call,
+                    }),
+                  };
                 },
               })
             : null;
@@ -1076,7 +1089,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             return streamedItems(result.items, (outcome) =>
               'error' in outcome
                 ? pipelineErrorEnvelope(
-                    streamedShape(config.transformer.output, outcome.error),
+                    streamedShape(
+                      config.transformer.output,
+                      outcome.error.shape,
+                    ),
                     outcome.pipeline ?? null,
                   )
                 : { result: { data: outcome.result.data.value } },
@@ -1215,7 +1231,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             if (error) {
               return errorOf(error);
             }
-            if (result.items) {
+            const { items } = result;
+            if (items && 'error' in items) {
+              // The call failed as a whole, such as when the server refused
+              // every run of it: the status and `responseMeta` get its error,
+              // and the response its envelope, with the server's mark
+              return {
+                error: items.error.error,
+                meta: { error: items.error.shape.value },
+                sent: pipelineErrorEnvelope(
+                  sentOf(items.error.shape),
+                  items.pipeline ?? null,
+                ),
+              };
+            }
+            if (items) {
               // A call for every item has no data of its own: each run's was
               // serialized as it ran, and is sent as it was checked.
               // `responseMeta` gets a result, with the runs as its data, and
@@ -1224,17 +1254,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 error: undefined,
                 meta: {
                   result: {
-                    data: await settledItems(result.items, (outcome) =>
+                    data: await settledItems(items, (outcome) =>
                       'error' in outcome
-                        ? { error: outcome.error.value }
+                        ? { error: outcome.error.shape.value }
                         : { result: { data: outcome.result.data.value } },
                     ),
                   },
                 },
-                sent: await settledItems(result.items, (outcome) =>
+                sent: await settledItems(items, (outcome) =>
                   'error' in outcome
                     ? pipelineErrorEnvelope(
-                        sentOf(outcome.error),
+                        sentOf(outcome.error.shape),
                         outcome.pipeline ?? null,
                       )
                     : { result: { data: sentOf(outcome.result.data) } },

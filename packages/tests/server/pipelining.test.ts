@@ -2916,6 +2916,61 @@ describe('a call of a pipelined batch, on its own', () => {
       items: { 0: { result: { data: { id: 't1' } } } },
     });
   });
+
+  test('a call for every item none of whose runs the server lets fill in is an error for the status and `responseMeta`', async () => {
+    const t = initTRPC.create();
+    const authors = vi.fn();
+    const router = t.router({
+      post: t.procedure.query(() => ({
+        tags: [{ id: 't1' }, { id: 't2' }],
+      })),
+      author: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        authors(opts.input.id);
+        return { id: opts.input.id };
+      }),
+    });
+    const meta: { data: unknown[]; errors: TRPCError[] }[] = [];
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], path: ['id'] }],
+          },
+        },
+      }),
+      router,
+      // `{"id":"t1"}` is 11 characters of JSON: no run fits
+      experimental_allowPipelining: { maxFillSize: 5 },
+      responseMeta: (opts) => {
+        meta.push({ data: opts.data, errors: opts.errors });
+        return {};
+      },
+    });
+
+    const message =
+      'What this call fills in goes over `maxFillSize` (5 characters of JSON for the batch)';
+    // One call ran, and the server refused the other as a whole
+    expect(res.status).toBe(207);
+    expect(meta).toHaveLength(1);
+    expect(meta[0]!.errors).toHaveLength(1);
+    expect(meta[0]!.errors[0]).toBeInstanceOf(TRPCError);
+    expect(meta[0]!.errors[0]).toMatchObject({ code: 'BAD_REQUEST', message });
+    // `responseMeta` gets the error's shape, without the server's mark
+    expect(meta[0]!.data[1]).toEqual({
+      error: expect.objectContaining({
+        message,
+        data: expect.objectContaining({ code: 'BAD_REQUEST' }),
+      }),
+    });
+    expect((await res.json())[1]).toEqual({
+      error: expect.objectContaining({ message }),
+      pipeline: 'not-run',
+    });
+    expect(authors).not.toHaveBeenCalled();
+  });
 });
 
 /** A pipelined batch as a GET request, with an input for calls 1 and 2 */
