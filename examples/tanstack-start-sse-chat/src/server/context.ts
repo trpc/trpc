@@ -1,4 +1,3 @@
-import { hasSlowQueries } from '~/lib/blog-settings';
 import { getSession } from './auth';
 
 /**
@@ -12,8 +11,6 @@ export const createContext = async (opts: { req: Request }) => {
 
   return {
     session,
-    /** The blog's "Slow queries" switch is on */
-    slowQueries: hasSlowQueries(opts.req),
   };
 };
 

@@ -2,7 +2,6 @@ import { createIsomorphicFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
   createTRPCClient,
-  experimental_pipelining,
   httpBatchStreamLink,
   httpSubscriptionLink,
   localLink,
@@ -15,8 +14,6 @@ import {
   type TRPCOptionsProxy,
 } from '@trpc/tanstack-react-query';
 import SuperJSON from 'superjson';
-import { slowQueriesHeaders } from '~/lib/blog-settings';
-import { meteredFetch } from '~/lib/request-meter';
 import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
@@ -60,15 +57,6 @@ const getLinks = createIsomorphicFn()
            * @see https://trpc.io/docs/v11/data-transformers
            */
           transformer: SuperJSON,
-          // Lets a query read its input from another query's data, in one
-          // request. The blog pages load a post and its author this way
-          experimental_pipelining: experimental_pipelining(),
-          // Queries go as POST, so the Network tab shows their inputs as JSON
-          methodOverride: 'POST',
-          // The blog's "Slow queries" setting, from its search params
-          headers: () => slowQueriesHeaders(),
-          // Only for the request meter on the blog pages: it counts the requests
-          fetch: meteredFetch,
         }),
       }),
     ];
