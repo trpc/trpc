@@ -33,7 +33,7 @@ import type { EntryQueryOptions, ProxyContext } from './entry';
 import { optionsOf, ownContextOf, queryClientOf, readProxy } from './entry';
 import type { ErrorOf } from './entryError';
 import { attempt } from './outcome';
-import { outcomeOfItem, withPipelinedResult } from './pipelined';
+import { notRun, outcomeOfItem, withPipelinedResult } from './pipelined';
 import type {
   AnyTRPCHandle,
   HandleType,
@@ -514,8 +514,19 @@ export function withItemQueries(opts: {
         .getQueryCache()
         .get(queryClient.defaultQueryOptions(opts.options).queryHash);
       const fetch = query?.promise;
-      const isActive = () =>
+      /** Whether the fetch got its data: its items' results are its own */
+      const done = { ok: false };
+      void fetch?.then(() => {
+        done.ok = true;
+      }, nothing);
+      /**
+       * Whether an item's result is still the list's: its fetch is the
+       * query's and runs, or got its data. Checked again as each item's
+       * result arrives, which can be after another fetch replaced it
+       */
+      const isCurrent = () =>
         !query ||
+        done.ok ||
         (query.promise === fetch && query.state.fetchStatus !== 'idle');
       for (const queries of opts.itemQueries) {
         // One call, which the server runs for every item of the list. Without
@@ -539,7 +550,7 @@ export function withItemQueries(opts: {
         }
         // Before the list's data reaches the components that read the items
         void list.then((data) => {
-          if (!isActive()) {
+          if (!isCurrent()) {
             return;
           }
           const listData = readPipelinePath(data, queries.list, null);
@@ -557,7 +568,12 @@ export function withItemQueries(opts: {
                     finishInput(queries, item),
                     undefined,
                   ),
-                  result: outcomeOfItem(call, [index]),
+                  // Of a list fetch that another replaced since, it is
+                  // not the item's: the item's query makes its own request,
+                  // also for a fetch of a later list that joined it
+                  result: outcomeOfItem(call, [index]).then((outcome) =>
+                    isCurrent() ? outcome : notRun,
+                  ),
                   // The server filled in the inputs from the same list
                   sameInput: () => Promise.resolve(true),
                 }) as unknown as FetchQueryOptions,

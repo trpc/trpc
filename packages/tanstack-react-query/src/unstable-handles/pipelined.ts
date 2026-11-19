@@ -71,7 +71,8 @@ export type PipelinedOutcome =
   | { readonly kind: 'error'; readonly error: unknown }
   | { readonly kind: 'notRun' };
 
-const notRun: PipelinedOutcome = { kind: 'notRun' };
+/** A call that didn't run, for the query to make its request itself */
+export const notRun: PipelinedOutcome = { kind: 'notRun' };
 
 /**
  * What a call that runs once settled to: its data, or its own error if it

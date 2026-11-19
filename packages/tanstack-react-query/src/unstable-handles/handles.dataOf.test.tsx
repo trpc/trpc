@@ -55,6 +55,11 @@ import type { TRPCOptionsProxy } from '..';
 const createAppRouter = () => {
   const t = initTRPC.create();
   const calls = vi.fn();
+  /** Awaited by every run of `author.held`, with its id and its run's number */
+  const held = vi.fn<(id: string, run: number) => Promise<void>>(() =>
+    Promise.resolve(),
+  );
+  let heldRuns = 0;
   let changes = 0;
   const appRouter = t.router({
     post: t.router({
@@ -169,6 +174,14 @@ const createAppRouter = () => {
         calls('author.byId', opts.input);
         return { id: opts.input.id, name: 'KATT', teamId: 'team1' };
       }),
+      /** An author, with the number of the run that answered */
+      held: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query(async (opts) => {
+          const run = ++heldRuns;
+          await held(opts.input.id, run);
+          return { id: opts.input.id, run };
+        }),
       /** An author, or `null` for no id: its input takes `null` */
       maybe: t.procedure
         .input(z.object({ id: z.string().nullable() }))
@@ -221,7 +234,7 @@ const createAppRouter = () => {
         }),
     }),
   });
-  return { appRouter, calls };
+  return { appRouter, calls, held };
 };
 
 const ctx = () => {
@@ -241,7 +254,7 @@ const pipeliningCtx = (ctxOpts: {
   /** The links before the batch link */
   before: TRPCLink<AnyRouter>[];
 }) => {
-  const { appRouter, calls } = createAppRouter();
+  const { appRouter, calls, held } = createAppRouter();
   const resource = testReactResource(appRouter, {
     server: {
       experimental_allowPipelining: ctxOpts.allowPipelining,
@@ -263,7 +276,7 @@ const pipeliningCtx = (ctxOpts: {
       ],
     }),
   });
-  return { ...resource, calls, appRouter };
+  return { ...resource, calls, held, appRouter };
 };
 
 /** Shares the request of queries with the same path and input, like a dedupe link */
@@ -2195,6 +2208,122 @@ describe('without the options', () => {
       expect(req.url).toContain('batch=1');
       expect(req.url).not.toContain('pipe=');
     }
+  });
+});
+
+describe('a list fetch that streams its items', () => {
+  test("an item's result that comes after another fetch replaced its list's is not written", async () => {
+    const releaser = { release: (): void => undefined };
+    const released = new Promise<void>((resolve) => {
+      releaser.release = resolve;
+    });
+    /** Whether to hold back the result of the next request for the second page */
+    const holding = { nextSecondPage: false };
+    const holdSecondPage: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) => {
+        const cursor = (op.input as { cursor?: unknown } | undefined)?.cursor;
+        const hold =
+          op.path === 'post.paged' && cursor === 1 && holding.nextSecondPage;
+        if (hold) {
+          holding.nextSecondPage = false;
+        }
+        return observable((observer) =>
+          next(op).subscribe({
+            next(value) {
+              if (hold) {
+                void released.then(() => observer.next(value));
+              } else {
+                observer.next(value);
+              }
+            },
+            error: (error) => observer.error(error),
+            complete() {
+              if (hold) {
+                void released.then(() => observer.complete());
+              } else {
+                observer.complete();
+              }
+            },
+          }),
+        );
+      };
+    await using resource = pipeliningCtx({
+      link: httpBatchStreamLink,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [holdSecondPage],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
+      ),
+    });
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The next run for `u0` waits: its result streams after its list's
+    let staleRun: number | null = null;
+    resource.held.mockImplementation((id, run) => {
+      if (id !== 'u0' || staleRun !== null) {
+        return Promise.resolve();
+      }
+      staleRun = run;
+      return released;
+    });
+    const authorKey = trpc.author.held.queryKey({ id: 'u0' });
+
+    // A refetch of both pages. Once the first page is in, `u0`'s query
+    // waits for its result, and, while its second page waits, another
+    // refetch replaces this one
+    holding.nextSecondPage = true;
+    void observer.refetch();
+    await vi.waitFor(() => {
+      expect(staleRun).not.toBeNull();
+      expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
+        'fetching',
+      );
+    });
+    const replaced = observer.refetch();
+    // The replacement's first page is in: its query for `u0` joins the one
+    // that waits, and its second page has gone out
+    await vi.waitFor(() => {
+      expect(
+        resource.held.mock.calls.filter(([id]) => id === 'u1'),
+      ).toHaveLength(3);
+    });
+    releaser.release();
+    await replaced;
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // Not the result of the request whose fetch was replaced
+    expect(resource.queryClient.getQueryData(authorKey)).toMatchObject({
+      id: 'u0',
+    });
+    expect(resource.queryClient.getQueryData(authorKey)).not.toMatchObject({
+      run: staleRun,
+    });
   });
 });
 
