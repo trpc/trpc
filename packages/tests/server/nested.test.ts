@@ -1292,6 +1292,34 @@ describe('types', () => {
     });
   });
 
+  test('`experimental_settle()` keeps a tuple and a readonly array in data as they are', () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      pair: t.procedure.query((): [string, number] => ['ada', 1]),
+      names: t.procedure.query((): readonly string[] => ['ada']),
+    });
+    const tuples = {} as TRPCClient<typeof router>;
+    check(() => {
+      expectTypeOf(
+        experimental_settle(experimental_nested(tuples, (q) => q.pair.query())),
+      ).resolves.toEqualTypeOf<[string, number]>();
+      expectTypeOf(
+        experimental_settle(
+          experimental_nested(tuples, (q) => q.names.query()),
+        ),
+      ).resolves.toEqualTypeOf<readonly string[]>();
+      expectTypeOf(
+        experimental_settle(
+          experimental_nested(tuples, (q) =>
+            q.names.query().map(() => ({ pair: q.pair.query() })),
+          ),
+        ),
+      ).resolves.toEqualTypeOf<
+        experimental_Node<string, { pair: [string, number] }>[]
+      >();
+    });
+  });
+
   test('errors', () => {
     check(() => {
       void experimental_nested(client, (q) =>

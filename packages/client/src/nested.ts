@@ -191,8 +191,9 @@ export type experimental_Settled<TResult> =
         TNode,
         { [K in keyof TEdges]: experimental_Settled<Awaited<TEdges[K]>> }
       >
-    : TResult extends readonly (infer TItem)[]
-      ? experimental_Settled<TItem>[]
+    : TResult extends readonly unknown[]
+      ? // Each position of a tuple, and `readonly`, as they are
+        { [K in keyof TResult]: experimental_Settled<TResult[K]> }
       : TResult;
 
 /** A list's item, in a path: the item a run is for */
