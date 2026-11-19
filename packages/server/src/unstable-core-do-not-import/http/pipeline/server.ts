@@ -266,6 +266,26 @@ function sourceFailed() {
   });
 }
 
+/**
+ * An error of its own, from what a read that many runs or calls share threw,
+ * for each that the read fails. A `TRPCError` it threw is copied, with its
+ * code, message, cause and stack: each that gets one, such as in `onError`,
+ * can change it
+ */
+function errorOfOwn(cause: unknown) {
+  const error = getTRPCErrorFromUnknown(cause);
+  if (error !== cause) {
+    return error;
+  }
+  const copy = new TRPCError({
+    code: error.code,
+    message: error.message,
+    cause: error.cause,
+  });
+  copy.stack = error.stack;
+  return copy;
+}
+
 /** What a call that reads data that is still to come gets */
 function stillToComeUnreadable() {
   return new TRPCError({
@@ -1035,9 +1055,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         // What else throws, such as a getter or what JSON can't carry, fails
         // each run that reads it
         error:
-          cause instanceof Refused
-            ? cause.refusal
-            : () => getTRPCErrorFromUnknown(cause),
+          cause instanceof Refused ? cause.refusal : () => errorOfOwn(cause),
       };
     }
   }

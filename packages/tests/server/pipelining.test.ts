@@ -3807,6 +3807,60 @@ describe('the calls that read the same failed call or refused value', () => {
       expect(errors[0]).not.toBe(errors[1]);
     },
   );
+
+  test('each fail with an error of their own, for a value whose getter throws a `TRPCError`', async () => {
+    const identity = {
+      serialize: (it: unknown) => it,
+      deserialize: (it: unknown) => it,
+    };
+    // Reads `post`'s data back with an `id` getter that throws
+    const getters = initTRPC.create({
+      transformer: {
+        input: identity,
+        output: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) =>
+            isObject(it) && 'id' in it
+              ? Object.defineProperty({}, 'id', {
+                  enumerable: true,
+                  get: () => {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: 'no' });
+                  },
+                })
+              : it,
+        },
+      },
+    });
+    const withGetters = getters.router({
+      post: getters.procedure.query(() => ({ id: 'ada' })),
+      echo: getters.procedure.input(z.unknown()).query((opts) => opts.input),
+    });
+    const errors: TRPCError[] = [];
+    const read = { reads: [{ to: ['id'], from: 0, path: ['id'] }] };
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,echo,echo',
+        pipe: { 1: read, 2: read },
+      }),
+      router: withGetters,
+      experimental_allowPipelining: true,
+      onError: (opts) => {
+        if (opts.path === 'echo') {
+          errors.push(opts.error);
+        }
+      },
+    });
+    const json = await res.json();
+
+    expect(json[1]).toMatchObject({ error: { data: { code: 'FORBIDDEN' } } });
+    expect(json[2]).toMatchObject({ error: { data: { code: 'FORBIDDEN' } } });
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).not.toBe(errors[1]);
+    for (const error of errors) {
+      expect(error).toMatchObject({ code: 'FORBIDDEN', message: 'no' });
+    }
+  });
 });
 
 describe.each([
