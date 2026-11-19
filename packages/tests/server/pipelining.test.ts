@@ -3022,6 +3022,40 @@ describe('a pipelined batch that does not stream', () => {
       type: 'query',
     });
   });
+
+  test('a call whose data has a getter that throws fails by itself, not the response', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      post: t.procedure.query(() => ({ authorId: 'u1' })),
+      broken: t.procedure.input(z.object({ id: z.string() })).query(() => ({
+        get id(): string {
+          throw new Error('Cannot read');
+        },
+      })),
+    });
+    const onError = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,broken',
+        pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } },
+      }),
+      router,
+      experimental_allowPipelining: true,
+      onError,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toEqual({ result: { data: { authorId: 'u1' } } });
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'INTERNAL_SERVER_ERROR', path: 'broken' } },
+    });
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]![0]).toMatchObject({
+      path: 'broken',
+      input: { id: 'u1' },
+    });
+  });
 });
 
 describe('a call for every item', () => {

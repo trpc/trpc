@@ -1192,13 +1192,34 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
-      (res): RPCResult => {
+      (res, index): RPCResult => {
         const [error, result] = res;
         if (error) {
           return res;
         }
 
-        if (isDataStream(result.data)) {
+        let streamLike: boolean;
+        try {
+          streamLike = isDataStream(result.data);
+        } catch (cause) {
+          if (!pipeline) {
+            throw cause;
+          }
+          // A getter of the data that throws, in a pipelined batch: it fails
+          // this call, as what JSON can't carry does, not the response
+          const call = info.calls[index]!;
+          const failure = getTRPCErrorFromUnknown(cause);
+          opts.onError?.({
+            error: failure,
+            path: call.path,
+            input: call.result(),
+            ctx: ctxManager.valueOrUndefined(),
+            type: call.procedure?._def.type ?? 'unknown',
+            req: opts.req,
+          });
+          return [failure, undefined];
+        }
+        if (streamLike) {
           return [
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
