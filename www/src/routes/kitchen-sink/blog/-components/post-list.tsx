@@ -17,6 +17,7 @@ import type { PostListHandles } from '../-entries.ts';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevNote, DevNoteText } from './note.tsx';
 import { usePostLink } from '../-links.ts';
+import { loadsNextPageOnScroll } from '../-next-page.ts';
 import { useBlogPreload } from './settings.tsx';
 
 const rowClass =
@@ -53,8 +54,7 @@ export function PostList(props: { readonly handles: PostListHandles }) {
   );
   const posts = postsQuery.data.pages.flatMap((page) => page.items);
 
-  // Loads the next page when the end of the list scrolls into view. Not
-  // after it failed: that waits for "Try again"
+  // Loads the next page when the end of the list scrolls into view
   const {
     hasNextPage,
     isFetchingNextPage,
@@ -66,9 +66,11 @@ export function PostList(props: { readonly handles: PostListHandles }) {
     const end = endRef.current;
     if (
       end === null ||
-      !hasNextPage ||
-      isFetchingNextPage ||
-      isFetchNextPageError
+      !loadsNextPageOnScroll({
+        hasNextPage,
+        isFetchingNextPage,
+        isFetchNextPageError,
+      })
     ) {
       return;
     }
