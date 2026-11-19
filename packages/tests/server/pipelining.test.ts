@@ -3812,6 +3812,31 @@ describe('the calls that read the same failed call or refused value', () => {
     },
   );
 
+  test("a call refused before it ran is marked so, when the formatter's shape has a `toJSON` that drops the mark", async () => {
+    const formatted = initTRPC.create({
+      // A shape whose JSON is the shape as the formatter made it
+      errorFormatter: ({ shape }) => ({ ...shape, toJSON: () => shape }),
+    });
+    const withToJSON = formatted.router({
+      list: formatted.procedure.query(() => ({ items: [{ id: 'ada' }] })),
+      echo: formatted.procedure.input(z.unknown()).query((opts) => opts.input),
+    });
+    const read = {
+      reads: [{ to: ['id'], from: 0, path: ['items', null, 'id'] }],
+    };
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({ paths: 'list,echo', pipe: { 1: read } }),
+      router: withToJSON,
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+  });
+
   test('each fail with an error of their own, for a value whose getter throws a `TRPCError`', async () => {
     const identity = {
       serialize: (it: unknown) => it,
