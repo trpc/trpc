@@ -20,4 +20,10 @@ export const showcases = [
     path: '/kitchen-sink/handles',
     title: 'Handles',
   },
+  {
+    description:
+      'A blog whose pages load a post, its author and the author’s team’s posts, each needing the one before, in one request. A meter shows each request and when each result arrives.',
+    path: '/kitchen-sink/blog',
+    title: 'Blog in one request',
+  },
 ] as const;

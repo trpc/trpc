@@ -29,6 +29,9 @@ const paths = [
   '/kitchen-sink/handles?post=2',
   // A tRPC batch: the path has dots and commas.
   '/kitchen-sink/handles/api/post.byId,post.comments',
+  '/kitchen-sink/blog',
+  '/kitchen-sink/blog/skeletons-in-the-ui?slow=true',
+  '/kitchen-sink/blog/api/blog.postBySlug,blog.authorById,blog.posts',
 ];
 
 /** The site's routes on trpc.io in production, where pages are indexed. */
