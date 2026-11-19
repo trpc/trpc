@@ -6,32 +6,27 @@ import {
 import { render } from '@testing-library/react';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import * as React from 'react';
 import { z } from 'zod';
 
 describe('original regression', () => {
-  const ctx = konn()
-    .beforeEach(() => {
-      const { router, procedure } = initTRPC.create();
+  function setup() {
+    const { router, procedure } = initTRPC.create();
 
-      const appRouter = router({
-        deeply: {
-          nested: {
-            greeting: procedure.query(() => 'hello'),
-            echo: procedure.input(z.string()).query((opts) => opts.input),
-          },
+    const appRouter = router({
+      deeply: {
+        nested: {
+          greeting: procedure.query(() => 'hello'),
+          echo: procedure.input(z.string()).query((opts) => opts.input),
         },
-      });
+      },
+    });
 
-      return getServerAndReactClient(appRouter);
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    return getServerAndReactClient(appRouter);
+  }
 
   test('utils proxy in dependency array', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     const nonce = '_______________nonce_______________';
     let effectCount = 0;
@@ -64,6 +59,7 @@ describe('original regression', () => {
   });
 
   test('call twice', async () => {
+    await using ctx = setup();
     const client = ctx.opts.client;
 
     const nested = client.deeply.nested;
@@ -73,83 +69,79 @@ describe('original regression', () => {
 });
 
 describe('RSC regression', () => {
-  const ctx = konn()
-    .beforeEach(() => {
-      // mock of React.cache deduplication
-      const cache = <T extends (...args: any[]) => any>(fn: T) => {
-        const cache = new Map<string, ReturnType<T>>();
-        return (...args: Parameters<T>) => {
-          const key = JSON.stringify(args);
-          if (cache.has(key)) {
-            return cache.get(key);
-          }
-          const result = fn(...args);
-          cache.set(key, result);
-          return result;
-        };
+  function setup() {
+    // mock of React.cache deduplication
+    const cache = <T extends (...args: any[]) => any>(fn: T) => {
+      const cache = new Map<string, ReturnType<T>>();
+      return (...args: Parameters<T>) => {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) {
+          return cache.get(key);
+        }
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
       };
+    };
 
-      const t = initTRPC.create();
-      const postByIdInvokations = vi.fn();
-      const appRouter = t.router({
-        post: t.router({
-          byId: t.procedure
-            .input(
-              z.object({
-                id: z.string(),
-              }),
-            )
-            .query((opts) => {
-              postByIdInvokations({
-                input: opts.input,
-              });
-
-              return `__result${opts.input.id}` as const;
+    const t = initTRPC.create();
+    const postByIdInvokations = vi.fn();
+    const appRouter = t.router({
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
             }),
-        }),
-      });
+          )
+          .query((opts) => {
+            postByIdInvokations({
+              input: opts.input,
+            });
 
-      const ctx = getServerAndReactClient(appRouter);
+            return `__result${opts.input.id}` as const;
+          }),
+      }),
+    });
 
-      const serverQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            // Since queries are prefetched on the server, we set a stale time so that
-            // queries aren't immediately refetched on the client
-            staleTime: 1000 * 30,
-          },
-          dehydrate: {
-            // include pending queries in dehydration
-            shouldDehydrateQuery: (query) =>
-              defaultShouldDehydrateQuery(query) ||
-              query.state.status === 'pending',
-          },
+    const ctx = getServerAndReactClient(appRouter);
+
+    const serverQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          // Since queries are prefetched on the server, we set a stale time so that
+          // queries aren't immediately refetched on the client
+          staleTime: 1000 * 30,
         },
-      });
+        dehydrate: {
+          // include pending queries in dehydration
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) ||
+            query.state.status === 'pending',
+        },
+      },
+    });
 
-      const createTRPCContext = cache(() => ({}));
-      const getQueryClient = cache(() => serverQueryClient);
-      const serverClient = t.createCallerFactory(appRouter)(createTRPCContext);
+    const createTRPCContext = cache(() => ({}));
+    const getQueryClient = cache(() => serverQueryClient);
+    const serverClient = t.createCallerFactory(appRouter)(createTRPCContext);
 
-      const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
-        serverClient,
-        getQueryClient,
-      );
+    const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
+      serverClient,
+      getQueryClient,
+    );
 
-      return {
-        ...ctx,
-        trpc,
-        HydrateClient,
-        getQueryClient,
-        postByIdInvokations,
-      };
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    return {
+      ...ctx,
+      trpc,
+      HydrateClient,
+      getQueryClient,
+      postByIdInvokations,
+    };
+  }
 
   test('rsc prefetch helpers', async () => {
+    await using ctx = setup();
     const { client, App, trpc, HydrateClient } = ctx;
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch');

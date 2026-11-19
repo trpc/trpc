@@ -81,7 +81,7 @@ test('next() skips an observer cancelled by an earlier observer', () => {
 
 describe('a throwing observer', () => {
   test('next() still notifies the later observers, and rethrows the error asynchronously', () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const subject = behaviorSubject(0);
     const error = new Error('observer failed');
     subject.subscribe({
@@ -95,12 +95,12 @@ describe('a throwing observer', () => {
     expect(() => subject.next(1)).not.toThrow();
     expect(second.mock.calls).toEqual([[0], [1]]);
     expect(subject.get()).toBe(1);
-    expect(vi.getTimerCount()).toBe(1);
-    expect(() => vi.runAllTimers()).toThrow(error);
+    expect(timers.getTimerCount()).toBe(1);
+    expect(() => timers.runAllTimers()).toThrow(error);
   });
 
   test('next() rethrows each observer error separately', () => {
-    using _timers = fakeTimersResource();
+    using timers = fakeTimersResource();
     const subject = behaviorSubject(0);
     const errors = [new Error('first failed'), new Error('second failed')];
     for (const error of errors) {
@@ -115,8 +115,8 @@ describe('a throwing observer', () => {
 
     expect(() => subject.next(1)).not.toThrow();
     expect(last).toHaveBeenLastCalledWith(1);
-    expect(vi.getTimerCount()).toBe(2);
-    expect(() => vi.advanceTimersToNextTimer()).toThrow(errors[0]);
-    expect(() => vi.advanceTimersToNextTimer()).toThrow(errors[1]);
+    expect(timers.getTimerCount()).toBe(2);
+    expect(() => timers.advanceTimersToNextTimer()).toThrow(errors[0]);
+    expect(() => timers.advanceTimersToNextTimer()).toThrow(errors[1]);
   });
 });

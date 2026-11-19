@@ -40,7 +40,8 @@
     "react": "catalog:www",
     "react-dom": "catalog:www",
     "satori": "0.63.2",
-    "sonner": "catalog:www"
+    "sonner": "catalog:www",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@effect/platform-node": "catalog:",

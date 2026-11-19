@@ -35,8 +35,14 @@ const trpcIo = 'https://trpc.io';
  */
 export const atTrpcIo = new URL(site.url).origin === trpcIo;
 
+/**
+ * The kitchen sink's showcases (`src/routes/kitchen-sink`), rendered on
+ * request (`build/on-demand.ts`) and indexed nowhere.
+ */
+export const kitchenSinkPath = '/kitchen-sink';
+
 /** The paths no search engine may index, on any host. */
-export const unindexedPaths: ReadonlyArray<string> = [];
+export const unindexedPaths: ReadonlyArray<string> = [kitchenSinkPath];
 
 /** The paths served only to whoever has a link (`build/hidden-paths.ts`). */
 export const hiddenPaths: ReadonlyArray<string> = [];

@@ -4,7 +4,6 @@ import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { inferProcedureParams } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
 const ignoreErrors = async (fn: () => unknown) => {

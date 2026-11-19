@@ -3,41 +3,36 @@ import { useQuery } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
 const post = { id: 1, text: 'foo' };
 const posts = [post];
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.number(),
-            }),
-          )
-          .query(({ input }) => posts.find((post) => post.id === input.id)),
-        all: t.procedure.query(() => posts),
-      }),
+function setup() {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
+          }),
+        )
+        .query(({ input }) => posts.find((post) => post.id === input.id)),
+      all: t.procedure.query(() => posts),
+    }),
 
-      greeting: t.procedure.query(async () => {
-        await new Promise((res) => setTimeout(res, 500));
-        return 'Hello trpc';
-      }),
-    });
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+    greeting: t.procedure.query(async () => {
+      await new Promise((res) => setTimeout(res, 500));
+      return 'Hello trpc';
+    }),
+  });
+  return getServerAndReactClient(appRouter);
+}
 
 test('invalidate with filter', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const greetingSpy = vi.fn();
   const postSpy = vi.fn();
@@ -110,6 +105,7 @@ test('invalidate with filter', async () => {
 });
 
 test('tanstack query queries are invalidated', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -155,6 +151,7 @@ test('tanstack query queries are invalidated', async () => {
 });
 
 test('mixed providers with more "advanced" filter', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {

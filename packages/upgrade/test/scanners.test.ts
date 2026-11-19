@@ -1,19 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, expect, it } from 'vitest';
+import { tempDirResource } from './__tempDir';
+import { expect, it } from 'vitest';
 import { scanProject } from '../src/lib/ast/scanners';
 
-let dir: string | null = null;
-afterEach(() => {
-  if (dir) rmSync(dir, { recursive: true, force: true });
-  dir = null;
-});
-
-/** A project with these files, and a tsconfig that includes them */
-function project(files: Record<string, string>) {
-  const root = mkdtempSync(join(tmpdir(), 'trpc-upgrade-scan-'));
-  dir = root;
+/** Writes a project with these files, and a tsconfig that includes them */
+function writeProject(root: string, files: Record<string, string>) {
   writeFileSync(
     join(root, 'tsconfig.json'),
     JSON.stringify({ compilerOptions: { strict: true }, include: ['*.ts'] }),
@@ -21,13 +13,14 @@ function project(files: Record<string, string>) {
   for (const [name, source] of Object.entries(files)) {
     writeFileSync(join(root, name), source);
   }
-  return root;
 }
 
 const router = `export type AppRouter = { router: true };\n`;
 
 it('finds the router type of the only setup', () => {
-  const root = project({
+  using fixture = tempDirResource('trpc-upgrade-scan-');
+  const root = fixture.dir;
+  writeProject(root, {
     'router.ts': router,
     'trpc.ts': `import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './router';
@@ -42,7 +35,9 @@ export const trpc = createTRPCReact<AppRouter>();
 });
 
 it('finds none when another setup has a router type it cannot follow', () => {
-  const root = project({
+  using fixture = tempDirResource('trpc-upgrade-scan-');
+  const root = fixture.dir;
+  writeProject(root, {
     'router.ts': router,
     'trpc.ts': `import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './router';
@@ -57,7 +52,9 @@ export const other = createTRPCReact<api.AppRouter>();
 });
 
 it('finds none when another setup calls the factory by an alias', () => {
-  const root = project({
+  using fixture = tempDirResource('trpc-upgrade-scan-');
+  const root = fixture.dir;
+  writeProject(root, {
     'router.ts': router,
     'other-router.ts': `export type OtherRouter = { other: true };\n`,
     'trpc.ts': `import { createTRPCReact } from '@trpc/react-query';
@@ -73,7 +70,9 @@ export const other = createReact<OtherRouter>();
 });
 
 it("finds the setup's name when it calls the factory by an alias", () => {
-  const root = project({
+  using fixture = tempDirResource('trpc-upgrade-scan-');
+  const root = fixture.dir;
+  writeProject(root, {
     'router.ts': router,
     'trpc.ts': `import { createTRPCReact as createReact } from '@trpc/react-query';
 import type { AppRouter } from './router';

@@ -7,6 +7,7 @@ import type {
   CreateHTTPHandlerOptions,
 } from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { initTRPC } from './../../../server/src/unstable-core-do-not-import/initTRPC';
@@ -56,19 +57,14 @@ function createClient(port: number, address: string) {
   });
 }
 
-let server: ReturnType<typeof createHTTPServer>;
-
 async function startServer(
   opts: CreateHTTPHandlerOptions<any> & { host?: string },
-): Promise<{
-  port: number;
-  address: string;
-}> {
-  server = createHTTPServer(opts);
+) {
+  const server = createHTTPServer(opts);
 
   // NOTE: Using custom hostname requires awaiting for `listening` event.
   // Prior to this event, it's not possible to retrieve resolved `port` and `address` values.
-  return new Promise((resolve, reject) => {
+  const info = await new Promise<AddressInfo>((resolve, reject) => {
     server.addListener('error', (err) => {
       reject(err);
     });
@@ -79,18 +75,22 @@ async function startServer(
     });
     server.listen(0, opts.host ?? '127.0.0.1');
   });
+
+  return makeAsyncResource(
+    { port: info.port, address: info.address },
+    () =>
+      new Promise<void>((resolve) => {
+        server.closeAllConnections();
+        server.close(() => resolve());
+      }),
+  );
 }
 
-afterEach(async () => {
-  if (server) {
-    server.close();
-  }
-});
-
 test('simple query', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const result = await client.hello.query({ who: 'test' });
@@ -102,9 +102,10 @@ test('simple query', async () => {
 });
 
 test('batched requests in body work correctly', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const res = await Promise.all([
@@ -115,9 +116,10 @@ test('batched requests in body work correctly', async () => {
 });
 
 test('error query', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   try {
@@ -129,7 +131,7 @@ test('error query', async () => {
 });
 
 test('middleware intercepts request', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     middleware: (_req, res, _next) => {
       res.statusCode = 419;
       res.end();
@@ -137,6 +139,7 @@ test('middleware intercepts request', async () => {
     },
     router,
   });
+  const { port, address } = $;
 
   const result = await fetch(`http://${address}:${port}`, {
     headers: {
@@ -147,12 +150,13 @@ test('middleware intercepts request', async () => {
 });
 
 test('middleware passes the request', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     middleware: (_req, _res, next) => {
       return next();
     },
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const result = await client.hello.query({ who: 'test' });
@@ -164,10 +168,11 @@ test('middleware passes the request', async () => {
 });
 
 test('custom host', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     host: findPossibleLocalAddress(),
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   expect(address).not.toEqual('127.0.0.1');
@@ -182,9 +187,10 @@ test('custom host', async () => {
 
 // https://github.com/trpc/trpc/issues/5522
 test('force content-type on mutations', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
 
   const mutUrl = `http://${address}:${port}/mut`;
   {
@@ -234,10 +240,11 @@ test('force content-type on mutations', async () => {
 });
 
 test('basePath without a trailing slash', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
     basePath: '/trpc',
   });
+  const { port, address } = $;
   const input = encodeURIComponent(JSON.stringify({ who: 'test' }));
 
   for (const path of ['/trpc/hello', '/trpc/hello/']) {
@@ -250,9 +257,10 @@ test('basePath without a trailing slash', async () => {
 });
 
 test('bad url does not crash server', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
 
   const res = await fetch(`http://${address}:${port}`, {
     method: 'GET',

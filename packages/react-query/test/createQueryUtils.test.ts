@@ -4,16 +4,9 @@ import { createAppRouter } from './__testHelpers';
 import { skipToken } from '@tanstack/react-query';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('createTRPCQueryUtils()', () => {
   test('ensureData()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -50,6 +43,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('fetchQuery()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -59,6 +53,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('fetchInfiniteQuery()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -87,6 +82,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('prefetchQuery()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -113,6 +109,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('prefetchInfiniteQuery()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -142,6 +139,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('invalidateQueries()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -161,6 +159,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('resetQueries()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -187,6 +186,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('refetchQueries()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -204,6 +204,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('setQueriesData()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -219,6 +220,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('cancelQuery()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -234,6 +236,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('getQueryData()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -249,6 +252,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('set and get infinite query data', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -291,6 +295,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('setMutationDefaults() and getMutationDefaults()', async () => {
+    await using factory = createAppRouter();
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
@@ -327,6 +332,7 @@ describe('createTRPCQueryUtils()', () => {
   });
 
   test('queryOptions() and infiniteQueryOptions() with skipToken', async () => {
+    await using factory = createAppRouter();
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({
       queryClient,

@@ -2,63 +2,58 @@ import { getServerAndReactClient } from './__reactHelpers';
 import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.string().optional(),
-            }),
-          )
-          .query(() => '__infResult' as const),
-        paginated: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().nullish(),
-            }),
-          )
-          .query(({ input }) => {
-            const cursor = input.cursor ?? 0;
-            return { cursor, nextCursor: cursor + 1 };
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
           }),
-        optionalCursor: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().optional(),
-            }),
-          )
-          .query(({ input }) => {
-            const cursor = input.cursor ?? 0;
-            return { cursor, nextCursor: cursor + 1 };
+        )
+        .query(() => '__result' as const),
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.string().optional(),
           }),
-        throwsError: t.procedure.query(() => {
-          throw new Error('__error');
+        )
+        .query(() => '__infResult' as const),
+      paginated: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+          }),
+        )
+        .query(({ input }) => {
+          const cursor = input.cursor ?? 0;
+          return { cursor, nextCursor: cursor + 1 };
         }),
+      optionalCursor: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().optional(),
+          }),
+        )
+        .query(({ input }) => {
+          const cursor = input.cursor ?? 0;
+          return { cursor, nextCursor: cursor + 1 };
+        }),
+      throwsError: t.procedure.query(() => {
+        throw new Error('__error');
       }),
-    });
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('fetch', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -69,6 +64,7 @@ test('fetch', async () => {
 });
 
 test('fetchInfinite', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -81,6 +77,7 @@ test('fetchInfinite', async () => {
 });
 
 test('fetchInfinite with initialCursor and pages', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -105,6 +102,7 @@ test('fetchInfinite with initialCursor and pages', async () => {
 });
 
 test('fetchInfinite without initialCursor on an optional cursor', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -128,6 +126,7 @@ test('fetchInfinite without initialCursor on an optional cursor', async () => {
 });
 
 test('prefetch and dehydrate', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -139,6 +138,7 @@ test('prefetch and dehydrate', async () => {
 });
 
 test('prefetchInfinite and dehydrate', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -150,6 +150,7 @@ test('prefetchInfinite and dehydrate', async () => {
 });
 
 test('prefetch faulty query and dehydrate', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: opts.client,
@@ -162,6 +163,7 @@ test('prefetch faulty query and dehydrate', async () => {
 });
 
 test('prefetch and dehydrate', async () => {
+  await using ctx = setup();
   const { opts } = ctx;
   const ssg = createServerSideHelpers({
     client: ctx.client.createClient(opts.trpcClientOptions),
