@@ -5507,7 +5507,7 @@ describe('a transformer that keeps what JSON drops', () => {
     });
 
     // The data is for the input the client has: `0`
-    expect(Object.is(handles.sign.input.value, 0)).toBe(true);
+    expect(Object.is(handles.sign.input?.value, 0)).toBe(true);
     expect(data.sign).toBe('not -0');
   });
 

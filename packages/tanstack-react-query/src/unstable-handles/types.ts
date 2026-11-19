@@ -50,38 +50,52 @@ export type HandleQueryKey<
   : [path: string[], opts?: { input?: TInput; type?: TType }];
 
 /**
- * A serializable reference to a query, from `loadHandles()`.
- * Pass it to a component and read it with `fromHandle(trpc, handle)`.
+ * Whether a handle's entry had `skipToken` for its input, and its input if not.
+ * `skipped` tells them apart: a skipped handle has no input.
  */
-export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
+type HandleInput<TInput> =
+  | {
+      /** The query's input. The key is absent when the input is `undefined`. */
+      readonly input: TInput;
+      readonly skipped?: undefined;
+    }
+  | {
+      /** None: its entry's input was `skipToken` */
+      readonly input?: undefined;
+      /**
+       * Only for an entry whose input is `skipToken`: its query is disabled,
+       * and `fromHandle()` gives options with `skipToken`. Read it with
+       * `useQuery`.
+       */
+      readonly skipped: true;
+    };
+
+/** What a query's handle has, whether it is skipped or not */
+interface TRPCQueryHandleBase<TDef extends ResolverDef> {
   /**
    * Type-only: never present at runtime. Required, so only
    * `loadHandles` creates handles.
    */
   readonly [handleDef]: TDef & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
-  /** The query's input. The key is absent when the input is `undefined`. */
-  readonly input: TDef['input'];
   /**
    * Only when an `experimental_entryPerItem()` entry is loaded for the items of
    * a list in the data: what that entry loads for an item. When the query is
    * fetched again, it loads that for its items, in the same request.
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
-  /**
-   * Only for an entry whose input is `skipToken`: its query is disabled, and
-   * `fromHandle()` gives options with `skipToken`. Read it with `useQuery`.
-   */
-  readonly skipped?: true;
 }
 
 /**
- * A serializable reference to an infinite query, from `loadHandles()`.
- * Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
+ * A serializable reference to a query, from `loadHandles()`.
+ * Pass it to a component and read it with `fromHandle(trpc, handle)`.
+ * Its `input` is there unless `skipped` is: check `skipped` before reading it.
  */
-export interface TRPCInfiniteQueryHandle<
-  TDef extends ResolverDef = ResolverDef,
-> {
+export type TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> =
+  TRPCQueryHandleBase<TDef> & HandleInput<TDef['input']>;
+
+/** What an infinite query's handle has, whether it is skipped or not */
+interface TRPCInfiniteQueryHandleBase<TDef extends ResolverDef> {
   /**
    * Type-only: never present at runtime. Required, so only
    * `loadHandles` creates handles.
@@ -92,11 +106,7 @@ export interface TRPCInfiniteQueryHandle<
     InfiniteHandleInput<TDef['input']>,
     'infinite'
   >;
-  /** The query's input, without `cursor` and `direction` */
-  readonly input: InfiniteHandleInput<TDef['input']>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
-  /** Only for an entry whose input is `skipToken`, as on a query's handle */
-  readonly skipped?: true;
   /**
    * Only when an `experimental_entryPerItem()` entry is loaded for the items of
    * every page: what that entry loads for an item. A page that is fetched
@@ -104,6 +114,16 @@ export interface TRPCInfiniteQueryHandle<
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
 }
+
+/**
+ * A serializable reference to an infinite query, from `loadHandles()`.
+ * Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
+ * Its `input`, without `cursor` and `direction`, is there unless `skipped`
+ * is, as on a query's handle.
+ */
+export type TRPCInfiniteQueryHandle<TDef extends ResolverDef = ResolverDef> =
+  TRPCInfiniteQueryHandleBase<TDef> &
+    HandleInput<InfiniteHandleInput<TDef['input']>>;
 
 /**
  * What an `experimental_entryPerItem()` entry loads for an item: the handle of

@@ -426,7 +426,7 @@ export const postRoute = createRoute({
 
 Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.post.byId, skipToken)`, or `prefetchInfiniteEntry` the same way. Nothing starts, and the entry still has a handle:
 
-- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: it never fetches, and its `fetchStatus` is `'idle'`. Its `status` is `'pending'`, unless the cache has data for its key: `skipToken` doesn't clear that, so a query without an input can show what an earlier fetch got. Check `handle.skipped` to tell a skipped entry apart. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
+- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: it never fetches, and its `fetchStatus` is `'idle'`. Its `status` is `'pending'`, unless the cache has data for its key: `skipToken` doesn't clear that, so a query without an input can show what an earlier fetch got. It has no `input`: check `handle.skipped` to tell a skipped entry apart, which also types `handle.input` as there. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
 - **Only a prefetch entry takes it.** A load waits for the data of an ensure or fetch entry, which would never come, so `ensureEntry(procedure, skipToken)` is a type error.
 - **An entry that reads its data with `experimental_dataOf()` fails**, as there is none: the load rejects, and says so.
 
@@ -714,7 +714,7 @@ const [aQuery, bQuery] = useSuspenseQueries({
 ```
 
 - Only `loadHandles` makes handles. A hand-written object doesn't type-check, and `fromHandle` throws on it.
-- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`.
+- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`. A [skipped handle](#conditional-queries) has none: check `handle.skipped` before reading it.
 - Reads share cache entries with `trpc.<path>.queryOptions(input)`.
 - `handle.queryKey` carries no data type, so the handle stays serializable. For a typed key, use `fromHandle(trpc, handle).queryKey` or `trpc.post.byId.queryKey(handle.input)`.
 
@@ -732,6 +732,8 @@ With `useQuery`, no `Suspense` boundary is needed:
 To change the input in the component, for a search term the URL can't hold, call the procedure and start from the handle's input:
 
 ```tsx
+// Only a skipped handle, whose entry had `skipToken`, has no input
+if (props.comments.skipped) throw new Error('Comments need a post');
 const [term, setTerm] = useState(props.comments.input.term);
 const commentsQuery = useSuspenseInfiniteQuery(
   trpc.post.comments.infiniteQueryOptions(

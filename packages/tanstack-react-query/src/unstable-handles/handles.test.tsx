@@ -370,6 +370,33 @@ describe('types', () => {
     void wrong2;
   });
 
+  test('a skipped handle has no input, and `skipped` tells it apart from one that has', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    const [{ post, list }] = await loadHandles(trpc, {
+      post: prefetchEntry(trpc.post.byId, skipToken),
+      list: prefetchInfiniteEntry(trpc.post.list, skipToken),
+    });
+
+    // @ts-expect-error a skipped handle has no input
+    void post.input.id;
+    // @ts-expect-error nor does a skipped infinite handle
+    void list.input.limit;
+
+    const inputOf = (handle: typeof post) =>
+      handle.skipped ? handle.input : handle.input.id;
+    expectTypeOf(inputOf).returns.toEqualTypeOf<string | undefined>();
+    const listInputOf = (handle: typeof list) =>
+      handle.skipped ? handle.input : handle.input.limit;
+    expectTypeOf(listInputOf).returns.toEqualTypeOf<number | undefined>();
+    const skippedInputOf = (handle: typeof post) =>
+      handle.skipped ? handle.input : null;
+    expectTypeOf(skippedInputOf).returns.toEqualTypeOf<undefined | null>();
+    const skippedListInputOf = (handle: typeof list) =>
+      handle.skipped ? handle.input : null;
+    expectTypeOf(skippedListInputOf).returns.toEqualTypeOf<undefined | null>();
+  });
+
   test('fromHandle takes any router level, loadHandles a router', () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
@@ -1360,14 +1387,15 @@ describe('runtime', () => {
         cursor: 4,
       }),
     });
-    expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
+    // Absent from a skipped handle: `skipped` tells them apart
+    expectTypeOf(post.input).toEqualTypeOf<{ id: string } | undefined>();
     expect(post.input).toEqual({ id: '1' });
     // A plain tuple with a typed input: no `unknown` and no tag, so router serializability checks accept it
     expectTypeOf(post.queryKey).toEqualTypeOf<
       [path: string[], opts?: { input?: { id: string }; type?: 'query' }]
     >();
 
-    expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
+    expectTypeOf(list.input).toEqualTypeOf<{ limit: number } | undefined>();
     expectTypeOf(list.queryKey).toEqualTypeOf<
       [path: string[], opts?: { input?: { limit: number }; type?: 'infinite' }]
     >();
