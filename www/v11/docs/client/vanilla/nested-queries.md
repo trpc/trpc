@@ -275,7 +275,7 @@ Its response has a result for every call, by index, as any batch's:
 - **The server only reads what it sends back anyway**: the data of a call in the same request, as the client gets it.
 - **A call runs once everything it reads is ready.** With `httpBatchStreamLink`, each result arrives as soon as it is ready, in any order.
 - **Each result is the data its query would get on its own**, with its filled-in input. The client works that input out from the first call's data, as the server did.
-- **Only a request with a blank is sent this way**, as `batch=pipeline`. Every other request is sent as it always was, also with the options on.
+- **Only a request with a call the server makes is sent this way**, as `batch=pipeline`: a call with a blank, or one that runs for every item of a list, as below, even with no blank. Every other request is sent as it always was, also with the options on.
 
 A call can also run once for every item of a list. The [post list](#map) loads the author of every post, and could load each author's team's posts too:
 
