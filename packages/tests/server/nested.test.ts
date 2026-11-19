@@ -620,6 +620,57 @@ describe.each([
     expect(teams.mock.calls).toEqual([['ada']]);
   });
 
+  test("a query in a `.map()` of a list in the data of a call the server refused, with an input that reads nothing, asks by itself once that call's data is there", async () => {
+    const t = initTRPC.create();
+    const tags = vi.fn();
+    const appRouter = t.router({
+      // Longer than the server's `maxValueLength`: no call can read it
+      page: t.procedure.query(() => ({ items: [{ note: 'x'.repeat(1100) }] })),
+      owner: t.procedure
+        .input(z.object({ note: z.string() }))
+        .query(() => ({ tags: ['a', 'b'] })),
+      tag: t.procedure.input(z.object({ kind: z.string() })).query((opts) => {
+        tags(opts.input.kind);
+        return opts.input.kind;
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const items = await experimental_nested(ctx.client, (q) =>
+      q.page.query().items.map((item) => {
+        const owner = q.owner.query({ note: item.note });
+        return {
+          owner,
+          tags: owner.tags.map(() => ({
+            tag: q.tag.query({ kind: 'constant' }),
+          })),
+        };
+      }),
+    );
+
+    expect(await items[0]!.edges.owner).toEqual({ tags: ['a', 'b'] });
+    const ownerTags = await items[0]!.edges.tags;
+    expect(await Promise.all(ownerTags.map((it) => it.edges.tag))).toEqual([
+      'constant',
+      'constant',
+    ]);
+    expect(tags.mock.calls).toEqual([['constant'], ['constant']]);
+  });
+
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
     await using ctx = setup({ pipelining: false });
 

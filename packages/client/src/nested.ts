@@ -1003,13 +1003,15 @@ export function experimental_nested<
   /**
    * Whether a run's error is what the server sends in place of a run that
    * reads one it didn't make, or that failed: an error the server marked
-   * `source-failed` beside it, in its envelope, and a call whose data the
-   * input reads that the server refused or that failed on the server, for
-   * the run's items. Any other error is the run's own, at once, whatever its
-   * code or its `data`. The server sends a failed source before the runs
-   * that read it, so this resolves at the first one, and doesn't wait for a
-   * source still to come. An error the client made, such as for a result it
-   * couldn't deserialize, doesn't say the server didn't run it
+   * `source-failed` beside it, in its envelope, and a call the run reads
+   * that the server refused or that failed on the server, for the run's
+   * items. What a run reads is what its input reads, and the list it runs
+   * for, which is in a call's data too. Any other error is the run's own, at
+   * once, whatever its code or its `data`. The server sends a failed source
+   * before the runs that read it, so this resolves at the first one, and
+   * doesn't wait for a source still to come. An error the client made, such
+   * as for a result it couldn't deserialize, doesn't say the server didn't
+   * run it
    */
   function blockedBySource(
     call: Call,
@@ -1019,7 +1021,10 @@ export function experimental_nested<
     if (run.mark !== 'source-failed') {
       return Promise.resolve(false);
     }
-    const sources = new Set(call.holes.map((hole) => hole.ref.call));
+    const sources = new Set([
+      ...call.holes.map((hole) => hole.ref.call),
+      ...call.frame.map((scope) => scope.list.call),
+    ]);
     return anyTrue(
       Array.from(sources, (source) =>
         settles(
