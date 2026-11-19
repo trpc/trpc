@@ -2200,6 +2200,7 @@ describe('without the options', () => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
     calls.mockClear();
+    resource.onRequestSpy.mockClear();
 
     const observer = new InfiniteQueryObserver(resource.queryClient, {
       ...fromHandle(trpc, handles.posts, { getNextPageParam }),
@@ -2210,6 +2211,13 @@ describe('without the options', () => {
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
+
+    // The page, without its author's call, and then the author by itself
+    expect(
+      resource.onRequestSpy.mock.calls.map(([req]) =>
+        req.url?.replace(/\?.*/, ''),
+      ),
+    ).toEqual(['/post.paged', '/author.byId']);
 
     const lastPost = data.data!.pages[1]!.items[0]!;
     expect(
