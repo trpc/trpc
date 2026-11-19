@@ -818,7 +818,6 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   limits: PipelineLimits;
 }) {
   const { limits } = opts;
-  const sizeOf = createPipelineSizeOf();
   /** How a run went, settled once: its data, or that it has none to read */
   type RunOutcome = { ok: true; data: unknown } | { ok: false };
   /** A run of a call, as the calls that read it see it */
@@ -948,15 +947,15 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
     );
   /**
-   * A value as a call gets it written into its input: serialized once through
-   * the transformer of inputs, as a client would send it, and read back from
-   * that one serialization. The value it was read from isn't read again, so
-   * what its getters, its `toJSON` or a proxy give is read once: what is
-   * measured is what is written, and nothing runs its code after. Refused
-   * first if it is an object or an array and `allowWholeValues` is false,
-   * as it was read
+   * A value as a call gets it written into its input: its JSON, serialized
+   * once through the transformer of inputs, as a client would send it. The
+   * value it was read from isn't read again, so what its getters, its
+   * `toJSON` or a proxy give is read once. The limits measure this JSON, and
+   * the input is decoded from it: see `fill`. `undefined` for what JSON
+   * writes nothing for. Refused first if it is an object or an array and
+   * `allowWholeValues` is false, as it was read
    */
-  function asWritten(value: unknown): unknown {
+  function asWritten(value: unknown): string | undefined {
     if (
       !limits.allowWholeValues &&
       typeof value === 'object' &&
@@ -964,23 +963,35 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     ) {
       throw new Refused(wholeValueRefused);
     }
-    const json = JSON.stringify(opts.transformer.input.serialize(value));
+    return JSON.stringify(opts.transformer.input.serialize(value));
+  }
+  /** How long a value is as it is written: its JSON. Nothing for none */
+  const lengthOf = (json: string | undefined) => json?.length ?? 0;
+  /** Checks a value, as it is written, before it goes into an input */
+  function checkValue(json: string | undefined) {
+    if (lengthOf(json) > limits.maxValueLength) {
+      throw valueTooLong();
+    }
+  }
+  /**
+   * What the transformer of inputs reads from JSON, as it reads a request's
+   * input: once for each JSON, and what it gives is read by nothing but what
+   * it goes into
+   */
+  function decoded(json: string | undefined): unknown {
     return json === undefined
       ? undefined
       : opts.transformer.input.deserialize(JSON.parse(json));
-  }
-  /** Checks a value, as it is written, before it goes into an input */
-  function checkValue(value: unknown) {
-    if (sizeOf(value, limits.maxValueLength) > limits.maxValueLength) {
-      throw valueTooLong();
-    }
   }
   /**
    * The value at `path` in `data`, for a call to read, as it is written: see
    * `asWritten`. Refused before it makes a list of items that would be
    * refused: the list is as long as the one it is of, which can be long
    */
-  function readValue(data: unknown, path: PipelinePath): Read<unknown> {
+  function readValue(
+    data: unknown,
+    path: PipelinePath,
+  ): Read<string | undefined> {
     let room = limits.maxValueLength;
     try {
       return {
@@ -1025,7 +1036,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return run.clientData;
   }
   /** What runs read of each run, by path: each value is read once */
-  const valuesOfRuns = new WeakMap<Run, Map<string, Promise<Read<unknown>>>>();
+  const valuesOfRuns = new WeakMap<
+    Run,
+    Map<string, Promise<Read<string | undefined>>>
+  >();
   /**
    * The value at `path` of the run at `indexes` of a call that `source` is
    * read by. Rejects as `runOf` does
@@ -1204,17 +1218,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     if (!comesBackAsSent({ transformer: opts.transformer.input, input })) {
       throw cannotSendAsTheClient();
     }
-    return input.decoded;
-  }
-  /**
-   * A filled-in input as a call gets it when a client fills it in and sends
-   * it: through the transformer of inputs, all of it, so what is not there
-   * is `null` in a list and left out of an object where JSON makes it so. It
-   * is a value of its own too, so a call that changes its input in place
-   * changes nothing that another call, or another run, reads.
-   */
-  function asSent(input: unknown, measure: (length: number) => void) {
-    return overTheWire(opts.transformer.input, input, measure);
+    return input;
   }
 
   /**
@@ -1238,8 +1242,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    * input is made: a run whose input can't be made takes none.
    */
   async function fill(run: {
-    /** The call's input as the transformer read it */
-    base: PipelineDecodedInput;
+    /** The call's input, as the client sent it and as it was read */
+    base: PipelineCallInput;
     reads: PipelineCallReads<Source>;
     place: Place;
     /**
@@ -1281,19 +1285,30 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         spend(fills, size);
       }
     };
-    const count = (value: unknown) => charge(sizeOf(value, room - size));
-    let input = run.base.value;
+    // What the client sent, and each value, decoded from its JSON once:
+    // nothing decoded is measured
+    let input = decoded(run.base.sent.json);
     for (const [at, read] of run.reads.reads.entries()) {
-      const value = values[at];
-      checkValue(value);
+      const json = values[at];
+      checkValue(json);
       if (!run.perItem) {
-        count(value);
+        charge(lengthOf(json));
       }
-      input = writePipelinePath({ input, to: read.to, value });
+      input = writePipelinePath({ input, to: read.to, value: decoded(json) });
     }
-    // All of a run's input for every item, with the keys its values are
-    // written under, as the transformer writes it: before it is read back
-    input = asSent(input, run.perItem ? charge : () => undefined);
+    // The input as a client sends it filled in: serialized once, all of it,
+    // so what is not there is `null` in a list and left out of an object
+    // where JSON makes it so, and decoded once from that, as any request's
+    // input is. It is a value of its own too, so a call that changes its
+    // input in place changes nothing that another call, or another run,
+    // reads. A run for every item counts all of it, with the keys its values
+    // are written under. A call that runs once counts at least what its
+    // input grew by
+    const sent = lengthOf(run.base.sent.json);
+    const read = size;
+    input = overTheWire(opts.transformer.input, input, (length) =>
+      charge(run.perItem ? length : Math.max(0, length - sent - read)),
+    );
     spend(fills, size);
     return input;
   }
@@ -1316,7 +1331,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       }) => TError;
     }): PipelineRuns<TError, TData> {
       const { error } = run;
-      let base: PipelineDecodedInput;
+      let base: PipelineCallInput;
       try {
         if (refusal) {
           throw refusal;
@@ -1352,7 +1367,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             lease.giveBack(1);
             ran.outcome.resolve({ ok: false });
             return {
-              error: error({ cause, input: base.value, notRun: false }),
+              error: error({ cause, input: base.decoded.value, notRun: false }),
             };
           }
           try {
@@ -1421,7 +1436,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               return {
                 error: error({
                   cause: node.error,
-                  input: base.value,
+                  input: base.decoded.value,
                   notRun: false,
                 }),
               };
@@ -1452,7 +1467,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         refused.every((cause) => refusalErrors.has(cause))
       ) {
         return {
-          error: error({ cause: refused[0], input: base.value, notRun: true }),
+          error: error({
+            cause: refused[0],
+            input: base.decoded.value,
+            notRun: true,
+          }),
         };
       }
       return response(ran);
