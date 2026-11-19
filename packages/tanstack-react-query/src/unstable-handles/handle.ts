@@ -13,7 +13,10 @@ import {
   pipeCall,
 } from '@trpc/client/unstable-internals';
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
-import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  readPipelinePath,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { DecorateRouterKeyable } from '../internals/createOptionsProxy';
 import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
@@ -496,13 +499,50 @@ function readItemQueries(
   });
 }
 
+/** An item's result from one fetch of its list */
+interface ItemResult {
+  result: Promise<PipelinedOutcome>;
+  /**
+   * Makes it the result of a later fetch of the list that has the same
+   * item, at once, unless it has settled: its item's query, which waits for
+   * it, then gets that fetch's result as soon as it comes
+   */
+  follow: (newer: Promise<PipelinedOutcome>) => void;
+}
+
 /**
  * The result of an item's query from the latest list fetch that loaded it.
  * A later fetch of the list that has the same item joins the item's query if
  * it is still waiting for an earlier fetch's result: the item then takes the
- * later fetch's result
+ * later fetch's result, without waiting for the earlier one
  */
-const latestItemResults = new WeakMap<object, Promise<PipelinedOutcome>>();
+const latestItemResults = new WeakMap<object, ItemResult>();
+
+function itemResult(opts: {
+  outcome: Promise<PipelinedOutcome>;
+  /** Whether the outcome is still the item's when it comes */
+  isCurrent: () => boolean;
+}): ItemResult {
+  const deferred = createDeferred<
+    PipelinedOutcome | Promise<PipelinedOutcome>
+  >();
+  const state = { settled: false };
+  const settle = (value: PipelinedOutcome | Promise<PipelinedOutcome>) => {
+    if (!state.settled) {
+      state.settled = true;
+      deferred.resolve(value);
+    }
+  };
+  void opts.outcome.then((outcome) =>
+    // Of a list fetch that another replaced since, it is not the item's:
+    // the item's query makes its own request
+    settle(opts.isCurrent() ? outcome : notRun),
+  );
+  return {
+    result: deferred.promise.then((value) => value),
+    follow: settle,
+  };
+}
 
 /**
  * Makes every fetch of a list also load what its items load, in the same
@@ -594,24 +634,19 @@ export function withItemQueries(opts: {
               const itemQuery = queryClient
                 .getQueryCache()
                 .build(queryClient, defaulted);
-              const result: Promise<PipelinedOutcome> = outcomeOfItem(call, [
-                index,
-              ]).then((outcome) => {
-                // A later list fetch that has the item joined its query,
-                // which waited for this result: the later one is the item's
-                const latest = latestItemResults.get(itemQuery);
-                if (latest !== undefined && latest !== result) {
-                  return latest;
-                }
-                // Of a list fetch that another replaced since, it is not
-                // the item's: the item's query makes its own request
-                return isCurrent() ? outcome : notRun;
+              const own = itemResult({
+                outcome: outcomeOfItem(call, [index]),
+                isCurrent,
               });
-              latestItemResults.set(itemQuery, result);
+              // An earlier list fetch's result for the item, which its query
+              // may wait for, is this one's from now on: this fetch joins
+              // that query, so this result is the item's
+              latestItemResults.get(itemQuery)?.follow(own.result);
+              latestItemResults.set(itemQuery, own);
               return queryClient.prefetchQuery(
                 withPipelinedResult({
                   options,
-                  result,
+                  result: own.result,
                   // The server filled in the inputs from the same list
                   sameInput: () => Promise.resolve(true),
                 }) as unknown as FetchQueryOptions,

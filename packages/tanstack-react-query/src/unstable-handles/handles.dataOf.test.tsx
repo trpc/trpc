@@ -2467,9 +2467,6 @@ describe('a list fetch that streams its items', () => {
     await vi.waitFor(() => {
       expect(u0Runs()).toBe(runsBefore + 1);
     });
-    expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
-      'fetching',
-    );
 
     releaser.release();
     await vi.waitFor(() => {
@@ -2484,6 +2481,91 @@ describe('a list fetch that streams its items', () => {
       run: staleRun,
     });
     expect(u0Runs()).toBe(runsBefore + 1);
+  });
+
+  test("a later fetch's result for an item fills its query while an earlier fetch's result for it is still held", async () => {
+    const releaser = { release: (): void => undefined };
+    const released = new Promise<void>((resolve) => {
+      releaser.release = resolve;
+    });
+    await using resource = pipeliningCtx({
+      link: httpBatchStreamLink,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
+      ),
+    });
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The next run for `u0` is held until the end of the test
+    let heldRun: number | null = null;
+    resource.held.mockImplementation((id, run) => {
+      if (id !== 'u0' || heldRun !== null) {
+        return Promise.resolve();
+      }
+      heldRun = run;
+      return released;
+    });
+    const authorKey = trpc.author.held.queryKey({ id: 'u0' });
+    const u0Runs = () => resource.held.mock.calls.filter(([id]) => id === 'u0');
+
+    // The first refetch gets its data while `u0`'s query waits for its result
+    await observer.refetch();
+    expect(heldRun).not.toBeNull();
+    expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
+      'fetching',
+    );
+    const runsBefore = u0Runs().length;
+
+    // A second refetch has the same row. Its result for `u0` fills the
+    // query, though the first refetch's is still held
+    await observer.refetch();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.getQueryState(authorKey)?.fetchStatus).toBe(
+        'idle',
+      );
+    });
+    const newerRun = u0Runs().at(-1)?.[1];
+    expect(u0Runs()).toHaveLength(runsBefore + 1);
+    expect(newerRun).not.toBe(heldRun);
+    expect(resource.queryClient.getQueryData(authorKey)).toEqual({
+      id: 'u0',
+      run: newerRun,
+    });
+
+    // The held result comes, and changes nothing
+    releaser.release();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.queryClient.getQueryData(authorKey)).toEqual({
+      id: 'u0',
+      run: newerRun,
+    });
+    expect(u0Runs()).toHaveLength(runsBefore + 1);
   });
 });
 
