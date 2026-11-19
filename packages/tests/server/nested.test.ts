@@ -469,6 +469,65 @@ describe.each([
     expect(ctx.calls).toHaveBeenCalledTimes(3);
   });
 
+  test("an item's query that reads a call the server refused asks by itself, once that call's data is there", async () => {
+    const t = initTRPC.create();
+    const pairs = vi.fn();
+    const appRouter = t.router({
+      // Longer than the server's `maxValueLength`: no call can read it
+      page: t.procedure.query(() => ({
+        note: 'x'.repeat(1100),
+        items: [{ id: 'a' }, { id: 'b' }],
+      })),
+      owner: t.procedure
+        .input(z.object({ note: z.string() }))
+        .query(() => ({ id: 'ada' })),
+      pair: t.procedure
+        .input(z.object({ owner: z.string(), item: z.string() }))
+        .query((opts) => {
+          pairs(opts.input);
+          return `${opts.input.owner}/${opts.input.item}`;
+        }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const page = await experimental_nested(ctx.client, (q) =>
+      q.page.query().with((it) => {
+        const owner = q.owner.query({ note: it.note });
+        return {
+          owner,
+          pairs: it.items.map((item) => ({
+            pair: q.pair.query({ owner: owner.id, item: item.id }),
+          })),
+        };
+      }),
+    );
+
+    expect(await page.edges.owner).toEqual({ id: 'ada' });
+    const items = await page.edges.pairs;
+    expect(await Promise.all(items.map((it) => it.edges.pair))).toEqual([
+      'ada/a',
+      'ada/b',
+    ]);
+    expect(pairs.mock.calls).toEqual([
+      [{ owner: 'ada', item: 'a' }],
+      [{ owner: 'ada', item: 'b' }],
+    ]);
+  });
+
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
     await using ctx = setup({ pipelining: false });
 

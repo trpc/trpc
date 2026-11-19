@@ -890,7 +890,10 @@ export function experimental_nested<
           if (run.kind === 'data') {
             return { ok: true, data: run.data };
           }
-          if (run.kind === 'error') {
+          // A run that reads a run the server didn't make, or that failed,
+          // doesn't run: the server sends an error in its place. It asks by
+          // itself, as a call does whose source failed
+          if (run.kind === 'error' && (await sourcesRan(call, items))) {
             return failed(run.error);
           }
         }
@@ -900,6 +903,34 @@ export function experimental_nested<
         ? outcomeOf(untyped.query(call.path, input.data, request(undefined)))
         : input;
     }, failed);
+  }
+
+  /**
+   * Whether the request has data for the run of every call whose data a
+   * run's input reads, for its items
+   */
+  async function sourcesRan(call: Call, items: Items) {
+    const sources = new Set(call.holes.map((hole) => hole.ref.call));
+    const ran = await Promise.all(
+      Array.from(sources, async (source) => {
+        const from = source.source;
+        // An operation of its own: its request's outcome
+        if (!from || !('owner' in from)) {
+          const sent = await source.sent;
+          return sent ? sent.ok : true;
+        }
+        const settled = await from.settled;
+        if (settled.status !== 'ran' || !settled.outcome.ok) {
+          return false;
+        }
+        const run = await readRun(
+          settled.outcome.data,
+          source.frame.map((scope) => items.get(scope) ?? -1),
+        );
+        return run.kind === 'data';
+      }),
+    );
+    return ran.every(Boolean);
   }
 
   /** The run at `indexes` of a call's data */
