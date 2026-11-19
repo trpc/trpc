@@ -1631,6 +1631,35 @@ describe('experimental_dataOf(entry, (data) => entry)', () => {
     ]);
   });
 
+  test('a handle whose whole input is from data that has none has no `input` in its key, as `queryKey()` has none', async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      /** A post that may have a filter for its comments */
+      post: t.procedure.query(() => ({
+        filter: undefined as { author: string } | undefined,
+      })),
+      comments: t.procedure
+        .input(z.object({ author: z.string() }).optional())
+        .query(() => ['first']),
+    });
+    await using resource = testReactResource(appRouter);
+    const trpc = resource.optionsProxyClient;
+
+    const post = prefetchEntry(trpc.post);
+    const [loaded] = await loadHandles(trpc, {
+      post,
+      comments: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.comments, it.filter),
+      ),
+    });
+    const comments = experimental_handleOfItem(loaded.comments, {
+      filter: undefined,
+    });
+    // Next.js rejects `undefined` in props
+    expect(comments).toStrictEqual({ queryKey: trpc.comments.queryKey() });
+    expect(JSON.parse(JSON.stringify(comments))).toStrictEqual(comments);
+  });
+
   test('an entry can be built from the data of an entry that is built from another, also an infinite one', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyClient;

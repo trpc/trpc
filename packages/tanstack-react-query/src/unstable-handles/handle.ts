@@ -300,9 +300,9 @@ export function experimental_handleOfItem(
     { input: perItem.input, itemInputs: perItem.itemInputs },
     item,
   );
-  const args = perItem.queryKey[perItem.queryKey.length - 1] as {
-    type?: unknown;
-  };
+  const { input: _unfinished, ...args } = perItem.queryKey[
+    perItem.queryKey.length - 1
+  ] as { input?: unknown; type?: unknown };
   // An infinite query's key has no cursor: it is the handle's `initialCursor`,
   // as `infiniteQueryOptions()` takes it from the input
   const infinite = args.type === 'infinite' && isPlainObject(filled);
@@ -315,7 +315,12 @@ export function experimental_handleOfItem(
   const initialCursor =
     perItem.initialCursor !== undefined ? perItem.initialCursor : cursor;
   return {
-    queryKey: [...perItem.queryKey.slice(0, -1), { ...args, input }],
+    // No input, as the options proxy's key has none for it: Next.js rejects
+    // `undefined` in props
+    queryKey: [
+      ...perItem.queryKey.slice(0, -1),
+      { ...args, ...(input !== undefined && { input }) },
+    ],
     ...(input !== undefined && { input }),
     ...(initialCursor !== undefined && { initialCursor }),
     // An item of an entry whose input is `skipToken` is skipped too
