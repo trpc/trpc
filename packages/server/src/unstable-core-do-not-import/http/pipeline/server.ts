@@ -786,14 +786,16 @@ function itemsOf(opts: {
   if (!Array.isArray(list)) {
     return { kind: 'items', items: [] };
   }
-  const error = opts.tooLong(list.length);
+  const { length } = list;
+  const error = opts.tooLong(length);
   if (error) {
     return { kind: 'failed', error };
   }
-  // By index: a list with holes has a run for each of them too
+  // By index, up to the length that was checked: a list with holes has a run
+  // for each of them too, and a `keys` of the list's own isn't asked
   return {
     kind: 'items',
-    items: Array.from(list.keys(), (index) =>
+    items: Array.from({ length }, (_, index) =>
       Promise.resolve<PlacesNode<Place>>({
         kind: 'run',
         value: { indexes: [...opts.indexes, index], item: list[index] },
