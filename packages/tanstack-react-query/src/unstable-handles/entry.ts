@@ -15,6 +15,7 @@ import { readQueryKey } from '../internals/utils';
 import type { EntryDataRef, EntryInputRef } from './dataRef';
 import {
   createEntryDataRef,
+  blankInput,
   entryDataRefOf,
   onlyAsList,
   replaceEntryDataRefs,
@@ -82,12 +83,32 @@ export function ownContextOf(
   return context && Reflect.ownKeys(context).length > 0 ? context : null;
 }
 
+/**
+ * Whether TanStack Query sets what an `experimental_dataOf()` value in an
+ * entry's input goes to, so the query never reads it: a cursor that
+ * `initialCursor` takes the place of, or an infinite query's direction. The
+ * one rule for what an entry reads, on the client and on the server
+ */
+function isReplaced(
+  opts: { type: HandleType; cursorFromOptions: boolean },
+  ref: EntryInputRef,
+) {
+  return (
+    opts.type === 'infinite' &&
+    ((ref.to[0] === 'cursor' && opts.cursorFromOptions) ||
+      ref.to[0] === 'direction')
+  );
+}
+
 /** Builds an entry's `EntryRequest`. Pure: it reads only what the entry was built with */
 function planRequest(opts: {
   type: HandleType;
   path: string[];
   input: unknown;
   opts: unknown;
+  /** Every `experimental_dataOf()` value in the input */
+  allRefs: EntryInputRef[];
+  /** The ones the query reads: not those that `isReplaced()` */
   refs: EntryInputRef[];
 }): EntryRequest {
   const entryOpts = opts.opts as
@@ -98,19 +119,18 @@ function planRequest(opts: {
   }
   if (
     ownContextOf(entryOpts) !== null ||
-    (opts.type === 'infinite' && opts.refs.some((ref) => ref.to.length === 0))
+    (opts.type === 'infinite' &&
+      opts.allRefs.some((ref) => ref.to.length === 0))
   ) {
     return { kind: 'alone' };
   }
   let input = replaceEntryDataRefs(opts.input, [], nothing);
-  let cursorFromOptions = false;
   if (opts.type === 'infinite') {
     // The first page's request, as `infiniteQueryOptions()` makes it: its
     // key has the input without `cursor` and `direction`, and the request
     // adds a cursor only if there is one. A `cursor: undefined` is left out,
     // as is one the server fills in, which it writes the key of itself
     const initialCursor = entryOpts?.initialCursor;
-    cursorFromOptions = initialCursor != null;
     const {
       cursor: inputCursor,
       direction: _direction,
@@ -127,13 +147,7 @@ function planRequest(opts: {
     kind: 'pipelined',
     path: opts.path.join('.'),
     input,
-    serverReads: new Set(
-      opts.refs.filter(
-        (ref) =>
-          !(ref.to[0] === 'cursor' && cursorFromOptions) &&
-          !(ref.to[0] === 'direction' && opts.type === 'infinite'),
-      ),
-    ),
+    serverReads: new Set(opts.refs),
   };
 }
 
@@ -143,7 +157,11 @@ export interface EntryState {
   type: HandleType;
   /** The procedure's path */
   path: string[];
-  /** The `experimental_dataOf()` values in the entry's input */
+  /**
+   * The `experimental_dataOf()` values in the entry's input that its query
+   * reads: not a cursor that `initialCursor` takes the place of, nor an
+   * infinite query's direction, which TanStack Query sets
+   */
   refs: EntryInputRef[];
   /**
    * The query's options, with every `experimental_dataOf()` value in the input replaced.
@@ -295,6 +313,13 @@ export function entry(opts: {
     );
   }
   const queryOpts = opts.opts as TRPCQueryBaseOptions | undefined;
+  const cursorFromOptions =
+    opts.type === 'infinite' &&
+    (opts.opts as { initialCursor?: unknown } | undefined)?.initialCursor !=
+      null;
+  const read = refs.filter(
+    (ref) => !isReplaced({ type: opts.type, cursorFromOptions }, ref),
+  );
   const trpcOpts = (pipeline: OperationPipeline) => ({
     ...queryOpts?.trpc,
     context: { ...queryOpts?.trpc?.context, ...pipelineContext(pipeline) },
@@ -310,12 +335,17 @@ export function entry(opts: {
     type: opts.type,
     kind: opts.kind,
     path: ctx.path,
-    refs,
+    refs: read,
     options: (optionsOpts) =>
       optionsOpts.pipeline === null && built
         ? built
         : options(
-            replaceEntryDataRefs(opts.input, [], optionsOpts.dataOfRef),
+            // What the query doesn't read has no data to fill in
+            replaceEntryDataRefs(opts.input, [], (ref) =>
+              isReplaced({ type: opts.type, cursorFromOptions }, ref)
+                ? blankInput
+                : optionsOpts.dataOfRef(ref),
+            ),
             optionsOpts.pipeline,
           ),
     request: planRequest({
@@ -323,12 +353,10 @@ export function entry(opts: {
       path: ctx.path,
       input: opts.input,
       opts: opts.opts,
-      refs,
+      allRefs: refs,
+      refs: read,
     }),
-    cursorFromOptions:
-      opts.type === 'infinite' &&
-      (opts.opts as { initialCursor?: unknown } | undefined)?.initialCursor !=
-        null,
+    cursorFromOptions,
     context: ownContextOf(queryOpts),
     queryClient: queryClientOf(ctx),
   });

@@ -15,6 +15,7 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
   retryLink,
+  TRPCClientError,
 } from '@trpc/client';
 import type { Operation, TRPCLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
@@ -2460,6 +2461,47 @@ describe.each([
     expect(resource.calls.mock.calls).toContainEqual([
       'post.pagedByAuthor',
       { authorId: 'u1', cursor: 2 },
+    ]);
+  });
+
+  test('a cursor that `initialCursor` replaces, from a prefetch entry that fails, blocks nothing', async () => {
+    // The first page of `post.paged` fails
+    const failFirstPage: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) =>
+        op.path === 'post.paged'
+          ? observable((observer) => {
+              observer.error(
+                TRPCClientError.from(new Error('The first page failed')),
+              );
+            })
+          : next(op);
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [failFirstPage],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const first = prefetchEntry(trpc.post.paged, {}, { retry: false });
+    const [handles, data] = await loadHandles(trpc, {
+      first,
+      later: ensureInfiniteEntry(
+        trpc.post.pagedByAuthor,
+        {
+          authorId: 'u1',
+          cursor: experimental_dataOf(first).nextCursor,
+        },
+        { initialCursor: 2 },
+      ),
+    });
+
+    expect(data.later.pageParams).toEqual([2]);
+    expect(handles.later).toMatchObject({ initialCursor: 2 });
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.pagedByAuthor', { authorId: 'u1', cursor: 2 }],
     ]);
   });
 
