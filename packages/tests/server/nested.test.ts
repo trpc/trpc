@@ -129,7 +129,7 @@ describe.each([
   }
 
   /** The request URLs, with `input` and `pipe` decoded */
-  function requestsOf(ctx: ReturnType<typeof setup>) {
+  function requestsOf(ctx: Pick<ReturnType<typeof setup>, 'onRequestSpy'>) {
     return ctx.onRequestSpy.mock.calls.map(([req]) => {
       const url = new URL(req.url!, 'http://localhost');
       const param = (name: string) => {
@@ -618,6 +618,11 @@ describe.each([
     expect(await page.edges.owner).toEqual({ id: 'ada' });
     expect(await page.edges.team).toBe('team-ada');
     expect(teams.mock.calls).toEqual([['ada']]);
+    // The first request pipelined both: they asked by themselves after it
+    expect(requestsOf(ctx)[0]!.pipe).toEqual({
+      1: { reads: [{ to: ['note'], from: 0, path: ['note'] }] },
+      2: { reads: [{ to: ['id'], from: 1, path: ['id'] }] },
+    });
   });
 
   test("a run's error that the transformer writes as a falsy value is the run's error, not a run the server left out", async () => {
@@ -732,6 +737,14 @@ describe.each([
       'constant',
     ]);
     expect(tags.mock.calls).toEqual([['constant'], ['constant']]);
+    // The first request pipelined both: they asked by themselves after it
+    expect(requestsOf(ctx)[0]!.pipe).toEqual({
+      1: {
+        each: { from: 0, path: ['items'] },
+        reads: [{ to: ['note'], path: ['note'] }],
+      },
+      2: { each: { from: 1, path: ['tags'] }, reads: [] },
+    });
   });
 
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
