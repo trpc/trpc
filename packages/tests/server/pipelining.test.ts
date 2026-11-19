@@ -2779,19 +2779,20 @@ describe('a call of a pipelined batch, on its own', () => {
     assert(res.body);
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let text = '';
-    while (!text.includes('INTERNAL_SERVER_ERROR')) {
-      const chunk = await reader.read();
-      assert(!chunk.done, 'The stream ended without the error of the run');
-      text += chunk.value;
-    }
+    const readToEnd = (async () => {
+      for (let chunk = await reader.read(); !chunk.done;) {
+        text += chunk.value;
+        chunk = await reader.read();
+      }
+    })();
+    // Bounded: if the stream held the error back until `t1` ends, this fails
+    // rather than hangs, and `t1` is then released on the way out
+    await vi.waitFor(() => expect(text).toContain('INTERNAL_SERVER_ERROR'));
     // The first run's error arrived while the second run was still running
     expect(text).not.toContain('"data":{"id":"t1"}');
 
     released.resolve();
-    for (let chunk = await reader.read(); !chunk.done;) {
-      text += chunk.value;
-      chunk = await reader.read();
-    }
+    await readToEnd;
     expect(text).toContain('"data":{"id":"t1"}');
   });
 
