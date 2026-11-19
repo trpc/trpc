@@ -697,6 +697,37 @@ describe.each([
     });
   });
 
+  test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      data: t.procedure.query(() => {
+        const data: { id: string; self?: unknown } = { id: 'ada' };
+        data.self = data;
+        return data;
+      }),
+      echo: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => opts.input.id),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+
+    const data = await experimental_nested(ctx.client, (q) =>
+      q.data.query().with((it) => ({ echo: q.echo.query(it) })),
+    );
+
+    expect(data.node.id).toBe('ada');
+    expect(await data.edges.echo).toBe('ada');
+  });
+
   test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
     await using ctx = setup({ pipelining: true });
     class AuthorInput {
