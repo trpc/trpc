@@ -3353,6 +3353,8 @@ describe('`maxFillSize`: what a request fills in', () => {
     await using server = serve({
       ...defaults,
       transformer: padded,
+      // Each value is as long as the transformer writes it too, pad and all
+      limits: { ...pipelineLimitDefaults, maxValueLength: 50_000 },
       fns: { list: () => [1, 2, 3], echo },
     });
     const list = sent('list', undefined);

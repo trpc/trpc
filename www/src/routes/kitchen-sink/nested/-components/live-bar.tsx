@@ -1,19 +1,33 @@
-'use client';
-
 import { Button } from '@shared/ui/components/button';
 import { RotateCw } from 'lucide-react';
-import { useEffect, useId, useState, useSyncExternalStore } from 'react';
-import type { Arrival, Mode, Run } from './meter';
-import { endMs, isDone, meter } from './meter';
+import {
+  type ReactNode,
+  useEffect,
+  useId,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
-const modes: { value: Mode; label: string }[] = [
-  { value: 'pipelined', label: 'One request' },
-  { value: 'separate', label: 'Without pipelining' },
+import {
+  type Arrival,
+  endMs,
+  isDone,
+  type Mode,
+  meter,
+  type Run,
+} from '../-meter.ts';
+
+const modeLabels: ReadonlyArray<{
+  readonly label: string;
+  readonly value: Mode;
+}> = [
+  { label: 'One request', value: 'pipelined' },
+  { label: 'Without pipelining', value: 'separate' },
 ];
 
-const dot: Record<Arrival['kind'], string> = {
-  posts: 'bg-foreground',
+const dot: Readonly<Record<Arrival['kind'], string>> = {
   author: 'bg-sky-500',
+  posts: 'bg-foreground',
   team: 'bg-amber-500',
 };
 
@@ -39,12 +53,12 @@ function useElapsed(run: Run | null) {
 
 /**
  * Sticks to the top while the posts scroll by: how many requests the load
- * sent, how long it has run, and when each result arrived
+ * sent, how long it has run, and when each result arrived.
  */
 export function LiveBar(props: {
-  mode: Mode;
-  onMode: (mode: Mode) => void;
-  onReload: () => void;
+  readonly mode: Mode;
+  readonly onMode: (mode: Mode) => void;
+  readonly onReload: () => void;
 }) {
   const name = useId();
   const run = useSyncExternalStore(meter.subscribe, meter.get, () => null);
@@ -53,39 +67,39 @@ export function LiveBar(props: {
   const requests = run?.requests ?? [];
   const arrivals = run?.arrivals ?? [];
   const failed = run?.failed ?? 0;
-  const streaming = requests.some((it) => it.doneMs === null);
+  const streaming = requests.some((request) => request.doneMs === null);
   // The timeline grows when a load runs past 2.5 s
   const scale = Math.max(2500, elapsed);
   const at = (ms: number) => `${Math.min(100, (ms / scale) * 100)}%`;
 
   return (
-    <div className="sticky top-2 z-10 grid gap-3 rounded-xl bg-card/85 p-3 shadow-lg ring-1 ring-foreground/10 backdrop-blur-md">
+    <div className="sticky top-[calc(var(--site-header)+0.5rem)] z-10 grid gap-3 rounded-xl bg-card/85 p-3 shadow-lg ring-1 ring-foreground/10 backdrop-blur-md">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div
-          role="radiogroup"
           aria-label="How the queries go"
           className="inline-flex rounded-lg bg-muted p-0.5 text-xs font-medium"
+          role="radiogroup"
         >
           {/* Native radios: one tab stop, and the arrow keys switch */}
-          {modes.map((it) => (
+          {modeLabels.map((option) => (
             <label
-              key={it.value}
-              className="relative rounded-md px-2.5 py-1 text-muted-foreground hover:text-foreground has-[:checked]:bg-background has-[:checked]:text-foreground has-[:checked]:shadow-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+              className="relative rounded-md px-2.5 py-1 text-muted-foreground hover:text-foreground has-checked:bg-background has-checked:text-foreground has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-ring"
+              key={option.value}
             >
               <input
-                type="radio"
-                name={name}
-                value={it.value}
-                checked={props.mode === it.value}
-                onChange={() => props.onMode(it.value)}
+                checked={props.mode === option.value}
                 // Unseen, over its label: a click on either picks it
                 className="absolute inset-0 cursor-pointer appearance-none rounded-md outline-none"
+                name={name}
+                onChange={() => props.onMode(option.value)}
+                type="radio"
+                value={option.value}
               />
-              {it.label}
+              {option.label}
             </label>
           ))}
         </div>
-        <Button variant="outline" size="sm" onClick={props.onReload}>
+        <Button onClick={props.onReload} size="sm" variant="outline">
           <RotateCw />
           Reload
         </Button>
@@ -95,9 +109,9 @@ export function LiveBar(props: {
         <div>
           <dt className="text-xs text-muted-foreground">Requests</dt>
           <dd
-            key={requests.length}
+            className="flex items-center justify-center gap-1.5 text-2xl font-semibold tabular-nums motion-safe:animate-nested-pop"
             data-testid="request-count"
-            className="animate-pop flex items-center justify-center gap-1.5 text-2xl font-semibold tabular-nums"
+            key={requests.length}
           >
             {streaming && (
               <span className="relative flex size-2">
@@ -135,39 +149,39 @@ export function LiveBar(props: {
       </dl>
 
       {/* Said once a load ends: one announcement, not one for each result */}
-      <p className="sr-only" aria-live="polite">
+      <p aria-live="polite" className="sr-only">
         {done &&
           `Done in ${(elapsed / 1000).toFixed(2)} seconds: ${arrivals.length} results, ${requests.length} ${requests.length === 1 ? 'request' : 'requests'}${failed > 0 ? `, ${failed} failed` : ''}`}
       </p>
       {/* The timeline, for a screen reader: each result and when it came */}
-      <ol className="sr-only" aria-label="Results as they arrived">
-        {arrivals.map((it, i) => (
+      <ol aria-label="Results as they arrived" className="sr-only">
+        {arrivals.map((arrival, i) => (
           <li key={i}>
-            {it.kind} {it.label}, at {it.ms} ms
+            {arrival.kind} {arrival.label}, at {arrival.ms} ms
           </li>
         ))}
       </ol>
       <div aria-hidden className="grid gap-1">
         {/* Each result, where it arrived */}
         <div className="relative h-3">
-          {arrivals.map((it, i) => (
+          {arrivals.map((arrival, i) => (
             <span
+              className={`absolute top-0.5 size-2 -translate-x-1/2 rounded-full ring-2 ring-card motion-safe:animate-nested-pop ${dot[arrival.kind]}`}
               key={i}
-              title={`${it.label} · ${it.ms} ms`}
-              className={`animate-pop absolute top-0.5 size-2 -translate-x-1/2 rounded-full ring-2 ring-card ${dot[it.kind]}`}
-              style={{ left: at(it.ms) }}
+              style={{ left: at(arrival.ms) }}
+              title={`${arrival.label} · ${arrival.ms} ms`}
             />
           ))}
         </div>
         {/* Each request, from when it went to when its response ended */}
-        {requests.map((it, i) => (
-          <div key={i} className="relative h-1 rounded-full bg-muted">
+        {requests.map((request, i) => (
+          <div className="relative h-1 rounded-full bg-muted" key={i}>
             <div
-              className={`absolute inset-y-0 rounded-full transition-[width] ${it.doneMs === null ? 'bg-emerald-500' : 'bg-emerald-500/50'}`}
+              className={`absolute inset-y-0 rounded-full transition-[width] ${request.doneMs === null ? 'bg-emerald-500' : 'bg-emerald-500/50'}`}
               style={{
-                left: at(it.ms),
+                left: at(request.ms),
                 // A request that went after the last frame hasn't run for any time yet
-                width: `calc(${at((it.doneMs ?? Math.max(elapsed, it.ms)) - it.ms)} + 0.25rem)`,
+                width: `calc(${at((request.doneMs ?? Math.max(elapsed, request.ms)) - request.ms)} + 0.25rem)`,
               }}
             />
           </div>
@@ -187,7 +201,10 @@ export function LiveBar(props: {
   );
 }
 
-function Legend(props: { className: string; children: React.ReactNode }) {
+function Legend(props: {
+  readonly children: ReactNode;
+  readonly className: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1">
       <span className={`inline-block ${props.className}`} />

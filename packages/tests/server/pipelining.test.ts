@@ -3346,6 +3346,53 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     expect(calls).toBe(0);
   });
 
+  test("whose input transformer reads it back as an object with a stateful `toJSON` is measured as JSON, and that object's `toJSON` runs once", async () => {
+    let calls = 0;
+    const t = initTRPC.create({
+      transformer: {
+        input: {
+          serialize: (value: unknown) => value,
+          // Reads `{ stateful: true }` as an object whose `toJSON` gives
+          // something short twice, and something long after
+          deserialize: (value: unknown) =>
+            isObject(value) && value['stateful'] === true
+              ? {
+                  toJSON: () => {
+                    calls += 1;
+                    return calls <= 2 ? 'x' : 'x'.repeat(2048);
+                  },
+                }
+              : value,
+        },
+        output: {
+          serialize: (value: unknown) => value,
+          deserialize: (value: unknown) => value,
+        },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,author',
+        pipe: { 1: { reads: [{ to: ['v'], from: 0, path: ['v'] }] } },
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ v: { stateful: true } })),
+        author: t.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return 'ran';
+        }),
+      }),
+      experimental_allowPipelining: { allowWholeValues: true },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toEqual({ result: { data: 'ran' } });
+    expect(author).toHaveBeenCalledExactlyOnceWith({ v: 'x' });
+    expect(calls).toBe(1);
+  });
+
   test('is read once in the whole request: each of its properties, and its `toJSON`', async () => {
     const accesses = new Map<string, number>();
     const count = (what: string) =>

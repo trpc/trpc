@@ -22,6 +22,12 @@ export const showcases = [
   },
   {
     description:
+      'Posts, their authors and the authors’ teams in one pipelined request, with experimental_nested() and a plain client. Switch pipelining off to see the requests it saves.',
+    path: '/kitchen-sink/nested',
+    title: 'Nested queries',
+  },
+  {
+    description:
       'A blog whose pages load a post, its author and the author’s team’s posts, each needing the one before, in one request. A meter shows each request and when each result arrives.',
     path: '/kitchen-sink/blog',
     title: 'Blog in one request',

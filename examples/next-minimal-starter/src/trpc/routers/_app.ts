@@ -1,12 +1,10 @@
 import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { baseProcedure, createTRPCRouter } from '../init';
-import { blogRouter } from './blog';
 
 let subscriptionIdx = 0;
 
 export const appRouter = createTRPCRouter({
-  blog: blogRouter,
   greeting: baseProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away

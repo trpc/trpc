@@ -7,9 +7,6 @@ const handler = (req: Request) =>
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    // The `/nested` page sends queries that read other queries' data in one
-    // request. The server fills in their inputs
-    experimental_allowPipelining: true,
     createContext: () => createTRPCContext({ headers: req.headers }),
   });
 
