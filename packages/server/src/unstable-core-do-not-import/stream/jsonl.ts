@@ -134,16 +134,24 @@ class MaxDepthError extends Error {
   }
 }
 
+/**
+ * Yields the stream's lines, each serialized where it was made, so a value
+ * that can't be serialized fails only the promise or iterable it belongs to
+ */
 async function* createBatchStreamProducer(
   opts: JSONLProducerOptions,
-): AsyncIterable<Head | ChunkData | typeof PING_SYM, void> {
+): AsyncIterable<string | typeof PING_SYM, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const mergedIterables = mergeAsyncIterables<ChunkData>();
+  function line(chunk: Head | ChunkData): string {
+    return JSON.stringify(opts.serialize ? opts.serialize(chunk) : chunk);
+  }
+
+  const mergedIterables = mergeAsyncIterables<string>();
   function registerAsync(
-    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
+    callback: (idx: ChunkIndex) => AsyncIterable<string, void>,
   ) {
     const idx = counter++ as ChunkIndex;
 
@@ -166,14 +174,14 @@ async function* createBatchStreamProducer(
       }
       try {
         const next = await promise;
-        yield [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
+        yield line([idx, PROMISE_STATUS_FULFILLED, encode(next, path)]);
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        yield [
+        yield line([
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
-        ];
+        ]);
       }
     });
   }
@@ -192,19 +200,27 @@ async function* createBatchStreamProducer(
         while (true) {
           const next = await iterator.next();
           if (next.done) {
-            yield [idx, ASYNC_ITERABLE_STATUS_RETURN, encode(next.value, path)];
+            yield line([
+              idx,
+              ASYNC_ITERABLE_STATUS_RETURN,
+              encode(next.value, path),
+            ]);
             break;
           }
-          yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
+          yield line([
+            idx,
+            ASYNC_ITERABLE_STATUS_YIELD,
+            encode(next.value, path),
+          ]);
         }
       } catch (cause) {
         opts.onError?.({ error: cause, path });
 
-        yield [
+        yield line([
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
-        ];
+        ]);
       }
     });
   }
@@ -264,10 +280,9 @@ async function* createBatchStreamProducer(
     newHead[key] = encode(item, [key]);
   }
 
-  yield newHead;
+  yield line(newHead);
 
-  let iterable: AsyncIterable<ChunkData | typeof PING_SYM, void> =
-    mergedIterables;
+  let iterable: AsyncIterable<string | typeof PING_SYM, void> = mergedIterables;
   if (opts.pingMs) {
     iterable = withPing(mergedIterables, opts.pingMs);
   }
@@ -281,32 +296,11 @@ async function* createBatchStreamProducer(
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: JSONLProducerOptions) {
-  let stream = readableStreamFrom(createBatchStreamProducer(opts));
-
-  const { serialize } = opts;
-  if (serialize) {
-    stream = stream.pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          if (chunk === PING_SYM) {
-            controller.enqueue(PING_SYM);
-          } else {
-            controller.enqueue(serialize(chunk));
-          }
-        },
-      }),
-    );
-  }
-
-  return stream
+  return readableStreamFrom(createBatchStreamProducer(opts))
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          if (chunk === PING_SYM) {
-            controller.enqueue(' ');
-          } else {
-            controller.enqueue(JSON.stringify(chunk) + '\n');
-          }
+          controller.enqueue(chunk === PING_SYM ? ' ' : chunk + '\n');
         },
       }),
     )
