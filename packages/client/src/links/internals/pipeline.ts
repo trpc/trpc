@@ -169,9 +169,10 @@ export type PipelinedCallState =
   /** The server ran it: its data, or its own error */
   | { status: 'ran'; outcome: Outcome<PipelinedData> }
   /**
-   * It didn't run. It wasn't sent, its request failed as a whole, a call it
-   * reads failed, or the server refused it before any of its runs ran. What
-   * wants it asks for it by itself
+   * It didn't run, or the client never had its result. It wasn't sent, its
+   * request failed as a whole, its result never arrived, a call it reads
+   * failed, or the server refused it before any of its runs ran. What wants
+   * it asks for it by itself
    */
   | { status: 'not-run'; error: unknown };
 
@@ -618,14 +619,16 @@ function errorItem(error: unknown): PipelinedItem {
 /**
  * A call's final state from what the response has for it alone. It didn't
  * run if the server says it refused it before any of its runs ran, such as
- * for a list longer than the server's limits.
+ * for a list longer than the server's limits, or if its result never
+ * arrived, such as from a response that broke off: whatever the server did,
+ * the client has no result of it.
  */
 function decodeCall(
   received: Outcome<HTTPResult | undefined>,
   link: PipeliningLink,
 ): PipelinedCallSettled {
   if (!received.ok) {
-    return { status: 'ran', outcome: received };
+    return { status: 'not-run', error: received.error };
   }
   const sent = received.data;
   // What isn't an object is no envelope: the call fails, and its siblings

@@ -925,6 +925,58 @@ describe.each([
   );
 
   test.runIf(scenario.link === httpBatchStreamLink)(
+    'a response that breaks off after the operation it reads arrived leaves a call `unresolved` too: the client never had its result',
+    async () => {
+      /** Once the operation has its result: then the response breaks off */
+      const delivered = createDeferred<void>();
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const lines = (await res.text()).split('\n');
+          // Everything up to the author's data, which never comes
+          const until = lines.findIndex((line) => line.includes('team-of-u1'));
+          expect(until).toBeGreaterThan(0);
+          const sent = new TextEncoder().encode(
+            lines.slice(0, until).join('\n') + '\n',
+          );
+          return new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(sent);
+              },
+              async pull(controller) {
+                await delivered.promise;
+                controller.error(new Error('The connection broke'));
+              },
+            }),
+            res,
+          );
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      // Also when the test fails: the response must end
+      using _break = makeResource({}, () => delivered.resolve());
+      expect(await postResult).toMatchObject({ authorId: 'u1' });
+      delivered.resolve();
+      await expect(author.result).rejects.toThrow('The connection broke');
+      expect(author.status).toBe('unresolved');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchStreamLink)(
     'a not-OK answer that is no error is the result of every operation, as without pipelining',
     async () => {
       await using ctx = setup({
