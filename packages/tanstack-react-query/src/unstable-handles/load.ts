@@ -662,10 +662,16 @@ export function beginEntries(opts: {
               },
             })
           : filled.data;
+        // A query that couldn't start, such as for a key that can't be
+        // hashed, has no handle: its options settle with the failure
+        const starting = attemptNow(() => start(built));
+        if (!starting.ok) {
+          options.settle(own(starting.error));
+          started.settle(own(starting.error));
+          return;
+        }
         options.settle(ok(built));
-        void attempt(() => start(built)).then((outcome) =>
-          started.settle(outcome.ok ? outcome : own(outcome.error)),
-        );
+        void starting.data.then(ok, own).then(started.settle);
       });
     }
     started.onSettled((outcome) => {

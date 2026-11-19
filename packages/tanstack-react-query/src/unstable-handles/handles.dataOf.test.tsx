@@ -1090,6 +1090,19 @@ describe('edges of a load', () => {
     expect(handles.author).toBeDefined();
   });
 
+  test("an entry whose input from another's data can't start has no handle in loadHandlesSettled", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const ids = ensureEntry(trpc.big.ids);
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      ids,
+      one: ensureEntry(trpc.big.byId, { id: experimental_dataOf(ids).first }),
+    });
+    expect(results.one.status).toBe('error');
+    // Its query never started, so a handle would read nothing
+    expect(Object.keys(handles)).toEqual(['ids']);
+  });
+
   test('a prefetch entry whose request fails after a cache write while it ran fails the entries that read it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
