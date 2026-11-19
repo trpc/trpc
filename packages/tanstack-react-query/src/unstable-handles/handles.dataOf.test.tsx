@@ -4973,6 +4973,102 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('a first cursor of `-0` and one of `0` are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: Record<string, any>[] = [];
+    function List(props: { cursor: number }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          posts: prefetchInfiniteEntry(
+            trpc.post.paged,
+            {},
+            { initialCursor: props.cursor },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <List cursor={-0} />
+        <List cursor={0} />
+        <List cursor={-0} />
+      </>,
+    );
+    // A transformer that keeps `-0`, such as superjson, lets a resolver tell
+    // them apart
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(Object.is(seen[1]!['posts'].initialCursor, 0)).toBe(true);
+    expect(seen[2]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('a first cursor with a bigint in it does not stop the component from rendering, and differs from one with a string', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: Record<string, any>[] = [];
+    function List(props: { cursor: unknown }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          posts: prefetchInfiniteEntry(
+            trpc.post.paged,
+            {},
+            // Against its type, as an app with a transformer for it can have
+            { initialCursor: props.cursor as number },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <List cursor={{ offset: 5n }} />
+        <List cursor={{ offset: '5' }} />
+        <List cursor={{ offset: 5n }} />
+      </>,
+    );
+    expect(seen[0]!['posts'].initialCursor).toEqual({ offset: 5n });
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('a `trpc.context` value of `undefined` and one of `null` are other loads', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { context: Record<string, unknown> }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context: props.context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card context={{ route: undefined }} />
+        <Card context={{ route: null }} />
+        <Card context={{ route: undefined }} />
+      </>,
+    );
+    // A link can tell them apart
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('entries under other keys are another load, also when the keys read the same joined with dots', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

@@ -318,6 +318,70 @@ function describeSymbol(symbol: symbol) {
 }
 
 /**
+ * A value as one with JSON that no other value has. JSON reads `undefined`
+ * and a hole as `null`, `-0` as `0` and a date as its string, and has no
+ * bigint: a transformer, or a link, can tell each of them apart. Each value is
+ * tagged with its type, so that no value reads like another's tag. A value
+ * that isn't a plain object or array, such as a class instance, is described
+ * as JSON writes it, or by its type if it has no JSON
+ */
+function describeValue(
+  value: unknown,
+  /** The objects and arrays `value` is in, so that one in itself ends */
+  within: readonly object[],
+): unknown {
+  switch (typeof value) {
+    case 'undefined':
+      return ['undefined'];
+    case 'bigint':
+      return ['bigint', String(value)];
+    case 'number':
+      // `NaN` and `Infinity` have no JSON either
+      return ['number', Object.is(value, -0) ? '-0' : String(value)];
+    case 'symbol':
+      return ['symbol', describeSymbol(value)];
+    case 'function':
+      return ['function'];
+    case 'string':
+    case 'boolean':
+      return ['value', value];
+    case 'object':
+      break;
+  }
+  if (value === null) {
+    return ['value', null];
+  }
+  if (within.includes(value)) {
+    return ['circular'];
+  }
+  const inside = [...within, value];
+  if (value instanceof Date) {
+    return ['date', String(value.getTime())];
+  }
+  if (Array.isArray(value)) {
+    return [
+      'array',
+      Array.from({ length: value.length }, (_, index) =>
+        index in value ? describeValue(value[index], inside) : ['hole'],
+      ),
+    ];
+  }
+  if (isPlainObject(value)) {
+    return [
+      'object',
+      Object.entries(value)
+        .map(([key, member]) => [key, describeValue(member, inside)] as const)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    ];
+  }
+  try {
+    return ['instance', hashKey([value])];
+  } catch {
+    return ['instance', describeOption(value)];
+  }
+}
+
+/**
  * An entry's own `trpc.context` as a value with JSON, symbol keys and all.
  * Two symbols with the same description differ. A value with no JSON, such
  * as a function, is described by its type
@@ -330,20 +394,9 @@ function describeContext(
   }
   return Reflect.ownKeys(context)
     .map((key) => {
-      const value = context[key];
-      let described: unknown;
-      if (typeof value === 'symbol') {
-        described = describeSymbol(value);
-      } else {
-        try {
-          described = hashKey([value]);
-        } catch {
-          described = describeOption(value);
-        }
-      }
       return [
         typeof key === 'symbol' ? describeSymbol(key) : `string:${key}`,
-        described,
+        describeValue(context[key], []),
       ] as const;
     })
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
@@ -387,14 +440,8 @@ export function describeEntries(opts: {
       // Not all of the options: `meta` can hold what has no JSON, or what is
       // new on every render
       options: startOptions.map((name) => describeOption(options[name])),
-      // A cursor can be a bigint, which has no JSON. Tagged with its type,
-      // so that a bigint and a string that reads like it differ
-      firstCursor:
-        typeof firstCursor === 'bigint'
-          ? ['bigint', String(firstCursor)]
-          : firstCursor === undefined
-            ? ['none']
-            : ['value', firstCursor],
+      // A cursor can be a bigint, or have one in it, which has no JSON
+      firstCursor: describeValue(firstCursor, []),
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       // Where its requests go, and so whether they can go in another's
       context: describeContext(leaf.state.context),
