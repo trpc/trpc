@@ -2277,6 +2277,12 @@ describe.each([
     expect(data.pages.pages).toEqual([
       { direction: 'forward', nextCursor: null },
     ]);
+    // In the post's request: a request of its own sends `forward` too
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+      'post.directed',
+    ]);
   });
 
   test('a cursor that `initialCursor` replaces, from an entry the cache has, keeps nothing waiting', async () => {
