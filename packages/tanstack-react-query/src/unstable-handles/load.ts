@@ -282,8 +282,9 @@ interface PerItemLoad {
   handle: Promise<Outcome<Handle, EntryFailure>>;
   handleNow: () => Handle;
   /**
-   * Once the list has data: each item's outcome, which is that item's own.
-   * Blocked if the list, or another entry it reads, has no data
+   * Once the list has data: each item's outcome, which is that item's own,
+   * or blocked if another entry it reads has no data. Blocked as a whole if
+   * the list has none
    */
   items: Promise<ItemsOutcome>;
 }
@@ -831,7 +832,19 @@ export function beginEntries(opts: {
     const items = new Promise<ItemsOutcome>((resolve) => {
       whenAll(readersOf(sources), (sourceData) => {
         if (!sourceData.ok) {
-          resolve(sourceData);
+          // Without the list, there are no items. With it, every item is
+          // blocked by the other entry that failed, and starts nothing
+          resolve(
+            listSource.forReaders.outcome.then((listData) =>
+              listData.ok
+                ? ok(
+                    itemsOf(new Map([[list.ref.entry, listData.data]])).map(
+                      () => Promise.resolve(sourceData),
+                    ),
+                  )
+                : listData,
+            ),
+          );
           return;
         }
         const { data } = sourceData;
@@ -978,7 +991,8 @@ function resultOf(load: EntryLoad, settle: boolean): Promise<unknown> {
   return load.items.then((items) => {
     if (!items.ok) {
       if (settle && isReported(load.leaf, items.error)) {
-        // Without the list, there are no items to have results
+        // Without the list, there are no items to have results. An item
+        // blocked by another entry has its own result
         return [];
       }
       throw errorOf(items.error);

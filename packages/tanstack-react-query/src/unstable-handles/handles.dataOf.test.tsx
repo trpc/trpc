@@ -516,6 +516,36 @@ describe('dataOf', () => {
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
   });
 
+  test('loadHandlesSettled has an error for every item whose query reads another entry that failed, when the list loaded', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const missing = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      post,
+      missing,
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.tag.byIds, {
+          ids: [tag.id],
+          first: experimental_dataOf(missing).id,
+        }),
+      ),
+    });
+
+    expect(results.post).toMatchObject({ status: 'success' });
+    // The list has two tags: each has the error of what it reads, and
+    // starts no query
+    expect(results.tags).toMatchObject([
+      { status: 'error', error: { key: 'missing', code: 'NOT_FOUND' } },
+      { status: 'error', error: { key: 'missing', code: 'NOT_FOUND' } },
+    ]);
+    expect(Object.keys(handles).sort()).toEqual(['missing', 'post']);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'tag.byIds'),
+    ).toEqual([]);
+  });
+
   test('loadHandlesSettled rejects for a failed prefetch entry at a key with a dot in it, next to a waited entry of the same name', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
