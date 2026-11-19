@@ -535,6 +535,26 @@ function clientError(cause: unknown) {
   );
 }
 
+/** See `isUnread()` */
+const unread = /* @__PURE__ */ new WeakSet<object>();
+
+/** An error for a result the link couldn't read: see `isUnread()` */
+function unreadError(cause: unknown) {
+  const error = clientError(cause);
+  unread.add(error);
+  return error;
+}
+
+/**
+ * Whether a call's or a run's error is the client's, not the server's: the
+ * link couldn't deserialize what the server sent, or it never arrived. It
+ * says nothing of whether the server ran it, nor of whether the calls that
+ * read it ran.
+ */
+export function isUnread(error: unknown) {
+  return typeof error === 'object' && error !== null && unread.has(error);
+}
+
 /**
  * The runs of a call for every item, as a response has them: its `items`, by
  * index, one level for each level of lists, down to a `{ result }` or an
@@ -569,7 +589,7 @@ function decodeRuns(
       }
       return node['error'] ? { error: read(node['error']) } : {};
     },
-    (cause) => ({ error: clientError(cause) }),
+    (cause) => ({ error: unreadError(cause) }),
   );
 }
 
@@ -604,7 +624,7 @@ export function readPipelinedRun(
           ? errorItem(node.error)
           : { kind: 'missing' };
     },
-    (cause) => errorItem(clientError(cause)),
+    (cause) => errorItem(unreadError(cause)),
   );
 }
 
@@ -671,9 +691,14 @@ function decodeCall(
       outcome: { ok: true, data: { kind: 'once', data: link.read(sent).data } },
     };
   } catch (error) {
-    return isTRPCClientError(error) && isPipelineNotRun(error.data)
-      ? { status: 'not-run', error }
-      : { status: 'ran', outcome: failed(error) };
+    if (isTRPCClientError(error) && isPipelineNotRun(error.data)) {
+      return { status: 'not-run', error };
+    }
+    // The server sent a result, and the link couldn't deserialize it
+    if (sentResult(received) && typeof error === 'object' && error !== null) {
+      unread.add(error);
+    }
+    return { status: 'ran', outcome: failed(error) };
   }
 }
 
