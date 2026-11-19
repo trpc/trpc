@@ -361,7 +361,7 @@ createHTTPServer({
 }).listen(3000);
 ```
 
-The link doesn't ask the server for its limits. It keeps to the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it doesn't send a call that a server with the defaults would refuse. If you change them on the server, raised or lowered, set the link's to the same or lower, and its `maxItems` to `maxBatchSize` or lower:
+The link doesn't ask the server for its limits. It plans with the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it doesn't send a call that a server with the defaults would refuse for its reads, its depth or the number of calls in the request. If you change them on the server, raised or lowered, set the link's to the same or lower, and its `maxItems` to `maxBatchSize` or lower:
 
 ```ts twoslash title='client.ts'
 // @include: dq-router
@@ -398,7 +398,7 @@ This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 - **The rest of the request runs**, unless it has more calls than `maxRuns` allows: then it fails as a whole. Only that call fails, and the calls that read its data fail with a `PRECONDITION_FAILED`, as they do when it fails for any other reason.
 - **A call refused before it runs asks by itself**, as in [the fallback](#fallback), and its query gets the data. A list whose runs would go over `maxRuns` runs for none of its items: the list loads, and its items' queries fall back to separate queries.
 - **A run that is refused fails by itself**, and its item's query gets the error, as it would get the procedure's own. The other runs of its call can run.
-- **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs.
+- **A call that goes over `maxReadsPerCall` or `maxDepth` is refused before it runs.** One that goes over the others is refused once the data it reads has arrived, before its procedure runs. The link can't know that data before it sends the call, so matching limits don't prevent these: a value longer than `maxValueLength`, fills over `maxFillSize`, a whole value without `allowWholeValues`, or a list whose runs go over `maxRuns`.
 - **Data that is still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
 
 #### What a value is {#limit-terms}
