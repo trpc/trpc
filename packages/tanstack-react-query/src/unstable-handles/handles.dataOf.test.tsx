@@ -2207,9 +2207,26 @@ describe('without the options', () => {
       staleTime: Infinity,
     });
     using _subscription = makeResource({}, observer.subscribe(vi.fn()));
-    await observer.fetchNextPage();
+    const next = await observer.fetchNextPage();
     expect(calls.mock.calls).toEqual([['post.paged', { cursor: 1 }]]);
     expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain('batch=1');
+
+    // The later page's row reads its author, which loads then, in a
+    // request of its own
+    resource.onRequestSpy.mockClear();
+    calls.mockClear();
+    const row = next.data!.pages[1]!.items[0]!;
+    expect(row.authorId).toBe('u1');
+    const author = await resource.queryClient.fetchQuery(
+      fromHandle(trpc, experimental_handleOfItem(handles.authors, row)),
+    );
+    expect(author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
+    expect(calls.mock.calls).toEqual([['author.byId', { id: 'u1' }]]);
+    expect(
+      resource.onRequestSpy.mock.calls.map(([req]) =>
+        req.url?.replace(/\?.*/, ''),
+      ),
+    ).toEqual(['/author.byId']);
   });
 
   test('a batch that is split: a later page still loads its items, in a request of their own', async () => {
