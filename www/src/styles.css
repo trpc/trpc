@@ -26,6 +26,19 @@ html {
   }
 }
 
+/* A result that just arrived, in the kitchen sink's nested queries
+   (`src/routes/kitchen-sink/nested`). */
+@theme {
+  --animate-nested-pop: nested-pop 250ms ease-out;
+
+  @keyframes nested-pop {
+    from {
+      opacity: 0.4;
+      scale: 1.15;
+    }
+  }
+}
+
 /* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
    comes into view: `pop` from hidden, or `boing` when they were already
    showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is

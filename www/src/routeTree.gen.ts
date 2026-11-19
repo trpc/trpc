@@ -27,7 +27,9 @@ import { Route as OgSplatRouteImport } from './routes/og.$'
 import { Route as DocsV10SplatRouteImport } from './routes/docs_.v10.$'
 import { Route as DocsV9SplatRouteImport } from './routes/docs_.v9.$'
 import { Route as KitchenSinkHandlesIndexRouteImport } from './routes/kitchen-sink/handles/index'
+import { Route as KitchenSinkNestedIndexRouteImport } from './routes/kitchen-sink/nested/index'
 import { Route as KitchenSinkHandlesApiSplatRouteImport } from './routes/kitchen-sink/handles/api.$'
+import { Route as KitchenSinkNestedApiSplatRouteImport } from './routes/kitchen-sink/nested/api.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -119,11 +121,22 @@ const KitchenSinkHandlesIndexRoute = KitchenSinkHandlesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => KitchenSinkHandlesRouteRoute,
 } as any)
+const KitchenSinkNestedIndexRoute = KitchenSinkNestedIndexRouteImport.update({
+  id: '/nested/',
+  path: '/nested/',
+  getParentRoute: () => KitchenSinkRouteRoute,
+} as any)
 const KitchenSinkHandlesApiSplatRoute =
   KitchenSinkHandlesApiSplatRouteImport.update({
     id: '/api/$',
     path: '/api/$',
     getParentRoute: () => KitchenSinkHandlesRouteRoute,
+  } as any)
+const KitchenSinkNestedApiSplatRoute =
+  KitchenSinkNestedApiSplatRouteImport.update({
+    id: '/nested/api/$',
+    path: '/nested/api/$',
+    getParentRoute: () => KitchenSinkRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -145,7 +158,9 @@ export interface FileRoutesByFullPath {
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
   '/kitchen-sink/handles/': typeof KitchenSinkHandlesIndexRoute
+  '/kitchen-sink/nested/': typeof KitchenSinkNestedIndexRoute
   '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
+  '/kitchen-sink/nested/api/$': typeof KitchenSinkNestedApiSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -164,7 +179,9 @@ export interface FileRoutesByTo {
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
   '/kitchen-sink/handles': typeof KitchenSinkHandlesIndexRoute
+  '/kitchen-sink/nested': typeof KitchenSinkNestedIndexRoute
   '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
+  '/kitchen-sink/nested/api/$': typeof KitchenSinkNestedApiSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -186,7 +203,9 @@ export interface FileRoutesById {
   '/docs_/v10/$': typeof DocsV10SplatRoute
   '/docs_/v9/$': typeof DocsV9SplatRoute
   '/kitchen-sink/handles/': typeof KitchenSinkHandlesIndexRoute
+  '/kitchen-sink/nested/': typeof KitchenSinkNestedIndexRoute
   '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
+  '/kitchen-sink/nested/api/$': typeof KitchenSinkNestedApiSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,7 +228,9 @@ export interface FileRouteTypes {
     | '/docs/v10/$'
     | '/docs/v9/$'
     | '/kitchen-sink/handles/'
+    | '/kitchen-sink/nested/'
     | '/kitchen-sink/handles/api/$'
+    | '/kitchen-sink/nested/api/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -228,7 +249,9 @@ export interface FileRouteTypes {
     | '/docs/v10/$'
     | '/docs/v9/$'
     | '/kitchen-sink/handles'
+    | '/kitchen-sink/nested'
     | '/kitchen-sink/handles/api/$'
+    | '/kitchen-sink/nested/api/$'
   id:
     | '__root__'
     | '/'
@@ -249,7 +272,9 @@ export interface FileRouteTypes {
     | '/docs_/v10/$'
     | '/docs_/v9/$'
     | '/kitchen-sink/handles/'
+    | '/kitchen-sink/nested/'
     | '/kitchen-sink/handles/api/$'
+    | '/kitchen-sink/nested/api/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -395,12 +420,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KitchenSinkHandlesIndexRouteImport
       parentRoute: typeof KitchenSinkHandlesRouteRoute
     }
+    '/kitchen-sink/nested/': {
+      id: '/kitchen-sink/nested/'
+      path: '/nested'
+      fullPath: '/kitchen-sink/nested/'
+      preLoaderRoute: typeof KitchenSinkNestedIndexRouteImport
+      parentRoute: typeof KitchenSinkRouteRoute
+    }
     '/kitchen-sink/handles/api/$': {
       id: '/kitchen-sink/handles/api/$'
       path: '/api/$'
       fullPath: '/kitchen-sink/handles/api/$'
       preLoaderRoute: typeof KitchenSinkHandlesApiSplatRouteImport
       parentRoute: typeof KitchenSinkHandlesRouteRoute
+    }
+    '/kitchen-sink/nested/api/$': {
+      id: '/kitchen-sink/nested/api/$'
+      path: '/nested/api/$'
+      fullPath: '/kitchen-sink/nested/api/$'
+      preLoaderRoute: typeof KitchenSinkNestedApiSplatRouteImport
+      parentRoute: typeof KitchenSinkRouteRoute
     }
   }
 }
@@ -424,11 +463,15 @@ const KitchenSinkHandlesRouteRouteWithChildren =
 interface KitchenSinkRouteRouteChildren {
   KitchenSinkHandlesRouteRoute: typeof KitchenSinkHandlesRouteRouteWithChildren
   KitchenSinkIndexRoute: typeof KitchenSinkIndexRoute
+  KitchenSinkNestedIndexRoute: typeof KitchenSinkNestedIndexRoute
+  KitchenSinkNestedApiSplatRoute: typeof KitchenSinkNestedApiSplatRoute
 }
 
 const KitchenSinkRouteRouteChildren: KitchenSinkRouteRouteChildren = {
   KitchenSinkHandlesRouteRoute: KitchenSinkHandlesRouteRouteWithChildren,
   KitchenSinkIndexRoute: KitchenSinkIndexRoute,
+  KitchenSinkNestedIndexRoute: KitchenSinkNestedIndexRoute,
+  KitchenSinkNestedApiSplatRoute: KitchenSinkNestedApiSplatRoute,
 }
 
 const KitchenSinkRouteRouteWithChildren =

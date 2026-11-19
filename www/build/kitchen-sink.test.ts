@@ -29,6 +29,10 @@ const paths = [
   '/kitchen-sink/handles?post=2',
   // A tRPC batch: the path has dots and commas.
   '/kitchen-sink/handles/api/post.byId,post.comments',
+  '/kitchen-sink/nested',
+  '/kitchen-sink/nested?mode=separate',
+  // A pipelined batch, which the browser sends as a POST.
+  '/kitchen-sink/nested/api/post.list,author.byId,team.byId',
 ];
 
 /** The site's routes on trpc.io in production, where pages are indexed. */

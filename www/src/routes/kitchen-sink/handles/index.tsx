@@ -13,7 +13,7 @@ import { site } from '~/site.ts';
 
 import { showcases } from '../-showcases.ts';
 import { Comments } from './-components/comments.tsx';
-import { Note, SeeItYourself } from './-components/note.tsx';
+import { Note, SeeItYourself } from '../-components/note.tsx';
 import { Post } from './-components/post.tsx';
 import { postNumbers } from './-posts.ts';
 import { loaderTRPC, useRequestCount } from './-trpc.ts';
