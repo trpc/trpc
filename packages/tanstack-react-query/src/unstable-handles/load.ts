@@ -372,15 +372,25 @@ export function beginEntries(opts: {
     state = { status: 'closed' };
   }
 
-  /** The prefetch entries whose data another entry reads, by their query's hash */
+  /**
+   * The entries whose data another entry reads, by their query's hash. `since`
+   * is how many writes and failures the query had once the load started it:
+   * `null` until then
+   */
   const watched = new Map<
     string,
-    { leaf: LinkedLeaf; data: Unit<unknown, EntryFailure> }[]
+    {
+      leaf: LinkedLeaf;
+      data: Unit<unknown, EntryFailure>;
+      since: { writes: number; failures: number } | null;
+    }[]
   >();
   /**
-   * Settles a prefetch entry's data from its fetch, in the step in which the
-   * `QueryClient` gets it. A fetch or ensure entry's data is what its
-   * `QueryClient` method resolves to, which the load waits for anyway
+   * Settles the data of an entry that another entry reads from the fetch the
+   * load starts or joins, in the step in which the `QueryClient` gets it,
+   * after its structural sharing. A prefetch resolves to nothing, and a fetch
+   * to what it fetched rather than what the cache keeps. Returns what to call
+   * once the query has started
    */
   function watch(
     leaf: LinkedLeaf,
@@ -388,29 +398,58 @@ export function beginEntries(opts: {
     data: Unit<unknown, EntryFailure>,
   ) {
     if (state.status === 'closed') {
-      return;
+      return nothing;
     }
     const { queryHash } = queryClient.defaultQueryOptions(options);
-    watched.set(queryHash, [...(watched.get(queryHash) ?? []), { leaf, data }]);
+    const one: NonNullable<ReturnType<typeof watched.get>>[number] = {
+      leaf,
+      data,
+      since: null,
+    };
+    watched.set(queryHash, [...(watched.get(queryHash) ?? []), one]);
     state.unwatch ??= queryClient.getQueryCache().subscribe((event) => {
       if (event.type !== 'updated') {
         return;
       }
       const { action } = event;
-      for (const one of watched.get(event.query.queryHash) ?? []) {
+      const queryState = event.query.state;
+      for (const each of watched.get(event.query.queryHash) ?? []) {
+        // Only of a fetch after the load started the query: a listener that
+        // started the load may be told of an earlier fetch after it. For
+        // data the cache had, such as a fresh hit, what the `QueryClient`
+        // method resolves to is the data
+        if (!each.since) {
+          continue;
+        }
         // Not a write, such as `setQueryData()`, while the request runs:
         // what the entries read is what the request returns, or its failure.
         // The action's data, not the query's: a listener told before this
         // one may have written to the query since
-        if (action.type === 'success' && !action.manual) {
-          one.data.settle(ok(action.data));
-        } else if (action.type === 'error') {
-          one.data.settle(
-            failed(ownFailure(one.leaf.label, one.leaf.state, action.error)),
+        if (
+          action.type === 'success' &&
+          !action.manual &&
+          queryState.dataUpdateCount > each.since.writes
+        ) {
+          each.data.settle(ok(action.data));
+        } else if (
+          action.type === 'error' &&
+          queryState.errorUpdateCount > each.since.failures
+        ) {
+          each.data.settle(
+            failed(ownFailure(each.leaf.label, each.leaf.state, action.error)),
           );
         }
       }
     });
+    return () => {
+      const query = queryClient.getQueryCache().get(queryHash);
+      if (query) {
+        one.since = {
+          writes: query.state.dataUpdateCount,
+          failures: query.state.errorUpdateCount,
+        };
+      }
+    };
   }
 
   /**
@@ -554,21 +593,24 @@ export function beginEntries(opts: {
     const isRead = linked.read.has(leaf);
 
     /**
-     * A prefetch entry that another entry reads. Its data is what its fetch
-     * resolves to, or the cache's write of it, whichever is first
+     * Starts the query. A throw is the caller's. If another entry reads this
+     * one, its data is the cache's write of its fetch, or what its
+     * `QueryClient` method resolves to, whichever is first
      */
-    const watched = state.kind === 'prefetch' && isRead;
-    /** Starts the query. A throw is the caller's */
     const start = (options: EntryQueryOptions) => {
-      if (watched) {
-        watch(leaf, options, data);
-      }
-      return startEntry({
+      const started =
+        isRead && state.kind === 'prefetch'
+          ? watch(leaf, options, data)
+          : nothing;
+      const promise = startEntry({
         queryClient,
         type: state.type,
-        kind: watched ? 'fetch' : state.kind,
+        // A prefetch resolves to nothing, also when the cache had fresh data
+        kind: isRead && state.kind === 'prefetch' ? 'fetch' : state.kind,
         options,
       });
+      started();
+      return promise;
     };
 
     let server: ServerSide | null = null;

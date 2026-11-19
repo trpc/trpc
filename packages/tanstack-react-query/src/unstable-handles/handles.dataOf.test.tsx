@@ -1339,6 +1339,63 @@ describe('edges of a load', () => {
     ]);
   });
 
+  test("a load started by a listener told of another fetch's success reads the cache's data, not that success", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    const cache = resource.queryClient.getQueryCache();
+    const loads: ReturnType<typeof startLoad>[] = [];
+    function startLoad() {
+      const post = prefetchEntry(
+        trpc.post.bySlug,
+        { slug: 'hello' },
+        { staleTime: Infinity },
+      );
+      return loadHandles(trpc, {
+        post,
+        author: ensureEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+      });
+    }
+    // Told of the success of a fetch the load has no part in. The load's
+    // listener, which it adds now, is told of that success after this one
+    using _subscription = makeResource(
+      {},
+      cache.subscribe((event) => {
+        if (
+          loads.length === 0 &&
+          event.type === 'updated' &&
+          event.action.type === 'success' &&
+          !event.action.manual &&
+          event.query.queryHash === hashKey(key)
+        ) {
+          resource.queryClient.setQueryData(key, {
+            id: 'written',
+            title: 'Written',
+            authorId: 'u2',
+            tags: [],
+          });
+          loads.push(startLoad());
+        }
+      }),
+    );
+    await resource.queryClient.fetchQuery(
+      trpc.post.bySlug.queryOptions({ slug: 'hello' }),
+    );
+    expect(loads).toHaveLength(1);
+    const [first] = loads;
+    if (!first) {
+      throw new Error('The listener started no load');
+    }
+    const [handles] = await first;
+    // The fresh data the load's prefetch got from the cache
+    expect(handles.author).toMatchObject({ input: { id: 'u2' } });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u2' }]]);
+  });
+
   test('a load that throws while it starts its entries leaves no listener once its earlier entries load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
