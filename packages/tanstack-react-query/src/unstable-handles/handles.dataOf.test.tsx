@@ -3438,28 +3438,30 @@ describe.each([
   });
 
   test("a later page's row whose query can't start doesn't stop the rows after it", async () => {
-    // A row whose id no query key can hold, as an app with a transformer for
-    // it can have, comes first on the second page
-    const addRow: TRPCLink<AnyRouter> =
+    // The first row of the second page has an author id no query key can
+    // hold, as an app with a transformer for it can have. The link changes
+    // the row in place: the server ran the row after it at the same place
+    const replaceAuthor: TRPCLink<AnyRouter> =
       () =>
       ({ op, next }) =>
         observable((observer) =>
           next(op).subscribe({
             next(value) {
               const data = value.result.data as
-                | { items?: unknown[] }
+                | { items?: { id: string; authorId: unknown }[] }
                 | undefined;
               const cursor = (op.input as { cursor?: unknown } | undefined)
                 ?.cursor;
+              const [first, ...rest] = data?.items ?? [];
               observer.next(
-                op.path === 'post.paged' && cursor === 1 && data?.items
+                op.path === 'post.pagedByAuthor' && cursor === 1 && first
                   ? ({
                       ...value,
                       result: {
                         ...value.result,
                         data: {
                           ...data,
-                          items: [{ id: 'big', authorId: 1n }, ...data.items],
+                          items: [{ ...first, authorId: 1n }, ...rest],
                         },
                       },
                     } as typeof value)
@@ -3475,15 +3477,15 @@ describe.each([
       latency: 0,
       maxBatchSize: undefined,
       allowPipelining: true,
-      before: [addRow],
+      before: [replaceAuthor],
     });
     const trpc = resource.optionsProxyClient;
     const getNextPageParam = (last: { nextCursor: number | null }) =>
       last.nextCursor;
 
     const posts = ensureInfiniteEntry(
-      trpc.post.paged,
-      {},
+      trpc.post.pagedByAuthor,
+      { authorId: 'a' },
       { getNextPageParam },
     );
     const [handles] = await loadHandles(trpc, {
@@ -3498,15 +3500,25 @@ describe.each([
       staleTime: Infinity,
     });
     using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.onRequestSpy.mockClear();
     const next = await observer.fetchNextPage();
     // The row that can't start came first on the page
     expect(next.data?.pages[1]?.items).toMatchObject([
-      { id: 'big', authorId: 1n },
-      { id: 'p1', authorId: 'u1' },
+      { id: 'a-p1-0', authorId: 1n },
+      { id: 'a-p1-1', authorId: 'u1' },
     ]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
+    // One request, with the page and its authors: the row after it didn't
+    // ask by itself
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(resource.onRequestSpy.mock.calls[0]![0].url).toContain(
+      '/post.pagedByAuthor,author.byId?batch=pipeline',
+    );
 
     // The row after it has its author, from the page's request
     expect(
@@ -3859,8 +3871,7 @@ describe.each([
       () =>
       ({ op, next }) =>
         observable((observer) => {
-          const cursor = (op.input as { cursor?: unknown } | undefined)
-            ?.cursor;
+          const cursor = (op.input as { cursor?: unknown } | undefined)?.cursor;
           const hold = op.path === 'post.paged' && cursor === 1 && !heldBack;
           heldBack ||= hold;
           return next(op).subscribe({
