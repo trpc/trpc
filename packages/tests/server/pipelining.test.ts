@@ -912,11 +912,23 @@ describe.each([
   );
 
   test('an answer that is no error and not by index is no result of a call the server makes', async () => {
-    await using ctx = setup({
+    const fetch = async () =>
+      Response.json(
+        {
+          result: {
+            data:
+              scenario.transformer === 'superjson'
+                ? superjson.serialize('maintenance')
+                : 'maintenance',
+          },
+        },
+        { status: 503 },
+      );
+    await using ctx = setup({ allowPipelining: true, pipelining: true, fetch });
+    await using without = setup({
       allowPipelining: true,
-      pipelining: true,
-      fetch: async () =>
-        Response.json({ result: { data: 'maintenance' } }, { status: 503 }),
+      pipelining: false,
+      fetch,
     });
     const post = createOperationPipeline();
     const postResult = ctx.untyped.query(
@@ -931,7 +943,10 @@ describe.each([
     });
     assert(author);
 
-    await postResult.catch(() => undefined);
+    // The operation gets the answer as it would without pipelining
+    const expected = await without.untyped.query('post', { slug: 'hello' });
+    expect(expected).toBeTruthy();
+    expect(await postResult).toEqual(expected);
     await expect(author.result).rejects.toThrow(
       'The server sent no result for a pipelined call',
     );
@@ -2185,20 +2200,54 @@ describe('the `pipe` search param', () => {
   });
 
   test('reads own properties only', async () => {
-    const res = await get(
-      pipe({
-        1: {
-          reads: [
-            { to: ['id'], from: 0, path: ['authorId'] },
-            { to: ['since'], from: 0, path: ['secret', 'inherited'] },
-            { to: ['__proto__'], from: 0, path: ['constructor'] },
-          ],
+    // What the pipeline reads is the data decoded from its JSON: this
+    // transformer gives `secret` an inherited property there
+    const t = initTRPC.create({
+      transformer: {
+        input: { serialize: (v: unknown) => v, deserialize: (v: unknown) => v },
+        output: {
+          serialize: (value: unknown) => value,
+          deserialize: (value: unknown) =>
+            isObject(value) && isObject(value['secret'])
+              ? {
+                  ...value,
+                  secret: Object.create({ inherited: 'no' }),
+                }
+              : value,
         },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request(
+        `http://localhost/trpc/post,author?batch=pipeline&${pipe({
+          1: {
+            reads: [
+              { to: ['id'], from: 0, path: ['authorId'] },
+              { to: ['since'], from: 0, path: ['secret', 'inherited'] },
+              { to: ['__proto__'], from: 0, path: ['constructor'] },
+            ],
+          },
+        })}`,
+      ),
+      router: t.router({
+        post: t.procedure
+          .input(z.unknown())
+          .query(() => ({ authorId: 'u1', secret: {} })),
+        author: t.procedure
+          .input(z.object({ id: z.string(), since: z.unknown().optional() }))
+          .query((opts) => {
+            author(opts.input);
+            return opts.input;
+          }),
       }),
-      { path: 'post,author', allowPipelining: true },
-    );
-    expect(res.json[1].result.data).toEqual({ id: 'u1', teamId: 'team-of-u1' });
-    expect(res.calls.mock.calls[0]![1]).toEqual({ id: 'u1' });
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1].result.data).toEqual({ id: 'u1' });
+    expect(author).toHaveBeenCalledWith({ id: 'u1' });
   });
 
   test.each([
