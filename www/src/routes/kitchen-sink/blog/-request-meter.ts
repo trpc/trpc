@@ -5,6 +5,7 @@
  * requests through `meteredFetch`, and the meter's component watches the
  * query cache.
  */
+import type { QueryCache, QueryKey } from '@tanstack/react-query';
 
 export interface Sent {
   /** The procedures it asks for, such as `blog.postBySlug` */
@@ -102,6 +103,42 @@ export const meter = {
     });
   },
 };
+
+/** The procedure of a tRPC query key, such as `blog.postBySlug` */
+export function pathOf(key: QueryKey) {
+  const [path] = key;
+  return Array.isArray(path) ? path.join('.') : '';
+}
+
+/** The run whose earlier results `countEarlier` counted */
+let countedEarlier: number | null = null;
+
+/**
+ * Counts the data that queries got in the current run before the meter
+ * watched the cache, such as a query that finished before the meter
+ * mounted. Once for each run, so a second mount counts nothing twice. The
+ * first run counts all of it: that is what the server sent with the page.
+ * A later run leaves out data from before it started, which was cached
+ */
+export function countEarlier(cache: QueryCache) {
+  const run = current;
+  if (countedEarlier === run.id) {
+    return;
+  }
+  countedEarlier = run.id;
+  // `dataUpdatedAt` is a `Date.now()`, in whole milliseconds
+  const startedAt = Math.floor(performance.timeOrigin + run.startedAt);
+  for (const query of cache.getAll()) {
+    const { status, dataUpdatedAt } = query.state;
+    if (status === 'success' && (run.id === 0 || dataUpdatedAt >= startedAt)) {
+      meter.arrive({
+        at: dataUpdatedAt,
+        id: run.id,
+        path: pathOf(query.queryKey),
+      });
+    }
+  }
+}
 
 /** The procedures a request asks for, from its URL: `…/api/a,b` */
 function pathsOf(url: RequestInfo | URL) {

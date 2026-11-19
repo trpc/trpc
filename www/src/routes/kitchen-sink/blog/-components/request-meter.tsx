@@ -1,4 +1,4 @@
-import { type QueryKey, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type ReactNode,
   useEffect,
@@ -6,13 +6,13 @@ import {
   useSyncExternalStore,
 } from 'react';
 
-import { endMs, meter, type Run } from '../-request-meter.ts';
-
-/** The procedure of a tRPC query key, such as `blog.postBySlug` */
-function pathOf(key: QueryKey) {
-  const [path] = key;
-  return Array.isArray(path) ? path.join('.') : '';
-}
+import {
+  countEarlier,
+  endMs,
+  meter,
+  pathOf,
+  type Run,
+} from '../-request-meter.ts';
 
 /** A store that never changes, for whether this has mounted */
 const subscribeNever = () => () => undefined;
@@ -43,19 +43,9 @@ function useBlogQueries() {
   const [fetching, setFetching] = useState(0);
   useEffect(() => {
     const cache = queryClient.getQueryCache();
-    // The data that came before this mounted, such as what the server sent
-    // with the page: in the first run, when each query got it
-    if (meter.get().id === 0 && meter.get().arrivals.length === 0) {
-      for (const query of cache.getAll()) {
-        if (query.state.status === 'success') {
-          meter.arrive({
-            at: query.state.dataUpdatedAt,
-            id: 0,
-            path: pathOf(query.queryKey),
-          });
-        }
-      }
-    }
+    // The data that came in this run before this mounted, such as what the
+    // server sent with the page, or a query that finished before it
+    countEarlier(cache);
     // The run each query started fetching in, so data that comes after a
     // navigation counts in the run that asked for it. The loaders start
     // their queries before this mounts: those are of the current run
