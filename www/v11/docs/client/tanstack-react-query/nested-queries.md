@@ -541,6 +541,7 @@ function AuthorName(props: {
 - **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](/docs/client/vanilla/nested-queries#limits).
 - **A list from `.map()` or `.flatMap()` loads in one request too.** The server walks the list as the client does, a level for every `null` in its path, and runs the call for the same items. Of an infinite entry, the request has the first page. If the items are the elements of one list in each page, such as `pages.flatMap((page) => page.items)`, and the item's query reads the item, the items of a later page load with that page, as [below](#later-fetches). Any other list's items load when they are read.
 - **With one request, a link mustn't change the list's rows.** The server runs the item's query for the rows as the procedure returned them, and each row reads the result at its place. A link that sorts or filters the rows would give a row another row's result.
+- **With one request, a link mustn't change any value that another query reads**, in a list or not. If a link changes a post's `authorId` from `u1` to `u2`, the server still runs `author.byId` for `u1`, and the cache can keep that result under the key for `u2`. See [Good to know](/docs/client/vanilla/nested-queries#good-to-know).
 
 For a fetch or ensure entry, `data` has a list with every item's data.
 
