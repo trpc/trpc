@@ -669,6 +669,23 @@ describe('dataOf', () => {
     expect(data.pages).toEqual([{ cursor: 'null', nextCursor: null }]);
   });
 
+  test("an infinite entry's data has `undefined` as the page param of a page without a cursor, in its type too, and `null` for a `null` one", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const [, data] = await loadHandles(trpc, {
+      none: ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' }),
+      fromNull: ensureInfiniteEntry(trpc.post.byAuthor, {
+        authorId: 'u2',
+        cursor: null,
+      }),
+    });
+    expect(data.none.pageParams).toEqual([undefined]);
+    expect(data.fromNull.pageParams).toEqual([null]);
+    expectTypeOf(data.none.pageParams).toEqualTypeOf<
+      (number | null | undefined)[]
+    >();
+  });
+
   test('throws for an entry that is not in the load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

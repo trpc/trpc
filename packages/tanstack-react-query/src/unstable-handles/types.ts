@@ -1,6 +1,7 @@
 import type {
   FetchQueryOptions,
   GetNextPageParamFunction,
+  InfiniteData,
 } from '@tanstack/react-query';
 import type { skipToken } from '@tanstack/react-query';
 import type { coerceAsyncIterableToArray } from '@trpc/server/unstable-core-do-not-import';
@@ -11,7 +12,6 @@ import type {
 import type {
   ExtractCursorType,
   ResolverDef,
-  TRPCInfiniteData,
   TRPCQueryBaseOptions,
 } from '../internals/types';
 import type { TRPCEntryError } from './entryError';
@@ -329,6 +329,16 @@ export type HandleOfEntry<TEntry> =
               : never;
 
 /**
+ * An infinite entry's data, as a load has it. A page without a cursor, such
+ * as the first page of an entry with no first cursor, has `undefined` as its
+ * page param, and one for a `null` cursor has `null`
+ */
+export type LoadedInfiniteData<TDef extends ResolverDef> = InfiniteData<
+  TDef['output'],
+  NonNullable<ExtractCursorType<TDef['input']>> | null | undefined
+>;
+
+/**
  * An entry's data, as its query has it: a procedure that yields has the list
  * that `queryOptions()` collects its values into
  */
@@ -336,7 +346,7 @@ export type DataOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
     ? coerceAsyncIterableToArray<TDef['output']>
     : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
-      ? TRPCInfiniteData<TDef['input'], TDef['output']>
+      ? LoadedInfiniteData<TDef>
       : TEntry extends experimental_TRPCEntryFromData<infer TInner, any>
         ? DataOfEntry<TInner>
         : never;

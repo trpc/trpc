@@ -272,11 +272,11 @@ describe('types', () => {
       ensured: { id: string; title: string };
       list: {
         pages: { items: number[]; nextCursor: number }[];
-        pageParams: (number | null)[];
+        pageParams: (number | null | undefined)[];
       };
       fetchedList: {
         pages: { items: number[]; nextCursor: number }[];
-        pageParams: (number | null)[];
+        pageParams: (number | null | undefined)[];
       };
     }>();
     // @ts-expect-error a prefetched query may have no data yet
