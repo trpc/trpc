@@ -505,6 +505,18 @@ export function withItemQueries(opts: {
       const list: Promise<unknown> = Promise.resolve(
         opts.optionsWith(pipeline).queryFn(context),
       );
+      // The fetch this request is of, without reading `context.signal`,
+      // which would make unmounting cancel the query. A fetch that another
+      // replaced, such as by a second `fetchNextPage()`, or that was
+      // cancelled, writes nothing to the cache: its request may still
+      // complete, and a newer fetch may have written its items since
+      const query = queryClient
+        .getQueryCache()
+        .get(queryClient.defaultQueryOptions(opts.options).queryHash);
+      const fetch = query?.promise;
+      const isActive = () =>
+        !query ||
+        (query.promise === fetch && query.state.fetchStatus !== 'idle');
       for (const queries of opts.itemQueries) {
         // One call, which the server runs for every item of the list. Without
         // a link that took the list into a batch, the items load when they
@@ -527,6 +539,9 @@ export function withItemQueries(opts: {
         }
         // Before the list's data reaches the components that read the items
         void list.then((data) => {
+          if (!isActive()) {
+            return;
+          }
           const listData = readPipelinePath(data, queries.list, null);
           for (const [index, element] of Array.isArray(listData)
             ? listData.entries()

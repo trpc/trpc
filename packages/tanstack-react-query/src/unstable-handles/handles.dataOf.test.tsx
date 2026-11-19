@@ -3774,6 +3774,108 @@ describe.each([
     ).toHaveLength(3);
   });
 
+  test("a later page whose fetch another replaced writes none of its items' queries", async () => {
+    // Holds back the result of the first request for the second page, which
+    // the transport still completes: the query doesn't abort it
+    const releaser = { release: (): void => undefined };
+    const released = new Promise<void>((resolve) => {
+      releaser.release = resolve;
+    });
+    let heldBack = false;
+    let completed = false;
+    const holdFirstPage: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) =>
+        observable((observer) => {
+          const cursor = (op.input as { cursor?: unknown } | undefined)
+            ?.cursor;
+          const hold = op.path === 'post.paged' && cursor === 1 && !heldBack;
+          heldBack ||= hold;
+          return next(op).subscribe({
+            next(value) {
+              if (hold) {
+                void released.then(() => observer.next(value));
+              } else {
+                observer.next(value);
+              }
+            },
+            error: (error) => observer.error(error),
+            complete() {
+              if (hold) {
+                void released.then(() => {
+                  observer.complete();
+                  completed = true;
+                });
+              } else {
+                observer.complete();
+              }
+            },
+          });
+        });
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [holdFirstPage],
+    });
+    const trpc = resource.optionsProxyClient;
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    const authorKey = trpc.author.byId.queryKey({ id: 'u1' });
+
+    // The first fetch of the second page waits; a second one cancels it
+    const cancelled = observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(heldBack).toBe(true);
+    });
+    const next = await observer.fetchNextPage();
+    expect(next.data?.pages).toHaveLength(2);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.queryClient.getQueryState(authorKey)).toMatchObject({
+      data: { id: 'u1' },
+      dataUpdateCount: 1,
+    });
+
+    // The cancelled fetch's request completes after all
+    releaser.release();
+    await cancelled;
+    await vi.waitFor(() => {
+      expect(completed).toBe(true);
+    });
+    // The step after: the list's result has reached the query function
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.queryClient.getQueryState(authorKey)).toMatchObject({
+      dataUpdateCount: 1,
+    });
+  });
+
   test("a query that is fetched again loads its items' queries in the same request", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
