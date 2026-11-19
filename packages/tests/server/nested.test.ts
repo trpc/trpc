@@ -620,6 +620,69 @@ describe.each([
     expect(teams.mock.calls).toEqual([['ada']]);
   });
 
+  test("a run's error that the transformer writes as a falsy value is the run's error, not a run the server left out", async () => {
+    /** What the transformer reads back from the `0` it writes for an error */
+    const errorShape = {
+      message: 'no author',
+      code: -32004,
+      data: { code: 'NOT_FOUND', httpStatus: 404 },
+    };
+    const isErrorShape = (value: unknown) =>
+      isObject(value) &&
+      typeof value['message'] === 'string' &&
+      typeof value['code'] === 'number' &&
+      isObject(value['data']);
+    const transformer = {
+      input: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) => value,
+      },
+      output: {
+        serialize: (value: unknown) => (isErrorShape(value) ? 0 : value),
+        deserialize: (value: unknown) => (value === 0 ? errorShape : value),
+      },
+    };
+    const t = initTRPC.create({ transformer });
+    const authors = vi.fn();
+    const appRouter = t.router({
+      list: t.procedure.query(() => ({ items: [{ id: 'ada' }, { id: 'x' }] })),
+      author: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        authors(opts.input.id);
+        if (opts.input.id === 'x') {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'no author' });
+        }
+        return { id: opts.input.id };
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    const items = await experimental_nested(ctx.client, (q) =>
+      q.list.query().items.map((item) => ({
+        author: q.author.query({ id: item.id }),
+      })),
+    );
+
+    expect(await items[0]!.edges.author).toEqual({ id: 'ada' });
+    await expect(items[1]!.edges.author).rejects.toMatchObject({
+      message: 'no author',
+      data: { code: 'NOT_FOUND' },
+    });
+    // Each ran once, in the one request: none was asked for again
+    expect(authors.mock.calls).toEqual([['ada'], ['x']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
   test("a query in a `.map()` of a list in the data of a call the server refused, with an input that reads nothing, asks by itself once that call's data is there", async () => {
     const t = initTRPC.create();
     const tags = vi.fn();
