@@ -581,13 +581,19 @@ export function withItemQueries(opts: {
             // key can hold, fails by itself: the row that reads it gets that
             // error, and the others load
             void attempt(() => {
-              const options = optionsOf(queries.procedure, 'query')(
+              const built = optionsOf(queries.procedure, 'query')(
                 finishInput(queries, item),
                 undefined,
               );
+              // With the QueryClient's defaults: `build()` alone hashes the
+              // key without its default `queryKeyHashFn`, which can throw,
+              // or name another query than the prefetch's. The prefetch
+              // takes the same hash
+              const defaulted = queryClient.defaultQueryOptions(built);
+              const options = { ...built, queryHash: defaulted.queryHash };
               const itemQuery = queryClient
                 .getQueryCache()
-                .build(queryClient, options);
+                .build(queryClient, defaulted);
               const result: Promise<PipelinedOutcome> = outcomeOfItem(call, [
                 index,
               ]).then((outcome) => {

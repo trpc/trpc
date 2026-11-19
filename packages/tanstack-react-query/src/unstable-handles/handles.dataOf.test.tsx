@@ -6313,4 +6313,70 @@ describe('a key that only a `queryKeyHashFn` the QueryClient has for it can hash
     const options = fromHandle(trpc, handles.id);
     await expect(resource.queryClient.fetchQuery(options)).resolves.toBe(1n);
   });
+
+  test("a list fetched again loads its items' queries in its request, under the keys the QueryClient's hash gives them", async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const calls = vi.fn();
+    const appRouter = t.router({
+      ids: t.procedure.query(() => {
+        calls('ids');
+        return { items: [{ id: 1n }, { id: 2n }] };
+      }),
+      byId: t.procedure.input(z.object({ id: z.bigint() })).query((opts) => {
+        calls('byId', opts.input.id);
+        return { id: opts.input.id };
+      }),
+    });
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer: superjson,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    resource.queryClient.setDefaultOptions({
+      queries: { queryKeyHashFn: bigintHash },
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const list = ensureEntry(trpc.ids);
+    const [handles] = await loadHandles(trpc, {
+      list,
+      byId: experimental_entryPerItem(experimental_dataOf(list).items, (item) =>
+        prefetchEntry(trpc.byId, { id: item.id }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.queryClient.removeQueries({ queryKey: trpc.byId.pathKey() });
+    resource.onRequestSpy.mockClear();
+    calls.mockClear();
+
+    // As after an invalidation
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, handles.list),
+      staleTime: 0,
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // One request, for the list and each item, and one query per item
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(calls.mock.calls).toEqual([['ids'], ['byId', 1n], ['byId', 2n]]);
+    expect(
+      resource.queryClient.getQueryData(trpc.byId.queryKey({ id: 2n })),
+    ).toEqual({ id: 2n });
+    expect(
+      resource.queryClient
+        .getQueryCache()
+        .findAll({ queryKey: trpc.byId.pathKey() }),
+    ).toHaveLength(2);
+  });
 });
