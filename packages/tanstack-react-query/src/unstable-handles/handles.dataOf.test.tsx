@@ -5533,6 +5533,43 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('the same infinite entry with and without `getNextPageParam` is another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: {
+      getNextPageParam:
+        | ((last: { nextCursor: number | null }) => number | null)
+        | undefined;
+    }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          posts: prefetchInfiniteEntry(
+            trpc.post.paged,
+            {},
+            props.getNextPageParam
+              ? { getNextPageParam: props.getNextPageParam }
+              : {},
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card getNextPageParam={undefined} />
+        <Card getNextPageParam={(last) => last.nextCursor} />
+        {/* Which function it is isn't compared: an inline one is new on every render */}
+        <Card getNextPageParam={(last) => last.nextCursor} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[1]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('an option that has no JSON is not read as one that is left out', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

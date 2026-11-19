@@ -284,6 +284,9 @@ export const startOptions = [
   'retryDelay',
   'gcTime',
   'pages',
+  // Whether there is one: without it, an infinite query loads no page after
+  // its first, and a load with `pages` fails
+  'getNextPageParam',
 ] as const;
 
 /**
