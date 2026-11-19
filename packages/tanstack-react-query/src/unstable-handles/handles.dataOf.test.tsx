@@ -6100,6 +6100,40 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('a `trpc.context` whose nested object differs only in a symbol key is another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    const region = Symbol('region');
+    function Card(props: { context: Record<string, unknown> }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context: props.context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card context={{ route: { [region]: 'east' } }} />
+        <Card context={{ route: { [region]: 'west' } }} />
+        <Card context={{ route: { [region]: 'east' } }} />
+        <Card context={{ route: {} }} />
+      </>,
+    );
+    // A link can route by them
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    expect(seen[3]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a `trpc.context` value of `undefined` and one of `null` are other loads', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

@@ -321,6 +321,26 @@ function describeSymbol(symbol: symbol) {
 }
 
 /**
+ * An object's own keys, symbols too, each tagged so that no string key reads
+ * like a symbol, with what `describe` makes of its value, in the order of
+ * their tags
+ */
+function describeKeys(
+  object: Readonly<Record<PropertyKey, unknown>>,
+  describe: (member: unknown) => unknown,
+) {
+  return Reflect.ownKeys(object)
+    .map(
+      (key) =>
+        [
+          typeof key === 'symbol' ? describeSymbol(key) : `string:${key}`,
+          describe(object[key]),
+        ] as const,
+    )
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/**
  * A value as one with JSON that no other value has. JSON reads `undefined`
  * and a hole as `null`, `-0` as `0` and a date as its string, and has no
  * bigint, and has a Map or a Set as `{}`: a transformer, or a link, can tell
@@ -388,11 +408,10 @@ function describeValue(
     ];
   }
   if (isPlainObject(value)) {
+    // Symbol keys too: a link can route by them, at any level
     return [
       'object',
-      Object.entries(value)
-        .map(([key, member]) => [key, describeValue(member, inside)] as const)
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+      describeKeys(value, (member) => describeValue(member, inside)),
     ];
   }
   try {
@@ -413,14 +432,7 @@ function describeContext(
   if (context === null) {
     return null;
   }
-  return Reflect.ownKeys(context)
-    .map((key) => {
-      return [
-        typeof key === 'symbol' ? describeSymbol(key) : `string:${key}`,
-        describeValue(context[key], []),
-      ] as const;
-    })
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return describeKeys(context, (member) => describeValue(member, []));
 }
 
 /**
