@@ -620,8 +620,8 @@ function errorItem(error: unknown): PipelinedItem {
  * A call's final state from what the response has for it alone. It didn't
  * run if the server says it refused it before any of its runs ran, such as
  * for a list longer than the server's limits, or if its result never
- * arrived, such as from a response that broke off: whatever the server did,
- * the client has no result of it.
+ * arrived, such as from a response that broke off or left it out: whatever
+ * the server did, the client has no result of it.
  */
 function decodeCall(
   received: Outcome<HTTPResult | undefined>,
@@ -631,9 +631,16 @@ function decodeCall(
     return { status: 'not-run', error: received.error };
   }
   const sent = received.data;
+  // No slot for it at all: as from a response that broke off
+  if (!sent) {
+    return {
+      status: 'not-run',
+      error: new Error('The server sent no result for a pipelined call'),
+    };
+  }
   // What isn't an object is no envelope: the call fails, and its siblings
   // keep theirs
-  if (!sent || !isObject(sent.json)) {
+  if (!isObject(sent.json)) {
     return {
       status: 'ran',
       outcome: failed(
