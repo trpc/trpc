@@ -472,8 +472,12 @@ export function experimental_entryPerItem(
 
 /**
  * An entry for `loadHandles()` that starts the query without waiting, like
- * `queryClient.prefetchQuery`. It never makes the load reject: errors surface where
- * the handle is read. Creating the entry starts nothing.
+ * `queryClient.prefetchQuery`. A failed request doesn't make the load reject:
+ * the error surfaces where the handle is read. It does if another entry reads
+ * its data with `experimental_dataOf()`, and a throw as the load starts it,
+ * such as from a `staleTime` function, does too. `loadHandlesSettled()` has no
+ * result for a prefetch entry, so it rejects in those cases as well. Creating
+ * the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
  */
 export function prefetchEntry<TDef extends ResolverDef>(
