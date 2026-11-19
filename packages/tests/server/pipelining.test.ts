@@ -847,6 +847,39 @@ describe.each([
   );
 
   test.runIf(scenario.link === httpBatchLink)(
+    'an answer with `null` for an operation says nothing of whether it failed: a call that reads it keeps the error the server sent it',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json([null, ...results.slice(1)], res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      // `t2` is forbidden
+      const tag = pipeCall({
+        path: 'tag',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['tags', '1', 'id'] }),
+      });
+      assert(tag);
+      await expect(postResult).rejects.toThrow();
+      await expect(tag.result).rejects.toMatchObject({
+        data: { code: 'FORBIDDEN' },
+      });
+      expect(tag.status).toBe('sent');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchLink)(
     'an answer with `null` for a call fails that call: it is no envelope, and the client had it',
     async () => {
       await using ctx = setup({

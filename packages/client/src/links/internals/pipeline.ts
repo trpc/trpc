@@ -683,8 +683,8 @@ function decodeCall(
  * it, so a failed source that has arrived is why the call failed, and one
  * still to come isn't.
  *
- * @param sourcesOk whether the server sent each source a result, not an
- * error, or `null` if it hasn't arrived
+ * @param sourcesOk whether the server sent each source a result (`true`)
+ * or an error (`false`), or `null` if that hasn't arrived
  */
 export function settlePipelinedCall(
   own: PipelinedCallSettled,
@@ -696,18 +696,17 @@ export function settlePipelinedCall(
 }
 
 /**
- * Whether the server sent a result, not an error, at an index of the
- * request: what the server ran the calls that read it from. Whether the
+ * Whether the server sent a result (`true`) or an error (`false`) at an index
+ * of the request: whether the server ran the calls that read it. Whether the
  * client can deserialize that result is another matter, and doesn't say
- * whether those calls ran. What is no envelope, such as `null`, is no result
+ * whether those calls ran. `null` for what says neither: no slot, a slot
+ * that is no envelope, such as `null`, or a result that never arrived
  */
 function sentResult(received: Outcome<HTTPResult | undefined>) {
-  return (
-    received.ok &&
-    !!received.data &&
-    isObject(received.data.json) &&
-    !('error' in received.data.json)
-  );
+  if (!received.ok || !received.data || !isObject(received.data.json)) {
+    return null;
+  }
+  return !('error' in received.data.json);
 }
 
 /**
@@ -722,8 +721,9 @@ function settlePipelinedBatch(opts: {
   link: PipeliningLink;
 }) {
   /**
-   * Whether the server sent a result at each index of the request, once it
-   * arrived: see `sentResult()`
+   * Whether the server sent a result or an error at each index of the
+   * request, or `null` until it arrives or if it says neither: see
+   * `sentResult()`
    */
   const ok: (boolean | null)[] = opts.results.map(() => null);
   // The same steps for an operation and a call, so that each is marked in
