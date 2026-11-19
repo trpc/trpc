@@ -1339,6 +1339,40 @@ describe('edges of a load', () => {
     ]);
   });
 
+  test("the entries that read a fetch entry fill in the cache's data, after its structural sharing", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    // The cache keeps the data it has: the fetch resolves to what it fetched
+    resource.queryClient.setQueryDefaults(key, {
+      structuralSharing: (previous: unknown, next: unknown) => previous ?? next,
+    });
+    resource.queryClient.setQueryData(key, {
+      id: 'cached',
+      title: 'Cached',
+      authorId: 'u2',
+      tags: [],
+    });
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      author: prefetchEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    expect(resource.queryClient.getQueryData(key)).toMatchObject({
+      authorId: 'u2',
+    });
+    expect(data.post).toMatchObject({ authorId: 'u2' });
+    expect(handles.author).toMatchObject({ input: { id: 'u2' } });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u2' }]]);
+  });
+
   test("a load started by a listener told of another fetch's success reads the cache's data, not that success", async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

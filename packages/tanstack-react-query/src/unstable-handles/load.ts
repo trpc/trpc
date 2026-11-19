@@ -598,10 +598,7 @@ export function beginEntries(opts: {
      * `QueryClient` method resolves to, whichever is first
      */
     const start = (options: EntryQueryOptions) => {
-      const started =
-        isRead && state.kind === 'prefetch'
-          ? watch(leaf, options, data)
-          : nothing;
+      const started = isRead ? watch(leaf, options, data) : nothing;
       const promise = startEntry({
         queryClient,
         type: state.type,
