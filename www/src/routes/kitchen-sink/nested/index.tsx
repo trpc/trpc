@@ -21,8 +21,8 @@ export const Route = createFileRoute('/kitchen-sink/nested/')({
 });
 
 /** Starts a load in `mode`, and counts its requests in the live bar. */
-const load = (mode: Mode) =>
-  meter.track(mode, (fetch) => loadPosts({ fetch, mode }));
+const load = (opts: { readonly mode: Mode; readonly signal: AbortSignal }) =>
+  meter.track(opts.mode, (fetch) => loadPosts({ ...opts, fetch }));
 
 function NestedPage() {
   const mode = Route.useSearch().mode ?? 'pipelined';
@@ -40,9 +40,13 @@ function NestedPage() {
   // mounted when only the search does. Its `id` is new, so what failed in the
   // last one is gone.
   useEffect(() => {
+    // The next load, or leaving the page, stops this one: an author still on
+    // its way doesn't then ask for its team.
+    const controller = new AbortController();
     // Not in the updater, which React may call twice
-    const posts = load(mode);
+    const posts = load({ mode, signal: controller.signal });
     setRun((last) => ({ id: (last?.id ?? 0) + 1, posts }));
+    return () => controller.abort();
   }, [mode, reloads]);
 
   return (
