@@ -13,6 +13,7 @@ import {
 } from 'typescript/ast';
 import {
   API,
+  ElementFlags,
   SymbolFlags,
   TypeFlags,
   TypeFormatFlags,
@@ -22,6 +23,7 @@ import {
   type RawCompilerOptions,
   type StringLiteralType,
   type Symbol as TsSymbol,
+  type TupleTypeReference,
   type Type,
   type TypeReference,
   type UnionType,
@@ -791,11 +793,17 @@ function convertTupleType(
 ): SchemaObject {
   const args = ctx.checker.getTypeArguments(type as TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
+  // Optional elements (`[string, number?]`) are marked in the tuple target's
+  // element flags, not by their type (a required `T | undefined` member must
+  // not lower the bound); every element from the first optional one on may
+  // be absent, so only the elements before it are required.
+  const elementFlags = (type as TupleTypeReference).getTarget().elementFlags;
+  const firstOptional = elementFlags.indexOf(ElementFlags.Optional);
   return {
     type: 'array',
     prefixItems: schemas,
     items: false,
-    minItems: args.length,
+    minItems: firstOptional === -1 ? args.length : firstOptional,
     maxItems: args.length,
   };
 }
