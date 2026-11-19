@@ -22,7 +22,7 @@ With [handles](/docs/client/tanstack-react-query/handles) and the functions on t
 
 - **A component says what data it needs, ahead of time.** It says so in a plain function. The data can depend on other data.
 - **The page makes one request for all of it.** The server fills in each id as it goes.
-- **Nothing blocks the page.** It shows at once, and each part streams in when its data is ready.
+- **Nothing blocks the page.** It shows at once, and each part shows when its data is ready. With `httpBatchStreamLink`, each part's result arrives as soon as the server has it. `httpBatchLink` saves the same round trips, but sends every result in one response, once the last one is done.
 
 An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment. It sits next to its component. A page puts several together. All of it loads in one request. But it is plain TypeScript and plain tRPC procedures: there is no schema, no resolver and no build step.
 
@@ -328,7 +328,7 @@ function MoreFromTeam(props: {
 }
 ```
 
-- **Each part shows when its query has loaded**: the post, then the author, then the team's posts. Give each its own Suspense boundary.
+- **Each part shows when its query has loaded**: the post, then the author, then the team's posts. Give each its own Suspense boundary. With [one request](#one-request) over `httpBatchLink`, they all arrive at once.
 - **The components make no request of their own.** Each query is already on its way when its component asks for it. Data older than `staleTime` still refetches in the background, as with any query: set a `staleTime` above 0, as [the setup guides do](/docs/client/tanstack-react-query/handles#invalidation-and-staleness).
 - **A finished handle is an ordinary handle.** It reads the cache entry `trpc.author.byId.queryOptions({ id: 'u1' })` would.
 
@@ -336,7 +336,9 @@ Then [turn on one request](/docs/client/vanilla/nested-queries#turn-on). Without
 
 ## One request {#one-request}
 
-The browser can't ask for the author before it has the post. It doesn't know the id. With pipelining it doesn't have to: it sends every call at once, and the server fills in each one's input from the result before it, then sends each result back when it is ready.
+The browser can't ask for the author before it has the post. It doesn't know the id. With pipelining it doesn't have to: it sends every call at once, and the server fills in each one's input from the result before it.
+
+Sending the calls together is what saves the round trips. When the results come back depends on the link: `httpBatchStreamLink` streams each one as it settles, so the post can show before its author. `httpBatchLink` waits for every result and sends them as one JSON response.
 
 It is a feature of the client and the server, not of TanStack Query, so it has its own page: [Nested queries in one request](/docs/client/vanilla/nested-queries#one-request). There you'll find how to [turn it on](/docs/client/vanilla/nested-queries#turn-on), [what goes over the wire](/docs/client/vanilla/nested-queries#wire), [what your links see](/docs/client/vanilla/nested-queries#links), [when it isn't one request](/docs/client/vanilla/nested-queries#fallback) and its [limits](/docs/client/vanilla/nested-queries#limits).
 
@@ -833,10 +835,11 @@ if (results.post.status === 'error') {
 }
 ```
 
-`loadHandlesSettled()` still rejects in two cases:
+`loadHandlesSettled()` still rejects in three cases:
 
 - **A prefetch entry's request fails and another entry reads its data.** A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
 - **An entry that reads no other entry throws while the load starts it**, such as from a `staleTime` function, whatever its kind, [as above](#errors).
+- **A query is interrupted rather than failing.** If `queryClient.cancelQueries()` cancels the fetch of an ensure entry the cache has no data for, the load rejects with TanStack Query's `CancelledError`, which `isCancelledError()` checks. An error with a `digest`, such as Next.js's `headers()` throws in a static render, is rethrown as it is.
 
 ## FAQ {#faq}
 

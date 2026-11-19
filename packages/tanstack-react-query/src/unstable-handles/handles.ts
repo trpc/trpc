@@ -112,8 +112,9 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * when the cache has data for it, such as from `setQueryData()`. A throw while
  * it starts an entry that reads no other entry, such as from a `staleTime`
  * function, makes it reject too, whatever the entry's kind.
- * It rejects with a `TRPCEntryError`, except for an error with a `digest`, such as
- * Next.js's `headers()` in a static render throws, which it rethrows as is.
+ * It rejects with a `TRPCEntryError`, except for an interruption, which it
+ * rethrows as is: a cancelled query's `CancelledError`, or an error with a
+ * `digest`, such as Next.js's `headers()` in a static render throws.
  *
  * Put TanStack Query's `skipToken` in place of an entry to start nothing for that
  * key: its handle is `undefined`, and `data` has no key for it.
@@ -161,8 +162,10 @@ export function loadHandles<
  * reject. A throw while it starts an entry that reads no other entry, such as from
  * a `staleTime` function, still rejects, whatever the entry's kind.
  *
- * A cancelled query, or an error with a `digest` such as Next.js's `headers()`
- * in a static render throws, still rejects, as it does with `loadHandles()`.
+ * An interruption still rejects, as it does with `loadHandles()`: a cancelled
+ * query, such as an ensure entry's uncached fetch that `cancelQueries()` stops,
+ * rejects with TanStack Query's `CancelledError`, and an error with a `digest`,
+ * such as Next.js's `headers()` throws in a static render, is rethrown as is.
  * @example
  * ```ts
  * const [handles, results] = await loadHandlesSettled(trpc, {

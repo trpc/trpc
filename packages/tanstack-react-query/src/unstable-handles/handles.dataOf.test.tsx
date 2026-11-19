@@ -584,6 +584,22 @@ describe('dataOf', () => {
     ).toEqual([]);
   });
 
+  test("loadHandlesSettled rejects with the cancellation of an uncached ensure entry's fetch", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const loaded = loadHandlesSettled(trpc, {
+      post: ensureEntry(trpc.post.bySlug, { slug: 'hello' }),
+    });
+    await resource.queryClient.cancelQueries({
+      queryKey: trpc.post.bySlug.queryKey({ slug: 'hello' }),
+    });
+    const error = await loaded.then(
+      () => null,
+      (reason: unknown) => reason,
+    );
+    expect(isCancelledError(error)).toBe(true);
+  });
+
   test('loadHandlesSettled rejects for a failed prefetch entry at a key with a dot in it, next to a waited entry of the same name', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
