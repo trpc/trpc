@@ -403,6 +403,12 @@ async function send(opts: {
   stream: boolean;
   /** Told of each result as the client reads it, by its index */
   onArrive: (index: number) => void;
+  /**
+   * Ends the request, and the read of its response, such as at a deadline:
+   * a test whose release is a result fails rather than waiting for one that
+   * never comes
+   */
+  signal: AbortSignal | null;
 }) {
   const plan = planPipelinedBatch({
     sent: opts.sent,
@@ -435,6 +441,7 @@ async function send(opts: {
         });
   const response = await fetch(url, {
     method: opts.method,
+    signal: opts.signal,
     ...(body === undefined
       ? {}
       : { body, headers: { 'content-type': 'application/json' } }),
@@ -596,6 +603,7 @@ const defaults = {
   fits: () => true,
   onError: () => undefined,
   onArrive: () => undefined,
+  signal: null,
 } as const;
 
 /** For reads of objects and arrays, which a server takes only with `allowWholeValues` */
@@ -1539,6 +1547,10 @@ describe('a call for every item', () => {
           open();
         }
       },
+      // A server that waits for `short` before it sends the runs of `long`
+      // never sends them: the read fails here rather than waiting forever,
+      // and `_opened` then ends `short`
+      signal: AbortSignal.timeout(2_000),
     });
 
     expect(itemCount(res.of(ofLong))).toBe(3);
