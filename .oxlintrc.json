@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "unicorn"],
+  "plugins": ["react", "typescript", "unicorn", "vitest"],
   "jsPlugins": ["./tooling/oxlint-plugin/index.ts"],
   // Only the rules below run, as they did with ESLint (no `eslint:recommended`).
   "categories": {
@@ -21,7 +21,15 @@
     "react/purity": "error",
     "react/set-state-in-render": "error",
     "react/static-components": "error",
-    "react/unsupported-syntax": "warn"
+    "react/unsupported-syntax": "warn",
+
+    // A plugin rule, not `no-restricted-imports` options, so that an override
+    // setting `no-restricted-imports` can't drop it.
+    "trpc/no-testing-library-wait-for": "error",
+
+    // Set up in the test with `using`: a helper returns a Disposable that
+    // undoes its setup, and the test's scope disposes it.
+    "vitest/no-hooks": "error"
   },
   "overrides": [
     {
@@ -130,18 +138,6 @@
         "no-restricted-imports": [
           "error",
           {
-            "paths": [
-              {
-                "name": "@testing-library/dom",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              },
-              {
-                "name": "@testing-library/react",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              }
-            ],
             "patterns": [
               {
                 "group": ["@trpc/*/src", "@trpc/*/src/**"],
@@ -204,30 +200,28 @@
       }
     },
     {
+      // A setup file runs around every test in the project, and has no
+      // test scope to `using` in.
+      "files": ["www/vitest.setup.ts"],
+      "rules": {
+        "vitest/no-hooks": "off"
+      }
+    },
+    {
       "files": ["packages/**"],
       "rules": {
-        "no-console": "error"
+        "no-console": "error",
+        // Not in `www/**`, whose tests set the clock with `useFakeTimers({ now })`.
+        "trpc/no-direct-fake-timers": "error"
       }
     },
     {
       "files": ["packages/server/src/adapters/**"],
       "rules": {
-        // Repeats the options above: an override replaces a rule's options.
+        // Repeats the `/src` pattern above: an override replaces a rule's options.
         "no-restricted-imports": [
           "error",
           {
-            "paths": [
-              {
-                "name": "@testing-library/dom",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              },
-              {
-                "name": "@testing-library/react",
-                "importNames": ["waitFor"],
-                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
-              }
-            ],
             "patterns": [
               {
                 "group": ["@trpc/*/src", "@trpc/*/src/**"],

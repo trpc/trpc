@@ -3,28 +3,23 @@ import { useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const appRouter = t.router({
-      post: t.router({
-        create: t.procedure.mutation(() => 'ok' as const),
-      }),
-    });
+  const appRouter = t.router({
+    post: t.router({
+      create: t.procedure.mutation(() => 'ok' as const),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 describe('mutation keys', () => {
   test('can grab from cache using correct key', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     const mutationKey = [['post', 'create']];
 
