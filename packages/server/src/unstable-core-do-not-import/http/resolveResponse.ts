@@ -358,13 +358,36 @@ function carriesNotRun(
   }
 }
 
+/** Stands for JSON that the transformer doesn't read back to the same */
+const notReadBack = Symbol();
+
+/**
+ * Checked JSON read back through the transformer, for a stream to serialize
+ * again: only if what it reads serializes to the same JSON. A server need
+ * not read back what only its clients read, so its transformer can fail to,
+ * or read it as other data
+ */
+function readBack(
+  transformer: CombinedDataTransformer['output'],
+  json: string,
+): unknown {
+  try {
+    const value: unknown = transformer.deserialize(JSON.parse(json));
+    return JSON.stringify(transformer.serialize(value)) === json
+      ? value
+      : notReadBack;
+  } catch {
+    return notReadBack;
+  }
+}
+
 /**
  * The data of a run as a stream sends it. The stream serializes what it sends
  * itself, so it gets the checked JSON read back through the transformer,
  * which serializes to the same again: not the data as it was made, which
- * could serialize differently the second time. A server need not read back
- * what only its clients read, so if the transformer can't, the data as it
- * was made, as a stream sends any other call's
+ * could serialize differently the second time. If the transformer doesn't
+ * read it back to the same, the data as it was made, as a stream sends any
+ * other call's
  */
 function streamedValue(
   transformer: CombinedDataTransformer['output'],
@@ -373,30 +396,22 @@ function streamedValue(
   if (sent.json === undefined) {
     return sent;
   }
-  try {
-    return {
-      value: transformer.deserialize(JSON.parse(sent.json)),
-      json: sent.json,
-    };
-  } catch {
-    return sent;
-  }
+  const value = readBack(transformer, sent.json);
+  return value === notReadBack ? sent : { value, json: sent.json };
 }
 
 /**
  * An error shape as a stream sends it: the checked JSON read back through
- * the transformer, as for data. If the transformer can't read it back, the
- * default shape of the same error, which serializes to the same every time
+ * the transformer, as for data. If the transformer doesn't read it back to
+ * the same, the default shape of the same error, which serializes to the
+ * same every time
  */
 function streamedShape(
   transformer: CombinedDataTransformer['output'],
   shape: SentShape,
 ): unknown {
-  try {
-    return transformer.deserialize(JSON.parse(shape.json));
-  } catch {
-    return shape.plain;
-  }
+  const value = readBack(transformer, shape.json);
+  return value === notReadBack ? shape.plain : value;
 }
 
 /** The runs of a call that runs for every item, as far as they are ready */
