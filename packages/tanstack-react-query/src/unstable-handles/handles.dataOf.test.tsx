@@ -567,6 +567,10 @@ describe('dataOf', () => {
       team: experimental_dataOf(post, (data) =>
         prefetchEntry(trpc.team.byId, { id: data.authorId }),
       ),
+      // An entry per item has no list to build its handle from
+      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      ),
     });
 
     expect(Object.keys(handles).sort()).toEqual(['author', 'post', 'team']);
