@@ -221,8 +221,9 @@ export interface experimental_PipeliningOptions {
    */
   allowWholeValues?: boolean;
   /**
-   * The most procedure runs a batch can have: each of its calls, and a call
-   * for every item once for each item. It keeps a small request from running
+   * The most procedure runs a batch can have: each of its calls that runs
+   * once, and a call for every item once for each item, counted when its list
+   * is ready. It keeps a small request from running
    * a procedure for every item of a long list. A batch with more calls than
    * this fails as a whole, as one over `maxBatchSize` does. `maxBatchSize`
    * caps the runs too, if it is lower.

@@ -2084,7 +2084,7 @@ describe('the `pipe` search param', () => {
       )}`,
     );
     const json = await res.json();
-    // Three calls and four items are over the limit. Three calls and two are not
+    // The list and four items are over the limit. The list and two are not
     expect(json[1].error.message).toBe(
       'A call for every item exceeds the maximum batch size',
     );

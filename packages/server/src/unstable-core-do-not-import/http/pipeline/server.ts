@@ -913,15 +913,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     framesDiffer: boolean;
     /**
      * The place it holds among the batch's runs from the start. A call that
-     * doesn't run gives it back; a call for every item gives it back for one
-     * for each item
+     * doesn't run gives it back. A call for every item holds none: it takes
+     * one for each item once its list is ready, so a list that isn't ready
+     * yet takes nothing from one that is
      */
     seat: PipelineLease;
   }
   /**
-   * The runs of the batch: each call holds a place from the start, and a
-   * call for every item one for each of its items. A call that doesn't run
-   * gives its places back.
+   * The runs of the batch: each call that runs once holds a place from the
+   * start, and a call for every item one for each of its items once its list
+   * is ready. A call that doesn't run gives its places back.
    */
   const runs = createPipelineBudget({
     limit: Math.min(limits.maxRuns, opts.maxRuns ?? Infinity),
@@ -991,6 +992,12 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       const framed = pipelineFrameOf({ reads, frameOf: (it) => it.frame });
       source.frame = framed.frame;
       source.framesDiffer = !framed.fits;
+      if (framed.frame) {
+        // A call for every item counted as one above, so that a request
+        // with more calls than `runs` allows is refused: its runs are its
+        // items, which take their places as its list is ready
+        source.seat.giveBack(1);
+      }
     }
   }
   /** Why a call is refused before it reads anything, if it is */
@@ -1425,9 +1432,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         }
         base = await inputToFill(source);
       } catch (cause) {
-        // Refused, or its own input can't be read: it runs for no item, and
-        // gives back the place it holds
-        source.seat.giveBack(1);
+        // Refused, or its own input can't be read: it runs for no item
         notRunBecause(cause);
         throw cause;
       }
@@ -1515,11 +1520,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         places.then((node): PlacesNode<Ran> => {
           switch (node.kind) {
             case 'failed':
-              source.seat.giveBack(1);
               return node;
             case 'items': {
-              // What it held from the start is for its runs, or for none
-              source.seat.giveBack(1);
               if (level + 1 < frame.depth) {
                 return {
                   kind: 'items',
