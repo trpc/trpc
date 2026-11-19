@@ -176,7 +176,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
               if (procedure?._def.type === 'subscription') {
                 const lastEventId = getLastEventId(opts);
 
-                if (lastEventId) {
+                if (lastEventId !== null) {
                   if (isObject(input)) {
                     input = {
                       ...input,
