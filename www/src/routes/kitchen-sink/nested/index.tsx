@@ -34,17 +34,16 @@ function NestedPage() {
     readonly id: number;
     readonly posts: Promise<Posts>;
   } | null>(null);
-  /** Starts a load. Its `id` is new, so what failed in the last one is gone. */
-  const start = (next: Mode) => {
-    // Not in the updater, which React may call twice
-    const posts = load(next);
-    setRun((last) => ({ id: (last?.id ?? 0) + 1, posts }));
-  };
+  /** Bumped by the Reload button, to load again in the same mode */
+  const [reloads, setReloads] = useState(0);
+  // A load for each mode the URL has, however it changed: the page stays
+  // mounted when only the search does. Its `id` is new, so what failed in the
+  // last one is gone.
   useEffect(() => {
-    start(mode);
-    // Only the first load: a switch or a reload starts the others.
-    // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Not in the updater, which React may call twice
+    const posts = load(mode);
+    setRun((last) => ({ id: (last?.id ?? 0) + 1, posts }));
+  }, [mode, reloads]);
 
   return (
     <>
@@ -97,10 +96,8 @@ function NestedPage() {
               resetScroll: false,
               search: { mode: next === 'pipelined' ? undefined : next },
             });
-            // A new load: nothing of the other mode's is kept.
-            start(next);
           }}
-          onReload={() => start(mode)}
+          onReload={() => setReloads((count) => count + 1)}
         />
       </section>
       <section className="grid gap-2">
