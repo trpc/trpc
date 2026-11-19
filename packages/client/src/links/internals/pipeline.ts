@@ -725,13 +725,18 @@ export function settlePipelinedCall(
  * of the request: whether the server ran the calls that read it. Whether the
  * client can deserialize that result is another matter, and doesn't say
  * whether those calls ran. `null` for what says neither: no slot, a slot
- * that is no envelope, such as `null`, or a result that never arrived
+ * that is no envelope, such as `null` or `{}`, or a result that never
+ * arrived
  */
 function sentResult(received: Outcome<HTTPResult | undefined>) {
   if (!received.ok || !received.data || !isObject(received.data.json)) {
     return null;
   }
-  return !('error' in received.data.json);
+  const json = received.data.json;
+  if ('result' in json || 'items' in json) {
+    return true;
+  }
+  return 'error' in json ? false : null;
 }
 
 /**
