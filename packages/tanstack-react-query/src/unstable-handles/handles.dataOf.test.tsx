@@ -6276,6 +6276,44 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('a `trpc.context` with another function in it is another load, and one with the same function is the same', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    // Callbacks a link routes by, which stay the same from render to render
+    const east = () => 'east';
+    const west = () => 'west';
+    function Card(props: { route: () => string }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            {
+              trpc: { context: { route: props.route } },
+              // Which function an option is still isn't compared: an inline
+              // one is new on every render
+              retryDelay: () => 10,
+            },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card route={east} />
+        <Card route={west} />
+        <Card route={east} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('entries under other keys are another load, also when the keys read the same joined with dots', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

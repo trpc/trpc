@@ -321,6 +321,26 @@ function describeSymbol(symbol: symbol) {
 }
 
 /**
+ * Every function a context has had, by its number. Held weakly: an inline
+ * function is new on every render
+ */
+const functionIds = new WeakMap<object, number>();
+const nextFunctionId = { value: 0 };
+
+/**
+ * A function as a string that no other function has: a link can route by
+ * which function a context has
+ */
+function describeFunction(fn: object) {
+  let id = functionIds.get(fn);
+  if (id === undefined) {
+    id = nextFunctionId.value++;
+    functionIds.set(fn, id);
+  }
+  return `function:${id}`;
+}
+
+/**
  * An object's own keys, symbols too, each tagged so that no string key reads
  * like a symbol, with what `describe` makes of its value, in the order of
  * their tags
@@ -346,7 +366,8 @@ function describeKeys(
  * bigint, and has a Map or a Set as `{}`: a transformer, or a link, can tell
  * each of them apart. Each value is tagged with its type, so that no value
  * reads like another's tag. A Map and a Set are described by their members,
- * in their order. A value that isn't a plain object, an array, a Map or a
+ * in their order. A function is described by which function it is, as a
+ * symbol is. A value that isn't a plain object, an array, a Map or a
  * Set, such as a class instance, is described
  * as JSON writes it, or by its type if it has no JSON
  */
@@ -366,7 +387,7 @@ function describeValue(
     case 'symbol':
       return ['symbol', describeSymbol(value)];
     case 'function':
-      return ['function'];
+      return ['function', describeFunction(value)];
     case 'string':
     case 'boolean':
       return ['value', value];
@@ -423,8 +444,8 @@ function describeValue(
 
 /**
  * An entry's own `trpc.context` as a value with JSON, symbol keys and all.
- * Two symbols with the same description differ. A value with no JSON, such
- * as a function, is described by its type
+ * Two symbols with the same description differ, and so do two functions:
+ * a link can route by a callback in it
  */
 function describeContext(
   context: Readonly<Record<PropertyKey, unknown>> | null,
