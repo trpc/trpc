@@ -5351,6 +5351,43 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('a `trpc.context` with a Map or a Set of other values is another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { context: Record<string, unknown> }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context: props.context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card context={{ route: new Map([['region', 'east']]) }} />
+        <Card context={{ route: new Map([['region', 'west']]) }} />
+        <Card context={{ route: new Map([['region', 'east']]) }} />
+        <Card context={{ route: new Set(['east']) }} />
+        <Card context={{ route: new Set(['west']) }} />
+        <Card context={{ route: new Set(['east']) }} />
+      </>,
+    );
+    // A link can route by what is in them
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    expect(seen[3]).not.toBe(seen[0]);
+    expect(seen[4]).not.toBe(seen[3]);
+    expect(seen[5]).toBe(seen[3]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a `trpc.context` value of `undefined` and one of `null` are other loads', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

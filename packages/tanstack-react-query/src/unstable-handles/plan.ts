@@ -320,9 +320,11 @@ function describeSymbol(symbol: symbol) {
 /**
  * A value as one with JSON that no other value has. JSON reads `undefined`
  * and a hole as `null`, `-0` as `0` and a date as its string, and has no
- * bigint: a transformer, or a link, can tell each of them apart. Each value is
- * tagged with its type, so that no value reads like another's tag. A value
- * that isn't a plain object or array, such as a class instance, is described
+ * bigint, and has a Map or a Set as `{}`: a transformer, or a link, can tell
+ * each of them apart. Each value is tagged with its type, so that no value
+ * reads like another's tag. A Map and a Set are described by their members,
+ * in their order. A value that isn't a plain object, an array, a Map or a
+ * Set, such as a class instance, is described
  * as JSON writes it, or by its type if it has no JSON
  */
 function describeValue(
@@ -364,6 +366,22 @@ function describeValue(
       Array.from({ length: value.length }, (_, index) =>
         index in value ? describeValue(value[index], inside) : ['hole'],
       ),
+    ];
+  }
+  // A link can route by what a Map or a Set has, which JSON leaves out
+  if (value instanceof Map) {
+    return [
+      'map',
+      Array.from(value, ([key, member]) => [
+        describeValue(key, inside),
+        describeValue(member, inside),
+      ]),
+    ];
+  }
+  if (value instanceof Set) {
+    return [
+      'set',
+      Array.from(value, (member) => describeValue(member, inside)),
     ];
   }
   if (isPlainObject(value)) {
