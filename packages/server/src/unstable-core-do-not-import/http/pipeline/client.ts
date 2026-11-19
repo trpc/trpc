@@ -8,7 +8,12 @@ import type {
   PipelineWholeRead,
   PipeRead,
 } from './wire';
-import { hasOwn, pipelineBatch } from './wire';
+import {
+  hasOwn,
+  pipelineBatch,
+  pipelineErrorEnvelope,
+  pipelineMarkOf,
+} from './wire';
 
 /** A call's reads as they are in a `pipe`, where a number names each source */
 export function encodePipelineReads(
@@ -227,7 +232,11 @@ export function deserializePipelinedItems(
     return { items: deserialized };
   }
   if (hasOwn(value, 'error')) {
-    return { error: deserialize(value['error']) };
+    // The server's mark is beside the error, and stays there
+    return pipelineErrorEnvelope(
+      deserialize(value['error']),
+      pipelineMarkOf(value),
+    );
   }
   return isObject(value['result'])
     ? { result: { data: deserialize(value['result']['data']) } }

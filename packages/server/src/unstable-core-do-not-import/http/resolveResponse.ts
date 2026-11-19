@@ -28,8 +28,7 @@ import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
 import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
-import { isPipelineNotRun, markPipelineError } from './pipeline/wire';
-import type { PipelineErrorMark } from './pipeline/wire';
+import { pipelineErrorEnvelope } from './pipeline/wire';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -297,9 +296,8 @@ interface SentShape {
   /** The JSON of what the transformer made of it, as it was checked */
   json: string;
   /**
-   * The default shape of the same error, of strings and numbers only, marked
-   * as `value` is: what a stream sends if the transformer can't read `json`
-   * back
+   * The default shape of the same error, of strings and numbers only: what a
+   * stream sends if the transformer can't read `json` back
    */
   plain: unknown;
 }
@@ -338,24 +336,6 @@ function trySendableShape(opts: {
       : { value: shape, json, plain: opts.plain };
   } catch {
     return null;
-  }
-}
-
-/**
- * Whether an error shape, as it is sent, has the mark of a call refused
- * before it ran: a shape with a `toJSON` of its own, or of its `data`, can
- * write JSON without it. If the transformer can't read the JSON back, which
- * a server need not do, it is taken to have it, as marked
- */
-function carriesNotRun(
-  transformer: CombinedDataTransformer['output'],
-  shape: SentShape,
-) {
-  try {
-    const read: unknown = transformer.deserialize(JSON.parse(shape.json));
-    return isObject(read) && isPipelineNotRun(read['data']);
-  } catch {
-    return true;
   }
 }
 
@@ -611,74 +591,38 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      * that JSON can't carry, such as one an `errorFormatter` gave a `BigInt`,
      * fails only that call or run, as an `INTERNAL_SERVER_ERROR`: in the
      * formatter's shape, or in the default one if JSON can't carry that
-     * either. What the server refused before it ran is marked so, in each,
-     * and so is what it sent in place of what reads a failed call or run.
+     * either. The server's mark goes beside it, in its envelope: nothing here
+     * adds one to the shape.
      */
     const pipelinedErrorShape = (sending: {
       error: TRPCError;
       input: unknown;
       call: TRPCRequestInfo['calls'][number] | undefined;
-      /** Whether the server refused the call before any of its runs ran */
-      notRun: boolean;
     }): SentShape => {
       const path = sending.call?.path;
-      const mark: PipelineErrorMark | null = sending.notRun
-        ? 'not-run'
-        : pipeline?.readFailedSource(sending.error)
-          ? 'source-failed'
-          : null;
-      const markedShape = (shape: unknown) =>
-        mark ? markPipelineError(shape, mark) : shape;
       const shapeOf = (error: TRPCError, input: unknown): unknown =>
-        markedShape(
-          getErrorShape({
-            config,
-            ctx: ctxManager.valueOrUndefined(),
-            error,
-            input,
-            path,
-            type: sending.call?.procedure?._def.type ?? 'unknown',
-          }),
-        );
+        getErrorShape({
+          config,
+          ctx: ctxManager.valueOrUndefined(),
+          error,
+          input,
+          path,
+          type: sending.call?.procedure?._def.type ?? 'unknown',
+        });
       const plainOf = (error: TRPCError): unknown =>
-        markedShape(
-          getDefaultErrorShape({
-            error,
-            path,
-            isDev: config.isDev,
-          }),
-        );
+        getDefaultErrorShape({
+          error,
+          path,
+          isDev: config.isDev,
+        });
       const transformer = config.transformer.output;
-      /**
-       * What is sent, if it has the mark of a call refused before it ran where
-       * it is to have it. The mark of what reads a failed call isn't read back:
-       * that would decode output the server otherwise never reads, and an
-       * error a formatter's shape sends without it is taken as the call's own
-       */
-      const marked = (sent: SentShape | null) =>
-        sent && (!sending.notRun || carriesNotRun(transformer, sent))
-          ? sent
-          : null;
       const sent = trySendableShape({
         transformer,
         shape: () => shapeOf(sending.error, sending.input),
         plain: plainOf(sending.error),
       });
       if (sent) {
-        // A formatter's shape that is sent without the mark: the default
-        // shape of the same error, which has it
-        const withMark =
-          marked(sent) ??
-          marked(
-            trySendableShape({
-              transformer,
-              shape: () => plainOf(sending.error),
-              plain: plainOf(sending.error),
-            }),
-          );
-        if (withMark) {
-          return withMark;
-        }
+        return sent;
       }
       const error = new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -686,13 +630,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
       const plain = plainOf(error);
       return (
-        marked(
-          trySendableShape({
-            transformer,
-            shape: () => shapeOf(error, undefined),
-            plain,
-          }),
-        ) ?? {
+        trySendableShape({
+          transformer,
+          shape: () => shapeOf(error, undefined),
+          plain,
+        }) ?? {
           value: plain,
           // Strings and numbers only, which JSON can carry
           json: JSON.stringify(transformer.serialize(plain)),
@@ -824,7 +766,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                     error,
                     input: failure.input,
                     call,
-                    notRun: failure.notRun,
                   });
                 },
               })
@@ -1108,37 +1049,36 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const call = info.calls[index];
 
           if (error) {
-            const shape = pipeline
-              ? pipelinedErrorShape({
-                  error,
-                  input: call!.result(),
-                  call,
-                  notRun: pipeline.isNotRun(error),
-                })
-              : null;
+            if (pipeline) {
+              // The server's mark, beside the error
+              return pipelineErrorEnvelope(
+                streamedShape(
+                  config.transformer.output,
+                  pipelinedErrorShape({ error, input: call!.result(), call }),
+                ),
+                pipeline.markOf(error),
+              );
+            }
             return {
-              error: shape
-                ? streamedShape(config.transformer.output, shape)
-                : getErrorShape({
-                    config,
-                    ctx: ctxManager.valueOrUndefined(),
-                    error,
-                    input: call!.result(),
-                    path: call!.path,
-                    type: call!.procedure?._def.type ?? 'unknown',
-                  }),
+              error: getErrorShape({
+                config,
+                ctx: ctxManager.valueOrUndefined(),
+                error,
+                input: call!.result(),
+                path: call!.path,
+                type: call!.procedure?._def.type ?? 'unknown',
+              }),
             };
           }
           if (result.items) {
-            // A run's data as it was checked, read back
+            // A run's data as it was checked, read back, and a run's error
+            // with the server's mark beside it
             return streamedItems(result.items, (outcome) =>
               'error' in outcome
-                ? {
-                    error: streamedShape(
-                      config.transformer.output,
-                      outcome.error,
-                    ),
-                  }
+                ? pipelineErrorEnvelope(
+                    streamedShape(config.transformer.output, outcome.error),
+                    outcome.pipeline ?? null,
+                  )
                 : { result: { data: outcome.result.data.value } },
             );
           }
@@ -1260,12 +1200,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 error,
                 input: call.result(),
                 call,
-                notRun: pipeline.isNotRun(error),
               });
               return {
                 error,
                 meta: { error: shape.value },
-                sent: { error: sentOf(shape) },
+                // The server's mark, beside the error
+                sent: pipelineErrorEnvelope(
+                  sentOf(shape),
+                  pipeline.markOf(error),
+                ),
               };
             };
             const [error, result] = res;
@@ -1290,7 +1233,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 },
                 sent: await settledItems(result.items, (outcome) =>
                   'error' in outcome
-                    ? { error: sentOf(outcome.error) }
+                    ? pipelineErrorEnvelope(
+                        sentOf(outcome.error),
+                        outcome.pipeline ?? null,
+                      )
                     : { result: { data: sentOf(outcome.result.data) } },
                 ),
               };

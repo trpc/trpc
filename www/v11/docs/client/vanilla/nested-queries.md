@@ -300,10 +300,11 @@ Its response has the runs of a call for every item in `items`, by the item's ind
   { "result": { "data": { "items": [{ "authorId": "u1" }, { "authorId": "u9" }] } } },
   { "items": {
       "0": { "result": { "data": { "id": "u1", "name": "Alex", "teamId": "t1" } } },
-      "1": { "error": { "message": "No author", "data": { "code": "NOT_FOUND" } } } } },
+      "1": { "error": { "message": "No author", "code": -32004, "data": { "code": "NOT_FOUND" } } } } },
   { "items": {
       "0": { "result": { "data": { "items": [], "nextCursor": null } } },
-      "1": { "error": { "message": "The call this call reads its input from failed", "data": { "code": "PRECONDITION_FAILED", "pipeline": "source-failed" } } } } }
+      "1": { "error": { "message": "The call this call reads its input from failed", "code": -32012, "data": { "code": "PRECONDITION_FAILED" } },
+             "pipeline": "source-failed" } } }
 ]
 ```
 
@@ -311,8 +312,9 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 - **A `null` in its path is a level of lists**: `["pages", null, "items"]` is every item of every page. `items` then has a level for each.
 - **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls whose frames don't nest, such as for the items of two different lists, is refused.
 - **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
-- **A call the server refused for a [limit](#limits) before any of it ran has `"pipeline": "not-run"` in its error's `data`**, beside what your error formatter puts there. The client then asks for it by itself. The error of a run, or of a list inside a call, has no such mark.
-- **The error the server sends in place of a call, a run or a list that reads a failed one has `"pipeline": "source-failed"` in its `data`**. That mark, not the `PRECONDITION_FAILED` code, is how the client tells it from an error your procedure threw: a procedure's own error has no mark, whatever its code.
+- **The server marks some errors with a `"pipeline"` beside the `error`**, never inside it. The error is your [error formatter](/docs/server/error-formatting)'s shape, as it makes it, so nothing it puts in `data`, or leaves out of its JSON, changes what the client does.
+- **A call the server refused for a [limit](#limits) before any of it ran is marked `"pipeline": "not-run"`.** The client then asks for it by itself. The error of a run, or of a list inside a call, has no such mark.
+- **The error the server sends in place of a call, a run or a list that reads a failed one is marked `"pipeline": "source-failed"`**, as run 1 of call 2 is above. That mark, not the `PRECONDITION_FAILED` code, is how the client tells it from an error your procedure threw: a procedure's own error has no mark, whatever its code or its `data`.
 - **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
 ### What your links see {#links}
@@ -475,7 +477,7 @@ A GraphQL server often gives a query a cost, from its depth and from how many it
 
 - **An input the transformer can't read fails the batch's calls**, as in any batch.
 - **Don't change data another call returned.** A call that reads it may see a different value than the response sends.
-- **Data and transformers have to give the same JSON every time.** The server writes a value once to check it and to fill it in, and a streamed one again to send it. A `toJSON` or a getter that gives something else each time can send other data than a call read.
+- **Data and transformers have to give the same JSON every time.** The server can write a value more than once, with `httpBatchLink` as with `httpBatchStreamLink`: to check it and fill it in where a call reads it, and again to send it. A `toJSON` or a getter that gives something else each time can send other data than a call read, or fail the response after a call read it.
 - **A transformer has to read back what it writes**, for a value by itself as for one inside an input, as superjson does. The server writes each value it fills in by itself, and refuses one it can tell doesn't come back. One that writes a value by itself other than inside an input can give a call another input than the client would send.
 
 ## FAQ {#faq}

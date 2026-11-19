@@ -12,7 +12,6 @@ import {
   createRecursiveProxy,
   hasOwn,
   isObject,
-  isPipelineSourceFailed,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from './createTRPCClient';
@@ -22,6 +21,7 @@ import type { TRPCProcedureOptions } from './internals/types';
 import type {
   Outcome,
   PipelinedData,
+  PipelinedRun,
   PipelineSource,
   Settles,
 } from './links/internals/pipeline';
@@ -35,7 +35,6 @@ import {
   readPipelinedRun,
   settles,
 } from './links/internals/pipeline';
-import { isTRPCClientError } from './TRPCClientError';
 
 /**
  * `experimental_nested()` records the queries its callback makes, then sends
@@ -607,6 +606,22 @@ function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
   return values.some((it) => hasStandIn(it, seen));
 }
 
+/** One pass of `mapInput()` over an input */
+interface InputPass {
+  onStandIn: (standIn: unknown, hole: Hole) => unknown;
+  /**
+   * The copy of each `Map` and `Set` copied in this pass, and what is in
+   * them: one in two places of the input is one copy, as a transformer that
+   * keeps references carries it
+   */
+  copies: Map<object, unknown>;
+}
+
+/** A pass of `mapInput()` that replaces each stand-in with what `onStandIn` gives */
+function inputPass(onStandIn: InputPass['onStandIn']): InputPass {
+  return { onStandIn, copies: new Map() };
+}
+
 /**
  * A copy of an input, with each stand-in in it replaced. `to` is where a
  * value is in the input: `null` in an array, where the server can't write
@@ -614,7 +629,7 @@ function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
 function mapInput(
   value: unknown,
   to: string[] | null,
-  onStandIn: (standIn: unknown, hole: Hole) => unknown,
+  pass: InputPass,
 ): unknown {
   const shape = shapeOf(value);
   if (shape) {
@@ -623,15 +638,15 @@ function mapInput(
         'experimental_nested(): an input can have stand-ins in it, not `.with()` or `.map()`',
       );
     }
-    return onStandIn(value, { to, ref: shape.ref });
+    return pass.onStandIn(value, { to, ref: shape.ref });
   }
   if (Array.isArray(value)) {
-    return value.map((item) => mapInput(item, null, onStandIn));
+    return value.map((item) => mapInput(item, null, pass));
   }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};
     for (const key of Object.keys(value)) {
-      setOwn(copy, key, mapInput(value[key], to && [...to, key], onStandIn));
+      setOwn(copy, key, mapInput(value[key], to && [...to, key], pass));
     }
     return copy;
   }
@@ -650,7 +665,7 @@ function mapInput(
   if (isObject(value)) {
     const proto: unknown = Object.getPrototypeOf(value);
     if (proto === Map.prototype || proto === Set.prototype) {
-      return copyData(value, new Map());
+      return copyData(value, pass.copies);
     }
   }
   return value;
@@ -829,14 +844,22 @@ export function experimental_nested<
     }
     // Read once, as it is now: a later change to the object doesn't change
     // the call, and the request and a query that asks by itself agree
-    const input = mapInput(args[0], [], (it) => it);
+    const input = mapInput(
+      args[0],
+      [],
+      inputPass((it) => it),
+    );
     const holes: Hole[] = [];
-    const blanked = mapInput(input, [], (_standIn, hole) => {
-      checkScopes(hole.ref, scopes);
-      holes.push(hole);
-      hole.ref.call.reads.push(hole.ref.path);
-      return undefined;
-    });
+    const blanked = mapInput(
+      input,
+      [],
+      inputPass((_standIn, hole) => {
+        checkScopes(hole.ref, scopes);
+        holes.push(hole);
+        hole.ref.call.reads.push(hole.ref.path);
+        return undefined;
+      }),
+    );
     const call: Call = {
       path: procedure,
       input,
@@ -964,7 +987,7 @@ export function experimental_nested<
           // itself, as a call does whose source failed
           if (
             run.kind === 'error' &&
-            !(await blockedBySource(call, items, run.error))
+            !(await blockedBySource(call, items, run))
           ) {
             return failed(run.error);
           }
@@ -979,19 +1002,29 @@ export function experimental_nested<
 
   /**
    * Whether a run's error is what the server sends in place of a run that
-   * reads one it didn't make, or that failed: an error the server marked so
-   * (`isPipelineSourceFailed`), and a call whose data the input reads that
-   * the server refused or that failed on the server, for the run's items.
-   * Any other error is the run's own, at once, whatever its code. The server sends a failed source before the runs that read it,
-   * so this resolves at the first one, and doesn't wait for a source still
-   * to come. An error the client made, such as for a result it couldn't
-   * deserialize, doesn't say the server didn't run it
+   * reads one it didn't make, or that failed: an error the server marked
+   * `source-failed` beside it, in its envelope, and a call the run reads
+   * that the server refused or that failed on the server, for the run's
+   * items. What a run reads is what its input reads, and the list it runs
+   * for, which is in a call's data too. Any other error is the run's own, at
+   * once, whatever its code or its `data`. The server sends a failed source
+   * before the runs that read it, so this resolves at the first one, and
+   * doesn't wait for a source still to come. An error the client made, such
+   * as for a result it couldn't deserialize, doesn't say the server didn't
+   * run it
    */
-  function blockedBySource(call: Call, items: Items, error: unknown) {
-    if (!isTRPCClientError(error) || !isPipelineSourceFailed(error.data)) {
+  function blockedBySource(
+    call: Call,
+    items: Items,
+    run: Extract<PipelinedRun, { kind: 'error' }>,
+  ) {
+    if (run.mark !== 'source-failed') {
       return Promise.resolve(false);
     }
-    const sources = new Set(call.holes.map((hole) => hole.ref.call));
+    const sources = new Set([
+      ...call.holes.map((hole) => hole.ref.call),
+      ...call.frame.map((scope) => scope.list.call),
+    ]);
     return anyTrue(
       Array.from(sources, (source) =>
         settles(

@@ -65,12 +65,15 @@
  *   with the code `PRECONDITION_FAILED`, in place of its items. What isn't a
  *   list has no items: `{ items: {} }`.
  * - A run fails by itself, and a run that reads a failed one doesn't run.
+ * - The server marks some errors with a `pipeline` beside the `error`, in
+ *   its envelope, never in the error's `data`, which the app's
+ *   `errorFormatter` makes: `{ "error": {…}, "pipeline": "not-run" }`.
  * - A call the server refused before any of its runs ran, for going over
- *   one of its limits, has `pipeline: 'not-run'` in its error's `data`. A
- *   client can ask for it by itself, as a call that wasn't sent.
+ *   one of its limits, is marked `not-run`. A client can ask for it by
+ *   itself, as a call that wasn't sent.
  * - The error the server sends in place of a call, a run or a list that
- *   reads a failed one has `pipeline: 'source-failed'` in its `data`. An
- *   error a procedure threw has no mark, whatever its code.
+ *   reads a failed one is marked `source-failed`. An error a procedure threw
+ *   has no mark, whatever its code or its `data`.
  * - Streamed, the `items` of a level and each of its items are values of
  *   their own, so each run arrives when it is ready, in any order.
  */
@@ -81,67 +84,43 @@
  */
 export const pipelineBatch = 'pipeline';
 
-/** Where in an error's `data` the server puts its mark */
-const markKey = 'pipeline';
-
 /**
- * What the server marks an error as, in its `data`. `not-run`: it refused the
- * call before any of its runs ran, so a separate query is worth a try.
- * `source-failed`: it is what the server sends in place of a call, a run or a
- * list that reads a failed one, which didn't run
+ * What the server marks an error as, beside it in its envelope. `not-run`: it
+ * refused the call before any of its runs ran, so a separate query is worth a
+ * try. `source-failed`: it is what the server sends in place of a call, a run
+ * or a list that reads a failed one, which didn't run
  */
 export type PipelineErrorMark = 'not-run' | 'source-failed';
 
 /**
- * An error shape with a mark of the server's. Added after the error
- * formatter, so no formatter drops it. A shape that is no object is as it is
+ * An error as a pipelined batch's response has it: the error formatter's
+ * shape, and the server's mark beside it, which only the server writes. The
+ * formatter controls the shape and its `data`, so nothing in them can be
+ * taken for a mark, and nothing it does to them drops one
  */
-export function markPipelineError<TShape>(
-  shape: TShape,
-  mark: PipelineErrorMark,
-): TShape {
-  if (typeof shape !== 'object' || shape === null) {
-    return shape;
-  }
-  const data: unknown = (shape as Record<string, unknown>)['data'];
-  return {
-    ...shape,
-    data: {
-      ...(typeof data === 'object' && data !== null ? data : {}),
-      [markKey]: mark,
-    },
-  };
+export interface PipelineErrorEnvelope<TError> {
+  error: TError;
+  /** Left out for an error with no mark, such as one a procedure threw */
+  pipeline?: PipelineErrorMark;
 }
 
-/** Whether an error's `data` has the server's mark `mark` */
-function hasPipelineErrorMark(data: unknown, mark: PipelineErrorMark) {
-  return (
-    hasOwn(data, markKey) && (data as Record<string, unknown>)[markKey] === mark
-  );
+/** An error's envelope, with the server's mark if it has one */
+export function pipelineErrorEnvelope<TError>(
+  error: TError,
+  mark: PipelineErrorMark | null,
+): PipelineErrorEnvelope<TError> {
+  return mark ? { error, pipeline: mark } : { error };
 }
 
 /**
- * An error shape with the mark of a call the server refused before any of its
- * runs ran: see `markPipelineError`
+ * The server's mark in an envelope as it arrived, or `null` if it has none:
+ * never what an error's shape or `data` says
  */
-export function markPipelineNotRun<TShape>(shape: TShape): TShape {
-  return markPipelineError(shape, 'not-run');
-}
-
-/**
- * Whether an error's `data` says the server refused its call before any of
- * its runs ran
- */
-export function isPipelineNotRun(data: unknown) {
-  return hasPipelineErrorMark(data, 'not-run');
-}
-
-/**
- * Whether an error's `data` says it is what the server sends in place of a
- * call, a run or a list that reads a failed one: not an error of its own
- */
-export function isPipelineSourceFailed(data: unknown) {
-  return hasPipelineErrorMark(data, 'source-failed');
+export function pipelineMarkOf(envelope: unknown): PipelineErrorMark | null {
+  const mark = hasOwn(envelope, 'pipeline')
+    ? (envelope as Record<string, unknown>)['pipeline']
+    : null;
+  return mark === 'not-run' || mark === 'source-failed' ? mark : null;
 }
 
 /**
@@ -432,7 +411,7 @@ export function readPipelinePath(
 /** The outcome of one run, as a response has it */
 export type PipelineItemEnvelope<TError> =
   | { result: { data: unknown } }
-  | { error: TError };
+  | PipelineErrorEnvelope<TError>;
 
 /**
  * What a response has for a call that runs for every item: its runs, by the

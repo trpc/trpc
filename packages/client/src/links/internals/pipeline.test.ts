@@ -52,13 +52,10 @@ describe('outcomes', () => {
 });
 
 describe('settlePipelinedCall', () => {
-  // What the server sends a call that reads a failed source: marked so
+  // What the server sends a call that reads a failed source, which it marks
+  // so beside the error, in its envelope
   const error = TRPCClientError.from({
-    error: {
-      message: 'source failed',
-      code: -32012,
-      data: { pipeline: 'source-failed' },
-    },
+    error: { message: 'source failed', code: -32012, data: {} },
   });
   const ranWithError: PipelinedCallSettled = {
     status: 'ran',
@@ -66,10 +63,14 @@ describe('settlePipelinedCall', () => {
   };
 
   test('a call that failed with a failed source that has arrived did not run', () => {
-    expect(settlePipelinedCall(ranWithError, [true, false], false)).toEqual({
-      status: 'not-run',
-      error,
-    });
+    expect(
+      settlePipelinedCall({
+        own: ranWithError,
+        mark: 'source-failed',
+        sourcesOk: [true, false],
+        asWhole: false,
+      }),
+    ).toEqual({ status: 'not-run', error });
   });
 
   test("a call's own error, with a failed source that has arrived, says it ran", () => {
@@ -82,7 +83,14 @@ describe('settlePipelinedCall', () => {
         }),
       },
     };
-    expect(settlePipelinedCall(own, [false], false)).toBe(own);
+    expect(
+      settlePipelinedCall({
+        own,
+        mark: null,
+        sourcesOk: [false],
+        asWhole: false,
+      }),
+    ).toBe(own);
   });
 
   test("a call's own error with the code the server sends a call that reads a failed source, but without its mark, says it ran", () => {
@@ -95,7 +103,38 @@ describe('settlePipelinedCall', () => {
         }),
       },
     };
-    expect(settlePipelinedCall(own, [false], false)).toBe(own);
+    expect(
+      settlePipelinedCall({
+        own,
+        mark: null,
+        sourcesOk: [false],
+        asWhole: false,
+      }),
+    ).toBe(own);
+  });
+
+  test("a call's own error with the mark in its `data`, which the app's `errorFormatter` makes, but not beside it, says it ran", () => {
+    const own: PipelinedCallSettled = {
+      status: 'ran',
+      outcome: {
+        ok: false,
+        error: TRPCClientError.from({
+          error: {
+            message: 'no team',
+            code: -32004,
+            data: { pipeline: 'source-failed' },
+          },
+        }),
+      },
+    };
+    expect(
+      settlePipelinedCall({
+        own,
+        mark: null,
+        sourcesOk: [false],
+        asWhole: false,
+      }),
+    ).toBe(own);
   });
 
   test("a call whose error is the request's did not run", () => {
@@ -104,16 +143,25 @@ describe('settlePipelinedCall', () => {
       status: 'ran',
       outcome: { ok: false, error: refused },
     };
-    expect(settlePipelinedCall(own, [null], true)).toEqual({
-      status: 'not-run',
-      error: refused,
-    });
+    expect(
+      settlePipelinedCall({
+        own,
+        mark: null,
+        sourcesOk: [null],
+        asWhole: true,
+      }),
+    ).toEqual({ status: 'not-run', error: refused });
   });
 
   test("a call's error is its own while no failed source has arrived", () => {
-    expect(settlePipelinedCall(ranWithError, [true, null], false)).toBe(
-      ranWithError,
-    );
+    expect(
+      settlePipelinedCall({
+        own: ranWithError,
+        mark: 'source-failed',
+        sourcesOk: [true, null],
+        asWhole: false,
+      }),
+    ).toBe(ranWithError);
   });
 
   test('a call with data ran, whatever its sources did', () => {
@@ -121,7 +169,14 @@ describe('settlePipelinedCall', () => {
       status: 'ran',
       outcome: { ok: true, data: { kind: 'once', data: 1 } },
     };
-    expect(settlePipelinedCall(ran, [false], false)).toBe(ran);
+    expect(
+      settlePipelinedCall({
+        own: ran,
+        mark: null,
+        sourcesOk: [false],
+        asWhole: false,
+      }),
+    ).toBe(ran);
   });
 });
 
@@ -130,7 +185,10 @@ describe('readPipelinedRun', () => {
     const runs = node({
       items: {
         0: node({ items: { 0: node({ result: { data: 'a' } }) } }),
-        1: node({ error: { message: 'too many', code: -32600, data: {} } }),
+        1: node({
+          error: { message: 'too many', code: -32600, data: {} },
+          pipeline: null,
+        }),
       },
     });
 
@@ -145,6 +203,38 @@ describe('readPipelinedRun', () => {
     );
     expect(await readPipelinedRun(runs, [2, 0])).toEqual({ kind: 'missing' });
     expect(await readPipelinedRun(runs, [0])).toEqual({ kind: 'missing' });
+  });
+
+  test("a run's error has the mark the server put beside it, or the list's it is in, and none in its `data` counts", async () => {
+    const sourceFailed = {
+      message: 'source failed',
+      code: -32012,
+      data: { pipeline: 'not-run' },
+    };
+    const runs = node({
+      items: {
+        0: node({
+          items: {
+            0: node({ error: sourceFailed, pipeline: 'source-failed' }),
+            1: node({ error: sourceFailed, pipeline: null }),
+          },
+        }),
+        1: node({ error: sourceFailed, pipeline: 'source-failed' }),
+      },
+    });
+
+    expect(await readPipelinedRun(runs, [0, 0])).toMatchObject({
+      kind: 'error',
+      mark: 'source-failed',
+    });
+    expect(await readPipelinedRun(runs, [0, 1])).toMatchObject({
+      kind: 'error',
+      mark: null,
+    });
+    expect(await readPipelinedRun(runs, [1, 0])).toMatchObject({
+      kind: 'error',
+      mark: 'source-failed',
+    });
   });
 });
 
