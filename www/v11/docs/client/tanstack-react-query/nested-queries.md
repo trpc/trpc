@@ -833,7 +833,10 @@ if (results.post.status === 'error') {
 }
 ```
 
-If the failed entry is a prefetch entry, which has no result, `loadHandlesSettled()` rejects with its error.
+`loadHandlesSettled()` still rejects in two cases:
+
+- **A prefetch entry's request fails and another entry reads its data.** A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
+- **An entry that reads no other entry throws while the load starts it**, such as from a `staleTime` function, whatever its kind, [as above](#errors).
 
 ## FAQ {#faq}
 

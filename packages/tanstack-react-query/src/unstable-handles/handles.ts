@@ -107,7 +107,11 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * Starts every entry before it waits for any, so the order of the entries doesn't
  * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
- * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
+ * soon as a fetch or ensure entry fails. A prefetch entry's failed request makes it
+ * reject only if another entry reads its data with `experimental_dataOf()`, also
+ * when the cache has data for it, such as from `setQueryData()`. A throw while
+ * it starts an entry that reads no other entry, such as from a `staleTime`
+ * function, makes it reject too, whatever the entry's kind.
  * It rejects with a `TRPCEntryError`, except for an error with a `digest`, such as
  * Next.js's `headers()` in a static render throws, which it rethrows as is.
  *
@@ -151,8 +155,11 @@ export function loadHandles<
  *
  * When an entry fails, the entries that read its data with `experimental_dataOf()` can't
  * start: they have no handle, and their result is the same error. So check the
- * results before you return the handles. If the failed entry is a prefetch entry,
- * which has no result, the load rejects with its error.
+ * results before you return the handles. If the failed entry is a prefetch entry
+ * whose data another entry reads, which has no result to hold the error, the load
+ * rejects with it. A prefetch entry that nothing reads can fail without making it
+ * reject. A throw while it starts an entry that reads no other entry, such as from
+ * a `staleTime` function, still rejects, whatever the entry's kind.
  *
  * A cancelled query, or an error with a `digest` such as Next.js's `headers()`
  * in a static render throws, still rejects, as it does with `loadHandles()`.
