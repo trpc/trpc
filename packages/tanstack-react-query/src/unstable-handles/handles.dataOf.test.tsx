@@ -1610,6 +1610,49 @@ describe('edges of a load', () => {
     ).toEqual([['author.byId', { id: 'u2' }]]);
   });
 
+  test("a load whose fresh hit comes while another fetch of the query runs reads the cached data, not that fetch's", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    resource.queryClient.setQueryData(key, {
+      id: 'cached',
+      title: 'Cached',
+      authorId: 'u2',
+      tags: [],
+    });
+    const loaded = Promise.resolve().then(() => {
+      const post = prefetchEntry(
+        trpc.post.bySlug,
+        { slug: 'hello' },
+        { staleTime: Infinity },
+      );
+      return loadHandles(trpc, {
+        post,
+        author: ensureEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+      });
+    });
+    // A fetch the load has no part in, running when the load gets its
+    // fresh data from the cache
+    const other = resource.queryClient.fetchQuery({
+      queryKey: key,
+      queryFn: () => ({
+        id: 'other',
+        title: 'Other',
+        authorId: 'u1',
+        tags: [],
+      }),
+      staleTime: 0,
+    });
+    const [handles] = await loaded;
+    await other;
+    expect(handles.author).toMatchObject({ input: { id: 'u2' } });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u2' }]]);
+  });
+
   test('a load that throws while it starts its entries leaves no listener once its earlier entries load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

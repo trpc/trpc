@@ -401,7 +401,20 @@ export function beginEntries(opts: {
     if (state.status === 'closed') {
       return nothing;
     }
-    const { queryHash } = queryClient.defaultQueryOptions(options);
+    const defaulted = queryClient.defaultQueryOptions(options);
+    const { queryHash } = defaulted;
+    // A fetch already running is the load's only if its call joins it, which
+    // it does when the cache's data is stale to it. On a fresh hit, the data
+    // is what the `QueryClient` method resolves to, not that fetch's
+    const running = queryClient.getQueryCache().get(queryHash);
+    const joins =
+      !running ||
+      running.state.fetchStatus === 'idle' ||
+      running.isStaleByTime(
+        typeof defaulted.staleTime === 'function'
+          ? defaulted.staleTime(running)
+          : defaulted.staleTime,
+      );
     const one: NonNullable<ReturnType<typeof watched.get>>[number] = {
       leaf,
       data,
@@ -436,6 +449,7 @@ export function beginEntries(opts: {
       // one started offline, is still the load's: it runs once it can, and
       // its success is a write after structural sharing like any other
       if (
+        !joins ||
         (queryClient.getQueryCache().get(queryHash)?.state.fetchStatus ??
           'idle') === 'idle'
       ) {
