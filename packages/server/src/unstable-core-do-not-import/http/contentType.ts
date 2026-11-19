@@ -154,7 +154,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
                   opts.searchParams.get('lastEventId') ??
                   opts.searchParams.get('Last-Event-Id');
 
-                if (lastEventId) {
+                if (lastEventId !== null) {
                   if (isObject(input)) {
                     input = {
                       ...input,
