@@ -11,6 +11,8 @@ import type {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
+import type { PipelineCallInput } from './pipeline/server';
+import type { PipelineLimits } from './pipeline/wire';
 
 /**
  * @deprecated Use `Headers` instead. This will be removed in v12.
@@ -113,6 +115,23 @@ export interface TRPCRequestInfo {
    */
   isBatchCall: boolean;
   /**
+   * Only on a pipelined batch: the limits the server sets on it.
+   * @internal
+   */
+  experimental_pipeline?: {
+    limits: PipelineLimits;
+    /**
+     * Reads the batch's `pipe`, which says which parts of the calls' inputs
+     * to fill in from earlier calls' data. The `pipe` isn't validated.
+     */
+    getPipe: () => Promise<unknown>;
+    /**
+     * Reads a call's input by the call's index: as the client sent it, taken
+     * before the transformer reads any input, and as the transformer read it
+     */
+    getInput: (index: number) => Promise<PipelineCallInput>;
+  };
+  /**
    * The procedure calls in the request.
    */
   calls: TRPCRequestInfoProcedureCall[];
@@ -160,6 +179,59 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
  * The options every adapter takes.
  * @internal
  */
+/**
+ * The limits of `experimental_allowPipelining`: what a pipelined batch can make
+ * the server do. A call that goes over one is refused with a `BAD_REQUEST`,
+ * and the rest of the batch runs. A batch with more calls than `maxRuns`
+ * fails as a whole.
+ *
+ * Experimental: it may change in a minor release.
+ * @see https://trpc.io/docs/client/vanilla/nested-queries#limits
+ */
+export interface experimental_PipeliningOptions {
+  /**
+   * The longest value a call can read, in characters of JSON: `"abc"` is 5.
+   * @default 1024
+   */
+  maxValueLength?: number;
+  /**
+   * The most values one call can read. Set the client's
+   * `experimental_pipelining({ maxReadsPerCall })` to the same or a lower
+   * number.
+   * @default 16
+   */
+  maxReadsPerCall?: number;
+  /**
+   * The most a batch can fill in, in characters of JSON: every value written
+   * into an input, and the whole input of every run of a call for every item.
+   * @default 100_000
+   */
+  maxFillSize?: number;
+  /**
+   * The most calls in a chain: a query that reads none is 1, so
+   * `post.bySlug` → `author.byId` → `post.list` is 3. Set the client's
+   * `experimental_pipelining({ maxDepth })` to the same or a lower number.
+   * @default 3
+   */
+  maxDepth?: number;
+  /**
+   * Whether a value a call reads can be an object or an array. Without it, a
+   * value has to be a string, a number, a boolean or `null`.
+   * @default false
+   */
+  allowWholeValues?: boolean;
+  /**
+   * The most procedure runs a batch can have: each of its calls that runs
+   * once, and a call for every item once for each item, counted when its list
+   * is ready. It keeps a small request from running
+   * a procedure for every item of a long list. A batch with more calls than
+   * this fails as a whole, as one over `maxBatchSize` does. `maxBatchSize`
+   * caps the runs too, if it is lower.
+   * @default 100
+   */
+  maxRuns?: number;
+}
+
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   /**
    * Called with each error a procedure throws, for example to log it.
@@ -190,6 +262,24 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * @default true
    */
   allowBatching?: boolean;
+  /**
+   * Whether to accept pipelined batches: batches where a query reads parts of
+   * its input from the data of an earlier query. The server fills them in, so
+   * a query that depends on another costs no extra round trip. Every call
+   * still validates its input and runs its middleware, and every run counts
+   * towards `maxBatchSize`. Set `experimental_pipelining` on the client's
+   * batch link too.
+   *
+   * `true` accepts them with the default limits. An object sets limits,
+   * and a call that goes over one is refused while the rest of the batch
+   * runs. A batch with more calls than `maxRuns` fails as a whole.
+   *
+   * Experimental: it may change in a minor release.
+   * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
+   * @see https://trpc.io/docs/client/vanilla/nested-queries#limits
+   * @default false
+   */
+  experimental_allowPipelining?: boolean | experimental_PipeliningOptions;
   /**
    * The most calls a batch can have. Larger batches get a 400 error. Set
    * the client's `maxItems` to the same or a lower number.

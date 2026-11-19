@@ -20,6 +20,7 @@ import {
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
+import type { BatchPipelining } from './internals/pipeline';
 import type { Operation, TRPCLink } from './types';
 
 /**
@@ -57,11 +58,29 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
   const maxItems = opts.maxItems ?? Infinity;
 
   return () => {
+    /** Calls that read the data of others, in the requests of what they read */
+    const pipelining =
+      opts.experimental_pipelining?.({
+        ...resolvedOpts,
+        maxItems,
+        maxURLLength,
+        streams: true,
+        read(result) {
+          if ('error' in result.json) {
+            throw TRPCClientError.from(result.json, { meta: result.meta });
+          }
+          return { data: result.json.result.data };
+        },
+      }) ?? null;
+
     const batchLoader = (
       type: ProcedureType,
     ): BatchLoader<BatchStreamOperation, HTTPResult> => {
       return {
         validate(batchOps) {
+          if (pipelining?.splits(batchOps)) {
+            return false;
+          }
           if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
             return true;
@@ -83,114 +102,130 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           return url.length <= maxURLLength;
         },
         async fetch(batchOps) {
-          const path = batchOps.map((op) => op.path).join(',');
-          const inputs = batchOps.map((op) => op.input);
+          const pipelined = pipelining?.take(batchOps) ?? null;
+          const results = fetchBatch(batchOps, pipelined);
+          pipelined?.settle(results);
+          return pipelined
+            ? (await results).slice(0, batchOps.length)
+            : results;
+        },
+      };
 
-          const batchSignals = allAbortSignals(
-            ...batchOps.map((op) => op.signal),
-          );
-          const abortController = new AbortController();
-          abortController.signal.addEventListener(
-            'abort',
-            () => {
-              for (const op of batchOps) {
-                op.releaseSignal();
-              }
-            },
-            { once: true },
-          );
+      async function fetchBatch(
+        batchOps: BatchStreamOperation[],
+        /** The calls the server makes after the operations, in the same request */
+        pipelined: ReturnType<BatchPipelining['take']>,
+      ) {
+        const sent = pipelined ? [...batchOps, ...pipelined.calls] : batchOps;
+        const path = sent.map((it) => it.path).join(',');
+        const inputs = sent.map((it) => it.input);
 
-          const responsePromise = fetchHTTPResponse({
-            ...resolvedOpts,
-            signal: raceAbortSignals(batchSignals, abortController.signal),
-            type,
-            contentTypeHeader: 'application/json',
-            trpcAcceptHeader: 'application/jsonl',
-            trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
-            getUrl,
-            getBody,
-            inputs,
-            path,
-            headers() {
-              if (!opts.headers) {
-                return {};
-              }
-              if (typeof opts.headers === 'function') {
-                return opts.headers({
-                  opList: batchOps as NonEmptyArray<BatchStreamOperation>,
-                });
-              }
-              return opts.headers;
-            },
-          });
-
-          const res = await responsePromise;
-
-          if (!res.ok) {
-            // Server returned a non-2xx response (e.g. batching disabled).
-            // The body is plain JSON, not JSONL, so parse it directly and
-            // propagate the same error to every operation in the batch.
-            const json = (await res.json()) as TRPCResponse;
-            if ('error' in json) {
-              json.error = resolvedOpts.transformer.output.deserialize(
-                json.error,
-              );
+        const batchSignals = allAbortSignals(
+          ...batchOps.map((op) => op.signal),
+        );
+        const abortController = new AbortController();
+        abortController.signal.addEventListener(
+          'abort',
+          () => {
+            for (const op of batchOps) {
+              op.releaseSignal();
             }
+          },
+          { once: true },
+        );
 
-            return batchOps.map((): Promise<HTTPResult> =>
+        const responsePromise = fetchHTTPResponse({
+          ...resolvedOpts,
+          signal: raceAbortSignals(batchSignals, abortController.signal),
+          type,
+          contentTypeHeader: 'application/json',
+          trpcAcceptHeader: 'application/jsonl',
+          trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
+          getUrl,
+          getBody,
+          ...pipelined?.request,
+          inputs,
+          path,
+          headers() {
+            if (!opts.headers) {
+              return {};
+            }
+            if (typeof opts.headers === 'function') {
+              return opts.headers({
+                opList: batchOps as NonEmptyArray<BatchStreamOperation>,
+              });
+            }
+            return opts.headers;
+          },
+        });
+
+        const res = await responsePromise;
+
+        if (!res.ok) {
+          // Server returned a non-2xx response (e.g. batching disabled).
+          // The body is plain JSON, not JSONL, so parse it directly and
+          // propagate the same error to every operation in the batch.
+          const json = (await res.json()) as TRPCResponse;
+          if ('error' in json) {
+            json.error = resolvedOpts.transformer.output.deserialize(
+              json.error,
+            );
+          }
+
+          // An error is every call's, and anything else only the operations',
+          // as without pipelining: it has no result for a call the server makes
+          return ('error' in json ? sent : batchOps).map(
+            (): Promise<HTTPResult> =>
               Promise.resolve({
                 json,
                 meta: {
                   response: res,
                 },
               }),
-            );
-          }
+          );
+        }
 
-          const [head] = await jsonlStreamConsumer<
-            Record<string, Promise<any>>
-          >({
-            // oxlint-disable-next-line typescript/no-non-null-assertion
-            from: res.body!,
-            deserialize: (data) =>
-              resolvedOpts.transformer.output.deserialize(data),
-            onError: () => abortController.abort(),
-            formatError(opts) {
-              const error = opts.error as TRPCErrorShape;
-              return TRPCClientError.from({
-                error,
-              });
-            },
-            abortController,
-          });
-          const promises = Object.keys(batchOps).map(
-            async (key): Promise<HTTPResult> => {
-              let json: TRPCResponse = await Promise.resolve(head[key]);
+        const [head] = await jsonlStreamConsumer<Record<string, Promise<any>>>({
+          // oxlint-disable-next-line typescript/no-non-null-assertion
+          from: res.body!,
+          deserialize: (data) =>
+            resolvedOpts.transformer.output.deserialize(data),
+          onError: () => abortController.abort(),
+          formatError(opts) {
+            const error = opts.error as TRPCErrorShape;
+            return TRPCClientError.from({
+              error,
+            });
+          },
+          abortController,
+        });
+        const promises = Object.keys(sent).map(
+          async (key): Promise<HTTPResult> => {
+            let json: TRPCResponse = await Promise.resolve(head[key]);
 
-              if ('result' in json) {
-                /**
-                 * Not very pretty, but we need to unwrap nested data as promises
-                 * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
-                 */
-                const result = await Promise.resolve(json.result);
-                json = {
-                  result: {
-                    data: await Promise.resolve(result.data),
-                  },
-                };
-              }
-
-              return {
-                json,
-                meta: {
-                  response: res,
+            if ('result' in json) {
+              /**
+               * Not very pretty, but we need to unwrap nested data as promises
+               * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+               */
+              const result = await Promise.resolve(json.result);
+              json = {
+                result: {
+                  data: await Promise.resolve(result.data),
                 },
               };
-            },
-          );
-          return promises;
-        },
-      };
+            }
+
+            return {
+              json,
+              meta: {
+                response: res,
+              },
+            };
+          },
+        );
+        return promises;
+      }
     };
 
     const query = dataLoader(batchLoader('query'));
@@ -207,6 +242,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
         }
         const ac = new AbortController();
         const loader = loaders[op.type];
+        pipelining?.open(op);
         const { signal, cleanup } = raceAbortSignalsWithCleanup(
           op.signal,
           ac.signal,
@@ -219,13 +255,28 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
         let isDone = false;
         let _res = undefined as HTTPResult | undefined;
-        promise
-          .then((res) => {
+        /**
+         * Before the observer hears of it: an error handler can send the
+         * operation again, and its calls are then the new attempt's
+         */
+        const finish = () => {
+          if (!isDone) {
             isDone = true;
+            pipelining?.close(op);
+          }
+        };
+        void promise
+          .then((res) => {
+            finish();
             _res = res;
             if ('error' in res.json) {
-              // A failed op has nothing left to stream, so it must not hold the batch open.
-              ac.abort();
+              // A failed op has nothing left to stream, so it must not hold
+              // the batch open: once the calls that read it have their results
+              if (pipelining) {
+                void pipelining.settled(op).then(() => ac.abort());
+              } else {
+                ac.abort();
+              }
               observer.error(
                 TRPCClientError.from(res.json, {
                   meta: res.meta,
@@ -244,7 +295,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
-            isDone = true;
+            finish();
             ac.abort();
             observer.error(
               TRPCClientError.from(err, {

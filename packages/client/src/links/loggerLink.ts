@@ -11,6 +11,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
+import { pipelineOf } from './internals/pipelineContext';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
@@ -125,9 +126,16 @@ function constructPartsAndArgs(
   opts: LoggerLinkFnOptions<any> & {
     colorMode: ColorMode;
     withContext?: boolean;
+    /** The paths of the calls that went in the operation's request */
+    pipelined: readonly string[];
   },
 ) {
-  const { direction, type, withContext, path, id, input } = opts;
+  const { direction, type, withContext, id, input } = opts;
+  // The calls that the server makes in the operation's request, after it
+  const path =
+    opts.pipelined.length > 0
+      ? `${opts.path} (+ ${opts.pipelined.join(', ')})`
+      : opts.path;
 
   const parts: string[] = [];
   const args: any[] = [];
@@ -196,8 +204,8 @@ const defaultLogger =
     c?: ConsoleEsque;
     colorMode?: ColorMode;
     withContext?: boolean;
-  }): LoggerLinkFn<TRouter> =>
-  (props) => {
+  }) =>
+  (props: LoggerLinkFnOptions<TRouter>, pipelined: readonly string[]) => {
     const rawInput = props.input;
     const input = isFormData(rawInput)
       ? Object.fromEntries(rawInput)
@@ -208,6 +216,7 @@ const defaultLogger =
       colorMode,
       input,
       withContext,
+      pipelined,
     });
 
     const fn: 'error' | 'log' =
@@ -235,19 +244,39 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   const colorMode =
     opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
   const withContext = opts.withContext ?? colorMode === 'css';
-  const {
-    logger = defaultLogger({ c: opts.console, colorMode, withContext }),
-  } = opts;
+  const builtIn = defaultLogger<TRouter>({
+    c: opts.console,
+    colorMode,
+    withContext,
+  });
+  /** A logger of the options gets what it always got */
+  const logger = (
+    props: LoggerLinkFnOptions<TRouter>,
+    pipelined: readonly string[],
+  ) => (opts.logger ? opts.logger(props) : builtIn(props, pipelined));
 
   return () => {
     return ({ op, next }) => {
       return observable((observer) => {
+        /**
+         * Calls that a link that pipelines adds to the operation's request.
+         * They are known when the request goes, not as the operation starts
+         */
+        const pipeline = pipelineOf(op);
+        let pipelined: readonly string[] = [];
+        let loggedUp = false;
         // ->
-        if (enabled({ ...op, direction: 'up' })) {
-          logger({
-            ...op,
-            direction: 'up',
-          });
+        function logUp() {
+          if (loggedUp) {
+            return;
+          }
+          loggedUp = true;
+          if (enabled({ ...op, direction: 'up' })) {
+            logger({ ...op, direction: 'up' }, pipelined);
+          }
+        }
+        if (!pipeline) {
+          logUp();
         }
         const requestStartTime = Date.now();
         function logResult(
@@ -255,18 +284,23 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
             | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
             | TRPCClientError<TRouter>,
         ) {
+          // Before its result, whatever happened to its request
+          logUp();
           const elapsedMs = Date.now() - requestStartTime;
 
           if (enabled({ ...op, direction: 'down', result })) {
-            logger({
-              ...op,
-              direction: 'down',
-              elapsedMs,
-              result,
-            });
+            logger(
+              {
+                ...op,
+                direction: 'down',
+                elapsedMs,
+                result,
+              },
+              pipelined,
+            );
           }
         }
-        return next(op)
+        const subscription = next(op)
           .pipe(
             tap({
               next(result) {
@@ -278,6 +312,19 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
             }),
           )
           .subscribe(observer);
+        if (pipeline) {
+          // A link that pipelines opens the pipeline as it takes the
+          // operation, which it does as the operation is subscribed to
+          if (pipeline.open) {
+            void pipeline.sent.then((paths) => {
+              pipelined = paths;
+              logUp();
+            });
+          } else {
+            logUp();
+          }
+        }
+        return subscription;
       });
     };
   };

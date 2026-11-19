@@ -1,6 +1,7 @@
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPLinkBaseOptions } from './internals/httpUtils';
+import type { experimental_Pipelining } from './internals/pipeline';
 import type { HTTPHeaders, Operation } from './types';
 
 /**
@@ -35,4 +36,23 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
      * @default Infinity
      */
     maxItems?: number;
+    /**
+     * Lets the server run more queries in a query's request, with parts of
+     * their inputs read from its data, so a query that depends on another
+     * costs no extra round trip. `experimental_nested()` uses it for the
+     * queries of a page. The server must set
+     * `experimental_allowPipelining: true`, or such a request fails.
+     *
+     * Pass `experimental_pipelining()` from `@trpc/client`. This link's module
+     * has none of its code, so a bundler that tree-shakes leaves it out of an
+     * app that doesn't import it.
+     *
+     * Such a query is no operation of its own, so the links before this one
+     * don't see it. Batches without one are sent as they are without this
+     * option.
+     *
+     * Experimental: it may change in a minor release.
+     * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
+     */
+    experimental_pipelining?: experimental_Pipelining;
   };

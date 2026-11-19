@@ -272,6 +272,62 @@
         // Vite's `useEnvironment`, and routes' inline `component`s.
         "react-hooks/rules-of-hooks": "off"
       }
+    },
+    {
+      // A batch link has none of the pipelining code: an app that wants it
+      // passes `experimental_pipelining()`, and only then is it in its bundle.
+      // `loggerLink` only reads an operation's pipeline, from its context.
+      "files": [
+        "packages/client/src/links/httpBatchLink.ts",
+        "packages/client/src/links/httpBatchStreamLink.ts",
+        "packages/client/src/links/loggerLink.ts"
+      ],
+      "rules": {
+        // Repeats the options above: an override replaces a rule's options.
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@testing-library/dom",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                "name": "@testing-library/react",
+                "importNames": ["waitFor"],
+                "message": "Use `vi.waitFor` instead as the Testing Library one does not work with fake timers"
+              },
+              {
+                // The client's half of the protocol, which `internals/pipeline` uses
+                "name": "@trpc/server/unstable-core-do-not-import",
+                "importNames": [
+                  "encodePipelineReads",
+                  "groupPipelineReads",
+                  "pipelinedBatchBody",
+                  "pipelinedBatchUrl",
+                  "pipelinedCallsRan",
+                  "planPipelinedBatch",
+                  "readPipelinedItem"
+                ],
+                "message": "The link gets the pipelining code from its `experimental_pipelining` option"
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@trpc/*/src", "@trpc/*/src/**"],
+                "message": "Remove the \"`/src`\" part of this import",
+                "allowTypeImports": false
+              },
+              {
+                "group": ["**/internals/pipeline"],
+                "allowTypeImports": true,
+                "message": "Import only types from the pipelining code here: the link gets the code from its `experimental_pipelining` option"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

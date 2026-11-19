@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
 /**
- * Notes for whoever reads this page, beside what they explain: which query a
- * part reads, and whether the page waited for it.
+ * Notes for whoever reads a showcase, beside what they explain: such as which
+ * query a part reads, and whether the page waited for it.
  */
 export function Note(props: {
   readonly children: ReactNode;
