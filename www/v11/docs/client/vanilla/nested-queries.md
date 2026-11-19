@@ -8,7 +8,7 @@ parent: "client/vanilla"
 order: 47
 ---
 
-`experimental_nested()` sends several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release. With TanStack Query, see [its handles](/docs/client/tanstack-react-query/handles).
+`experimental_nested()` sends several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release; with TanStack Query, use [its nested queries](/docs/client/tanstack-react-query/nested-queries) instead.
 
 [See it in the kitchen sink](/kitchen-sink/nested): posts, their authors and the authors' teams in one request, or without pipelining to compare.
 
@@ -339,6 +339,8 @@ A query that reads another's data then waits for that data, fills in its input i
 - **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
 
+With TanStack Query, some of these work differently: see [When the list is fetched again](/docs/client/tanstack-react-query/nested-queries#later-fetches).
+
 ### Limits {#limits}
 
 A call that reads another's data makes the server copy that data into its input. `true` turns pipelining on with limits that keep that small. An object sets them, and any you leave out keep their default:
@@ -439,7 +441,7 @@ The longest value a call reads, in characters of JSON: 1,024 by default. Every v
 Whether a value can be an object or a list: `false` by default. Without it, a value has to be a string, a number, a boolean or `null`. A value that isn't there is left out of the input, as JSON leaves it out.
 
 - **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
-- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A value that a transformer makes, such as a `Date`, is an object too.
+- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A list of ids made with `.map()` needs it too, as [TanStack Query's `experimental_dataOf()`](/docs/client/tanstack-react-query/nested-queries#data-of) builds one. A value that a transformer makes, such as a `Date`, is an object too.
 - **Not needed for a list that [a query for every item](#map) reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
 
 #### `maxFillSize` {#limit-fill-size}

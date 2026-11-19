@@ -10,7 +10,10 @@ import {
   QueryClientProvider,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import type { DehydratedState } from '@tanstack/react-query';
+import type {
+  DehydratedState,
+  QueryKeyHashFunction,
+} from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
@@ -38,6 +41,13 @@ const ctx = () => {
             title: `Posts on ${opts.input.day.toISOString().slice(0, 10)}`,
             fetchedAt: new Date(0),
           };
+        }),
+      /** A post by its number, a bigint */
+      byNumber: t.procedure
+        .input(z.object({ number: z.bigint() }))
+        .query((opts) => {
+          calls(opts.input);
+          return { title: `Post number ${String(opts.input.number)}` };
         }),
     }),
   });
@@ -70,14 +80,17 @@ function makeServer(resource: ReturnType<typeof ctx>) {
 }
 
 /** Server-render the client tree, the way Next.js renders client components */
-async function renderClientTree(
-  resource: ReturnType<typeof ctx>,
-  state: DehydratedState | undefined,
-  children: React.ReactNode,
-) {
+async function renderClientTree(opts: {
+  resource: ReturnType<typeof ctx>;
+  state: DehydratedState | undefined;
+  /** The client QueryClient's `queryKeyHashFn` */
+  queryKeyHashFn: QueryKeyHashFunction<readonly unknown[]> | undefined;
+  children: React.ReactNode;
+}) {
+  const { resource } = opts;
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: { staleTime: 30_000 },
+      queries: { staleTime: 30_000, queryKeyHashFn: opts.queryKeyHashFn },
       hydrate: { deserializeData: superjson.deserialize },
     },
   });
@@ -88,8 +101,8 @@ async function renderClientTree(
     const { pipe } = renderToPipeableStream(
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={resource.client} queryClient={queryClient}>
-          <HydrationBoundary state={state}>
-            <React.Suspense fallback="loading">{children}</React.Suspense>
+          <HydrationBoundary state={opts.state}>
+            <React.Suspense fallback="loading">{opts.children}</React.Suspense>
           </HydrationBoundary>
         </TRPCProvider>
       </QueryClientProvider>,
@@ -145,14 +158,17 @@ describe('server rendering', () => {
     // Handles cross as framework data: Flight and seroval keep the `Date` in the input
     const props = structuredClone({ ensured, pending });
 
-    const html = await renderClientTree(
+    const html = await renderClientTree({
       resource,
       state,
-      <>
-        <Post post={props.ensured} />
-        <Post post={props.pending} />
-      </>,
-    );
+      queryKeyHashFn: undefined,
+      children: (
+        <>
+          <Post post={props.ensured} />
+          <Post post={props.pending} />
+        </>
+      ),
+    });
 
     expect(html).toContain('Posts on 2026-01-01');
     expect(html).toContain('Posts on 2026-01-02');
@@ -175,7 +191,12 @@ describe('server rendering', () => {
 
     // No dehydrated state: the client tree has to fetch the query again
     const render = () =>
-      renderClientTree(resource, undefined, <Post post={handle} />);
+      renderClientTree({
+        resource,
+        state: undefined,
+        queryKeyHashFn: undefined,
+        children: <Post post={handle} />,
+      });
     expect(await render()).toContain('Posts on 2026-02-01');
     expect(await render()).toContain('Posts on 2026-02-01');
 
@@ -197,13 +218,59 @@ describe('server rendering', () => {
       }),
     });
 
-    const html = await renderClientTree(
+    const html = await renderClientTree({
       resource,
-      undefined,
-      <Post post={handle} />,
-    );
+      state: undefined,
+      queryKeyHashFn: undefined,
+      children: <Post post={handle} />,
+    });
     expect(html).toContain('Posts on 2026-02-02');
     expect(resource.calls).toHaveBeenCalledTimes(2);
     expect(trpcWarnings(warn)).toHaveLength(1);
+  });
+
+  test("a key that only the QueryClient's own `queryKeyHashFn` can hash still fetches, and warns", async () => {
+    await using resource = ctx();
+    using warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    // The default hash throws on a bigint
+    const queryKeyHashFn: QueryKeyHashFunction<readonly unknown[]> = (
+      queryKey,
+    ) =>
+      JSON.stringify(queryKey, (_key, value: unknown) =>
+        typeof value === 'bigint' ? `${value}n` : value,
+      );
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { staleTime: 30_000, queryKeyHashFn } },
+    });
+    const trpc = createTRPCOptionsProxy({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient,
+    });
+    const [{ handle }] = await loadHandles(trpc, {
+      handle: ensureEntry(trpc.post.byNumber, { number: 1n }),
+    });
+
+    function PostByNumber(props: {
+      post: inferQueryHandle<TRPC['post']['byNumber']>;
+    }) {
+      const clientTRPC = trpcContext.useTRPC();
+      const postQuery = useSuspenseQuery(fromHandle(clientTRPC, props.post));
+      return <p>{postQuery.data.title}</p>;
+    }
+    // No dehydrated state: the client tree has to fetch the query again
+    const html = await renderClientTree({
+      resource,
+      state: undefined,
+      queryKeyHashFn,
+      children: <PostByNumber post={handle} />,
+    });
+
+    expect(html).toContain('Post number 1');
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    expect(trpcWarnings(warn)).toHaveLength(1);
+    expect(trpcWarnings(warn)[0]).toContain(
+      'The handle for "post.byNumber" is being fetched again during server rendering',
+    );
   });
 });
