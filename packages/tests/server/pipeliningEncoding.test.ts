@@ -166,7 +166,7 @@ test.each([
     allowPipelining: { maxRuns: 2 },
   },
 ])(
-  "keeps `pipeline: 'not-run'` when the error of $name the server refused is one JSON cannot carry",
+  "keeps `pipeline: 'not-run'` beside the error of $name the server refused, when its shape is one JSON cannot carry",
   async ({ pipe, allowPipelining }) => {
     const res = await send({
       router: createRouter({ big: allButInternal, changing: false }),
@@ -182,8 +182,9 @@ test.each([
     });
     expect(json[1]).toMatchObject({
       error: {
-        data: { code: 'INTERNAL_SERVER_ERROR', pipeline: 'not-run' },
+        data: { code: 'INTERNAL_SERVER_ERROR' },
       },
+      pipeline: 'not-run',
     });
   },
 );
@@ -553,7 +554,7 @@ describe('what a pipelined stream sends, serialized once', () => {
     expect(text).not.toContain('INTERNAL_SERVER_ERROR');
   });
 
-  test("keeps `pipeline: 'not-run'` in the default shape of an error the transformer can't read back", async () => {
+  test("keeps `pipeline: 'not-run'` beside the default shape of an error the transformer can't read back", async () => {
     using gate = gateResource();
     gate.resolve();
     const res = await fetchRequestHandler({
@@ -644,7 +645,8 @@ describe('a call for every item whose every run a limit refuses', () => {
     const json = await res.json();
 
     expect(json[1]).toMatchObject({
-      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+      error: { data: { code: 'BAD_REQUEST' } },
+      pipeline: 'not-run',
     });
     expect(onError).toHaveBeenCalledTimes(1);
   });
@@ -765,8 +767,9 @@ describe('an error shape whose `data` has a getter that throws', () => {
     expect(json[0]).toEqual({ result: { data: { authorId: 'u1' } } });
     expect(json[1]).toMatchObject({
       error: {
-        data: { code: 'INTERNAL_SERVER_ERROR', pipeline: 'not-run' },
+        data: { code: 'INTERNAL_SERVER_ERROR' },
       },
+      pipeline: 'not-run',
     });
   });
 });

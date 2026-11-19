@@ -33,6 +33,7 @@ import {
 import type { PipelineRuns } from './server';
 import type {
   PipelineCallReads,
+  PipelineErrorMark,
   PipelineLimits,
   PipelineList,
   PipelinePath,
@@ -41,11 +42,12 @@ import type {
 import type * as Wire from './wire';
 import {
   bindPipelinePath,
-  markPipelineNotRun,
   pipelineBatch,
+  pipelineErrorEnvelope,
   pipelineFrameOf,
   pipelineLimitDefaults,
   pipelineListLevels,
+  pipelineMarkOf,
   readPipelinePath,
 } from './wire';
 
@@ -75,9 +77,18 @@ interface WireError {
   code: string;
 }
 
-/** `shape`, marked as a request handler marks a call refused before it ran */
-function markedIf<TShape>(notRun: boolean, shape: TShape) {
-  return notRun ? markPipelineNotRun(shape) : shape;
+/**
+ * A call's error envelope, with the server's mark beside its error, as a
+ * request handler writes it
+ */
+function callError(
+  pipeline: { markOf: (error: TRPCError) => PipelineErrorMark | null },
+  cause: unknown,
+) {
+  return pipelineErrorEnvelope(
+    wireError(cause),
+    cause instanceof TRPCError ? pipeline.markOf(cause) : null,
+  );
 }
 
 /** The input of a call that sent `{}` */
@@ -210,9 +221,9 @@ function serve(opts: {
                 JSON.stringify(opts.transformer.output.serialize(data));
                 return data;
               },
-              error: ({ cause, input, notRun }) => {
+              error: ({ cause, input }) => {
                 opts.onError(call.path, input);
-                return markedIf(notRun, wireError(cause));
+                return wireError(cause);
               },
             });
             return [undefined, undefined, items];
@@ -234,13 +245,8 @@ function serve(opts: {
     const answers = results.map(async (result) => {
       const [cause, data, items] = await result;
       if (cause !== undefined) {
-        // Marked, as a request handler marks it, if refused before it ran
-        return {
-          error:
-            cause instanceof TRPCError
-              ? markedIf(pipeline.isNotRun(cause), wireError(cause))
-              : wireError(cause),
-        };
+        // Marked, as a request handler marks it
+        return callError(pipeline, cause);
       }
       if (items) {
         return settle(items, opts.transformer);
@@ -293,7 +299,10 @@ async function settle(
   if (!('items' in node)) {
     // Both through the transformer, as the client reads both through it
     return 'error' in node
-      ? { error: transformer.output.serialize(node.error) }
+      ? pipelineErrorEnvelope(
+          transformer.output.serialize(node.error),
+          node.pipeline ?? null,
+        )
       : { result: { data: transformer.output.serialize(node.result.data) } };
   }
   const items: Record<string, object> = {};
@@ -352,7 +361,10 @@ function reads(
  * How a call went: its data, its error, or the runs of a call for every item,
  * by item, one level for each level of lists
  */
-type Outcome = { data: unknown } | { error: WireError } | { items: unknown };
+type Outcome =
+  | { data: unknown }
+  | { error: WireError; pipeline?: PipelineErrorMark }
+  | { items: unknown };
 
 /** How many items a call for every item ran for, at its first level of lists */
 function itemCount(outcome: Outcome | undefined) {
@@ -452,7 +464,10 @@ async function send(opts: {
           }
         : isObject(result)
           ? { data: opts.transformer.output.deserialize(result['data']) }
-          : { error: (answer as { error: WireError }).error },
+          : pipelineErrorEnvelope(
+              (answer as { error: WireError }).error,
+              pipelineMarkOf(answer),
+            ),
     );
   };
   const reading = (async () => {
@@ -784,6 +799,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
         code: 'PRECONDITION_FAILED',
         message: 'The call this call reads its input from failed',
       },
+      pipeline: 'source-failed',
     });
     expect(res.ran(teamPosts)).toBe(false);
     // Nor what reads that, two calls after the one that failed
@@ -1298,6 +1314,7 @@ describe('a call for every item', () => {
             code: 'PRECONDITION_FAILED',
             message: 'The call this call reads its input from failed',
           },
+          pipeline: 'source-failed',
         },
       },
     });
@@ -1332,8 +1349,8 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A call for every item exceeds the maximum batch size',
-        data: { pipeline: 'not-run' },
       },
+      pipeline: 'not-run',
     });
     // It ran for none of them
     expect(ran.map(([path]) => path)).toEqual(['posts']);
@@ -1365,8 +1382,8 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A call for every item exceeds the maximum batch size',
-        data: { pipeline: 'not-run' },
       },
+      pipeline: 'not-run',
     });
     expect(ran.map(([path]) => path)).toEqual(['posts']);
   });
@@ -1711,6 +1728,7 @@ describe('a call for every item', () => {
         code: 'PRECONDITION_FAILED',
         message: 'The call this call reads its input from failed',
       },
+      pipeline: 'source-failed',
     });
     expect(res.ran(tagOfEach)).toBe(false);
     expect(ran).toEqual([['post', { slug: 'gone' }]]);
@@ -1847,8 +1865,8 @@ describe('a call for every item', () => {
         code: 'BAD_REQUEST',
         message:
           'The lists at one level have 6 items together, more than `maxRuns` (4) allows',
-        data: { pipeline: 'not-run' },
       },
+      pipeline: 'not-run',
     });
     expect(echo).not.toHaveBeenCalled();
   });
@@ -1911,6 +1929,7 @@ describe('a call for every item', () => {
             code: 'PRECONDITION_FAILED',
             message: 'The call this call reads its input from failed',
           },
+          pipeline: 'source-failed',
         },
       },
     });
@@ -1955,8 +1974,14 @@ describe('a call for every item', () => {
     expect(res.of(members)).toMatchObject({ error: { code: 'BAD_REQUEST' } });
     expect(res.of(ofMembers)).toEqual({
       items: {
-        0: { error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }) },
-        1: { error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }) },
+        0: {
+          error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }),
+          pipeline: 'source-failed',
+        },
+        1: {
+          error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }),
+          pipeline: 'source-failed',
+        },
       },
     });
     expect(echo).not.toHaveBeenCalled();
@@ -2255,8 +2280,8 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message: 'A list has 4 items, more than `maxRuns` (3) allows',
-        data: { pipeline: 'not-run' },
       },
+      pipeline: 'not-run',
     });
     expect(echo).not.toHaveBeenCalled();
   });
@@ -2451,7 +2476,8 @@ describe('the limits of a server', () => {
    * client asks for it by itself
    */
   const refused = (message: string) => ({
-    error: { code: 'BAD_REQUEST', message, data: { pipeline: 'not-run' } },
+    error: { code: 'BAD_REQUEST', message },
+    pipeline: 'not-run',
   });
   /** A run refused for a limit: other runs of its call can run, so no mark */
   const refusedRun = (message: string) => ({
@@ -2525,12 +2551,7 @@ describe('the limits of a server', () => {
             };
           } catch (cause) {
             // Marked, as a request handler marks it
-            return {
-              error: markedIf(
-                pipeline.isNotRun(cause as TRPCError),
-                wireError(cause),
-              ),
-            };
+            return callError(pipeline, cause);
           }
         },
         data: (outcome) => {
@@ -3044,12 +3065,7 @@ describe('the limits of a server', () => {
             return { data: await run.input() };
           } catch (cause) {
             // Marked, as a request handler marks it
-            return {
-              error: markedIf(
-                pipeline.isNotRun(cause as TRPCError),
-                wireError(cause),
-              ),
-            };
+            return callError(pipeline, cause);
           }
         },
         data: (outcome) => ('data' in outcome ? outcome.data : null),
@@ -3107,7 +3123,8 @@ describe('`maxFillSize`: what a request fills in', () => {
   };
   /** A call refused for the limit before it ran: marked */
   const refused = {
-    error: { ...refusedRun.error, data: { pipeline: 'not-run' } },
+    error: refusedRun.error,
+    pipeline: 'not-run',
   };
 
   test('a call that would go over `maxFillSize` is refused, and takes none of it', async () => {
@@ -3367,8 +3384,8 @@ describe('`maxFillSize`: what a request fills in', () => {
         code: 'BAD_REQUEST',
         message:
           'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
-        data: { pipeline: 'not-run' },
       },
+      pipeline: 'not-run',
     });
     expect(over.echo).not.toHaveBeenCalled();
 
@@ -4695,8 +4712,8 @@ describe('an input its transformer would send other than as the client sent it',
           code: 'BAD_REQUEST',
           message:
             "This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in",
-          data: { pipeline: 'not-run' },
         },
+        pipeline: 'not-run',
       });
       expect(echo).not.toHaveBeenCalled();
     },
@@ -4744,8 +4761,8 @@ describe('an input its transformer would send other than as the client sent it',
           code: 'BAD_REQUEST',
           message:
             "A value this call reads doesn't come back through the input transformer as it was written, so the server can't fill it in",
-          data: { pipeline: 'not-run' },
         },
+        pipeline: 'not-run',
       });
       expect(echo).not.toHaveBeenCalled();
     },
@@ -4786,16 +4803,10 @@ describe('an input its transformer would send other than as the client sent it',
     });
 
     expect(res.of(reader)).toMatchObject({
-      error: { code: 'BAD_REQUEST', data: { pipeline: 'not-run' } },
+      error: { code: 'BAD_REQUEST' },
+      pipeline: 'not-run',
     });
     expect(echo).not.toHaveBeenCalled();
-  });
-});
-
-describe('the mark of a call refused before it ran', () => {
-  test('leaves a shape that is no object as it is', () => {
-    expect(markPipelineNotRun('error')).toBe('error');
-    expect(markPipelineNotRun(null)).toBe(null);
   });
 });
 

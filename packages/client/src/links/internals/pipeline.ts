@@ -1,7 +1,7 @@
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
-  PipelinedItem,
+  PipelineErrorMark,
   PipelineFrame,
   PipelineLimits,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -9,12 +9,11 @@ import {
   createDeferred,
   hasOwn,
   isObject,
-  isPipelineNotRun,
-  isPipelineSourceFailed,
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelineFrameOf,
   pipelineLimitDefaults,
+  pipelineMarkOf,
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isTRPCClientError, TRPCClientError } from '../../TRPCClientError';
@@ -136,13 +135,26 @@ export type PipelineSource = OperationPipeline | PipelinedCall;
  * level for each of its items by index, or a run's `{ result }` or
  * `{ error }`. A list that couldn't run is an `{ error }` in place of its
  * items. An error is as the server sent it, or a `TRPCClientError` for a run
- * the link couldn't read. `{}` is no run.
+ * the link couldn't read, with the mark the server put beside it in its
+ * envelope, or `null` for none. `{}` is no run.
  */
 export type PipelinedRunsNode =
   | { items: Readonly<Record<string, PipelinedRuns>> }
   | { result: { data: unknown } }
-  | { error: unknown }
+  | { error: unknown; pipeline: PipelineErrorMark | null }
   | Record<string, never>;
+
+/** One run's outcome of a call that the server ran once for every item */
+export type PipelinedRun =
+  | { kind: 'data'; data: unknown }
+  /**
+   * As the client throws it, with the mark the server put beside it in its
+   * envelope, or beside the error of the list it is in. `null` for none,
+   * such as for the error of a procedure, or for a run the link couldn't read
+   */
+  | { kind: 'error'; error: unknown; mark: PipelineErrorMark | null }
+  /** The server sent nothing for the item */
+  | { kind: 'missing' };
 
 /**
  * The runs of a call for every item, decoded once by the link. Each level,
@@ -588,9 +600,12 @@ function decodeRuns(
       if (isObject(result)) {
         return { result: { data: read(await result['data']) } };
       }
-      return node['error'] ? { error: read(node['error']) } : {};
+      // The server's mark is beside the error, never in it
+      return node['error']
+        ? { error: read(node['error']), pipeline: pipelineMarkOf(node) }
+        : {};
     },
-    (cause) => ({ error: unreadError(cause) }),
+    (cause) => ({ error: unreadError(cause), pipeline: null }),
   );
 }
 
@@ -603,13 +618,15 @@ function decodeRuns(
 export function readPipelinedRun(
   runs: PipelinedRuns,
   indexes: readonly number[],
-): Settles<PipelinedItem> {
+): Settles<PipelinedRun> {
   return settles(
-    async (): Promise<PipelinedItem> => {
+    async (): Promise<PipelinedRun> => {
       let node = await runs;
       for (const index of indexes) {
         if (!('items' in node)) {
-          return 'error' in node ? errorItem(node.error) : { kind: 'missing' };
+          return 'error' in node
+            ? errorItem(node.error, node.pipeline)
+            : { kind: 'missing' };
         }
         const item = hasOwn(node.items, String(index))
           ? node.items[index]
@@ -622,25 +639,30 @@ export function readPipelinedRun(
       return 'result' in node
         ? { kind: 'data', data: node.result.data }
         : 'error' in node
-          ? errorItem(node.error)
+          ? errorItem(node.error, node.pipeline)
           : { kind: 'missing' };
     },
-    (cause) => errorItem(unreadError(cause)),
+    (cause) => errorItem(unreadError(cause), null),
   );
 }
 
-/** A run's error, as the client throws it */
-function errorItem(error: unknown): PipelinedItem {
+/** A run's error, as the client throws it, and the server's mark */
+function errorItem(
+  error: unknown,
+  mark: PipelineErrorMark | null,
+): PipelinedRun {
   return {
     kind: 'error',
     error: isTRPCClientError(error) ? error : TRPCClientError.from({ error }),
+    mark,
   };
 }
 
 /**
  * A call's final state from what the response has for it alone. It didn't
- * run if the server says it refused it before any of its runs ran, such as
- * for a list longer than the server's limits, or if its result never
+ * run if the server marked its envelope `not-run`, as it refused it before
+ * any of its runs ran, such as for a list longer than the server's limits,
+ * whatever the error's `data` says, or if its result never
  * arrived, such as from a response that broke off or left it out: whatever
  * the server did, the client has no result of it.
  */
@@ -692,7 +714,7 @@ function decodeCall(
       outcome: { ok: true, data: { kind: 'once', data: link.read(sent).data } },
     };
   } catch (error) {
-    if (isTRPCClientError(error) && isPipelineNotRun(error.data)) {
+    if (pipelineMarkOf(sent.json) === 'not-run') {
       return { status: 'not-run', error };
     }
     // The server sent a result, and the link couldn't deserialize it
@@ -706,34 +728,38 @@ function decodeCall(
 /**
  * A call's final state, from its own and what has arrived of its sources.
  * It didn't run if its error is the request's, in every slot: the server
- * refused the request as a whole. Nor if the server marked its error as the
- * one it sends in place of a call that reads a failed source
- * (`isPipelineSourceFailed`), with a failed source that has arrived: the
- * server sends it after the source's error, and one still to come isn't why
- * the call failed. Any other error is the call's own, whatever its code: a
+ * refused the request as a whole. Nor if the server marked its envelope
+ * `source-failed`, as the error it sends in place of a call that reads a
+ * failed source, with a failed source that has arrived: the server sends it
+ * after the source's error, and one still to come isn't why the call failed.
+ * Any other error is the call's own, whatever its code or its `data`: a
  * source can fail in the response after the server filled in what reads it,
  * such as for data that serializes once and then throws, and the call then
  * ran.
- *
- * @param sourcesOk whether the server sent each source a result (`true`)
- * or an error (`false`), or `null` if that hasn't arrived
- * @param asWhole whether the call's answer is the request's, the same in
- * every slot, not one of its own
  */
-export function settlePipelinedCall(
-  own: PipelinedCallSettled,
-  sourcesOk: readonly (boolean | null)[],
-  asWhole: boolean,
-): PipelinedCallSettled {
+export function settlePipelinedCall(opts: {
+  own: PipelinedCallSettled;
+  /** The mark the server put beside the call's error, in its envelope */
+  mark: PipelineErrorMark | null;
+  /**
+   * Whether the server sent each source a result (`true`) or an error
+   * (`false`), or `null` if that hasn't arrived
+   */
+  sourcesOk: readonly (boolean | null)[];
+  /**
+   * Whether the call's answer is the request's, the same in every slot, not
+   * one of its own
+   */
+  asWhole: boolean;
+}): PipelinedCallSettled {
+  const { own } = opts;
   if (own.status !== 'ran' || own.outcome.ok) {
     return own;
   }
   const { error } = own.outcome;
   const readFailedSource =
-    isTRPCClientError(error) &&
-    isPipelineSourceFailed(error.data) &&
-    sourcesOk.includes(false);
-  return asWhole || readFailedSource ? { status: 'not-run', error } : own;
+    opts.mark === 'source-failed' && opts.sourcesOk.includes(false);
+  return opts.asWhole || readFailedSource ? { status: 'not-run', error } : own;
 }
 
 /**
@@ -798,13 +824,15 @@ function settlePipelinedBatch(opts: {
       ),
     ];
     void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
-      const settled = settlePipelinedCall(
-        decodeCall(received, opts.link),
-        sources.map((source) => ok[source] ?? null),
-        received.ok &&
+      const settled = settlePipelinedCall({
+        own: decodeCall(received, opts.link),
+        mark: received.ok ? pipelineMarkOf(received.data?.json) : null,
+        sourcesOk: sources.map((source) => ok[source] ?? null),
+        asWhole:
+          received.ok &&
           isObject(received.data?.json) &&
           received.data.json === first,
-      );
+      });
       ok[index] = sentResult(received);
       moveCall(call, { from: 'sent', to: settled });
     });

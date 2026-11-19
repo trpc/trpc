@@ -3200,7 +3200,7 @@ describe('a call the server refuses before any of its runs ran', () => {
     },
   };
 
-  test("is marked `pipeline: 'not-run'` in its error's `data`, for a limit: a list with more runs than `maxRuns`", async () => {
+  test("is marked `pipeline: 'not-run'` beside its error, not in the formatter's `data`, for a limit: a list with more runs than `maxRuns`", async () => {
     const json = await send({
       pipe: eachAuthor,
       allowPipelining: { maxRuns: 2 },
@@ -3211,8 +3211,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         message:
           'This call would make the batch run 3 times, more than `maxRuns` (2) allows',
         code: -32600,
-        data: { custom: true, pipeline: 'not-run' },
+        data: { custom: true },
       },
+      pipeline: 'not-run',
     });
   });
 
@@ -3223,7 +3224,8 @@ describe('a call the server refuses before any of its runs ran', () => {
     });
 
     expect(json[1]).toMatchObject({
-      error: { data: { custom: true, pipeline: 'not-run' } },
+      error: { data: { custom: true } },
+      pipeline: 'not-run',
     });
   });
 
@@ -3242,7 +3244,8 @@ describe('a call the server refuses before any of its runs ran', () => {
     });
 
     expect(json[1]).toMatchObject({
-      error: { data: { custom: true, pipeline: 'not-run' } },
+      error: { data: { custom: true } },
+      pipeline: 'not-run',
     });
   });
 
@@ -3360,7 +3363,8 @@ describe('a call the server refuses before any of its runs ran', () => {
       result: { data: { items: [{ id: 'ada' }] } },
     });
     expect(json[1]).toMatchObject({
-      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+      error: { data: { code: 'BAD_REQUEST' } },
+      pipeline: 'not-run',
     });
     expect(ran).not.toHaveBeenCalled();
   });
@@ -3399,9 +3403,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         code: -32600,
         data: expect.objectContaining({
           code: 'BAD_REQUEST',
-          pipeline: 'not-run',
         }),
       },
+      pipeline: 'not-run',
     });
     expect(author).not.toHaveBeenCalled();
   });
@@ -3439,9 +3443,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         code: -32600,
         data: expect.objectContaining({
           code: 'BAD_REQUEST',
-          pipeline: 'not-run',
         }),
       },
+      pipeline: 'not-run',
     });
     expect(author).not.toHaveBeenCalled();
   });
@@ -3635,8 +3639,9 @@ describe('a value a call reads, with a `toJSON` of its own', () => {
       error: {
         message:
           'A value this call reads is longer than `maxValueLength` (1024 characters of JSON) allows',
-        data: { code: 'BAD_REQUEST', pipeline: 'not-run' },
+        data: { code: 'BAD_REQUEST' },
       },
+      pipeline: 'not-run',
     });
     expect(author).not.toHaveBeenCalled();
   });
@@ -3751,7 +3756,8 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     // Inside a client's input `{ v: { stateful: true } }` it stays as it is,
     // so the server can't fill it in as the client would send it
     expect(json[1]).toMatchObject({
-      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+      error: { data: { code: 'BAD_REQUEST' } },
+      pipeline: 'not-run',
     });
     expect(author).not.toHaveBeenCalled();
     expect(calls).toBe(1);
@@ -3846,7 +3852,7 @@ describe('the calls that read the same failed call or refused value', () => {
     },
   );
 
-  test("a call refused before it ran is marked so, when the formatter's shape has a `toJSON` that drops the mark", async () => {
+  test("a call refused before it ran is marked so beside its error, also when the formatter's shape has a `toJSON` of its own", async () => {
     const formatted = initTRPC.create({
       // A shape whose JSON is the shape as the formatter made it
       errorFormatter: ({ shape }) => ({ ...shape, toJSON: () => shape }),
@@ -3867,7 +3873,8 @@ describe('the calls that read the same failed call or refused value', () => {
     const json = await res.json();
 
     expect(json[1]).toMatchObject({
-      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+      error: { data: { code: 'BAD_REQUEST' } },
+      pipeline: 'not-run',
     });
   });
 
@@ -3975,7 +3982,7 @@ describe.each([
 
       await postResult;
       await expect(author.result).rejects.toMatchObject({
-        data: { code: 'BAD_REQUEST', pipeline: 'not-run' },
+        data: { code: 'BAD_REQUEST' },
       });
       expect(author.status).toBe('unresolved');
     });

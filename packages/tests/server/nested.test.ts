@@ -528,6 +528,97 @@ describe.each([
       [{ owner: 'ada', item: 'b' }],
     ]);
   });
+  test("a call's own error with `pipeline: 'not-run'` in the `data` an `errorFormatter` made rejects its edge: it is not asked for again", async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape }) => ({
+        ...shape,
+        data: { ...shape.data, pipeline: 'not-run' },
+      }),
+    });
+    const authors = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        authors(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no author' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => ({
+        author: q.author.query({ id: it.authorId }),
+      })),
+    );
+
+    await expect(post.edges.author).rejects.toMatchObject({
+      message: 'no author',
+      data: { code: 'NOT_FOUND' },
+    });
+    expect(authors.mock.calls).toEqual([['ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("a call that reads a call the server refused asks by itself, also when the `errorFormatter`'s shape writes JSON without its `data`", async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape }) => ({
+        ...shape,
+        toJSON: () => ({ message: shape.message, code: shape.code }),
+      }),
+    });
+    const teams = vi.fn();
+    const appRouter = t.router({
+      // Longer than the server's `maxValueLength`: no call can read it
+      page: t.procedure.query(() => ({ note: 'x'.repeat(1100) })),
+      owner: t.procedure
+        .input(z.object({ note: z.string() }))
+        .query(() => ({ id: 'ada' })),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        return `team-${opts.input.id}`;
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const page = await experimental_nested(ctx.client, (q) =>
+      q.page.query().with((it) => {
+        const owner = q.owner.query({ note: it.note });
+        return { owner, team: q.team.query({ id: owner.id }) };
+      }),
+    );
+
+    expect(await page.edges.owner).toEqual({ id: 'ada' });
+    expect(await page.edges.team).toBe('team-ada');
+    expect(teams.mock.calls).toEqual([['ada']]);
+  });
 
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
     await using ctx = setup({ pipelining: false });
@@ -736,7 +827,6 @@ describe.each([
 
     expect(echoed).toEqual({ map: [['id', { name: 'ada' }]], set: ['ada'] });
   });
-
   test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
     const t = initTRPC.create({ transformer: superjson });
     const appRouter = t.router({
@@ -1600,6 +1690,147 @@ describe('httpBatchLink, without streaming', () => {
       await expect(items[index]!.edges.pair).rejects.toMatchObject({
         message: `no pair ${id}`,
         data: { code: 'PRECONDITION_FAILED' },
+      });
+    }
+    expect(pairs.mock.calls).toEqual([
+      [{ owner: 'ada', item: 'a' }],
+      [{ owner: 'ada', item: 'b' }],
+    ]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+  test("a call that read a call whose response failed after the read ran on the server: its edge rejects with its own error, also with `pipeline: 'source-failed'` in the `data` an `errorFormatter` made", async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape }) => ({
+        ...shape,
+        data: { ...shape.data, pipeline: 'source-failed' },
+      }),
+    });
+    const teams = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+        // The server serializes it once to fill in the team's input, and
+        // then fails to serialize it for the response
+        let serialized = 0;
+        return {
+          toJSON() {
+            serialized++;
+            if (serialized > 1) {
+              throw new Error('serialized twice');
+            }
+            return { teamId: 'team-ada' };
+          },
+        };
+      }),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no team' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => {
+        const author = q.author.query({ id: it.authorId });
+        return { author, team: q.team.query({ id: author.teamId }) };
+      }),
+    );
+
+    await expect(post.edges.author).rejects.toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    await expect(post.edges.team).rejects.toMatchObject({
+      message: 'no team',
+      data: { code: 'NOT_FOUND' },
+    });
+    expect(teams.mock.calls).toEqual([['team-ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test("an item's run that read a call whose response failed after the read ran on the server: its edge rejects with its own error, also with `pipeline: 'source-failed'` in the `data` an `errorFormatter` made", async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape }) => ({
+        ...shape,
+        data: { ...shape.data, pipeline: 'source-failed' },
+      }),
+    });
+    const pairs = vi.fn();
+    const appRouter = t.router({
+      page: t.procedure.query(() => ({ items: [{ id: 'a' }, { id: 'b' }] })),
+      owner: t.procedure.query(() => {
+        // The server serializes it once to fill in the pairs' inputs, and
+        // then fails to serialize it for the response
+        let serialized = 0;
+        return {
+          toJSON() {
+            serialized++;
+            if (serialized > 1) {
+              throw new Error('serialized twice');
+            }
+            return { id: 'ada' };
+          },
+        };
+      }),
+      pair: t.procedure
+        .input(z.object({ owner: z.string(), item: z.string() }))
+        .query((opts) => {
+          pairs(opts.input);
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `no pair ${opts.input.item}`,
+          });
+        }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const page = await experimental_nested(ctx.client, (q) =>
+      q.page.query().with((it) => {
+        const owner = q.owner.query();
+        return {
+          owner,
+          pairs: it.items.map((item) => ({
+            pair: q.pair.query({ owner: owner.id, item: item.id }),
+          })),
+        };
+      }),
+    );
+
+    await expect(page.edges.owner).rejects.toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    const items = await page.edges.pairs;
+    for (const [index, id] of ['a', 'b'].entries()) {
+      await expect(items[index]!.edges.pair).rejects.toMatchObject({
+        message: `no pair ${id}`,
+        data: { code: 'NOT_FOUND' },
       });
     }
     expect(pairs.mock.calls).toEqual([

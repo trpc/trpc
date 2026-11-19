@@ -7,12 +7,15 @@ import { isAsyncIterable, isObject } from '../../utils';
 import type { experimental_PipeliningOptions } from '../types';
 import type {
   PipelineCallReads,
+  PipelineErrorEnvelope,
+  PipelineErrorMark,
   PipelineFrame,
   PipelineLimits,
   PipelineList,
   PipelinePath,
 } from './wire';
 import {
+  pipelineErrorEnvelope,
   pipelineFrameOf,
   pipelineLimitDefaults,
   readPipelinePath,
@@ -260,8 +263,8 @@ function overTheWire(
 
 /**
  * The errors the server made in place of a call, a run or a list that reads a
- * failed one: see `readFailedSource`. Never one a procedure threw, whatever
- * its code
+ * failed one, which the server marks `source-failed`. Never one a procedure
+ * threw, whatever its code
  */
 const sourceFailedErrors = new WeakSet<TRPCError>();
 
@@ -734,11 +737,11 @@ export interface PipelineServerCall {
 
 /**
  * The outcome of one run, as a response has it: what the run's `item` gave,
- * or what `error` made of why it failed
+ * or what `error` made of why it failed, with the server's mark beside it
  */
 export type PipelineRunEnvelope<TError, TData> =
   | { result: { data: TData } }
-  | { error: TError };
+  | PipelineErrorEnvelope<TError>;
 
 /**
  * The runs of a call that runs for every item, as a response has them: by
@@ -767,16 +770,11 @@ export type PipelineEach = <TError, TData>(run: {
    */
   read: (result: TData) => string | undefined;
   /**
-   * What the response has for a run that failed, or for a list that can't
-   * run. `notRun` is whether the server refused the whole call before any of
-   * its runs ran: what it makes is then to be marked so, as
-   * `markPipelineNotRun` marks it
+   * The error shape the response has for a run that failed, for a list that
+   * can't run, or for a call refused as a whole. The server puts its mark
+   * beside it, in the envelope, so nothing `error` makes can add or drop one
    */
-  error: (failure: {
-    cause: unknown;
-    input: unknown;
-    notRun: boolean;
-  }) => TError;
+  error: (failure: { cause: unknown; input: unknown }) => TError;
 }) => PipelineRuns<TError, TData>;
 
 /**
@@ -944,7 +942,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   });
   /**
    * The errors of calls refused for going over a limit before any of their
-   * runs ran, as the call's outcome: see `isNotRun`
+   * runs ran, as the call's outcome: see `markOf`
    */
   const refusedBeforeRunning = new WeakSet<TRPCError>();
   /** Notes why a call doesn't run, before any of its runs ran */
@@ -1407,13 +1405,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     return async function runEach<TError, TData>(run: {
       item: (input: unknown) => Promise<TData>;
       read: (result: TData) => string | undefined;
-      error: (failure: {
-        cause: unknown;
-        input: unknown;
-        notRun: boolean;
-      }) => TError;
+      error: (failure: { cause: unknown; input: unknown }) => TError;
     }): PipelineRuns<TError, TData> {
-      const { error } = run;
+      /**
+       * The envelope of an error, marked `source-failed` if it is the one the
+       * server made in place of what reads a failed call or run
+       */
+      const failedWith = (cause: unknown, input: unknown) =>
+        pipelineErrorEnvelope(
+          run.error({ cause, input }),
+          cause instanceof TRPCError && sourceFailedErrors.has(cause)
+            ? 'source-failed'
+            : null,
+        );
       let base: PipelineCallInput;
       try {
         if (refusal) {
@@ -1487,9 +1491,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             return { kind: 'ran', envelope: { result: { data } } };
           } catch (cause) {
             ran.outcome.resolve({ ok: false });
+            // The procedure's own error, which has no mark
             return {
               kind: 'ran',
-              envelope: { error: error({ cause, input, notRun: false }) },
+              envelope: pipelineErrorEnvelope(
+                run.error({ cause, input }),
+                null,
+              ),
             };
           }
         })();
@@ -1546,24 +1554,12 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               return node.value.end.then((end) =>
                 end.kind === 'ran'
                   ? end.envelope
-                  : {
-                      error: error({
-                        cause: end.cause,
-                        input: base.decoded.value,
-                        notRun: false,
-                      }),
-                    },
+                  : failedWith(end.cause, base.decoded.value),
               );
             case 'items':
               return { items: node.items.map(response) };
             case 'failed':
-              return {
-                error: error({
-                  cause: node.error,
-                  input: base.decoded.value,
-                  notRun: false,
-                }),
-              };
+              return failedWith(node.error, base.decoded.value);
           }
         });
       /**
@@ -1594,13 +1590,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       // or a run that can't run for another reason has been ruled out. One
       // with none refused is as it is
       if (refused.length > 0) {
-        return {
-          error: error({
-            cause: refused[0],
-            input: base.decoded.value,
-            notRun: true,
-          }),
-        };
+        return pipelineErrorEnvelope(
+          run.error({ cause: refused[0], input: base.decoded.value }),
+          'not-run',
+        );
       }
       return response(ran);
     };
@@ -1677,19 +1670,20 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     /** The calls, with inputs that are filled in when they are read */
     calls: calls.map((it) => it.call),
     /**
-     * Whether the server refused the call whose error this is, for going over
-     * a limit, before any of its runs ran. The response marks its error so,
-     * as `markPipelineNotRun` does: a client can then ask for it by itself
+     * The mark the response puts beside a call's error, in its envelope.
+     * `not-run`: the server refused the call, for going over a limit, before
+     * any of its runs ran, so a client can ask for it by itself.
+     * `source-failed`: the error is the one the server sent in place of a call
+     * that reads a failed one, which didn't run, so a client never has to tell
+     * it from the procedure's own by its code. `null` for any other error,
+     * such as one a procedure threw, whatever its code
      */
-    isNotRun: (error: TRPCError) => refusedBeforeRunning.has(error),
-    /**
-     * Whether the error is the one the server sent in place of a call, a run
-     * or a list that reads a failed one, which didn't run: not an error a
-     * procedure threw, whatever its code. The response marks it so, as
-     * `markPipelineError` does with `source-failed`, so a client never has to
-     * tell it from the procedure's own by its code
-     */
-    readFailedSource: (error: TRPCError) => sourceFailedErrors.has(error),
+    markOf: (error: TRPCError): PipelineErrorMark | null =>
+      refusedBeforeRunning.has(error)
+        ? 'not-run'
+        : sourceFailedErrors.has(error)
+          ? 'source-failed'
+          : null,
     /**
      * Runs every call, and tells the calls that read a call's data how it
      * went. A call that reads values gets how it runs, which is `null` for
