@@ -861,6 +861,18 @@ describe.each([
 });
 
 describe('httpBatchStreamLink', () => {
+  /**
+   * What `experimental_nested()` resolves to, bounded: if the root waited for
+   * a query a test holds back, this fails rather than hangs, and the test's
+   * disposers then let that query end
+   */
+  async function rootOf<TResult>(loaded: Promise<TResult>) {
+    const settled = vi.fn();
+    void loaded.then(settled, settled);
+    await vi.waitFor(() => expect(settled).toHaveBeenCalled());
+    return loaded;
+  }
+
   test("each item's edge settles by itself: a slow item doesn't hold back the others", async () => {
     const { appRouter, gates } = createRouter();
     const gate = createDeferred<void>();
@@ -887,10 +899,7 @@ describe('httpBatchStreamLink', () => {
       })),
     );
     // Bounded: the root must not wait for Bob either
-    const root = vi.fn();
-    void loaded.then(root, () => undefined);
-    await vi.waitFor(() => expect(root).toHaveBeenCalled());
-    const list = await loaded;
+    const list = await rootOf(loaded);
     const adaSettled = vi.fn();
     const bobSettled = vi.fn();
     const ada = list[0]!.edges.author;
@@ -949,13 +958,15 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) => {
-      const slow = q.slow.query();
-      return q.withPromise.query().with((it) => ({
-        pair: q.pair.query({ id: it.id, other: slow.id }),
-        slow,
-      }));
-    });
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) => {
+        const slow = q.slow.query();
+        return q.withPromise.query().with((it) => ({
+          pair: q.pair.query({ id: it.id, other: slow.id }),
+          slow,
+        }));
+      }),
+    );
     const rejected = vi.fn();
     void root.edges.pair.then(undefined, rejected);
 
@@ -985,14 +996,16 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) =>
-      q.post.list.query({ limit: 2 }).with((list) => ({
-        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
-          posts: list.items.map((it) => ({
-            author: q.author.byId.query({ id: it.authorId }),
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) =>
+        q.post.list.query({ limit: 2 }).with((list) => ({
+          slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+            posts: list.items.map((it) => ({
+              author: q.author.byId.query({ id: it.authorId }),
+            })),
           })),
         })),
-      })),
+      ),
     );
     root.node.items.reverse();
     gate.resolve();
@@ -1029,16 +1042,18 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) =>
-      q.post.pages.query().with((data) => ({
-        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
-          pages: data.pages.map((page) =>
-            page.items.map((it) => ({
-              author: q.author.byId.query({ id: it.authorId }),
-            })),
-          ),
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) =>
+        q.post.pages.query().with((data) => ({
+          slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+            pages: data.pages.map((page) =>
+              page.items.map((it) => ({
+                author: q.author.byId.query({ id: it.authorId }),
+              })),
+            ),
+          })),
         })),
-      })),
+      ),
     );
     const [first, second] = root.node.pages;
     root.node.pages = [second!, first!];
