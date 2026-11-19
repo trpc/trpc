@@ -1411,6 +1411,14 @@ describe('edges of a load', () => {
             tags: [],
           });
           loads.push(startLoad());
+          // A write after the load got its fresh data, before the load's
+          // listener is told of the earlier success
+          resource.queryClient.setQueryData(key, {
+            id: 'rewritten',
+            title: 'Rewritten',
+            authorId: 'u3',
+            tags: [],
+          });
         }
       }),
     );

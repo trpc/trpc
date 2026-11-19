@@ -373,16 +373,16 @@ export function beginEntries(opts: {
   }
 
   /**
-   * The entries whose data another entry reads, by their query's hash. `since`
-   * is how many writes and failures the query had once the load started it:
-   * `null` until then
+   * The entries whose data another entry reads, by their query's hash.
+   * `armed` is whether a notification can be of the fetch the load started
+   * or joined
    */
   const watched = new Map<
     string,
     {
       leaf: LinkedLeaf;
       data: Unit<unknown, EntryFailure>;
-      since: { writes: number; failures: number } | null;
+      armed: boolean;
     }[]
   >();
   /**
@@ -404,7 +404,7 @@ export function beginEntries(opts: {
     const one: NonNullable<ReturnType<typeof watched.get>>[number] = {
       leaf,
       data,
-      since: null,
+      armed: false,
     };
     watched.set(queryHash, [...(watched.get(queryHash) ?? []), one]);
     state.unwatch ??= queryClient.getQueryCache().subscribe((event) => {
@@ -412,29 +412,17 @@ export function beginEntries(opts: {
         return;
       }
       const { action } = event;
-      const queryState = event.query.state;
       for (const each of watched.get(event.query.queryHash) ?? []) {
-        // Only of a fetch after the load started the query: a listener that
-        // started the load may be told of an earlier fetch after it. For
-        // data the cache had, such as a fresh hit, what the `QueryClient`
-        // method resolves to is the data
-        if (!each.since) {
+        if (!each.armed) {
           continue;
         }
         // Not a write, such as `setQueryData()`, while the request runs:
         // what the entries read is what the request returns, or its failure.
         // The action's data, not the query's: a listener told before this
         // one may have written to the query since
-        if (
-          action.type === 'success' &&
-          !action.manual &&
-          queryState.dataUpdateCount > each.since.writes
-        ) {
+        if (action.type === 'success' && !action.manual) {
           each.data.settle(ok(action.data));
-        } else if (
-          action.type === 'error' &&
-          queryState.errorUpdateCount > each.since.failures
-        ) {
+        } else if (action.type === 'error') {
           each.data.settle(
             failed(ownFailure(each.leaf.label, each.leaf.state, action.error)),
           );
@@ -442,13 +430,22 @@ export function beginEntries(opts: {
       }
     });
     return () => {
-      const query = queryClient.getQueryCache().get(queryHash);
-      if (query) {
-        one.since = {
-          writes: query.state.dataUpdateCount,
-          failures: query.state.errorUpdateCount,
-        };
+      // Without a fetch, such as for a fresh hit, the data is what the
+      // `QueryClient` method resolves to
+      if (
+        queryClient.getQueryCache().get(queryHash)?.state.fetchStatus !==
+        'fetching'
+      ) {
+        return;
       }
+      // From the next microtask. A notification in this step is of an
+      // action dispatched before the load started the query: the listener
+      // that started the load is told of it before this one. The fetch's
+      // own success or failure can't come in this step, as the query awaits
+      // what its function returns
+      queueMicrotask(() => {
+        one.armed = true;
+      });
     };
   }
 
