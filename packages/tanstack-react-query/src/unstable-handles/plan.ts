@@ -455,7 +455,9 @@ export function describeEntries(opts: {
     return {
       kind: leaf.state.kind,
       type: leaf.state.type,
-      queryKey: options.queryKey,
+      // As the cache hashes it, with the `queryKeyHashFn` it is set up
+      // with: the keys it tells apart are other queries
+      queryHash: opts.queryClient.defaultQueryOptions(options).queryHash,
       // `skipToken` and no input have the same query key
       skipped: options.queryFn === skipToken,
       // Not all of the options: `meta` can hold what has no JSON, or what is

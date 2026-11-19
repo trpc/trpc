@@ -5728,6 +5728,38 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test("keys that the client's `queryKeyHashFn` tells apart are another load", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    // Tells a date from its ISO string, as the cache then does
+    resource.queryClient.setDefaultOptions({
+      queries: {
+        queryKeyHashFn: (queryKey) =>
+          JSON.stringify(superjson.serialize(queryKey)),
+      },
+    });
+    const date = new Date(0);
+    const seen: unknown[] = [];
+    function Card(props: { slug: string }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(trpc.post.bySlug, { slug: props.slug }),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card slug={date as unknown as string} />
+        <Card slug={date.toISOString()} />
+      </>,
+    );
+    expect(seen[1]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('the same infinite entry with and without `getNextPageParam` is another load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
