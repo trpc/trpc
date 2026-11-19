@@ -5,6 +5,7 @@ export {
    */
   experimental_standaloneMiddleware,
   experimental_standaloneMiddleware as experimental_trpcMiddleware,
+  unstable_dedupeQueries,
   initTRPC,
   // --- FIXME a bunch of these exports are only useful for plugins - move them somewhere else? ----
   getTRPCErrorFromUnknown,

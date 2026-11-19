@@ -1,4 +1,8 @@
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
+import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
+import { createBuilder } from '@trpc/server/unstable-core-do-not-import';
+import superjson from 'superjson';
 
 test('decorate independently', () => {
   type User = {
@@ -542,4 +546,58 @@ test('meta', () => {
 
     return next();
   });
+});
+
+test('a middleware gets the transformer', async () => {
+  const transformers = vi.fn<(transformer: CombinedDataTransformer) => void>();
+  const withTransformer = initTRPC.create({ transformer: superjson });
+  const without = initTRPC.create();
+  await using ctx = testServerAndClientResource(
+    withTransformer.router({
+      fromRoot: withTransformer.procedure
+        .use((opts) => {
+          expectTypeOf(
+            opts.transformer,
+          ).toEqualTypeOf<CombinedDataTransformer>();
+          transformers(opts.transformer);
+          return opts.next();
+        })
+        .query(() => 'ok'),
+    }),
+  );
+  await using ctxWithout = testServerAndClientResource(
+    without.router({
+      fromRoot: without.procedure
+        .use((opts) => {
+          transformers(opts.transformer);
+          return opts.next();
+        })
+        .query(() => 'ok'),
+      // Not from `t.procedure`, so it has no root config
+      fromBuilder: createBuilder()
+        .use((opts) => {
+          transformers(opts.transformer);
+          return opts.next();
+        })
+        .query(() => 'ok'),
+    }),
+  );
+
+  await ctx.client.fromRoot.query();
+  await ctxWithout.client.fromRoot.query();
+  await ctxWithout.client.fromBuilder.query();
+
+  const [given, none, noConfig] = transformers.mock.calls.map(
+    ([transformer]) => transformer,
+  );
+  assert(given && none && noConfig);
+  expect(given).toEqual({ input: superjson, output: superjson });
+  // Without one, a transformer that changes nothing
+  const date = new Date(0);
+  for (const transformer of [none, noConfig]) {
+    expect(transformer.input.serialize(date)).toBe(date);
+    expect(transformer.input.deserialize(date)).toBe(date);
+    expect(transformer.output.serialize(date)).toBe(date);
+    expect(transformer.output.deserialize(date)).toBe(date);
+  }
 });

@@ -9,6 +9,7 @@ import {
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
+import type { CombinedDataTransformer } from './transformer';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isAsyncIterable, isObject } from './utils';
 
@@ -127,6 +128,12 @@ export type MiddlewareFunction<
      * The index of this call in a batch request.
      */
     batchIndex: number;
+    /**
+     * The transformer given to `initTRPC.create()`, or one that changes
+     * nothing. `transformer.input.serialize()` encodes an input as the client
+     * sends it.
+     */
+    transformer: CombinedDataTransformer;
     /**
      * Runs the next middleware, or the resolver. Pass `ctx` to add to the
      * context, or `input` to replace the input.

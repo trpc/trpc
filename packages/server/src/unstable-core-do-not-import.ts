@@ -25,6 +25,7 @@ export * from './unstable-core-do-not-import/http/pathSeparator';
 export * from './unstable-core-do-not-import/http/resolveResponse';
 export * from './unstable-core-do-not-import/http/types';
 export * from './unstable-core-do-not-import/initTRPC';
+export * from './unstable-core-do-not-import/dedupeQueries';
 export * from './unstable-core-do-not-import/middleware';
 export * from './unstable-core-do-not-import/parser';
 export * from './unstable-core-do-not-import/procedure';
