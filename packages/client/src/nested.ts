@@ -1,3 +1,4 @@
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyProcedure,
   AnyRouter,
@@ -27,12 +28,14 @@ import type {
 import {
   createOperationPipeline,
   failed,
+  isUnread,
   outcomeOf,
   pipeCall,
   pipelineContext,
   readPipelinedRun,
   settles,
 } from './links/internals/pipeline';
+import { isTRPCClientError } from './TRPCClientError';
 
 /**
  * `experimental_nested()` records the queries its callback makes, then sends
@@ -534,6 +537,24 @@ function allOk<TData>(
   );
 }
 
+/** Whether one of the checks is `true`, as soon as one is */
+function anyTrue(checks: readonly Settles<boolean>[]): Promise<boolean> {
+  return new Promise((resolve) => {
+    let left = checks.length;
+    if (left === 0) {
+      resolve(false);
+    }
+    for (const check of checks) {
+      void check.then((it) => {
+        left--;
+        if (it || left === 0) {
+          resolve(it);
+        }
+      });
+    }
+  });
+}
+
 /**
  * Whether a value that isn't a plain object, an array or a Date has a
  * stand-in in it. `seen` keeps a cycle from looping
@@ -908,7 +929,10 @@ export function experimental_nested<
           // A run that reads a run the server didn't make, or that failed,
           // doesn't run: the server sends an error in its place. It asks by
           // itself, as a call does whose source failed
-          if (run.kind === 'error' && (await sourcesRan(call, items))) {
+          if (
+            run.kind === 'error' &&
+            !(await blockedBySource(call, items, run.error))
+          ) {
             return failed(run.error);
           }
         }
@@ -921,31 +945,52 @@ export function experimental_nested<
   }
 
   /**
-   * Whether the request has data for the run of every call whose data a
-   * run's input reads, for its items
+   * Whether a run's error is what the server sends in place of a run that
+   * reads one it didn't make, or that failed: a `PRECONDITION_FAILED`, and a
+   * call whose data the input reads that the server refused or that failed
+   * on the server, for the run's items. Any other error is the run's own,
+   * at once. The server sends a failed source before the runs that read it,
+   * so this resolves at the first one, and doesn't wait for a source still
+   * to come. An error the client made, such as for a result it couldn't
+   * deserialize, doesn't say the server didn't run it
    */
-  async function sourcesRan(call: Call, items: Items) {
+  function blockedBySource(call: Call, items: Items, error: unknown) {
+    if (
+      !isTRPCClientError(error) ||
+      error.shape?.code !== TRPC_ERROR_CODES_BY_KEY.PRECONDITION_FAILED
+    ) {
+      return Promise.resolve(false);
+    }
     const sources = new Set(call.holes.map((hole) => hole.ref.call));
-    const ran = await Promise.all(
-      Array.from(sources, async (source) => {
-        const from = source.source;
-        // An operation of its own: its request's outcome
-        if (!from || !('owner' in from)) {
-          const sent = await source.sent;
-          return sent ? sent.ok : true;
-        }
-        const settled = await from.settled;
-        if (settled.status !== 'ran' || !settled.outcome.ok) {
-          return false;
-        }
-        const run = await readRun(
-          settled.outcome.data,
-          source.frame.map((scope) => items.get(scope) ?? -1),
-        );
-        return run.kind === 'data';
-      }),
+    return anyTrue(
+      Array.from(sources, (source) =>
+        settles(
+          async () => {
+            const from = source.source;
+            // An operation of its own: its request's outcome
+            if (!from || !('owner' in from)) {
+              const sent = await source.sent;
+              return sent ? !sent.ok : false;
+            }
+            const settled = await from.settled;
+            if (settled.status === 'not-run') {
+              return true;
+            }
+            if (!settled.outcome.ok) {
+              return !isUnread(settled.outcome.error);
+            }
+            const run = await readRun(
+              settled.outcome.data,
+              source.frame.map((scope) => items.get(scope) ?? -1),
+            );
+            return run.kind === 'error'
+              ? !isUnread(run.error)
+              : run.kind !== 'data';
+          },
+          () => false,
+        ),
+      ),
     );
-    return ran.every(Boolean);
   }
 
   /** The run at `indexes` of a call's data */

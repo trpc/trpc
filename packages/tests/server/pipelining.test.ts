@@ -814,7 +814,7 @@ describe.each([
   );
 
   test.runIf(scenario.link === httpBatchLink)(
-    'an answer with no result for a call fails that call',
+    'an answer with no result for a call leaves that call `unresolved`, as one that breaks off does: the client never had its result',
     async () => {
       await using ctx = setup({
         allowPipelining: true,
@@ -842,6 +842,72 @@ describe.each([
       await expect(author.result).rejects.toThrow(
         'The server sent no result for a pipelined call',
       );
+      expect(author.status).toBe('unresolved');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchLink)(
+    'an answer with `null` for an operation says nothing of whether it failed: a call that reads it keeps the error the server sent it',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json([null, ...results.slice(1)], res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      // `t2` is forbidden
+      const tag = pipeCall({
+        path: 'tag',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['tags', '1', 'id'] }),
+      });
+      assert(tag);
+      await expect(postResult).rejects.toThrow();
+      await expect(tag.result).rejects.toMatchObject({
+        data: { code: 'FORBIDDEN' },
+      });
+      expect(tag.status).toBe('sent');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchLink)(
+    'an answer with `null` for a call fails that call: it is no envelope, and the client had it',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json([results[0], null], res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      expect(await postResult).toMatchObject({ slug: 'hello' });
+      await expect(author.result).rejects.toThrow(
+        'The server sent no result for a pipelined call',
+      );
+      expect(author.status).toBe('sent');
     },
   );
 
@@ -969,6 +1035,11 @@ describe.each([
       assert(author);
       // Also when the test fails: the response must end
       using _break = makeResource({}, () => delivered.resolve());
+      // Bounded: if the operation waited for the author, this fails rather
+      // than hangs, and the response then breaks off
+      const settled = vi.fn();
+      void postResult.then(settled, settled);
+      await vi.waitFor(() => expect(settled).toHaveBeenCalled());
       expect(await postResult).toMatchObject({ authorId: 'u1' });
       delivered.resolve();
       await expect(author.result).rejects.toThrow('The connection broke');

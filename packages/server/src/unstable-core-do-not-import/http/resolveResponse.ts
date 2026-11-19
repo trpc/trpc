@@ -320,19 +320,21 @@ function sentOf(sent: SentValue | SentShape): unknown {
 }
 
 /**
- * An error shape serialized once, or `null` if it can't be, or if JSON writes
- * nothing for it: a response has an error there
+ * An error shape made and serialized once, or `null` if making or
+ * serializing it throws, such as for a getter of the formatter's, or if JSON
+ * writes nothing for it: a response has an error there
  */
 function trySendableShape(opts: {
   transformer: CombinedDataTransformer['output'];
-  shape: unknown;
+  shape: () => unknown;
   plain: unknown;
 }): SentShape | null {
   try {
-    const { json } = sendable(opts.transformer, opts.shape);
+    const shape = opts.shape();
+    const { json } = sendable(opts.transformer, shape);
     return json === undefined
       ? null
-      : { value: opts.shape, json, plain: opts.plain };
+      : { value: shape, json, plain: opts.plain };
   } catch {
     return null;
   }
@@ -342,20 +344,25 @@ function trySendableShape(opts: {
  * The data of a run as a stream sends it. The stream serializes what it sends
  * itself, so it gets the checked JSON read back through the transformer,
  * which serializes to the same again: not the data as it was made, which
- * could serialize differently the second time. Throws what reading it back
- * throws: the client couldn't read it either
+ * could serialize differently the second time. A server need not read back
+ * what only its clients read, so if the transformer can't, the data as it
+ * was made, as a stream sends any other call's
  */
 function streamedValue(
   transformer: CombinedDataTransformer['output'],
   sent: SentValue,
 ): SentValue {
-  return {
-    value:
-      sent.json === undefined
-        ? undefined
-        : transformer.deserialize(JSON.parse(sent.json)),
-    json: sent.json,
-  };
+  if (sent.json === undefined) {
+    return sent;
+  }
+  try {
+    return {
+      value: transformer.deserialize(JSON.parse(sent.json)),
+      json: sent.json,
+    };
+  } catch {
+    return sent;
+  }
 }
 
 /**
@@ -602,7 +609,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       const transformer = config.transformer.output;
       const sent = trySendableShape({
         transformer,
-        shape: shapeOf(sending.error, sending.input),
+        shape: () => shapeOf(sending.error, sending.input),
         plain: plainOf(sending.error),
       });
       if (sent) {
@@ -616,7 +623,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       return (
         trySendableShape({
           transformer,
-          shape: shapeOf(error, undefined),
+          shape: () => shapeOf(error, undefined),
           plain,
         }) ?? {
           value: plain,
@@ -734,7 +741,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                     ? streamedValue(config.transformer.output, sent)
                     : sent;
                 },
-                read: (sent) => sent.value,
+                // What was checked and sent: data isn't serialized again
+                read: (sent) => sent.json,
                 error: (failure) => {
                   const error = getTRPCErrorFromUnknown(failure.cause);
                   opts.onError?.({

@@ -535,6 +535,26 @@ function clientError(cause: unknown) {
   );
 }
 
+/** See `isUnread()` */
+const unread = /* @__PURE__ */ new WeakSet<object>();
+
+/** An error for a result the link couldn't read: see `isUnread()` */
+function unreadError(cause: unknown) {
+  const error = clientError(cause);
+  unread.add(error);
+  return error;
+}
+
+/**
+ * Whether a call's or a run's error is the client's, not the server's: the
+ * link couldn't deserialize what the server sent, or it never arrived. It
+ * says nothing of whether the server ran it, nor of whether the calls that
+ * read it ran.
+ */
+export function isUnread(error: unknown) {
+  return typeof error === 'object' && error !== null && unread.has(error);
+}
+
 /**
  * The runs of a call for every item, as a response has them: its `items`, by
  * index, one level for each level of lists, down to a `{ result }` or an
@@ -569,7 +589,7 @@ function decodeRuns(
       }
       return node['error'] ? { error: read(node['error']) } : {};
     },
-    (cause) => ({ error: clientError(cause) }),
+    (cause) => ({ error: unreadError(cause) }),
   );
 }
 
@@ -604,7 +624,7 @@ export function readPipelinedRun(
           ? errorItem(node.error)
           : { kind: 'missing' };
     },
-    (cause) => errorItem(clientError(cause)),
+    (cause) => errorItem(unreadError(cause)),
   );
 }
 
@@ -620,8 +640,8 @@ function errorItem(error: unknown): PipelinedItem {
  * A call's final state from what the response has for it alone. It didn't
  * run if the server says it refused it before any of its runs ran, such as
  * for a list longer than the server's limits, or if its result never
- * arrived, such as from a response that broke off: whatever the server did,
- * the client has no result of it.
+ * arrived, such as from a response that broke off or left it out: whatever
+ * the server did, the client has no result of it.
  */
 function decodeCall(
   received: Outcome<HTTPResult | undefined>,
@@ -631,9 +651,16 @@ function decodeCall(
     return { status: 'not-run', error: received.error };
   }
   const sent = received.data;
+  // No slot for it at all: as from a response that broke off
+  if (!sent) {
+    return {
+      status: 'not-run',
+      error: new Error('The server sent no result for a pipelined call'),
+    };
+  }
   // What isn't an object is no envelope: the call fails, and its siblings
   // keep theirs
-  if (!sent || !isObject(sent.json)) {
+  if (!isObject(sent.json)) {
     return {
       status: 'ran',
       outcome: failed(
@@ -664,9 +691,14 @@ function decodeCall(
       outcome: { ok: true, data: { kind: 'once', data: link.read(sent).data } },
     };
   } catch (error) {
-    return isTRPCClientError(error) && isPipelineNotRun(error.data)
-      ? { status: 'not-run', error }
-      : { status: 'ran', outcome: failed(error) };
+    if (isTRPCClientError(error) && isPipelineNotRun(error.data)) {
+      return { status: 'not-run', error };
+    }
+    // The server sent a result, and the link couldn't deserialize it
+    if (sentResult(received) && typeof error === 'object' && error !== null) {
+      unread.add(error);
+    }
+    return { status: 'ran', outcome: failed(error) };
   }
 }
 
@@ -676,8 +708,8 @@ function decodeCall(
  * it, so a failed source that has arrived is why the call failed, and one
  * still to come isn't.
  *
- * @param sourcesOk whether the server sent each source a result, not an
- * error, or `null` if it hasn't arrived
+ * @param sourcesOk whether the server sent each source a result (`true`)
+ * or an error (`false`), or `null` if that hasn't arrived
  */
 export function settlePipelinedCall(
   own: PipelinedCallSettled,
@@ -689,18 +721,17 @@ export function settlePipelinedCall(
 }
 
 /**
- * Whether the server sent a result, not an error, at an index of the
- * request: what the server ran the calls that read it from. Whether the
+ * Whether the server sent a result (`true`) or an error (`false`) at an index
+ * of the request: whether the server ran the calls that read it. Whether the
  * client can deserialize that result is another matter, and doesn't say
- * whether those calls ran. What is no envelope, such as `null`, is no result
+ * whether those calls ran. `null` for what says neither: no slot, a slot
+ * that is no envelope, such as `null`, or a result that never arrived
  */
 function sentResult(received: Outcome<HTTPResult | undefined>) {
-  return (
-    received.ok &&
-    !!received.data &&
-    isObject(received.data.json) &&
-    !('error' in received.data.json)
-  );
+  if (!received.ok || !received.data || !isObject(received.data.json)) {
+    return null;
+  }
+  return !('error' in received.data.json);
 }
 
 /**
@@ -715,8 +746,9 @@ function settlePipelinedBatch(opts: {
   link: PipeliningLink;
 }) {
   /**
-   * Whether the server sent a result at each index of the request, once it
-   * arrived: see `sentResult()`
+   * Whether the server sent a result or an error at each index of the
+   * request, or `null` until it arrives or if it says neither: see
+   * `sentResult()`
    */
   const ok: (boolean | null)[] = opts.results.map(() => null);
   // The same steps for an operation and a call, so that each is marked in
