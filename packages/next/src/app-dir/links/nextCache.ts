@@ -46,7 +46,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const { path, input, type, context } = op;
 
         const cacheTag = generateCacheTag(path, input);
-        const cacheTags = generateCacheTags(path, input);
+        const cacheTags = generateCacheTags({ procedurePath: path, input });
         // Let per-request revalidate override global revalidate
         const requestRevalidate =
           typeof context['revalidate'] === 'number' ||
