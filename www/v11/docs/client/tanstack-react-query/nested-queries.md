@@ -116,7 +116,10 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 // @filename: trpc/server.tsx
-import { QueryClient } from '@tanstack/react-query';
+import {
+  defaultShouldDehydrateQuery,
+  QueryClient,
+} from '@tanstack/react-query';
 import {
   createTRPCOptionsProxy,
   unstable_createHydrateClient,
@@ -124,8 +127,20 @@ import {
 import { cache } from 'react';
 import { appRouter } from '~/server/router';
 
-// One per request
-export const getQueryClient = cache(() => new QueryClient());
+// One per request. It sends pending queries to the browser too, as in the
+// App Router setup, so they stream in as they settle
+export const getQueryClient = cache(
+  () =>
+    new QueryClient({
+      defaultOptions: {
+        dehydrate: {
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) ||
+            query.state.status === 'pending',
+        },
+      },
+    }),
+);
 export const trpc = createTRPCOptionsProxy({
   ctx: {},
   router: appRouter,
@@ -554,6 +569,7 @@ Content-Type: application/json
 - **Read the list through its handle.** A query from `trpc.post.list.infiniteQueryOptions()` fetches the list alone.
 - **Only the item's part of an input is new.** What an item's input reads besides the item, such as the whole list or another entry, stays as it was in the first load. That is the input the items' handles have, so each row still finds its query.
 - **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
+- **If the server refuses the items' call**, such as for one of its [limits](/docs/client/vanilla/nested-queries#limits), the list arrives without the items' data. Then every row's query is fetched as soon as the list arrives, in a batch, whether its row renders or not.
 - **Not with a `trpc.context` of its own.** `fromHandle(trpc, handles.posts, { trpc: { context } })` with a non-empty `context` fetches the list alone, since a link may route by that context. Each row's query loads when the row reads it.
 
 ## Entries next to components {#groups}
@@ -687,7 +703,7 @@ export function PostPage(props: { slug: string }) {
 
 ### In a server component {#server-components}
 
-A server component calls `loadHandles()`, as a loader does. [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client) sends the queries that exist when it renders. A query that is built from another's data exists only once that data is there.
+A server component calls `loadHandles()`, as a loader does. [`HydrateClient`](/docs/client/tanstack-react-query/handles#hydrate-client) sends the queries that exist when it renders. A pending query is sent only when the query client's `shouldDehydrateQuery` allows it, as in the [App Router setup](/docs/client/nextjs/app-router-setup). A query that is built from another's data exists only once that data is there.
 
 So wait for the data that the next query needs:
 
