@@ -129,7 +129,7 @@ describe.each([
   }
 
   /** The request URLs, with `input` and `pipe` decoded */
-  function requestsOf(ctx: ReturnType<typeof setup>) {
+  function requestsOf(ctx: Pick<ReturnType<typeof setup>, 'onRequestSpy'>) {
     return ctx.onRequestSpy.mock.calls.map(([req]) => {
       const url = new URL(req.url!, 'http://localhost');
       const param = (name: string) => {
@@ -618,6 +618,74 @@ describe.each([
     expect(await page.edges.owner).toEqual({ id: 'ada' });
     expect(await page.edges.team).toBe('team-ada');
     expect(teams.mock.calls).toEqual([['ada']]);
+    // The first request pipelined both: they asked by themselves after it
+    expect(requestsOf(ctx)[0]!.pipe).toEqual({
+      1: { reads: [{ to: ['note'], from: 0, path: ['note'] }] },
+      2: { reads: [{ to: ['id'], from: 1, path: ['id'] }] },
+    });
+  });
+
+  test("a run's error that the transformer writes as a falsy value is the run's error, not a run the server left out", async () => {
+    /** What the transformer reads back from the `0` it writes for an error */
+    const errorShape = {
+      message: 'no author',
+      code: -32004,
+      data: { code: 'NOT_FOUND', httpStatus: 404 },
+    };
+    const isErrorShape = (value: unknown) =>
+      isObject(value) &&
+      typeof value['message'] === 'string' &&
+      typeof value['code'] === 'number' &&
+      isObject(value['data']);
+    const transformer = {
+      input: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) => value,
+      },
+      output: {
+        serialize: (value: unknown) => (isErrorShape(value) ? 0 : value),
+        deserialize: (value: unknown) => (value === 0 ? errorShape : value),
+      },
+    };
+    const t = initTRPC.create({ transformer });
+    const authors = vi.fn();
+    const appRouter = t.router({
+      list: t.procedure.query(() => ({ items: [{ id: 'ada' }, { id: 'x' }] })),
+      author: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        authors(opts.input.id);
+        if (opts.input.id === 'x') {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'no author' });
+        }
+        return { id: opts.input.id };
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+
+    const items = await experimental_nested(ctx.client, (q) =>
+      q.list.query().items.map((item) => ({
+        author: q.author.query({ id: item.id }),
+      })),
+    );
+
+    expect(await items[0]!.edges.author).toEqual({ id: 'ada' });
+    await expect(items[1]!.edges.author).rejects.toMatchObject({
+      message: 'no author',
+      data: { code: 'NOT_FOUND' },
+    });
+    // Each ran once, in the one request: none was asked for again
+    expect(authors.mock.calls).toEqual([['ada'], ['x']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test("a query in a `.map()` of a list in the data of a call the server refused, with an input that reads nothing, asks by itself once that call's data is there", async () => {
@@ -669,6 +737,14 @@ describe.each([
       'constant',
     ]);
     expect(tags.mock.calls).toEqual([['constant'], ['constant']]);
+    // The first request pipelined both: they asked by themselves after it
+    expect(requestsOf(ctx)[0]!.pipe).toEqual({
+      1: {
+        each: { from: 0, path: ['items'] },
+        reads: [{ to: ['note'], path: ['note'] }],
+      },
+      2: { each: { from: 1, path: ['tags'] }, reads: [] },
+    });
   });
 
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {

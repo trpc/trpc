@@ -600,8 +600,9 @@ function decodeRuns(
       if (isObject(result)) {
         return { result: { data: read(await result['data']) } };
       }
-      // The server's mark is beside the error, never in it
-      return node['error']
+      // The server's mark is beside the error, never in it. An error the
+      // transformer writes as a falsy value, such as `0`, is an error too
+      return hasOwn(node, 'error')
         ? { error: read(node['error']), pipeline: pipelineMarkOf(node) }
         : {};
     },

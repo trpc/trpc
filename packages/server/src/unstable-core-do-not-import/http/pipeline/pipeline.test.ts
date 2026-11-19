@@ -1392,7 +1392,8 @@ describe('a call for every item', () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
-      // Two lists, and two calls for their items
+      // The two lists, and the runs for the items of the short one, not the
+      // long one
       maxRuns: 4,
       fns: { long: () => [1, 2, 3], short: () => [1, 2], echo },
     });
@@ -1436,7 +1437,7 @@ describe('a call for every item', () => {
     await using server = serve({
       ...defaults,
       stream: true,
-      // Four calls, and three runs for the items of the long list
+      // The two lists, and the three runs for the items of the long one
       maxRuns: 5,
       fns: {
         empty: () => [],
@@ -1487,6 +1488,70 @@ describe('a call for every item', () => {
     ]);
   });
 
+  test('a call for every item whose list is not ready yet holds no place: the one whose list is ready first runs', async () => {
+    const echo = vi.fn((input: unknown) => input);
+    // Opened when the client has the result for the items of the long list
+    let open: () => void = () => undefined;
+    const opened = new Promise<void>((resolve) => {
+      open = resolve;
+    });
+    await using server = serve({
+      ...defaults,
+      stream: true,
+      // Two lists and the three runs for the items of the long one. The two
+      // runs for the items of the short one would go over
+      maxRuns: 5,
+      fns: {
+        long: () => [1, 2, 3],
+        // Its list is ready after the client has the long one's runs
+        short: async () => {
+          await opened;
+          return [1, 2];
+        },
+        echo,
+      },
+    });
+    // Disposed before the server: `short` ends even if the test failed first
+    using _opened = makeResource({}, () => open());
+    const long = sent('long', undefined);
+    const short = sent('short', undefined);
+    const ofLong = call(
+      'echo',
+      {},
+      reads({ from: long, path: [] }, { to: ['n'], path: [] }),
+    );
+    const ofShort = call(
+      'echo',
+      {},
+      reads({ from: short, path: [] }, { to: ['n'], path: [] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      stream: true,
+      url: server.url,
+      method: 'GET',
+      sent: [long, short],
+      calls: [ofLong, ofShort],
+      onArrive: (index) => {
+        // In the request: long, short, of long, of short
+        if (index === 2) {
+          open();
+        }
+      },
+    });
+
+    expect(itemCount(res.of(ofLong))).toBe(3);
+    expect(res.of(ofShort)).toEqual({
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'A call for every item exceeds the maximum batch size',
+      },
+      pipeline: 'not-run',
+    });
+    expect(echo.mock.calls).toEqual([[{ n: 1 }], [{ n: 2 }], [{ n: 3 }]]);
+  });
+
   test('a call for every item whose list is from a failed call has no run: its place goes to one that needs it', async () => {
     const echo = vi.fn((input: unknown) => input);
     // Opened when the client has the failure of the call for the items of `broken`
@@ -1497,7 +1562,7 @@ describe('a call for every item', () => {
     await using server = serve({
       ...defaults,
       stream: true,
-      // Four calls, and two runs for the items of the list
+      // The two lists, and the two runs for the items of `list`
       maxRuns: 4,
       fns: {
         broken: () => {
@@ -1579,7 +1644,8 @@ describe('a call for every item', () => {
         },
       },
       stream: true,
-      // Three calls, and two runs for the items of the list
+      // The list, and the two runs for its items once the unreadable call
+      // gives back its place
       maxRuns: 3,
       fns: {
         // Ready after the client has the failure of the unreadable call
@@ -1942,11 +2008,11 @@ describe('a call for every item', () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
-      // The batch's three calls, but not the two runs of `members` in
-      // place of its own
+      // The batch's three calls, but not `groups` and the three runs of
+      // `members`
       limits: { ...pipelineLimitDefaults, maxRuns: 3 },
       fns: {
-        groups: () => [{ id: 'a' }, { id: 'b' }],
+        groups: () => [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
         members: () => ({ ids: ['x'] }),
         echo,
       },
@@ -1979,6 +2045,10 @@ describe('a call for every item', () => {
           pipeline: 'source-failed',
         },
         1: {
+          error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }),
+          pipeline: 'source-failed',
+        },
+        2: {
           error: expect.objectContaining({ code: 'PRECONDITION_FAILED' }),
           pipeline: 'source-failed',
         },
@@ -2800,7 +2870,7 @@ describe('the limits of a server', () => {
       await using server = serve({
         ...defaults,
         stream: true,
-        // Four calls, and two runs for the items of `short`
+        // The two lists, and the two runs for the items of `short`
         limits: { ...pipelineLimitDefaults, maxRuns: 4 },
         fns: {
           list: () => [1, 2, 3],

@@ -453,7 +453,7 @@ The most a request fills in, in characters of JSON: 100,000 by default. It count
 
 #### `maxRuns` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item. A list whose runs would go over it runs for none of its items, and their queries fall back to separate queries. In a list of lists, that is each inner list by itself, and the queries of its items get a `BAD_REQUEST`.
+The most times a request runs a procedure: 100 by default. Each call is a run, and a call that runs in a frame is a run for each item instead, counted when its list is ready. A list whose runs would go over it runs for none of its items, and their queries fall back to separate queries. Of two lists whose runs would go over it together, the one that is ready first runs. In a list of lists, that is each inner list by itself, and the queries of its items get a `BAD_REQUEST`.
 
 The lists at one level of a list of lists count together against it, even when no call runs for their items: each item of a level has a place before anything runs. So a middle level wider than `maxRuns` is refused, even when its leaves would fit.
 
