@@ -827,6 +827,33 @@ describe.each([
 
     expect(echoed).toEqual({ map: [['id', { name: 'ada' }]], set: ['ada'] });
   });
+  test('an input with one `Map` in two places reaches the procedure with one `Map` in both, as a transformer that keeps references carries it', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      // Not parsed: a parser would make a new `Map` of each
+      same: t.procedure
+        .input((value) => value as { a: unknown; b: unknown })
+        .query((opts) => opts.input.a === opts.input.b),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+
+    const same = await experimental_nested(ctx.client, (q) => {
+      const map = new Map([['id', 'ada']]);
+      return q.same.query({ a: map, b: map });
+    });
+
+    expect(same).toBe(true);
+  });
+
   test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
     const t = initTRPC.create({ transformer: superjson });
     const appRouter = t.router({

@@ -606,6 +606,22 @@ function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
   return values.some((it) => hasStandIn(it, seen));
 }
 
+/** One pass of `mapInput()` over an input */
+interface InputPass {
+  onStandIn: (standIn: unknown, hole: Hole) => unknown;
+  /**
+   * The copy of each `Map` and `Set` copied in this pass, and what is in
+   * them: one in two places of the input is one copy, as a transformer that
+   * keeps references carries it
+   */
+  copies: Map<object, unknown>;
+}
+
+/** A pass of `mapInput()` that replaces each stand-in with what `onStandIn` gives */
+function inputPass(onStandIn: InputPass['onStandIn']): InputPass {
+  return { onStandIn, copies: new Map() };
+}
+
 /**
  * A copy of an input, with each stand-in in it replaced. `to` is where a
  * value is in the input: `null` in an array, where the server can't write
@@ -613,7 +629,7 @@ function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
 function mapInput(
   value: unknown,
   to: string[] | null,
-  onStandIn: (standIn: unknown, hole: Hole) => unknown,
+  pass: InputPass,
 ): unknown {
   const shape = shapeOf(value);
   if (shape) {
@@ -622,15 +638,15 @@ function mapInput(
         'experimental_nested(): an input can have stand-ins in it, not `.with()` or `.map()`',
       );
     }
-    return onStandIn(value, { to, ref: shape.ref });
+    return pass.onStandIn(value, { to, ref: shape.ref });
   }
   if (Array.isArray(value)) {
-    return value.map((item) => mapInput(item, null, onStandIn));
+    return value.map((item) => mapInput(item, null, pass));
   }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};
     for (const key of Object.keys(value)) {
-      setOwn(copy, key, mapInput(value[key], to && [...to, key], onStandIn));
+      setOwn(copy, key, mapInput(value[key], to && [...to, key], pass));
     }
     return copy;
   }
@@ -649,7 +665,7 @@ function mapInput(
   if (isObject(value)) {
     const proto: unknown = Object.getPrototypeOf(value);
     if (proto === Map.prototype || proto === Set.prototype) {
-      return copyData(value, new Map());
+      return copyData(value, pass.copies);
     }
   }
   return value;
@@ -828,14 +844,22 @@ export function experimental_nested<
     }
     // Read once, as it is now: a later change to the object doesn't change
     // the call, and the request and a query that asks by itself agree
-    const input = mapInput(args[0], [], (it) => it);
+    const input = mapInput(
+      args[0],
+      [],
+      inputPass((it) => it),
+    );
     const holes: Hole[] = [];
-    const blanked = mapInput(input, [], (_standIn, hole) => {
-      checkScopes(hole.ref, scopes);
-      holes.push(hole);
-      hole.ref.call.reads.push(hole.ref.path);
-      return undefined;
-    });
+    const blanked = mapInput(
+      input,
+      [],
+      inputPass((_standIn, hole) => {
+        checkScopes(hole.ref, scopes);
+        holes.push(hole);
+        hole.ref.call.reads.push(hole.ref.path);
+        return undefined;
+      }),
+    );
     const call: Call = {
       path: procedure,
       input,
