@@ -21,3 +21,13 @@ export const showcases = [
     title: 'Handles',
   },
 ] as const;
+
+export type Showcase = (typeof showcases)[number];
+
+/** The showcase `pathname` is in, or `undefined` outside them. */
+export function showcaseAt(pathname: string) {
+  return showcases.find(
+    (showcase) =>
+      pathname === showcase.path || pathname.startsWith(`${showcase.path}/`),
+  );
+}

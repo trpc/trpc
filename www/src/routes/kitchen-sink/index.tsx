@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 
+import { GitHubIcon } from '~/components/icons.tsx';
+
 import { kitchenSink, showcases } from './-showcases.ts';
+import { showcaseFolderUrl } from './-source.ts';
 
 export const Route = createFileRoute('/kitchen-sink/')({
   component: KitchenSinkIndex,
@@ -15,9 +18,9 @@ function KitchenSinkIndex() {
       <p className="text-muted-foreground">{kitchenSink.description}</p>
       <ul className="grid gap-3">
         {showcases.map((showcase) => (
-          <li key={showcase.path}>
+          <li className="relative" key={showcase.path}>
             <Link
-              className="block rounded-lg border p-4 hover:bg-muted"
+              className="block rounded-lg border p-4 pr-12 hover:bg-muted"
               to={showcase.path}
             >
               <span className="font-semibold">{showcase.title}</span>
@@ -25,6 +28,15 @@ function KitchenSinkIndex() {
                 {showcase.description}
               </span>
             </Link>
+            {/* Beside the card's link, not in it: links don't nest. */}
+            <a
+              aria-label={`${showcase.title} on GitHub`}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground *:size-4"
+              href={showcaseFolderUrl(showcase)}
+              title="View example on GitHub"
+            >
+              <GitHubIcon />
+            </a>
           </li>
         ))}
       </ul>
