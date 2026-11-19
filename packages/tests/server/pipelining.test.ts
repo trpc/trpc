@@ -3164,6 +3164,125 @@ describe('a call the server refuses before any of its runs ran', () => {
     });
     expect(author).not.toHaveBeenCalled();
   });
+
+  test('is marked when a limit refuses the input of every run, as none of them ran', async () => {
+    const lists = initTRPC.create();
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'list,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: [] },
+            reads: [{ to: ['longField'], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return opts.input;
+        }),
+      }),
+      // `{"longField":"x"}` is 17 characters of JSON
+      experimental_allowPipelining: { maxFillSize: 16 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toEqual({
+      error: {
+        message:
+          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+        code: -32600,
+        data: expect.objectContaining({
+          code: 'BAD_REQUEST',
+          pipeline: 'not-run',
+        }),
+      },
+    });
+    expect(author).not.toHaveBeenCalled();
+  });
+
+  test('is not marked when a limit refuses the input of a run after another ran', async () => {
+    const lists = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'list,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: [] },
+            reads: [{ to: ['longField'], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.unknown()).query((opts) => opts.input),
+      }),
+      // Room for one run's input, not two
+      experimental_allowPipelining: { maxFillSize: 20 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toMatchObject({
+      items: {
+        0: { result: { data: { longField: 'x' } } },
+        1: { error: { data: { code: 'BAD_REQUEST' } } },
+      },
+    });
+    expect(JSON.stringify(json[1])).not.toContain('not-run');
+  });
+
+  test('is not marked when a run fails for what is not a limit, and a limit refuses the others', async () => {
+    const lists = initTRPC.create();
+    const copy = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request(
+        `http://localhost/trpc/list,author,copy?batch=pipeline&input=${encodeURIComponent(
+          JSON.stringify({ 1: null, 2: {} }),
+        )}&pipe=${encodeURIComponent(
+          JSON.stringify({
+            1: { each: { from: 0, path: [] }, reads: [{ to: [], path: [] }] },
+            // Reads the run of `author` for the same item
+            2: {
+              each: { from: 0, path: [] },
+              reads: [{ to: ['longField'], from: 1, path: [] }],
+            },
+          }),
+        )}`,
+      ),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.string()).query((opts) => {
+          if (opts.input === 'x') {
+            throw new TRPCError({ code: 'NOT_FOUND' });
+          }
+          return opts.input;
+        }),
+        copy: lists.procedure.input(z.unknown()).query((opts) => {
+          copy(opts.input);
+          return opts.input;
+        }),
+      }),
+      // Room for the runs of `author`, not for a run of `copy`
+      experimental_allowPipelining: { maxFillSize: 16 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[2]).toMatchObject({
+      items: {
+        // It reads a run that failed
+        0: { error: { data: { code: 'PRECONDITION_FAILED' } } },
+        1: { error: { data: { code: 'BAD_REQUEST' } } },
+      },
+    });
+    expect(JSON.stringify(json[2])).not.toContain('not-run');
+    expect(copy).not.toHaveBeenCalled();
+  });
 });
 
 describe('a value a call reads, with a getter that gives something else each time', () => {

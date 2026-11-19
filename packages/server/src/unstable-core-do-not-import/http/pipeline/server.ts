@@ -675,7 +675,8 @@ export type PipelineRunEnvelope<TError, TData> =
  * The runs of a call that runs for every item, as a response has them: by
  * the item's index, one level for each level of lists, down to the outcome
  * of each run. A list that can't run is an `{ error }`, and so is a call
- * none of whose runs started as the server refused its lists. Each level,
+ * none of whose runs ran as the server refused its lists, or what their
+ * inputs fill in, for its limits. Each level,
  * and each run, is a promise of its own, ready when it is.
  */
 export type PipelineRuns<TError, TData> = Promise<
@@ -1347,15 +1348,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       interface Ran {
         run: Run;
         envelope: Promise<PipelineRunEnvelope<TError, TData>>;
+        /**
+         * Why it didn't call the procedure, once its input is made or can't
+         * be: none if it did
+         */
+        notCalled: Promise<unknown[]>;
       }
-      /** Whether any of its runs started: it holds a place for each */
-      let started = false;
-      const firstStarted = createDeferred<void>();
+      /** Whether any of its runs called the procedure */
+      let called = false;
+      const firstCalled = createDeferred<void>();
       /** A run, which holds a place of `lease` */
       const start = (place: Place, lease: PipelineLease): Ran => {
-        started = true;
-        firstStarted.resolve();
         const ran = newRun();
+        const notCalled = createDeferred<unknown[]>();
         const envelope = (async (): Promise<
           PipelineRunEnvelope<TError, TData>
         > => {
@@ -1366,10 +1371,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             // It doesn't run, and gives back its place
             lease.giveBack(1);
             ran.outcome.resolve({ ok: false });
+            notCalled.resolve([cause]);
             return {
               error: error({ cause, input: base.decoded.value, notRun: false }),
             };
           }
+          called = true;
+          firstCalled.resolve();
+          notCalled.resolve([]);
           try {
             const data = await run.item(input);
             ran.outcome.resolve({ ok: true, data: run.read(data) });
@@ -1379,7 +1388,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             return { error: error({ cause, input, notRun: false }) };
           }
         })();
-        return { run: ran, envelope };
+        return { run: ran, envelope, notCalled: notCalled.promise };
       };
       /**
        * Its runs, level by level. `lease` is what the runs below hold: the
@@ -1442,12 +1451,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               };
           }
         });
-      /** Why each list of it that can't run can't, once every list is ready */
-      const failures = async (places: Places<Ran>): Promise<TRPCError[]> => {
+      /**
+       * Why each list of it that can't run can't, and why each run didn't
+       * call the procedure, once every list is ready and every run's input is
+       * made or can't be
+       */
+      const failures = async (places: Places<Ran>): Promise<unknown[]> => {
         const node = await places;
         switch (node.kind) {
           case 'run':
-            return [];
+            return node.value.notCalled;
           case 'items':
             return (await Promise.all(node.items.map(failures))).flat();
           case 'failed':
@@ -1455,16 +1468,19 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         }
       };
       const failed = failures(ran);
-      // Once a run starts, or every list is ready without one
-      await Promise.race([firstStarted.promise, failed]);
-      const refused = started ? [] : await failed;
-      // None of its runs started, as the server refused its lists for its
-      // limits: a client can ask for it by itself, as for a call refused as
-      // a whole. One with a list that can't run for another reason, or with
-      // no list refused, is as it is
+      // Once a run calls the procedure, or every run is known not to
+      await Promise.race([firstCalled.promise, failed]);
+      const refused = called ? [] : await failed;
+      // None of its runs called the procedure, as the server refused its
+      // lists, or what their inputs fill in, for its limits: a client can ask
+      // for it by itself, as for a call refused as a whole. One with a list
+      // or a run that can't run for another reason, or with none refused, is
+      // as it is
       if (
         refused.length > 0 &&
-        refused.every((cause) => refusalErrors.has(cause))
+        refused.every(
+          (cause) => cause instanceof TRPCError && refusalErrors.has(cause),
+        )
       ) {
         return {
           error: error({
