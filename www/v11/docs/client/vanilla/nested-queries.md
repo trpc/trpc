@@ -10,6 +10,8 @@ order: 47
 
 `experimental_nested()` sends several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release. With TanStack Query, see [its handles](/docs/client/tanstack-react-query/handles).
 
+[See it in the kitchen sink](/kitchen-sink/nested): posts, their authors and the authors' teams in one request, or without pipelining to compare.
+
 ```twoslash include dq-router
 // @jsx: react-jsx
 // @target: esnext
