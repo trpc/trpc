@@ -32,7 +32,7 @@ import { readQueryKey } from '../internals/utils';
 import type { EntryQueryOptions, ProxyContext } from './entry';
 import { optionsOf, ownContextOf, queryClientOf, readProxy } from './entry';
 import type { ErrorOf } from './entryError';
-import { attempt } from './outcome';
+import { attempt, attemptNow } from './outcome';
 import type { PipelinedOutcome } from './pipelined';
 import { notRun, outcomeOfItem, withPipelinedResult } from './pipelined';
 import type {
@@ -93,6 +93,10 @@ export function isServerEnvironment() {
   return typeof window === 'undefined' || 'Deno' in globalThis;
 }
 
+/**
+ * The query hashes, or for a key the default hash can't hold, the procedure
+ * paths, that were warned about
+ */
 export const warnedNotHydrated = new Set<string>();
 
 export function warnIfNotHydrated(
@@ -101,9 +105,15 @@ export function warnIfNotHydrated(
 ): QueryFunction<any, any, any> {
   return (context) => {
     if (isServerEnvironment()) {
-      const queryHash = hashKey(context.queryKey);
-      if (!warnedNotHydrated.has(queryHash)) {
-        warnedNotHydrated.add(queryHash);
+      // The query may hash its key with its own `queryKeyHashFn`, such as
+      // for a bigint, which the default hash throws on: the warning never
+      // keeps the query from running
+      const hashed = attemptNow(() => hashKey(context.queryKey));
+      const warnedKey = hashed.ok
+        ? `hash:${hashed.data}`
+        : `path:${path.join('.')}`;
+      if (!warnedNotHydrated.has(warnedKey)) {
+        warnedNotHydrated.add(warnedKey);
         // oxlint-disable-next-line no-console
         console.warn(
           `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering. ` +
