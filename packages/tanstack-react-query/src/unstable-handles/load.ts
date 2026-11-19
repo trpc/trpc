@@ -47,11 +47,18 @@ import {
 } from './pipelined';
 import type { EntryTree, LinkedLeaf } from './plan';
 import { linkEntries, mapEntryTree, readEntries } from './plan';
+import type { HandleType, TRPCEntryKind } from './types';
 import { nothing } from './utils';
 
 export function startEntry(opts: {
   queryClient: QueryClient;
-  state: EntryState;
+  type: HandleType;
+  /**
+   * The `QueryClient` method to start it with. A prefetch entry whose data
+   * another entry reads is fetched: a prefetch resolves to nothing, also
+   * when the cache had fresh data, and absorbs a cancellation
+   */
+  kind: TRPCEntryKind;
   options: EntryQueryOptions;
 }) {
   const { queryClient, options } = opts;
@@ -61,9 +68,9 @@ export function startEntry(opts: {
   }
   // The options proxy built them for the query's type, as the `QueryClient`
   // methods for that type take them
-  if (opts.state.type === 'infinite') {
+  if (opts.type === 'infinite') {
     const infinite = options as unknown as FetchInfiniteQueryOptions;
-    switch (opts.state.kind) {
+    switch (opts.kind) {
       case 'prefetch':
         return queryClient.prefetchInfiniteQuery(infinite);
       case 'ensure':
@@ -76,7 +83,7 @@ export function startEntry(opts: {
     }
   }
   const query = options as unknown as FetchQueryOptions;
-  switch (opts.state.kind) {
+  switch (opts.kind) {
     case 'prefetch':
       return queryClient.prefetchQuery(query);
     case 'ensure':
@@ -527,12 +534,22 @@ export function beginEntries(opts: {
     );
     const isRead = linked.read.has(leaf);
 
+    /**
+     * A prefetch entry that another entry reads. Its data is what its fetch
+     * resolves to, or the cache's write of it, whichever is first
+     */
+    const watched = state.kind === 'prefetch' && isRead;
     /** Starts the query. A throw is the caller's */
     const start = (options: EntryQueryOptions) => {
-      if (state.kind === 'prefetch' && isRead) {
+      if (watched) {
         watch(leaf, options, data);
       }
-      return startEntry({ queryClient, state, options });
+      return startEntry({
+        queryClient,
+        type: state.type,
+        kind: watched ? 'fetch' : state.kind,
+        options,
+      });
     };
 
     let server: ServerSide | null = null;
@@ -664,21 +681,9 @@ export function beginEntries(opts: {
         );
         return;
       }
-      if (!outcome.ok || state.kind !== 'prefetch') {
-        data.settle(outcome);
-        return;
-      }
-      // A prefetch resolves to nothing and never rejects. What it fetched
-      // settled `data` as the cache got it; else the cache had fresh data
-      // and the load fetched nothing
-      const built = options.state();
-      const query =
-        built.status === 'settled' && built.outcome.ok
-          ? queryClient.getQueryState(built.outcome.data.queryKey)
-          : undefined;
-      data.settle(
-        query?.data !== undefined ? ok(query.data) : own(query?.error),
-      );
+      // A prefetch that no entry reads resolves to nothing: its data is
+      // only waited for to know that it settled
+      data.settle(outcome);
     });
 
     const from = leaf.built.by === 'dataOf';
@@ -802,7 +807,12 @@ export function beginEntries(opts: {
                       (await serverKeys).get(place) === key,
                   });
                 }
-                return startEntry({ queryClient, state, options });
+                return startEntry({
+                  queryClient,
+                  type: state.type,
+                  kind: state.kind,
+                  options,
+                });
               }).then((outcome) =>
                 outcome.ok
                   ? outcome

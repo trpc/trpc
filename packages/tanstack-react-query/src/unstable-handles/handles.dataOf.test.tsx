@@ -3,6 +3,7 @@ import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   hashKey,
   InfiniteQueryObserver,
+  isCancelledError,
   skipToken,
   useQuery,
   useSuspenseInfiniteQuery,
@@ -1117,6 +1118,60 @@ describe('edges of a load', () => {
     expect(
       resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
     ).toEqual([]);
+  });
+
+  test('a prefetch entry whose first fetch is cancelled stops the entries that read it with the cancellation', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const loaded = loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    // With `revert`, as by default: the query goes back to having no data
+    // and no error
+    await resource.queryClient.cancelQueries({
+      queryKey: trpc.post.bySlug.queryKey({ slug: 'hello' }),
+    });
+    const error = await loaded.then(
+      () => null,
+      (rejected: unknown) => rejected,
+    );
+    expect(isCancelledError(error)).toBe(true);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([]);
+  });
+
+  test('a prefetch entry the cache has fresh data for gives the entries that read it that data, not a later write', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    const postOf = (authorId: string) => ({
+      id: 'id-of-hello',
+      title: 'Post hello',
+      authorId,
+      tags: [],
+    });
+    resource.queryClient.setQueryData(key, postOf('u1'));
+    const post = prefetchEntry(
+      trpc.post.bySlug,
+      { slug: 'hello' },
+      { staleTime: Infinity },
+    );
+    const loaded = loadHandles(trpc, {
+      post,
+      author: ensureEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    // After the load selected the cache's data, which it fetched nothing for
+    resource.queryClient.setQueryData(key, postOf('u2'));
+    const [handles, data] = await loaded;
+    expect(handles.author.input).toEqual({ id: 'u1' });
+    expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
   });
 
   test("a cache write as a prefetch entry's request succeeds is in neither its items' queries nor the handle", async () => {
