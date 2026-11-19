@@ -108,8 +108,13 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
  * soon as a fetch or ensure entry fails. A prefetch entry's failed request makes it
- * reject only if another entry reads its data with `experimental_dataOf()`, also
- * when the cache has data for it, such as from `setQueryData()`. A throw while
+ * reject only if another entry needs its data for a handle or for data the load
+ * waits for: one that reads it in its input with `experimental_dataOf(entry)`, or
+ * a fetch or ensure entry built from it with `experimental_dataOf(entry, (data) => entry)`.
+ * That is so also when the cache has data for it, such as from `setQueryData()`.
+ * A prefetch entry built from it with a callback, or with
+ * `experimental_entryPerItem()`, doesn't start, and the load still resolves,
+ * with its unfinished handle. A throw while
  * it starts an entry that reads no other entry, such as from a `staleTime`
  * function, makes it reject too, whatever the entry's kind.
  * It rejects with a `TRPCEntryError`, except for an interruption, which it
@@ -156,10 +161,14 @@ export function loadHandles<
  *
  * When an entry fails, the entries that read its data with `experimental_dataOf()` can't
  * start: they have no handle, and their result is the same error. So check the
- * results before you return the handles. If the failed entry is a prefetch entry
- * whose data another entry reads, which has no result to hold the error, the load
- * rejects with it. A prefetch entry that nothing reads can fail without making it
- * reject. A throw while it starts an entry that reads no other entry, such as from
+ * results before you return the handles. If the failed entry is a prefetch entry,
+ * which has no result to hold the error, the load rejects with it when another
+ * entry needs its data for a handle or a result: one that reads it in its input,
+ * or a fetch or ensure entry built from it with a callback. A prefetch entry
+ * built from it with `experimental_dataOf(entry, (data) => entry)` doesn't start,
+ * but the load still resolves, with that entry's unfinished handle. A prefetch
+ * entry that nothing reads can fail without making it reject. A throw while it
+ * starts an entry that reads no other entry, such as from
  * a `staleTime` function, still rejects, whatever the entry's kind.
  *
  * An interruption still rejects, as it does with `loadHandles()`: a cancelled

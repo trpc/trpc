@@ -352,8 +352,8 @@ An entry with a `trpc.context` of its own takes no part: a link may route by tha
 - **`fromHandle()` doesn't take an unfinished handle**: it is a type error, and it throws.
 - **A query has no cache entry until its key is known.** The author's call is on its way from the start. Its query is created when the post arrives, under the key of its real input. A query never changes its key.
 - **The query is there before the component asks.** It is created in the step that gives the cache the post. So the author card finds it loading, and makes no request of its own.
-- **A failed entry fails where it is read.** If the post fails, the load still resolves, the author never starts, and the component that reads the post throws the error.
-- **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too.
+- **A failed entry fails where it is read.** If the post fails, the load still resolves, with the author's unfinished handle, the author never starts, and the component that reads the post throws the error.
+- **A fetch or ensure entry in the callback** is waited for, as always. Its handle is unfinished too. As the load needs the post for its data, a failed post makes the load reject.
 
 ## When the loader needs the data {#data-of}
 
@@ -579,21 +579,14 @@ Content-Type: application/json
 
 A component can say which queries it needs in a function next to it. A page puts those functions together, as a GraphQL query does with fragments. An object of entries is a group: its handles and data are under its key.
 
-```tsx twoslash title='author-card.tsx'
+```ts twoslash title='author-card.entries.ts'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: author-card.tsx
+// @filename: author-card.entries.ts
 // ---cut---
-import { useSuspenseQuery } from '@tanstack/react-query';
-import {
-  fromHandle,
-  prefetchEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import type {
-  experimental_inferHandles,
-  TRPCLoadEntries,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
+import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
 
 // It takes an author's id, and doesn't care where it comes from
 export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
@@ -601,6 +594,31 @@ export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
     author: prefetchEntry(trpc.author.byId, { id: opts.authorId }),
   } satisfies TRPCLoadEntries;
 }
+```
+
+The component is in a file of its own, which can be a client component:
+
+```tsx twoslash title='author-card.tsx'
+// @include: dq-router
+// @include: dq-trpc
+// @filename: author-card.entries.ts
+import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
+export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
+  return {
+    author: prefetchEntry(trpc.author.byId, { id: opts.authorId }),
+  } satisfies TRPCLoadEntries;
+}
+// @filename: author-card.tsx
+// ---cut---
+'use client';
+
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC } from '~/trpc/client';
+import type { authorCardEntries } from './author-card.entries';
 
 export function AuthorCard(props: {
   handles: experimental_inferHandles<typeof authorCardEntries>;
@@ -616,7 +634,7 @@ The post page passes it an id that the server fills in:
 ```ts twoslash title='post-page.entries.ts'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: author-card.tsx
+// @filename: author-card.entries.ts
 import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPC } from '~/trpc/client';
@@ -633,7 +651,7 @@ import {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPC } from '~/trpc/client';
-import { authorCardEntries } from './author-card';
+import { authorCardEntries } from './author-card.entries';
 
 export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   const post = ensureEntry(trpc.post.bySlug, { slug: opts.slug });
@@ -648,7 +666,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 - **End an entries function with `satisfies TRPCLoadEntries`.** It checks the entries where you write them, and keeps a [`skipToken`](/docs/client/tanstack-react-query/handles#conditional-queries) a `skipToken`.
 - **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props.
-- **In Next.js**, keep an entries function out of a `'use client'` file. A server component calls it.
+- **In Next.js**, keep an entries function out of a `'use client'` file, as `author-card.entries.ts` is. A server component calls it, and a server component can't call a function from a client component's module. The component's file imports only the type of its entries.
 - **A failed entry is named by its keys**: `authorCard.author`.
 
 ## Without a loader {#without-a-loader}
@@ -800,7 +818,7 @@ export async function AuthorSection(props: {
 
 When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
 
-- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`, and if its request fails while the cache has data, such as from `setQueryData()`. A failed request of a prefetch entry that nothing reads never makes a load reject.
+- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry needs its data for its handle or for data the load waits for: one that reads it in its input with `experimental_dataOf(entry)`, or a fetch or ensure entry in an `experimental_dataOf(entry, (data) => entry)` callback. That is so even if its request fails while the cache has data, such as from `setQueryData()`. A prefetch entry in the callback, or of `experimental_entryPerItem()`, just doesn't start. A failed request of a prefetch entry that nothing reads never makes a load reject.
 - **A throw while the load starts an entry that reads no other entry**, such as from a `staleTime` function, makes the load reject, with `loadHandlesSettled()` too. It starts no entry after that one.
 - **An entry built from another entry's data whose query can't start** fails by itself, with a `TRPCEntryError`, such as for an input that no query key can hold.
 - **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. An entry whose request failed still has its handle. An entry has no handle when the load couldn't build it: its query couldn't start, or it never started because an entry its handle's input reads failed. An entry built with `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle if that handle doesn't need the failed entry. Check the results before you return the handles.
@@ -837,7 +855,7 @@ if (results.post.status === 'error') {
 
 `loadHandlesSettled()` still rejects in three cases:
 
-- **A prefetch entry's request fails and another entry reads its data.** A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
+- **A prefetch entry's request fails and another entry needs its data** for its handle or its result: it reads the data in its input, or it is a fetch or ensure entry in an `experimental_dataOf(entry, (data) => entry)` callback. A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry in the callback doesn't start, and the load resolves with its unfinished handle. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
 - **An entry that reads no other entry throws while the load starts it**, such as from a `staleTime` function, whatever its kind, [as above](#errors).
 - **A query is interrupted rather than failing.** If `queryClient.cancelQueries()` cancels the fetch of an ensure entry the cache has no data for, the load rejects with TanStack Query's `CancelledError`, which `isCancelledError()` checks. An error with a `digest`, such as Next.js's `headers()` throws in a static render, is rethrown as it is.
 
