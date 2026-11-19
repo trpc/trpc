@@ -1,3 +1,4 @@
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
@@ -703,21 +704,35 @@ function decodeCall(
 }
 
 /**
- * A call's final state, from its own and what has arrived of its sources:
- * the server sends a source's result before the error of a call that reads
- * it, so a failed source that has arrived is why the call failed, and one
- * still to come isn't.
+ * A call's final state, from its own and what has arrived of its sources.
+ * It didn't run if its error is the request's, in every slot: the server
+ * refused the request as a whole. Nor if it is a `PRECONDITION_FAILED`
+ * with a failed source that has arrived: the server sends that in place of
+ * a call that reads a failed source, after the source's error, and one
+ * still to come isn't why the call failed. Any other error is the call's
+ * own: a source can fail in the response after the server filled in what
+ * reads it, such as for data that serializes once and then throws, and the
+ * call then ran.
  *
  * @param sourcesOk whether the server sent each source a result (`true`)
  * or an error (`false`), or `null` if that hasn't arrived
+ * @param asWhole whether the call's answer is the request's, the same in
+ * every slot, not one of its own
  */
 export function settlePipelinedCall(
   own: PipelinedCallSettled,
   sourcesOk: readonly (boolean | null)[],
+  asWhole: boolean,
 ): PipelinedCallSettled {
-  return own.status === 'ran' && !own.outcome.ok && sourcesOk.includes(false)
-    ? { status: 'not-run', error: own.outcome.error }
-    : own;
+  if (own.status !== 'ran' || own.outcome.ok) {
+    return own;
+  }
+  const { error } = own.outcome;
+  const readFailedSource =
+    isTRPCClientError(error) &&
+    error.shape?.code === TRPC_ERROR_CODES_BY_KEY.PRECONDITION_FAILED &&
+    sourcesOk.includes(false);
+  return asWhole || readFailedSource ? { status: 'not-run', error } : own;
 }
 
 /**
@@ -756,11 +771,20 @@ function settlePipelinedBatch(opts: {
    * `sentResult()`
    */
   const ok: (boolean | null)[] = opts.results.map(() => null);
+  /**
+   * The first operation's answer, once it arrives. One that isn't by index
+   * is the request's, and every slot has that same object: JSON never parses
+   * two slots of a list to one
+   */
+  let first: unknown = undefined;
   // The same steps for an operation and a call, so that each is marked in
   // the order the results arrive
   for (const [index] of opts.ops.entries()) {
     void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
       ok[index] = sentResult(received);
+      if (index === 0 && received.ok) {
+        first = received.data?.json;
+      }
     });
   }
   for (const [offset, call] of opts.plan.calls.entries()) {
@@ -776,6 +800,9 @@ function settlePipelinedBatch(opts: {
       const settled = settlePipelinedCall(
         decodeCall(received, opts.link),
         sources.map((source) => ok[source] ?? null),
+        received.ok &&
+          isObject(received.data?.json) &&
+          received.data.json === first,
       );
       ok[index] = sentResult(received);
       moveCall(call, { from: 'sent', to: settled });

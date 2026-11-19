@@ -1344,6 +1344,64 @@ describe('httpBatchLink, without streaming', () => {
     expect(teams.mock.calls).toEqual([['team-ada']]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test('a call that read a call whose response failed after the read ran on the server: its edge rejects with its own error', async () => {
+    const t = initTRPC.create();
+    const teams = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+        // The server serializes it once to fill in the team's input, and
+        // then fails to serialize it for the response
+        let serialized = 0;
+        return {
+          toJSON() {
+            serialized++;
+            if (serialized > 1) {
+              throw new Error('serialized twice');
+            }
+            return { teamId: 'team-ada' };
+          },
+        };
+      }),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no team' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => {
+        const author = q.author.query({ id: it.authorId });
+        return { author, team: q.team.query({ id: author.teamId }) };
+      }),
+    );
+
+    await expect(post.edges.author).rejects.toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    await expect(post.edges.team).rejects.toMatchObject({
+      message: 'no team',
+      data: { code: 'NOT_FOUND' },
+    });
+    expect(teams.mock.calls).toEqual([['team-ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('types', () => {
