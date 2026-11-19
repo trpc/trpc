@@ -428,7 +428,7 @@ Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.pos
 
 - **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: it never fetches, and its `fetchStatus` is `'idle'`. Its `status` is `'pending'`, unless the cache has data for its key: `skipToken` doesn't clear that, so a query without an input can show what an earlier fetch got. It has no `input`: check `handle.skipped` to tell a skipped entry apart, which also types `handle.input` as there. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
 - **Only a prefetch entry takes it.** A load waits for the data of an ensure or fetch entry, which would never come, so `ensureEntry(procedure, skipToken)` is a type error.
-- **An entry that reads its data with `experimental_dataOf()` fails**, as there is none: the load rejects, and says so.
+- **An entry that needs its data fails**, as there is none: the load rejects, also with `loadHandlesSettled()`, and says so. That is an entry that reads it in its input with `experimental_dataOf(entry)`, and a fetch or ensure entry built from it with `experimental_dataOf(entry, (data) => entry)` or `experimental_entryPerItem()`. A prefetch entry built from it either way doesn't start, and the load resolves with that entry's unfinished handle.
 
 #### TanStack Query equivalents {#tanstack-equivalents}
 

@@ -778,41 +778,59 @@ export default async function PostPage(props: {
 - **The author's query is on its way when `HydrateClient` renders**, so it crosses to the browser and streams in.
 - **To not hold the page back, put the load in a server component of its own**, in a Suspense boundary. The rest of the page shows first.
 - **There is no request to save.** The proxy calls the router directly, so nothing is pipelined on the server.
-- **A load of only prefetch entries waits for nothing**, so the page's `HydrateClient` has the first query only. Then the browser asks for the author by itself. To send it, wait for the post in a server component further down, and render a `HydrateClient` there too:
+- **A load of only prefetch entries waits for nothing**, so the page's `HydrateClient` has the first query only. Then the browser asks for the author by itself. To send it, load the post again in a server component further down, with an ensure entry, and render a `HydrateClient` there too:
 
 ```tsx twoslash title='app/posts/[slug]/author-section.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @include: dq-post-entries
 // @filename: components.tsx
 import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import type { postPageEntries } from './post-page.entries';
+import type { authorSectionEntries } from './author-section';
 export declare function AuthorCard(props: {
-  handles: experimental_inferHandles<typeof postPageEntries>;
+  handles: experimental_inferHandles<typeof authorSectionEntries>;
 }): React.ReactNode;
 // @filename: author-section.tsx
 // ---cut---
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
+import {
+  ensureEntry,
+  experimental_dataOf,
+  loadHandles,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { HydrateClient, trpc } from '~/trpc/server';
 import { AuthorCard } from './components';
-import type { postPageEntries } from './post-page.entries';
+
+export function authorSectionEntries(slug: string) {
+  // Whatever post the cache has, even stale, or the fetch on its way: the
+  // page's load already fetches a stale post again
+  const post = ensureEntry(
+    trpc.post.bySlug,
+    { slug },
+    { staleTime: Infinity },
+  );
+  return {
+    post,
+    author: experimental_dataOf(post, (it) =>
+      prefetchEntry(trpc.author.byId, { id: it.authorId }),
+    ),
+  };
+}
 
 // A server component, rendered in a Suspense boundary
-export async function AuthorSection(props: {
-  handles: experimental_inferHandles<typeof postPageEntries>;
-}) {
-  // The author's query is created in the step that the post arrives in
-  await getQueryClient().ensureQueryData(
-    fromHandle(trpc, props.handles.post),
-  );
+export async function AuthorSection(props: { slug: string }) {
+  // Waits for the post. The author's query is created from the same data,
+  // before the load resolves
+  const [handles] = await loadHandles(trpc, authorSectionEntries(props.slug));
   return (
     <HydrateClient>
-      <AuthorCard handles={props.handles} />
+      <AuthorCard handles={handles} />
     </HydrateClient>
   );
 }
 ```
+
+- **The author's query is built from the post this load has**, so it is there when `HydrateClient` renders, and its key matches the post that crosses with it. A post that the cache has resolves the load at once, and a post that is on its way, from the page's load, is waited for. No request goes out twice.
+- **Don't wait with `queryClient.ensureQueryData()` instead.** It gives a stale post at once, while the page's load fetches the post again and builds the author's query only from that fetch. `HydrateClient` would render before the author's query exists.
 
 ## Errors {#errors}
 
