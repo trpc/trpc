@@ -2942,13 +2942,12 @@ describe('the limits of a server', () => {
         calls: [items, ids],
       });
 
-      expect(res.of(items)).toEqual({
-        items: {
-          0: refusedRun(
-            'A value this call reads is an object or an array, and `allowWholeValues` is false',
-          ),
-        },
-      });
+      // Its only run is refused before it ran, so the call is
+      expect(res.of(items)).toEqual(
+        refused(
+          'A value this call reads is an object or an array, and `allowWholeValues` is false',
+        ),
+      );
       expect(res.of(ids)).toEqual({ items: { 0: { result: { data: 'a' } } } });
     });
   });
@@ -3250,7 +3249,8 @@ describe('`maxFillSize`: what a request fills in', () => {
         2: refusedRun,
       },
     });
-    expect(res.of(ofTwo)).toEqual({ items: { 0: refusedRun, 1: refusedRun } });
+    // Neither of its runs ran, so the call is refused before it ran
+    expect(res.of(ofTwo)).toEqual(refused);
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
@@ -3319,15 +3319,13 @@ describe('`maxFillSize`: what a request fills in', () => {
     };
 
     const over = await run(16);
+    // Its only run is refused before it ran, so the call is
     expect(over.outcome).toEqual({
-      items: {
-        0: {
-          error: {
-            code: 'BAD_REQUEST',
-            message:
-              'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
-          },
-        },
+      error: {
+        code: 'BAD_REQUEST',
+        message:
+          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+        data: { pipeline: 'not-run' },
       },
     });
     expect(over.echo).not.toHaveBeenCalled();

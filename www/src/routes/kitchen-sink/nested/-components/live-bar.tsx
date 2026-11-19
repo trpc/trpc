@@ -109,7 +109,7 @@ export function LiveBar(props: {
         <div>
           <dt className="text-xs text-muted-foreground">Requests</dt>
           <dd
-            className="flex items-center justify-center gap-1.5 text-2xl font-semibold tabular-nums motion-safe:animate-nested-pop"
+            className="flex items-center justify-center gap-1.5 text-2xl font-semibold tabular-nums motion-safe:animate-arrive"
             data-testid="request-count"
             key={requests.length}
           >
@@ -166,7 +166,7 @@ export function LiveBar(props: {
         <div className="relative h-3">
           {arrivals.map((arrival, i) => (
             <span
-              className={`absolute top-0.5 size-2 -translate-x-1/2 rounded-full ring-2 ring-card motion-safe:animate-nested-pop ${dot[arrival.kind]}`}
+              className={`absolute top-0.5 size-2 -translate-x-1/2 rounded-full ring-2 ring-card motion-safe:animate-arrive ${dot[arrival.kind]}`}
               key={i}
               style={{ left: at(arrival.ms) }}
               title={`${arrival.label} · ${arrival.ms} ms`}

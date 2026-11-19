@@ -13,7 +13,7 @@ export function PostList(props: { readonly posts: Promise<Posts> }) {
     <ul className="grid gap-3">
       {posts.map((post) => (
         <li
-          className="grid gap-2 rounded-xl bg-card p-4 shadow-sm ring-1 ring-foreground/10 motion-safe:animate-nested-pop"
+          className="grid gap-2 rounded-xl bg-card p-4 shadow-sm ring-1 ring-foreground/10 motion-safe:animate-arrive"
           key={post.node.slug}
         >
           <span className="font-medium">{post.node.title}</span>
@@ -31,7 +31,7 @@ export function PostList(props: { readonly posts: Promise<Posts> }) {
 function AuthorLine(props: { readonly author: Promise<Author> }) {
   const author = use(props.author);
   return (
-    <span className="flex flex-wrap items-center gap-2 text-sm motion-safe:animate-nested-pop">
+    <span className="flex flex-wrap items-center gap-2 text-sm motion-safe:animate-arrive">
       <span className="inline-flex items-center gap-1.5">
         <span className="size-2 rounded-full bg-sky-500" />
         {author.node.name}
@@ -48,7 +48,7 @@ function AuthorLine(props: { readonly author: Promise<Author> }) {
 function TeamName(props: { readonly team: Promise<Team> }) {
   const team = use(props.team);
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 motion-safe:animate-nested-pop dark:text-amber-300">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 motion-safe:animate-arrive dark:text-amber-300">
       <span className="size-1.5 rounded-full bg-amber-500" />
       {team.name}
     </span>

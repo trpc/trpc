@@ -169,9 +169,10 @@ export type PipelinedCallState =
   /** The server ran it: its data, or its own error */
   | { status: 'ran'; outcome: Outcome<PipelinedData> }
   /**
-   * It didn't run. It wasn't sent, its request failed as a whole, a call it
-   * reads failed, or the server refused it before any of its runs ran. What
-   * wants it asks for it by itself
+   * It didn't run, or the client never had its result. It wasn't sent, its
+   * request failed as a whole, its result never arrived, a call it reads
+   * failed, or the server refused it before any of its runs ran. What wants
+   * it asks for it by itself
    */
   | { status: 'not-run'; error: unknown };
 
@@ -618,14 +619,16 @@ function errorItem(error: unknown): PipelinedItem {
 /**
  * A call's final state from what the response has for it alone. It didn't
  * run if the server says it refused it before any of its runs ran, such as
- * for a list longer than the server's limits.
+ * for a list longer than the server's limits, or if its result never
+ * arrived, such as from a response that broke off: whatever the server did,
+ * the client has no result of it.
  */
 function decodeCall(
   received: Outcome<HTTPResult | undefined>,
   link: PipeliningLink,
 ): PipelinedCallSettled {
   if (!received.ok) {
-    return { status: 'ran', outcome: received };
+    return { status: 'not-run', error: received.error };
   }
   const sent = received.data;
   // What isn't an object is no envelope: the call fails, and its siblings
@@ -673,8 +676,8 @@ function decodeCall(
  * it, so a failed source that has arrived is why the call failed, and one
  * still to come isn't.
  *
- * @param sourcesOk whether each source succeeded, or `null` if it hasn't
- * arrived
+ * @param sourcesOk whether the server sent each source a result, not an
+ * error, or `null` if it hasn't arrived
  */
 export function settlePipelinedCall(
   own: PipelinedCallSettled,
@@ -683,6 +686,21 @@ export function settlePipelinedCall(
   return own.status === 'ran' && !own.outcome.ok && sourcesOk.includes(false)
     ? { status: 'not-run', error: own.outcome.error }
     : own;
+}
+
+/**
+ * Whether the server sent a result, not an error, at an index of the
+ * request: what the server ran the calls that read it from. Whether the
+ * client can deserialize that result is another matter, and doesn't say
+ * whether those calls ran. What is no envelope, such as `null`, is no result
+ */
+function sentResult(received: Outcome<HTTPResult | undefined>) {
+  return (
+    received.ok &&
+    !!received.data &&
+    isObject(received.data.json) &&
+    !('error' in received.data.json)
+  );
 }
 
 /**
@@ -696,14 +714,16 @@ function settlePipelinedBatch(opts: {
   results: PipelinedBatch['results'];
   link: PipeliningLink;
 }) {
-  /** Whether what is at each index of the request succeeded, once it arrived */
+  /**
+   * Whether the server sent a result at each index of the request, once it
+   * arrived: see `sentResult()`
+   */
   const ok: (boolean | null)[] = opts.results.map(() => null);
   // The same steps for an operation and a call, so that each is marked in
   // the order the results arrive
   for (const [index] of opts.ops.entries()) {
     void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
-      ok[index] =
-        received.ok && !!received.data && !('error' in received.data.json);
+      ok[index] = sentResult(received);
     });
   }
   for (const [offset, call] of opts.plan.calls.entries()) {
@@ -720,7 +740,7 @@ function settlePipelinedBatch(opts: {
         decodeCall(received, opts.link),
         sources.map((source) => ok[source] ?? null),
       );
-      ok[index] = settled.status === 'ran' && settled.outcome.ok;
+      ok[index] = sentResult(received);
       moveCall(call, { from: 'sent', to: settled });
     });
   }

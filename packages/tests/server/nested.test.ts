@@ -23,6 +23,7 @@ import {
   isObject,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
+import superjson from 'superjson';
 import { z } from 'zod';
 
 interface Post {
@@ -469,6 +470,65 @@ describe.each([
     expect(ctx.calls).toHaveBeenCalledTimes(3);
   });
 
+  test("an item's query that reads a call the server refused asks by itself, once that call's data is there", async () => {
+    const t = initTRPC.create();
+    const pairs = vi.fn();
+    const appRouter = t.router({
+      // Longer than the server's `maxValueLength`: no call can read it
+      page: t.procedure.query(() => ({
+        note: 'x'.repeat(1100),
+        items: [{ id: 'a' }, { id: 'b' }],
+      })),
+      owner: t.procedure
+        .input(z.object({ note: z.string() }))
+        .query(() => ({ id: 'ada' })),
+      pair: t.procedure
+        .input(z.object({ owner: z.string(), item: z.string() }))
+        .query((opts) => {
+          pairs(opts.input);
+          return `${opts.input.owner}/${opts.input.item}`;
+        }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const page = await experimental_nested(ctx.client, (q) =>
+      q.page.query().with((it) => {
+        const owner = q.owner.query({ note: it.note });
+        return {
+          owner,
+          pairs: it.items.map((item) => ({
+            pair: q.pair.query({ owner: owner.id, item: item.id }),
+          })),
+        };
+      }),
+    );
+
+    expect(await page.edges.owner).toEqual({ id: 'ada' });
+    const items = await page.edges.pairs;
+    expect(await Promise.all(items.map((it) => it.edges.pair))).toEqual([
+      'ada/a',
+      'ada/b',
+    ]);
+    expect(pairs.mock.calls).toEqual([
+      [{ owner: 'ada', item: 'a' }],
+      [{ owner: 'ada', item: 'b' }],
+    ]);
+  });
+
   test('an input is read as it was when the query was made, also by a query that asks by itself', async () => {
     await using ctx = setup({ pipelining: false });
 
@@ -576,6 +636,65 @@ describe.each([
 
     const author = await list[0]!.edges.author;
     expect(await author.edges.post).toEqual(posts[0]);
+  });
+
+  test('a query that asks by itself reads a `Map` or a `Set` as it arrived, not as the caller changed it', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const gate = createDeferred<void>();
+    const appRouter = t.router({
+      data: t.procedure.query(() => ({
+        id: 'ada',
+        map: new Map([['id', { name: 'ada' }]]),
+        set: new Set(['ada']),
+      })),
+      slow: t.procedure.input(z.string()).query(async () => {
+        await gate.promise;
+        return 'slow';
+      }),
+      echo: t.procedure
+        .input(
+          z.object({
+            map: z.map(z.string(), z.object({ name: z.string() })),
+            set: z.set(z.string()),
+          }),
+        )
+        .query((opts) => ({
+          map: [...opts.input.map.entries()],
+          set: [...opts.input.set],
+        })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+    // Also when the test fails: the server's slow call must end
+    using _release = makeResource({}, () => gate.resolve());
+
+    const data = await experimental_nested(ctx.client, (q) =>
+      q.data.query().with((it) => ({
+        // `slow` asks once the data has arrived, and `echo` once `slow` has,
+        // after the change below
+        slow: q.slow.query(it.id).with(() => ({
+          echo: q.echo.query({ map: it.map, set: it.set }),
+        })),
+      })),
+    );
+    data.node.map.get('id')!.name = 'bob';
+    data.node.map.set('other', { name: 'eve' });
+    data.node.set.add('bob');
+    gate.resolve();
+
+    const slow = await data.edges.slow;
+    expect(await slow.edges.echo).toEqual({
+      map: [['id', { name: 'ada' }]],
+      set: ['ada'],
+    });
   });
 
   test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
@@ -742,6 +861,18 @@ describe.each([
 });
 
 describe('httpBatchStreamLink', () => {
+  /**
+   * What `experimental_nested()` resolves to, bounded: if the root waited for
+   * a query a test holds back, this fails rather than hangs, and the test's
+   * disposers then let that query end
+   */
+  async function rootOf<TResult>(loaded: Promise<TResult>) {
+    const settled = vi.fn();
+    void loaded.then(settled, settled);
+    await vi.waitFor(() => expect(settled).toHaveBeenCalled());
+    return loaded;
+  }
+
   test("each item's edge settles by itself: a slow item doesn't hold back the others", async () => {
     const { appRouter, gates } = createRouter();
     const gate = createDeferred<void>();
@@ -768,10 +899,7 @@ describe('httpBatchStreamLink', () => {
       })),
     );
     // Bounded: the root must not wait for Bob either
-    const root = vi.fn();
-    void loaded.then(root, () => undefined);
-    await vi.waitFor(() => expect(root).toHaveBeenCalled());
-    const list = await loaded;
+    const list = await rootOf(loaded);
     const adaSettled = vi.fn();
     const bobSettled = vi.fn();
     const ada = list[0]!.edges.author;
@@ -830,13 +958,15 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) => {
-      const slow = q.slow.query();
-      return q.withPromise.query().with((it) => ({
-        pair: q.pair.query({ id: it.id, other: slow.id }),
-        slow,
-      }));
-    });
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) => {
+        const slow = q.slow.query();
+        return q.withPromise.query().with((it) => ({
+          pair: q.pair.query({ id: it.id, other: slow.id }),
+          slow,
+        }));
+      }),
+    );
     const rejected = vi.fn();
     void root.edges.pair.then(undefined, rejected);
 
@@ -866,14 +996,16 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) =>
-      q.post.list.query({ limit: 2 }).with((list) => ({
-        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
-          posts: list.items.map((it) => ({
-            author: q.author.byId.query({ id: it.authorId }),
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) =>
+        q.post.list.query({ limit: 2 }).with((list) => ({
+          slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+            posts: list.items.map((it) => ({
+              author: q.author.byId.query({ id: it.authorId }),
+            })),
           })),
         })),
-      })),
+      ),
     );
     root.node.items.reverse();
     gate.resolve();
@@ -910,16 +1042,18 @@ describe('httpBatchStreamLink', () => {
 
     // Also when the test fails: the server's slow call must end
     using _release = makeResource({}, () => gate.resolve());
-    const root = await experimental_nested(ctx.client, (q) =>
-      q.post.pages.query().with((data) => ({
-        slow: q.author.byId.query({ id: 'slow' }).with(() => ({
-          pages: data.pages.map((page) =>
-            page.items.map((it) => ({
-              author: q.author.byId.query({ id: it.authorId }),
-            })),
-          ),
+    const root = await rootOf(
+      experimental_nested(ctx.client, (q) =>
+        q.post.pages.query().with((data) => ({
+          slow: q.author.byId.query({ id: 'slow' }).with(() => ({
+            pages: data.pages.map((page) =>
+              page.items.map((it) => ({
+                author: q.author.byId.query({ id: it.authorId }),
+              })),
+            ),
+          })),
         })),
-      })),
+      ),
     );
     const [first, second] = root.node.pages;
     root.node.pages = [second!, first!];
@@ -1031,6 +1165,63 @@ describe('httpBatchLink, without streaming', () => {
     await expect(list[0]!.edges.author).rejects.toThrow('cannot read ada');
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test("a call that read data the link can't deserialize ran on the server: its edge rejects with its own error", async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({ transformer: identity });
+    const teams = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id, teamId: 'team-ada' })),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no team' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            transformer: {
+              ...identity,
+              deserialize: (value: unknown) => {
+                if (isObject(value) && value['teamId'] === 'team-ada') {
+                  throw new Error('cannot read the author');
+                }
+                return value;
+              },
+            },
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => {
+        const author = q.author.query({ id: it.authorId });
+        return { author, team: q.team.query({ id: author.teamId }) };
+      }),
+    );
+
+    await expect(post.edges.author).rejects.toThrow(
+      'Unable to transform response from server',
+    );
+    await expect(post.edges.team).rejects.toThrow('no team');
+    expect(teams.mock.calls).toEqual([['team-ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('types', () => {
@@ -1112,6 +1303,34 @@ describe('types', () => {
           Post,
           { author: experimental_Node<Author, { team: Team }> }
         >[]
+      >();
+    });
+  });
+
+  test('`experimental_settle()` keeps a tuple and a readonly array in data as they are', () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      pair: t.procedure.query((): [string, number] => ['ada', 1]),
+      names: t.procedure.query((): readonly string[] => ['ada']),
+    });
+    const tuples = {} as TRPCClient<typeof router>;
+    check(() => {
+      expectTypeOf(
+        experimental_settle(experimental_nested(tuples, (q) => q.pair.query())),
+      ).resolves.toEqualTypeOf<[string, number]>();
+      expectTypeOf(
+        experimental_settle(
+          experimental_nested(tuples, (q) => q.names.query()),
+        ),
+      ).resolves.toEqualTypeOf<readonly string[]>();
+      expectTypeOf(
+        experimental_settle(
+          experimental_nested(tuples, (q) =>
+            q.names.query().map(() => ({ pair: q.pair.query() })),
+          ),
+        ),
+      ).resolves.toEqualTypeOf<
+        experimental_Node<string, { pair: [string, number] }>[]
       >();
     });
   });

@@ -353,3 +353,157 @@ describe('what a pipelined response sends, serialized once', () => {
     });
   });
 });
+
+describe('what a pipelined stream sends, serialized once', () => {
+  test("sends a run's data as it was checked: data that serializes differently each time fails nothing, and the runs after it arrive", async () => {
+    const t = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfEachTag },
+        streams: true,
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ tags: [{ id: 't1' }, { id: 't2' }] })),
+        author: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query(async (opts) => {
+            if (opts.input.id === 't2') {
+              // Arrives after the one that changes
+              await new Promise((resolve) => setTimeout(resolve, 10));
+              return { id: 't2' };
+            }
+            let reads = 0;
+            return {
+              toJSON: () => {
+                reads += 1;
+                return { changing: reads === 1 ? 'first' : BigInt(reads) };
+              },
+            };
+          }),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const text = await res.text();
+
+    expect(text).toContain('"data":{"changing":"first"}');
+    expect(text).toContain('"data":{"id":"t2"}');
+  });
+
+  /**
+   * A transformer that can't read back what has `changing`, and a formatter
+   * whose `changing` is a string the first time it is read and a `BigInt`
+   * each time after
+   */
+  const unreadable = initTRPC.create({
+    transformer: {
+      input: { serialize: (v: unknown) => v, deserialize: (v: unknown) => v },
+      output: {
+        serialize: (value: unknown) => value,
+        deserialize: (value: unknown) => {
+          if (JSON.stringify(value).includes('"changing"')) {
+            throw new Error('Cannot decode');
+          }
+          return value;
+        },
+      },
+    },
+    errorFormatter: ({ shape }) => {
+      let reads = 0;
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          get changing() {
+            reads += 1;
+            return reads === 1 ? 'first' : BigInt(reads);
+          },
+        },
+      };
+    },
+  });
+  const unreadableRouter = unreadable.router({
+    post: unreadable.procedure.query(() => ({
+      authorId: 'missing',
+      tags: [{ id: 'missing' }, { id: 't1' }],
+    })),
+    author: unreadable.procedure
+      .input(z.object({ id: z.string() }))
+      .query(async (opts) => {
+        if (opts.input.id === 'missing') {
+          throw new TRPCError({ code: 'NOT_FOUND' });
+        }
+        // Arrives after the one that fails
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return { id: opts.input.id };
+      }),
+  });
+
+  test("sends an error shape the transformer can't read back in the default shape: it fails nothing, and the runs after it arrive", async () => {
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: { 1: authorOfPost, 2: authorOfEachTag },
+        streams: true,
+      }),
+      router: unreadableRouter,
+      experimental_allowPipelining: true,
+    });
+    const text = await res.text();
+
+    expect(text.match(/"code":"NOT_FOUND"/g)).toHaveLength(2);
+    expect(text).not.toContain('"changing"');
+    expect(text).toContain('"data":{"id":"t1"}');
+  });
+
+  test("fails by itself a run whose data the transformer can't read back: the client couldn't either", async () => {
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfEachTag },
+        streams: true,
+      }),
+      router: unreadable.router({
+        post: unreadable.procedure.query(() => ({
+          tags: [{ id: 't1' }, { id: 't2' }],
+        })),
+        author: unreadable.procedure
+          .input(z.object({ id: z.string() }))
+          .query(async (opts) => {
+            if (opts.input.id === 't1') {
+              return { changing: 'never' };
+            }
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            return { id: opts.input.id };
+          }),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const text = await res.text();
+
+    expect(text).toContain('"code":"INTERNAL_SERVER_ERROR"');
+    expect(text).not.toContain('"changing"');
+    expect(text).toContain('"data":{"id":"t2"}');
+  });
+
+  test("keeps `pipeline: 'not-run'` in the default shape of an error the transformer can't read back", async () => {
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfPost },
+        streams: true,
+      }),
+      router: unreadableRouter,
+      experimental_allowPipelining: { maxReadsPerCall: 0 },
+    });
+    const text = await res.text();
+
+    expect(text).toContain('"authorId":"missing"');
+    expect(text).toContain('"pipeline":"not-run"');
+    expect(text).not.toContain('"changing"');
+  });
+});

@@ -845,6 +845,37 @@ describe.each([
     },
   );
 
+  test.runIf(scenario.link === httpBatchLink)(
+    'an answer with `null` for an operation fails that operation alone: its calls keep their results, and nothing rejects unhandled',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json([null, ...results.slice(1)], res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      await expect(postResult).rejects.toThrow();
+      expect(await author.result).toEqual({
+        data: { id: 'u1', teamId: 'team-of-u1' },
+      });
+    },
+  );
+
   test.runIf(scenario.link === httpBatchStreamLink)(
     'a response that breaks off fails what it had no result for: such calls are `unresolved`, as the client never had their results',
     async () => {
@@ -894,6 +925,58 @@ describe.each([
   );
 
   test.runIf(scenario.link === httpBatchStreamLink)(
+    'a response that breaks off after the operation it reads arrived leaves a call `unresolved` too: the client never had its result',
+    async () => {
+      /** Once the operation has its result: then the response breaks off */
+      const delivered = createDeferred<void>();
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const lines = (await res.text()).split('\n');
+          // Everything up to the author's data, which never comes
+          const until = lines.findIndex((line) => line.includes('team-of-u1'));
+          expect(until).toBeGreaterThan(0);
+          const sent = new TextEncoder().encode(
+            lines.slice(0, until).join('\n') + '\n',
+          );
+          return new Response(
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(sent);
+              },
+              async pull(controller) {
+                await delivered.promise;
+                controller.error(new Error('The connection broke'));
+              },
+            }),
+            res,
+          );
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      // Also when the test fails: the response must end
+      using _break = makeResource({}, () => delivered.resolve());
+      expect(await postResult).toMatchObject({ authorId: 'u1' });
+      delivered.resolve();
+      await expect(author.result).rejects.toThrow('The connection broke');
+      expect(author.status).toBe('unresolved');
+    },
+  );
+
+  test.runIf(scenario.link === httpBatchStreamLink)(
     'a not-OK answer that is no error is the result of every operation, as without pipelining',
     async () => {
       await using ctx = setup({
@@ -912,11 +995,23 @@ describe.each([
   );
 
   test('an answer that is no error and not by index is no result of a call the server makes', async () => {
-    await using ctx = setup({
+    const fetch = async () =>
+      Response.json(
+        {
+          result: {
+            data:
+              scenario.transformer === 'superjson'
+                ? superjson.serialize('maintenance')
+                : 'maintenance',
+          },
+        },
+        { status: 503 },
+      );
+    await using ctx = setup({ allowPipelining: true, pipelining: true, fetch });
+    await using without = setup({
       allowPipelining: true,
-      pipelining: true,
-      fetch: async () =>
-        Response.json({ result: { data: 'maintenance' } }, { status: 503 }),
+      pipelining: false,
+      fetch,
     });
     const post = createOperationPipeline();
     const postResult = ctx.untyped.query(
@@ -931,7 +1026,10 @@ describe.each([
     });
     assert(author);
 
-    await postResult.catch(() => undefined);
+    // The operation gets the answer as it would without pipelining
+    const expected = await without.untyped.query('post', { slug: 'hello' });
+    expect(expected).toBeTruthy();
+    expect(await postResult).toEqual(expected);
     await expect(author.result).rejects.toThrow(
       'The server sent no result for a pipelined call',
     );
@@ -2185,20 +2283,54 @@ describe('the `pipe` search param', () => {
   });
 
   test('reads own properties only', async () => {
-    const res = await get(
-      pipe({
-        1: {
-          reads: [
-            { to: ['id'], from: 0, path: ['authorId'] },
-            { to: ['since'], from: 0, path: ['secret', 'inherited'] },
-            { to: ['__proto__'], from: 0, path: ['constructor'] },
-          ],
+    // What the pipeline reads is the data decoded from its JSON: this
+    // transformer gives `secret` an inherited property there
+    const t = initTRPC.create({
+      transformer: {
+        input: { serialize: (v: unknown) => v, deserialize: (v: unknown) => v },
+        output: {
+          serialize: (value: unknown) => value,
+          deserialize: (value: unknown) =>
+            isObject(value) && isObject(value['secret'])
+              ? {
+                  ...value,
+                  secret: Object.create({ inherited: 'no' }),
+                }
+              : value,
         },
+      },
+    });
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request(
+        `http://localhost/trpc/post,author?batch=pipeline&${pipe({
+          1: {
+            reads: [
+              { to: ['id'], from: 0, path: ['authorId'] },
+              { to: ['since'], from: 0, path: ['secret', 'inherited'] },
+              { to: ['__proto__'], from: 0, path: ['constructor'] },
+            ],
+          },
+        })}`,
+      ),
+      router: t.router({
+        post: t.procedure
+          .input(z.unknown())
+          .query(() => ({ authorId: 'u1', secret: {} })),
+        author: t.procedure
+          .input(z.object({ id: z.string(), since: z.unknown().optional() }))
+          .query((opts) => {
+            author(opts.input);
+            return opts.input;
+          }),
       }),
-      { path: 'post,author', allowPipelining: true },
-    );
-    expect(res.json[1].result.data).toEqual({ id: 'u1', teamId: 'team-of-u1' });
-    expect(res.calls.mock.calls[0]![1]).toEqual({ id: 'u1' });
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1].result.data).toEqual({ id: 'u1' });
+    expect(author).toHaveBeenCalledWith({ id: 'u1' });
   });
 
   test.each([
@@ -3163,6 +3295,125 @@ describe('a call the server refuses before any of its runs ran', () => {
       },
     });
     expect(author).not.toHaveBeenCalled();
+  });
+
+  test('is marked when a limit refuses the input of every run, as none of them ran', async () => {
+    const lists = initTRPC.create();
+    const author = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'list,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: [] },
+            reads: [{ to: ['longField'], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.unknown()).query((opts) => {
+          author(opts.input);
+          return opts.input;
+        }),
+      }),
+      // `{"longField":"x"}` is 17 characters of JSON
+      experimental_allowPipelining: { maxFillSize: 16 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toEqual({
+      error: {
+        message:
+          'What this call fills in goes over `maxFillSize` (16 characters of JSON for the batch)',
+        code: -32600,
+        data: expect.objectContaining({
+          code: 'BAD_REQUEST',
+          pipeline: 'not-run',
+        }),
+      },
+    });
+    expect(author).not.toHaveBeenCalled();
+  });
+
+  test('is not marked when a limit refuses the input of a run after another ran', async () => {
+    const lists = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'list,author',
+        pipe: {
+          1: {
+            each: { from: 0, path: [] },
+            reads: [{ to: ['longField'], path: [] }],
+          },
+        },
+      }),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.unknown()).query((opts) => opts.input),
+      }),
+      // Room for one run's input, not two
+      experimental_allowPipelining: { maxFillSize: 20 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[1]).toMatchObject({
+      items: {
+        0: { result: { data: { longField: 'x' } } },
+        1: { error: { data: { code: 'BAD_REQUEST' } } },
+      },
+    });
+    expect(JSON.stringify(json[1])).not.toContain('not-run');
+  });
+
+  test('is not marked when a run fails for what is not a limit, and a limit refuses the others', async () => {
+    const lists = initTRPC.create();
+    const copy = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: new Request(
+        `http://localhost/trpc/list,author,copy?batch=pipeline&input=${encodeURIComponent(
+          JSON.stringify({ 1: null, 2: {} }),
+        )}&pipe=${encodeURIComponent(
+          JSON.stringify({
+            1: { each: { from: 0, path: [] }, reads: [{ to: [], path: [] }] },
+            // Reads the run of `author` for the same item
+            2: {
+              each: { from: 0, path: [] },
+              reads: [{ to: ['longField'], from: 1, path: [] }],
+            },
+          }),
+        )}`,
+      ),
+      router: lists.router({
+        list: lists.procedure.query(() => ['x', 'y']),
+        author: lists.procedure.input(z.string()).query((opts) => {
+          if (opts.input === 'x') {
+            throw new TRPCError({ code: 'NOT_FOUND' });
+          }
+          return opts.input;
+        }),
+        copy: lists.procedure.input(z.unknown()).query((opts) => {
+          copy(opts.input);
+          return opts.input;
+        }),
+      }),
+      // Room for the runs of `author`, not for a run of `copy`
+      experimental_allowPipelining: { maxFillSize: 16 },
+    });
+    const json = (await res.json()) as unknown[];
+
+    expect(json[2]).toMatchObject({
+      items: {
+        // It reads a run that failed
+        0: { error: { data: { code: 'PRECONDITION_FAILED' } } },
+        1: { error: { data: { code: 'BAD_REQUEST' } } },
+      },
+    });
+    expect(JSON.stringify(json[2])).not.toContain('not-run');
+    expect(copy).not.toHaveBeenCalled();
   });
 });
 

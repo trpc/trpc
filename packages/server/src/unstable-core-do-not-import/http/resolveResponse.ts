@@ -295,6 +295,12 @@ interface SentShape {
   value: unknown;
   /** The JSON of what the transformer made of it, as it was checked */
   json: string;
+  /**
+   * The default shape of the same error, of strings and numbers only, marked
+   * as `value` is: what a stream sends if the transformer can't read `json`
+   * back
+   */
+  plain: unknown;
 }
 
 /**
@@ -317,23 +323,45 @@ function sentOf(sent: SentValue | SentShape): unknown {
  * An error shape serialized once, or `null` if it can't be, or if JSON writes
  * nothing for it: a response has an error there
  */
-function trySendableShape(
-  transformer: CombinedDataTransformer['output'],
-  shape: unknown,
-): SentShape | null {
+function trySendableShape(opts: {
+  transformer: CombinedDataTransformer['output'];
+  shape: unknown;
+  plain: unknown;
+}): SentShape | null {
   try {
-    const { json } = sendable(transformer, shape);
-    return json === undefined ? null : { value: shape, json };
+    const { json } = sendable(opts.transformer, opts.shape);
+    return json === undefined
+      ? null
+      : { value: opts.shape, json, plain: opts.plain };
   } catch {
     return null;
   }
 }
 
 /**
- * An error shape as a stream sends it. The stream serializes what it sends
+ * The data of a run as a stream sends it. The stream serializes what it sends
  * itself, so it gets the checked JSON read back through the transformer,
- * which serializes to the same again. If the transformer can't read it back,
- * the shape as it was made
+ * which serializes to the same again: not the data as it was made, which
+ * could serialize differently the second time. Throws what reading it back
+ * throws: the client couldn't read it either
+ */
+function streamedValue(
+  transformer: CombinedDataTransformer['output'],
+  sent: SentValue,
+): SentValue {
+  return {
+    value:
+      sent.json === undefined
+        ? undefined
+        : transformer.deserialize(JSON.parse(sent.json)),
+    json: sent.json,
+  };
+}
+
+/**
+ * An error shape as a stream sends it: the checked JSON read back through
+ * the transformer, as for data. If the transformer can't read it back, the
+ * default shape of the same error, which serializes to the same every time
  */
 function streamedShape(
   transformer: CombinedDataTransformer['output'],
@@ -342,7 +370,7 @@ function streamedShape(
   try {
     return transformer.deserialize(JSON.parse(shape.json));
   } catch {
-    return shape.value;
+    return shape.plain;
   }
 }
 
@@ -563,11 +591,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         });
         return sending.notRun ? markPipelineNotRun(shape) : shape;
       };
-      const output = config.transformer.output;
-      const sent = trySendableShape(
-        output,
-        shapeOf(sending.error, sending.input),
-      );
+      const plainOf = (error: TRPCError): unknown => {
+        const plain = getDefaultErrorShape({
+          error,
+          path,
+          isDev: config.isDev,
+        });
+        return sending.notRun ? markPipelineNotRun(plain) : plain;
+      };
+      const transformer = config.transformer.output;
+      const sent = trySendableShape({
+        transformer,
+        shape: shapeOf(sending.error, sending.input),
+        plain: plainOf(sending.error),
+      });
       if (sent) {
         return sent;
       }
@@ -575,17 +612,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         code: 'INTERNAL_SERVER_ERROR',
         message: 'The error of this call cannot be sent',
       });
-      const fallback = getDefaultErrorShape({
-        error,
-        path,
-        isDev: config.isDev,
-      });
-      const marked = sending.notRun ? markPipelineNotRun(fallback) : fallback;
+      const plain = plainOf(error);
       return (
-        trySendableShape(output, shapeOf(error, undefined)) ?? {
-          value: marked,
+        trySendableShape({
+          transformer,
+          shape: shapeOf(error, undefined),
+          plain,
+        }) ?? {
+          value: plain,
           // Strings and numbers only, which JSON can carry
-          json: JSON.stringify(output.serialize(marked)),
+          json: JSON.stringify(transformer.serialize(plain)),
+          plain,
         }
       );
     };
@@ -692,7 +729,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   }
                   // What JSON can't carry fails the run, not the response or
                   // the stream. Serialized once: what was checked is sent
-                  return sendable(config.transformer.output, itemData);
+                  const sent = sendable(config.transformer.output, itemData);
+                  return isStreamCall
+                    ? streamedValue(config.transformer.output, sent)
+                    : sent;
                 },
                 read: (sent) => sent.value,
                 error: (failure) => {
@@ -1015,7 +1055,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             };
           }
           if (result.items) {
-            // A run's data as it was made, as for a call that runs once
+            // A run's data as it was checked, read back
             return streamedItems(result.items, (outcome) =>
               'error' in outcome
                 ? {
