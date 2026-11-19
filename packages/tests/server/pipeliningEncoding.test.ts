@@ -574,6 +574,82 @@ describe('what a pipelined stream sends, serialized once', () => {
   });
 });
 
+describe('a call for every item, in a stream', () => {
+  test("sends a run's error for what isn't a limit without waiting for the runs still to fill in", async () => {
+    using gate = gateResource();
+    const t = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: {
+          1: authorOfEachTag,
+          // Reads the run of call 1 for the same tag
+          2: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], from: 1, path: ['id'] }],
+          },
+        },
+        streams: true,
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({
+          tags: [{ id: 'missing' }, { id: 't1' }],
+        })),
+        author: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query(async (opts) => {
+            if (opts.input.id === 'missing') {
+              throw new TRPCError({ code: 'NOT_FOUND' });
+            }
+            await gate.promise;
+            return { id: opts.input.id };
+          }),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const stream = streamReader(res);
+
+    // Call 2's run for `missing` reads a run that failed, while its run for
+    // `t1` still waits for the run it reads
+    expect(await stream.until('PRECONDITION_FAILED', 1)).not.toContain(
+      '"data":{"id":"t1"}',
+    );
+    gate.resolve();
+    expect(await stream.until(null, 0)).toContain('"data":{"id":"t1"}');
+  });
+});
+
+describe('a call for every item whose every run a limit refuses', () => {
+  test('reports one error, not one for each run too', async () => {
+    const t = initTRPC.create();
+    const onError = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfEachTag },
+        streams: false,
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ tags: [{ id: 't1' }, { id: 't2' }] })),
+        author: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query((opts) => opts.input),
+      }),
+      // `{"id":"t1"}` is 11 characters of JSON
+      experimental_allowPipelining: { maxFillSize: 10 },
+      onError,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('what a call reads of a run of a call for every item', () => {
   test('is the data as it was checked and sent: data whose `toJSON` throws the second time fails no call that reads it', async () => {
     const t = initTRPC.create();

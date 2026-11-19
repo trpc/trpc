@@ -1361,25 +1361,44 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         notRunBecause(cause);
         throw cause;
       }
+      /**
+       * How a run ends: its envelope, or why it didn't call the procedure,
+       * which `error` makes an envelope of only if the response has its runs
+       */
+      type RunEnd =
+        | { kind: 'ran'; envelope: PipelineRunEnvelope<TError, TData> }
+        | { kind: 'notCalled'; cause: unknown };
       interface Ran {
         run: Run;
-        envelope: Promise<PipelineRunEnvelope<TError, TData>>;
+        end: Promise<RunEnd>;
         /**
          * Why it didn't call the procedure, once its input is made or can't
          * be: none if it did
          */
         notCalled: Promise<unknown[]>;
       }
-      /** Whether any of its runs called the procedure */
-      let called = false;
-      const firstCalled = createDeferred<void>();
+      /**
+       * Whether it is known that the call isn't refused as a whole: a run
+       * called the procedure, or a list or a run failed for what isn't a
+       * limit. Its runs are the response from then
+       */
+      let ruledOut = false;
+      const onRuledOut = createDeferred<void>();
+      const ruleOut = () => {
+        ruledOut = true;
+        onRuledOut.resolve();
+      };
+      /** Notes why a list or a run of it can't run */
+      const noteFailure = (cause: unknown) => {
+        if (!(cause instanceof TRPCError && refusalErrors.has(cause))) {
+          ruleOut();
+        }
+      };
       /** A run, which holds a place of `lease` */
       const start = (place: Place, lease: PipelineLease): Ran => {
         const ran = newRun();
         const notCalled = createDeferred<unknown[]>();
-        const envelope = (async (): Promise<
-          PipelineRunEnvelope<TError, TData>
-        > => {
+        const end = (async (): Promise<RunEnd> => {
           let input: unknown;
           try {
             input = await fill({ base, reads, place, perItem: true });
@@ -1388,12 +1407,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
             lease.giveBack(1);
             ran.outcome.resolve({ ok: false });
             notCalled.resolve([cause]);
-            return {
-              error: error({ cause, input: base.decoded.value, notRun: false }),
-            };
+            noteFailure(cause);
+            return { kind: 'notCalled', cause };
           }
-          called = true;
-          firstCalled.resolve();
+          ruleOut();
           notCalled.resolve([]);
           try {
             const data = await run.item(input);
@@ -1401,13 +1418,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
               ok: true,
               data: { kind: 'json', json: run.read(data) },
             });
-            return { result: { data } };
+            return { kind: 'ran', envelope: { result: { data } } };
           } catch (cause) {
             ran.outcome.resolve({ ok: false });
-            return { error: error({ cause, input, notRun: false }) };
+            return {
+              kind: 'ran',
+              envelope: { error: error({ cause, input, notRun: false }) },
+            };
           }
         })();
-        return { run: ran, envelope, notCalled: notCalled.promise };
+        return { run: ran, end, notCalled: notCalled.promise };
       };
       /**
        * Its runs, level by level. `lease` is what the runs below hold: the
@@ -1457,7 +1477,17 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         places.then((node): Response | Promise<Response> => {
           switch (node.kind) {
             case 'run':
-              return node.value.envelope;
+              return node.value.end.then((end) =>
+                end.kind === 'ran'
+                  ? end.envelope
+                  : {
+                      error: error({
+                        cause: end.cause,
+                        input: base.decoded.value,
+                        notRun: false,
+                      }),
+                    },
+              );
             case 'items':
               return { items: node.items.map(response) };
             case 'failed':
@@ -1483,24 +1513,21 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           case 'items':
             return (await Promise.all(node.items.map(failures))).flat();
           case 'failed':
+            noteFailure(node.error);
             return [node.error];
         }
       };
       const failed = failures(ran);
-      // Once a run calls the procedure, or every run is known not to
-      await Promise.race([firstCalled.promise, failed]);
-      const refused = called ? [] : await failed;
+      // Once it is known that it isn't refused as a whole, or every run is
+      // known not to call the procedure
+      await Promise.race([onRuledOut.promise, failed]);
+      const refused = ruledOut ? [] : await failed;
       // None of its runs called the procedure, as the server refused its
       // lists, or what their inputs fill in, for its limits: a client can ask
       // for it by itself, as for a call refused as a whole. One with a list
-      // or a run that can't run for another reason, or with none refused, is
-      // as it is
-      if (
-        refused.length > 0 &&
-        refused.every(
-          (cause) => cause instanceof TRPCError && refusalErrors.has(cause),
-        )
-      ) {
+      // or a run that can't run for another reason has been ruled out. One
+      // with none refused is as it is
+      if (refused.length > 0) {
         return {
           error: error({
             cause: refused[0],
