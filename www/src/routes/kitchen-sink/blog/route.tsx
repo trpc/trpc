@@ -1,21 +1,29 @@
-import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import {
+  HydrationBoundary,
+  QueryClientProvider,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   createFileRoute,
   Outlet,
   retainSearchParams,
+  useMatch,
   useNavigate,
-  useRouter,
 } from '@tanstack/react-router';
-import { useState } from 'react';
+import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense, useState } from 'react';
 
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
 
+import { PostList, PostListSkeleton } from './-components/post-list.tsx';
 import { RequestMeter } from './-components/request-meter.tsx';
 import {
   BlogPreloadProvider,
   BlogSettingsBar,
 } from './-components/settings.tsx';
+import { postListEntries } from './-entries.ts';
+import { contentId } from './-links.ts';
 import { meter } from './-request-meter.ts';
 import {
   blogSearchKeys,
@@ -25,7 +33,13 @@ import {
   setSlowQueries,
 } from './-settings.ts';
 import { showcase } from './-showcase.ts';
-import { getQueryClient, TRPCProvider, trpcClient, useTRPC } from './-trpc.ts';
+import {
+  getQueryClient,
+  loaderTRPC,
+  TRPCProvider,
+  trpcClient,
+  useTRPC,
+} from './-trpc.ts';
 
 /**
  * The showcase's own query client, for its pages alone: the rest of the
@@ -47,6 +61,16 @@ export const Route = createFileRoute('/kitchen-sink/blog')({
     if (!opts.preload && typeof window !== 'undefined') {
       meter.start();
     }
+  },
+  // The post list is on every page of the blog: beside the post on a wide
+  // screen, and the index page on a narrow one. Its queries go in the same
+  // request as the page's
+  loader: async () => {
+    const { dehydrated, trpc } = loaderTRPC();
+    const [handles] = await loadHandles(trpc, postListEntries(trpc));
+    // On the server, the queries go to the browser with the page. In the
+    // browser, they're already in its query client.
+    return { dehydrated: await dehydrated(), handles };
   },
   component: BlogLayout,
 });
@@ -71,9 +95,14 @@ function BlogLayout() {
 function BlogFrame() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const router = useRouter();
   const navigate = useNavigate();
+  const data = Route.useLoaderData();
   const settings = blogSettingsOf(Route.useSearch());
+  // On a narrow screen, a post's page shows the post alone
+  const postOpen = useMatch({
+    from: '/kitchen-sink/blog/$slug',
+    shouldThrow: false,
+  });
   return (
     <>
       <h1 className="text-4xl font-extrabold tracking-tight">
@@ -97,26 +126,64 @@ function BlogFrame() {
           The router
         </a>
       </p>
-      <BlogSettingsBar
-        value={settings}
-        onChange={(next) => {
-          const slowChanged = next.slowQueries !== settings.slowQueries;
-          if (slowChanged) {
-            // Forget what the blog has loaded: the page loads again at the
-            // new speed, and its loader starts its queries, in one request
-            queryClient.removeQueries(trpc.blog.pathFilter());
-          }
-          void navigate({
-            replace: true,
-            search: (prev) => ({ ...prev, ...blogSearchOf(next) }),
-            to: '.',
-          }).then(() => (slowChanged ? router.invalidate() : undefined));
-        }}
-      />
-      <RequestMeter />
-      <BlogPreloadProvider value={settings.preload}>
-        <Outlet />
-      </BlogPreloadProvider>
+      {/* Wider than the kitchen sink's column on a wide screen, for the list
+          and the post side by side. `--blog-bar` is the sticky bar's
+          height: what sits under it, and where a link lands, is below it */}
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 [--blog-bar:3rem] lg:mx-[calc((100%-min(72rem,100vw-3rem))/2)]">
+        <div
+          data-slot="blog-bar"
+          className="sticky top-(--site-header) z-30 -mx-4 flex h-(--blog-bar) items-center justify-between gap-2 border-b bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-b-xl lg:border-x lg:px-3"
+        >
+          <BlogSettingsBar
+            value={settings}
+            onChange={(next) => {
+              const slowChanged = next.slowQueries !== settings.slowQueries;
+              // A setting is a search param, not a page: it stays where you
+              // are, and doesn't add to the history
+              void navigate({
+                replace: true,
+                resetScroll: false,
+                search: (prev) => ({ ...prev, ...blogSearchOf(next) }),
+                to: '.',
+              }).then(() =>
+                // The blog's queries load again at the new speed, in one
+                // request. The page keeps showing their data meanwhile, so
+                // nothing moves
+                slowChanged
+                  ? queryClient.invalidateQueries(trpc.blog.pathFilter())
+                  : undefined,
+              );
+            }}
+          />
+          <RequestMeter />
+        </div>
+        <BlogPreloadProvider value={settings.preload}>
+          <HydrationBoundary state={data.dehydrated}>
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+              <div
+                // A page's content, where a link to the page lands: under the
+                // sticky bar, as `html`'s `scroll-padding-top` keeps it under
+                // the site's header
+                className="grid min-w-0 scroll-mt-[calc(var(--blog-bar)-0.5rem)] gap-6 lg:col-start-2 lg:row-start-1"
+                id={contentId}
+              >
+                <Outlet />
+              </div>
+              {/* On a wide screen, the list scrolls by itself, so opening a
+                  post keeps your place in it */}
+              <aside
+                aria-label="Posts"
+                className={`${postOpen ? 'hidden lg:block' : ''} lg:sticky lg:top-[calc(var(--site-header)+var(--blog-bar)+1rem)] lg:col-start-1 lg:row-start-1 lg:max-h-[calc(100dvh-var(--site-header)-var(--blog-bar)-2rem)] lg:overflow-y-auto lg:overscroll-contain lg:pr-1`}
+                data-scroll-restoration-id="blog-posts"
+              >
+                <Suspense fallback={<PostListSkeleton />}>
+                  <PostList handles={data.handles} />
+                </Suspense>
+              </aside>
+            </div>
+          </HydrationBoundary>
+        </BlogPreloadProvider>
+      </div>
     </>
   );
 }

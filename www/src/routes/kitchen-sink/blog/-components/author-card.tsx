@@ -20,6 +20,7 @@ import {
 import { Suspense } from 'react';
 
 import type { PostPageHandles } from '../-entries.ts';
+import { usePostLink } from '../-links.ts';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevFallback, DevNote } from './note.tsx';
 import { useBlogPreload } from './settings.tsx';
@@ -40,7 +41,7 @@ export function AuthorCard(props: { readonly handles: PostPageHandles }) {
   const author = authorQuery.data;
 
   return (
-    <Card>
+    <Card className="motion-safe:animate-arrive">
       <CardHeader>
         <div className="flex items-center gap-3">
           <Avatar>
@@ -100,6 +101,7 @@ function MoreFromTeam(props: {
 }) {
   const trpc = useTRPC();
   const preload = useBlogPreload();
+  const postLink = usePostLink();
   const moreQuery = useSuspenseInfiniteQuery(
     fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -137,9 +139,9 @@ function MoreFromTeam(props: {
       </DevNote>
       <ul className="flex flex-col gap-2 text-sm">
         {morePosts.map((post) => (
-          <li key={post.slug}>
+          <li className="motion-safe:animate-arrive" key={post.slug}>
             <Link
-              to="/kitchen-sink/blog/$slug"
+              {...postLink}
               params={{ slug: post.slug }}
               preload={preload}
               className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"

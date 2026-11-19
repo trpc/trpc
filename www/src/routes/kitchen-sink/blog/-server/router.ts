@@ -197,11 +197,20 @@ export const appRouter = t.router({
     postBySlug: blogProcedure
       .input(z.object({ slug: z.string() }))
       .query((opts) => {
-        const post = posts.find((it) => it.slug === opts.input.slug);
+        const index = posts.findIndex((it) => it.slug === opts.input.slug);
+        const post = posts[index];
         if (post === undefined) {
           throw new TRPCError({ code: 'NOT_FOUND' });
         }
-        return post;
+        // The posts on either side of it in the list, for the links at its
+        // end
+        const linkTo = (it: Post | undefined) =>
+          it === undefined ? null : { slug: it.slug, title: it.title };
+        return {
+          ...post,
+          newer: linkTo(posts[index - 1]),
+          older: linkTo(posts[index + 1]),
+        };
       }),
     authorById: blogProcedure
       .input(z.object({ id: z.string() }))

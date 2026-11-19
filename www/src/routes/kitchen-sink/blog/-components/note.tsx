@@ -4,7 +4,7 @@ import {
   HoverCardTrigger,
 } from '@shared/ui/components/hover-card';
 import { Skeleton } from '@shared/ui/components/skeleton';
-import { InfoIcon } from 'lucide-react';
+import { ChevronRightIcon, InfoIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 /**
@@ -13,7 +13,8 @@ import type { ReactNode } from 'react';
  * the details.
  */
 
-const noteText =
+/** The text of a note, such as what a Suspense fallback waits for */
+export const noteTextClass =
   'text-xs text-muted-foreground [&_code]:font-mono [&_code]:text-foreground';
 
 const cardClass =
@@ -73,7 +74,7 @@ export function DevFallback(props: {
   return (
     <div className="flex flex-col gap-1.5">
       <Skeleton className={props.className} />
-      <p className={noteText}>
+      <p className={noteTextClass}>
         <span className="font-medium">Suspense: </span>
         {props.children}
       </p>
@@ -81,12 +82,21 @@ export function DevFallback(props: {
   );
 }
 
-/** What to do to see the feature work, such as which tab to open. */
+/**
+ * What to do to see the feature work, such as which tab to open. Closed
+ * until you open it, so it doesn't push the page down
+ */
 export function SeeItYourself(props: { readonly children: ReactNode }) {
   return (
-    <div className="grid gap-2 rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground [&_code]:font-mono [&_code]:text-foreground">
-      <span className="font-medium text-foreground">See it yourself</span>
-      {props.children}
-    </div>
+    <details className="group rounded-lg border border-dashed px-4 py-2.5 text-sm text-muted-foreground [&_code]:font-mono [&_code]:text-foreground">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
+        <ChevronRightIcon
+          aria-hidden
+          className="size-4 transition-transform group-open:rotate-90"
+        />
+        See it yourself
+      </summary>
+      <div className="grid gap-2 pt-2">{props.children}</div>
+    </details>
   );
 }

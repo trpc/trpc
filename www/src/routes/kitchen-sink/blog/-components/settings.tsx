@@ -1,7 +1,10 @@
 import { Button } from '@shared/ui/components/button';
-import { Label } from '@shared/ui/components/label';
-import { Switch } from '@shared/ui/components/switch';
-import { ChevronDownIcon, RotateCcwIcon } from 'lucide-react';
+import {
+  ChevronDownIcon,
+  RotateCcwIcon,
+  TurtleIcon,
+  ZapIcon,
+} from 'lucide-react';
 import { createContext, use, useId } from 'react';
 
 import {
@@ -15,9 +18,9 @@ const preloadOptions: ReadonlyArray<{
   readonly label: string;
 }> = [
   { value: false, label: 'Off' },
-  { value: 'intent', label: 'On hover or focus' },
-  { value: 'viewport', label: 'When in view' },
-  { value: 'render', label: 'When rendered' },
+  { value: 'intent', label: 'Hover' },
+  { value: 'viewport', label: 'In view' },
+  { value: 'render', label: 'Render' },
 ];
 
 const PreloadContext = createContext<BlogPreload>(blogSettingsDefaults.preload);
@@ -31,8 +34,9 @@ export function useBlogPreload() {
 }
 
 /**
- * The blog's settings, together: how slow its queries are, when its links
- * load the page they go to, and a button to put both back as they were
+ * The blog's settings, in one short row: how slow its queries are, when its
+ * links load the page they go to, and a button to put both back as they
+ * were
  */
 export function BlogSettingsBar(props: {
   readonly value: BlogSettings;
@@ -40,65 +44,68 @@ export function BlogSettingsBar(props: {
 }) {
   const { value, onChange } = props;
   const preloadId = useId();
-  const slowId = useId();
   const isDefault =
     value.slowQueries === blogSettingsDefaults.slowQueries &&
     value.preload === blogSettingsDefaults.preload;
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-lg border px-4 py-3">
-      <div className="flex items-center gap-3">
-        <Switch
-          id={slowId}
-          checked={value.slowQueries}
-          onCheckedChange={(checked) =>
-            onChange({ ...value, slowQueries: checked })
-          }
+    <div className="flex min-w-0 items-center gap-1.5 text-xs">
+      <button
+        type="button"
+        aria-pressed={value.slowQueries}
+        title="Every query your browser asks for takes 1 to 3 seconds"
+        className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2 font-medium whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current aria-pressed:border-foreground aria-pressed:bg-foreground aria-pressed:text-background"
+        onClick={() => onChange({ ...value, slowQueries: !value.slowQueries })}
+      >
+        <TurtleIcon aria-hidden className="size-3.5" />
+        Slow
+      </button>
+      <label
+        htmlFor={preloadId}
+        className="ml-1 font-medium whitespace-nowrap text-muted-foreground max-sm:sr-only"
+      >
+        Preload links
+      </label>
+      <div className="relative shrink-0">
+        <ZapIcon
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground"
         />
-        <Label htmlFor={slowId} className="flex flex-col items-start gap-1">
-          Slow queries
-          <span className="text-xs font-normal text-muted-foreground">
-            Every query your browser asks for takes 1 to 3 seconds
-          </span>
-        </Label>
-      </div>
-      <div className="flex items-center gap-2 text-sm">
-        <label htmlFor={preloadId}>Preload links</label>
-        <div className="relative">
-          <select
-            id={preloadId}
-            className="h-7 appearance-none rounded-md border bg-background py-0.5 pr-7 pl-2 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-            value={String(value.preload)}
-            onChange={(event) => {
-              const picked = preloadOptions.find(
-                (option) => String(option.value) === event.target.value,
-              );
-              onChange({
-                ...value,
-                preload: picked?.value ?? blogSettingsDefaults.preload,
-              });
-            }}
-          >
-            {preloadOptions.map((option) => (
-              <option key={String(option.value)} value={String(option.value)}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDownIcon
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2"
-          />
-        </div>
+        <select
+          id={preloadId}
+          title="When a link loads the page it goes to"
+          className="h-7 appearance-none rounded-full border bg-background pr-6 pl-6 text-xs font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+          value={String(value.preload)}
+          onChange={(event) => {
+            const picked = preloadOptions.find(
+              (option) => String(option.value) === event.target.value,
+            );
+            onChange({
+              ...value,
+              preload: picked?.value ?? blogSettingsDefaults.preload,
+            });
+          }}
+        >
+          {preloadOptions.map((option) => (
+            <option key={String(option.value)} value={String(option.value)}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 right-2 size-3 -translate-y-1/2"
+        />
       </div>
       <Button
         variant="ghost"
-        size="sm"
-        className="ml-auto"
+        size="icon-sm"
+        aria-label="Reset settings"
+        title="Reset settings"
+        className="shrink-0"
         disabled={isDefault}
         onClick={() => onChange(blogSettingsDefaults)}
       >
         <RotateCcwIcon />
-        Reset
       </Button>
     </div>
   );
