@@ -475,7 +475,7 @@ A GraphQL server often gives a query a cost, from its depth and from how many it
 
 - **An input the transformer can't read fails the batch's calls**, as in any batch.
 - **Don't change data another call returned.** A call that reads it may see a different value than the response sends.
-- **Data and transformers have to give the same JSON every time.** The server writes a value once to check it and to fill it in, and a streamed one again to send it. A `toJSON` or a getter that gives something else each time can send other data than a call read.
+- **Data and transformers have to give the same JSON every time.** The server can write a value more than once, with `httpBatchLink` as with `httpBatchStreamLink`: to check it and fill it in where a call reads it, and again to send it. A `toJSON` or a getter that gives something else each time can send other data than a call read, or fail the response after a call read it.
 - **A transformer has to read back what it writes**, for a value by itself as for one inside an input, as superjson does. The server writes each value it fills in by itself, and refuses one it can tell doesn't come back. One that writes a value by itself other than inside an input can give a call another input than the client would send.
 
 ## FAQ {#faq}
