@@ -30,7 +30,7 @@ An `xxxEntries()` function is a spiritual cousin of a GraphQL query or fragment.
 ```
 
 :::tip See it in an app
-The [SSE chat example](https://sse.trpc.io/blog) has a blog that loads this way. Open your browser's Network tab and go from post to post: each page is one request, for the post, its author and more posts from the author's team. Its [source](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat/src/routes/blog) is two routes.
+The kitchen sink has a [blog](/kitchen-sink/blog) that loads this way. Open your browser's Network tab and go from post to post: each page is one request, for the post, its author and more posts from the author's team. Its [source](https://github.com/trpc/trpc/tree/main/www/src/routes/kitchen-sink/blog) is two routes.
 :::
 
 :::info
