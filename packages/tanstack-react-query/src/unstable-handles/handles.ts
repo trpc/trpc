@@ -160,7 +160,10 @@ export function loadHandles<
  * with a `TRPCEntryError`, for every fetch and ensure entry.
  *
  * When an entry fails, the entries that read its data with `experimental_dataOf()` can't
- * start: they have no handle, and their result is the same error. So check the
+ * start, and a fetch or ensure entry among them has the same error as its result.
+ * One that reads the data in its input, or an `experimental_entryPerItem()` over
+ * it, has no handle. One built from it with
+ * `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle. So check the
  * results before you return the handles. If the failed entry is a prefetch entry,
  * which has no result to hold the error, the load rejects with it when another
  * entry needs its data for a handle or a result: one that reads it in its input,

@@ -554,6 +554,31 @@ describe('dataOf', () => {
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
   });
 
+  test('loadHandlesSettled keeps the unfinished handle of an entry built with a callback from an entry that failed', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'missing' });
+    const [handles, results] = await loadHandlesSettled(trpc, {
+      post,
+      author: experimental_dataOf(post, (data) =>
+        ensureEntry(trpc.author.byId, { id: data.authorId }),
+      ),
+      team: experimental_dataOf(post, (data) =>
+        prefetchEntry(trpc.team.byId, { id: data.authorId }),
+      ),
+    });
+
+    expect(Object.keys(handles).sort()).toEqual(['author', 'post', 'team']);
+    expect(results.author).toMatchObject({
+      status: 'error',
+      error: { key: 'post', code: 'NOT_FOUND' },
+    });
+    expect(resource.calls.mock.calls.map(([path]) => path)).toEqual([
+      'post.bySlug',
+    ]);
+  });
+
   test('loadHandlesSettled has an error for every item whose query reads another entry that failed, when the list loaded', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
