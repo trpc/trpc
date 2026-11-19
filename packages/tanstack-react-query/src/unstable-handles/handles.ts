@@ -164,8 +164,8 @@ export function loadHandles<
  * handle, and its result, if it has one, is the same error. One built from it
  * with `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle,
  * and its result, if it has one, is the same error. An
- * `experimental_entryPerItem()` over it has no handle, and its result is an empty
- * list. So check the
+ * `experimental_entryPerItem()` over it has no handle, and its result, if it has
+ * one, is an empty list. So check the
  * results before you return the handles. If the failed entry is a prefetch entry,
  * which has no result to hold the error, the load rejects with it when another
  * entry needs its data for a handle or a result: one that reads it in its input,
