@@ -8,16 +8,17 @@ import { failed, ok } from './outcome';
 import { isPlainObject } from './utils';
 
 /**
- * Whether two cursors are the same. Only what can be shown to be: equal
- * primitives, of the same type, and plain objects and arrays of them. A date
- * is the same only as a date of the same time. Anything else, such as a
- * class instance a transformer keeps, is not, so the page is fetched by
- * itself rather than recorded with another cursor. No cursor isn't `null`,
- * no key isn't a key whose value is `undefined`, a hole in an array isn't
- * a value, and `-0` isn't `0`.
+ * Whether two inputs, query keys or cursors are the same request. Only what
+ * can be shown to be: equal primitives, of the same type, and plain objects
+ * and arrays of them. A date is the same only as a date of the same time.
+ * Anything else, such as a class instance a transformer keeps, is not, so
+ * the query is fetched by itself rather than recorded with another's
+ * result. Not their cache hash, which is JSON: no value isn't `null`, no
+ * key isn't a key whose value is `undefined`, a hole in an array isn't a
+ * value, and `-0` isn't `0`.
  */
-export function sameCursor(a: unknown, b: unknown): boolean {
-  // `NaN` is the same cursor as `NaN`. `-0` is not `0`: a transformer that
+export function sameValue(a: unknown, b: unknown): boolean {
+  // `NaN` is the same value as `NaN`. `-0` is not `0`: a transformer that
   // keeps it, such as superjson, lets a resolver tell them apart
   if (Object.is(a, b)) {
     return true;
@@ -37,7 +38,7 @@ export function sameCursor(a: unknown, b: unknown): boolean {
       Array.from(
         { length: a.length },
         (_, index) =>
-          index in a === index in b && sameCursor(a[index], b[index]),
+          index in a === index in b && sameValue(a[index], b[index]),
       ).every(Boolean)
     );
   }
@@ -50,7 +51,7 @@ export function sameCursor(a: unknown, b: unknown): boolean {
       keys.every(
         (key) =>
           Object.prototype.hasOwnProperty.call(b, key) &&
-          sameCursor(a[key], b[key]),
+          sameValue(a[key], b[key]),
       )
     );
   }

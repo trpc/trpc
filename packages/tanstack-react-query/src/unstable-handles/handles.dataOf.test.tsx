@@ -4645,6 +4645,75 @@ describe('a transformer that keeps what JSON drops', () => {
     // The page is for the cursor the client has: `0`
     expect(data.rest.pages).toEqual([{ cursor: 'not -0', nextCursor: null }]);
   });
+
+  /** A server with superjson, which keeps `-0`, and a batch link that pipelines */
+  const signedZeroCtx = () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      /** `-0`, alone and in a list */
+      zero: t.procedure.query(() => ({ value: -0, list: [-0] })),
+      /** Whether its value is `-0` */
+      sign: t.procedure
+        .input((raw: unknown) => raw as { value: number })
+        .query((opts) => (Object.is(opts.input.value, -0) ? '-0' : 'not -0')),
+    });
+    return testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer: superjson,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+  };
+
+  test("a stale ensure entry's `0` is not the server's `-0` in another entry's input", async () => {
+    await using resource = signedZeroCtx();
+    const trpc = resource.optionsProxyClient;
+    // The cached value is `0`. Its refetch has `-0`
+    resource.queryClient.setQueryData(
+      trpc.zero.queryKey(),
+      { value: 0, list: [0] },
+      { updatedAt: 1 },
+    );
+
+    const zero = ensureEntry(trpc.zero);
+    const [handles, data] = await loadHandles(trpc, {
+      zero,
+      sign: ensureEntry(trpc.sign, { value: experimental_dataOf(zero).value }),
+    });
+
+    // The data is for the input the client has: `0`
+    expect(Object.is(handles.sign.input.value, 0)).toBe(true);
+    expect(data.sign).toBe('not -0');
+  });
+
+  test("a stale ensure entry's `0` is not the server's `-0` in an item's input", async () => {
+    await using resource = signedZeroCtx();
+    const trpc = resource.optionsProxyClient;
+    // The cached item is `0`. Its refetch has `-0`
+    resource.queryClient.setQueryData(
+      trpc.zero.queryKey(),
+      { value: 0, list: [0] },
+      { updatedAt: 1 },
+    );
+
+    const zero = ensureEntry(trpc.zero);
+    const [, data] = await loadHandles(trpc, {
+      zero,
+      signs: experimental_entryPerItem(
+        experimental_dataOf(zero).list,
+        (value) => ensureEntry(trpc.sign, { value }),
+      ),
+    });
+
+    // The item's data is for the input the client has: `0`
+    expect(data.signs).toEqual(['not -0']);
+  });
 });
 
 describe('experimental_useHandles', () => {

@@ -5,7 +5,7 @@ import type {
   QueryFunction,
   QueryFunctionContext,
 } from '@tanstack/react-query';
-import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
+import { isCancelledError, skipToken } from '@tanstack/react-query';
 import type {
   PipelinedCall,
   PipelineSource,
@@ -42,7 +42,7 @@ import {
   dataOfCall,
   outcomeOfCall,
   outcomeOfItem,
-  sameCursor,
+  sameValue,
   withPipelinedResult,
 } from './pipelined';
 import type { EntryTree, LinkedLeaf } from './plan';
@@ -650,9 +650,11 @@ export function beginEntries(opts: {
                     holes: false,
                   });
                   return (
-                    hashKey(filled.data.queryKey) === hashKey(sent.queryKey) &&
+                    // Not their hashes: `-0` and `0` hash alike, and a
+                    // transformer, such as superjson, can tell them apart
+                    sameValue(filled.data.queryKey, sent.queryKey) &&
                     // An infinite query's cursor isn't in its key
-                    sameCursor(
+                    sameValue(
                       filled.data.initialPageParam,
                       sent.initialPageParam,
                     )
@@ -769,7 +771,7 @@ export function beginEntries(opts: {
         /**
          * The key of every item's query, with the input the server filled
          * in, by where the item is: the place it reads its result from.
-         * Each item's own: `null` for one whose key can't be held
+         * Each item's own: `null` for one whose key can't be built
          */
         const serverKeys = send
           ? serverData(send, data).then(
@@ -777,14 +779,13 @@ export function beginEntries(opts: {
                 new Map(
                   server.ok
                     ? itemsOf(server.data).map((listItem) => {
-                        const key = attemptNow(() =>
-                          hashKey(
+                        const key = attemptNow(
+                          () =>
                             optionsFrom(leaf, {
                               data: server.data,
                               item: listItem,
                               holes: false,
                             }).queryKey,
-                          ),
                         );
                         return [placeOf(listItem), key.ok ? key.data : null];
                       })
@@ -803,14 +804,16 @@ export function beginEntries(opts: {
                   holes: false,
                 });
                 if (send && serverKeys) {
-                  const key = hashKey(options.queryKey);
+                  const { queryKey } = options;
                   const place = placeOf(listItem);
                   options = withPipelinedResult({
                     options,
                     result: outcomeOfItem(send.call, serverIndexes(listItem)),
-                    // The server ran the same query at the item's place
+                    // The server ran the same query at the item's place. Not
+                    // by their hashes: `-0` and `0` hash alike, and a
+                    // transformer, such as superjson, can tell them apart
                     sameInput: async () =>
-                      (await serverKeys).get(place) === key,
+                      sameValue((await serverKeys).get(place), queryKey),
                   });
                 }
                 return startEntry({
