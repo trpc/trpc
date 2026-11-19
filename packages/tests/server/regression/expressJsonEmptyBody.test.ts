@@ -3,6 +3,7 @@ import type http from 'http';
 import { createTRPCClient, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import express from 'express';
 import { z } from 'zod';
 
@@ -32,32 +33,28 @@ async function startServer() {
   }
   const url = `http://localhost:${address.port}`;
 
-  return {
-    client: createTRPCClient<typeof router>({
-      links: [httpLink({ url })],
-    }),
-    close: () =>
+  return makeAsyncResource(
+    {
+      client: createTRPCClient<typeof router>({
+        links: [httpLink({ url })],
+      }),
+    },
+    () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),
-  };
+  );
 }
 
-let $: Awaited<ReturnType<typeof startServer>>;
-beforeAll(async () => {
-  $ = await startServer();
-});
-afterAll(async () => {
-  await $.close();
-});
-
 test('a mutation called without input gets undefined', async () => {
+  await using $ = await startServer();
   expect(await $.client.greet.mutate()).toBe('hello nobody');
 });
 
 test('a mutation called with input still gets it', async () => {
+  await using $ = await startServer();
   expect(await $.client.echo.mutate({ name: 'world' })).toEqual({
     input: { name: 'world' },
   });
