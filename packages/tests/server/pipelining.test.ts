@@ -846,16 +846,19 @@ describe.each([
     },
   );
 
-  test.runIf(scenario.link === httpBatchLink)(
-    'an answer with `null` for an operation says nothing of whether it failed: a call that reads it keeps the error the server sent it',
-    async () => {
+  test.runIf(scenario.link === httpBatchLink).each([
+    { answer: null, name: '`null`' },
+    { answer: {}, name: 'an object with neither a result nor an error' },
+  ])(
+    'an answer with $name for an operation says nothing of whether it failed: a call that reads it keeps the error the server sent it',
+    async ({ answer }) => {
       await using ctx = setup({
         allowPipelining: true,
         pipelining: true,
         fetch: async (input, init) => {
           const res = await fetch(input, init);
           const results: unknown[] = await res.json();
-          return Response.json([null, ...results.slice(1)], res);
+          return Response.json([answer, ...results.slice(1)], res);
         },
       });
       const post = createOperationPipeline();
