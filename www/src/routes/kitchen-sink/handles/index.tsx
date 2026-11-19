@@ -9,9 +9,9 @@ import { Suspense } from 'react';
 import { z } from 'zod';
 
 import { pageHead } from '~/seo.ts';
-import { site } from '~/site.ts';
 
 import { showcases } from '../-showcases.ts';
+import { showcaseFileUrl } from '../-source.ts';
 import { Comments } from './-components/comments.tsx';
 import { Note, SeeItYourself } from '../-components/note.tsx';
 import { Post } from './-components/post.tsx';
@@ -53,12 +53,6 @@ export const Route = createFileRoute('/kitchen-sink/handles/')({
   component: HandlesPage,
 });
 
-/**
- * The commit this build is from, so the links show the code that runs. It
- * changes this route's own chunk on each deploy, and no other.
- */
-const source = `${site.github}/blob/${__TRPC_SENTRY_RELEASE__ || 'main'}/www/src/routes/kitchen-sink/handles`;
-
 function HandlesPage() {
   const data = Route.useLoaderData();
   const requests = useRequestCount();
@@ -73,11 +67,14 @@ function HandlesPage() {
         queries with <code>fromHandle</code>, by a handle: the query's name and
         input, without its data. Your browser gets the data with the page, so it
         doesn't fetch it again.{' '}
-        <a className="underline" href={`${source}/index.tsx`}>
+        <a className="underline" href={showcaseFileUrl(showcase, 'index.tsx')}>
           How it works
         </a>{' '}
         ·{' '}
-        <a className="underline" href={`${source}/-server/router.ts`}>
+        <a
+          className="underline"
+          href={showcaseFileUrl(showcase, '-server/router.ts')}
+        >
           The router
         </a>
       </p>

@@ -4,12 +4,25 @@
  * list it, the build doesn't prerender it, and the host sends every request
  * there, its endpoints too, to the function, which nothing caches.
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { describe, expect, it } from '@effect/vitest';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { vi } from 'vitest';
 
 import { showcases } from '../src/routes/kitchen-sink/-showcases.ts';
+import { showcaseFolderUrl } from '../src/routes/kitchen-sink/-source.ts';
+import { KitchenSinkLayout } from '../src/routes/kitchen-sink/route.tsx';
 
-import { kitchenSinkPath, unindexedPaths } from '../src/site.ts';
+import { kitchenSinkPath, site, unindexedPaths } from '../src/site.ts';
 import { unindexedPathProblems } from './hidden-paths.ts';
 import {
   isRequestOnly,
@@ -136,5 +149,72 @@ describe('the kitchen sink’s social cards', () => {
     for (const path of [kitchenSinkPath, ...folders]) {
       expect(carded).toContain(path);
     }
+  });
+});
+
+/** Builds read the commit from `__TRPC_SENTRY_RELEASE__`; it's empty locally. */
+const releaseResource = (release: string) => {
+  vi.stubGlobal('__TRPC_SENTRY_RELEASE__', release);
+  return makeResource({}, () => vi.unstubAllGlobals());
+};
+
+/** The kitchen sink's layout at `pathname`, rendered on the server. */
+const renderLayout = async (pathname: string) => {
+  const root = createRootRoute();
+  const layout = createRoute({
+    component: KitchenSinkLayout,
+    getParentRoute: () => root,
+    path: kitchenSinkPath,
+  });
+  const router = createRouter({
+    history: createMemoryHistory({ initialEntries: [pathname] }),
+    isServer: true,
+    routeTree: root.addChildren([
+      layout.addChildren(
+        ['/', ...showcases.map((showcase) => showcase.path)].map((path) =>
+          createRoute({
+            getParentRoute: () => layout,
+            path: path.replace(kitchenSinkPath, '') || '/',
+          }),
+        ),
+      ),
+    ]),
+  });
+  await router.load();
+  return renderToString(createElement(RouterProvider, { router }));
+};
+
+describe('the kitchen sink’s GitHub links', () => {
+  it('links each showcase’s folder, at the commit the build is from', () => {
+    using _release = releaseResource('0123abc');
+    for (const showcase of showcases) {
+      const url = showcaseFolderUrl(showcase);
+      const prefix = `${site.github}/tree/0123abc/`;
+      expect(url.startsWith(prefix)).toBe(true);
+      const folder = new URL(
+        `../../${url.slice(prefix.length)}`,
+        import.meta.url,
+      );
+      expect(statSync(folder).isDirectory()).toBe(true);
+    }
+  });
+
+  it('links main without a commit', () => {
+    using _release = releaseResource('');
+    expect(showcaseFolderUrl(showcases[0])).toBe(
+      `${site.github}/tree/main/www/src/routes/kitchen-sink/handles`,
+    );
+  });
+
+  it('shows the button on every showcase, and not on the index', async () => {
+    using _release = releaseResource('');
+    for (const showcase of showcases) {
+      const html = await renderLayout(`${showcase.path}?post=2`);
+      expect(html).toContain('View example on GitHub');
+      expect(html).toContain(`href="${showcaseFolderUrl(showcase)}"`);
+    }
+    expect(await renderLayout(kitchenSinkPath)).not.toContain(
+      'View example on GitHub',
+    );
   });
 });
