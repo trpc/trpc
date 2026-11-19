@@ -453,7 +453,7 @@ Options:
 
 - The page renders at once, and the data streams in.
 - The reader shows cached data, or suspends. Give it its own `<Suspense>`, or the nearest boundary above shows its fallback, which may be the whole page.
-- It never makes the load reject. The reader gets the error: see [Errors](#errors).
+- A failed request doesn't make the load reject: the reader gets the error, see [Errors](#errors). It does if another entry reads its data with `experimental_dataOf()`, or if starting it throws, such as from a `staleTime` function.
 - Use it for slow queries, content below the fold and side panels.
 
 ### `ensureEntry`: wait {#ensure}
@@ -1115,7 +1115,7 @@ results.post.data.title;
 
 #### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
+A prefetch entry's failed request doesn't make the load reject, unless another entry reads its data. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
 
 ## Invalidation {#invalidation-and-staleness}
 
