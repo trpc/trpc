@@ -4,6 +4,7 @@ import {
   hashKey,
   InfiniteQueryObserver,
   isCancelledError,
+  onlineManager,
   skipToken,
   useQuery,
   useSuspenseInfiniteQuery,
@@ -1367,6 +1368,46 @@ describe('edges of a load', () => {
     expect(handles.author).toMatchObject({ input: { id: 'u2' } });
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([['author.byId', { id: 'u2' }]]);
+  });
+
+  test("the entries that read a fetch entry whose fetch starts paused, offline, fill in the cache's data once it runs", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const { queryClient } = resource;
+    const key = trpc.post.bySlug.queryKey({ slug: 'hello' });
+    using _mounted = makeResource({}, () => queryClient.unmount());
+    queryClient.mount();
+    using _online = makeResource({}, () => onlineManager.setOnline(true));
+    onlineManager.setOnline(false);
+    // The cache keeps the data it has: the fetch resolves to what it fetched
+    queryClient.setQueryDefaults(key, {
+      structuralSharing: (previous: unknown, next: unknown) => previous ?? next,
+    });
+    queryClient.setQueryData(key, {
+      id: 'cached',
+      title: 'Cached',
+      authorId: 'u2',
+      tags: [],
+    });
+    const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
+    const loaded = loadHandles(trpc, {
+      post,
+      author: prefetchEntry(trpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    expect(queryClient.getQueryState(key)?.fetchStatus).toBe('paused');
+    onlineManager.setOnline(true);
+    const [handles, data] = await loaded;
+    expect(queryClient.getQueryData(key)).toMatchObject({ authorId: 'u2' });
+    expect(data.post).toMatchObject({ authorId: 'u2' });
+    expect(handles.author).toMatchObject({ input: { id: 'u2' } });
+    await vi.waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
     });
     expect(
       resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),

@@ -431,10 +431,12 @@ export function beginEntries(opts: {
     });
     return () => {
       // Without a fetch, such as for a fresh hit, the data is what the
-      // `QueryClient` method resolves to
+      // `QueryClient` method resolves to. A fetch that is paused, such as
+      // one started offline, is still the load's: it runs once it can, and
+      // its success is a write after structural sharing like any other
       if (
-        queryClient.getQueryCache().get(queryHash)?.state.fetchStatus !==
-        'fetching'
+        (queryClient.getQueryCache().get(queryHash)?.state.fetchStatus ??
+          'idle') === 'idle'
       ) {
         return;
       }
