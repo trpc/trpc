@@ -798,9 +798,10 @@ export async function AuthorSection(props: {
 
 When an entry fails, the entries that read its data can't start. For an entry the load doesn't wait for, see [The load doesn't wait](#without-waiting).
 
-- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`, and if its request fails while the cache has data, such as from `setQueryData()`. A prefetch entry that nothing reads never makes a load reject.
-- **An entry whose query can't start** fails by itself, with a `TRPCEntryError`, such as for an input built from another entry's data that no query key can hold.
-- **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. Those have no handle, so check the results before you return the handles.
+- **`loadHandles()` rejects** with the error of the entry that failed. That is also so for a prefetch entry, if another entry reads its data with `experimental_dataOf(entry)`, and if its request fails while the cache has data, such as from `setQueryData()`. A failed request of a prefetch entry that nothing reads never makes a load reject.
+- **A throw while the load starts an entry that reads no other entry**, such as from a `staleTime` function, makes the load reject, with `loadHandlesSettled()` too. It starts no entry after that one.
+- **An entry built from another entry's data whose query can't start** fails by itself, with a `TRPCEntryError`, such as for an input that no query key can hold.
+- **`loadHandlesSettled()` has that error in `results`**, for the entry that failed and for the fetch and ensure entries that read it. An entry whose request failed still has its handle. An entry has no handle when the load couldn't build it: its query couldn't start, or it never started because an entry its handle's input reads failed. An entry built with `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle if that handle doesn't need the failed entry. Check the results before you return the handles.
 
 ```ts twoslash
 // @include: dq-router
