@@ -14,7 +14,6 @@ import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense, useState } from 'react';
 
 import { pageHead } from '~/seo.ts';
-import { site } from '~/site.ts';
 
 import { PostList, PostListSkeleton } from './-components/post-list.tsx';
 import { RequestMeter } from './-components/request-meter.tsx';
@@ -32,6 +31,7 @@ import {
   blogSettingsOf,
   setSlowQueries,
 } from './-settings.ts';
+import { showcaseFileUrl } from '../-source.ts';
 import { showcase } from './-showcase.ts';
 import {
   getQueryClient,
@@ -75,12 +75,6 @@ export const Route = createFileRoute('/kitchen-sink/blog')({
   component: BlogLayout,
 });
 
-/**
- * The commit this build is from, so the links show the code that runs. It
- * changes this route's own chunk on each deploy, and no other.
- */
-const source = `${site.github}/blob/${__TRPC_SENTRY_RELEASE__ || 'main'}/www/src/routes/kitchen-sink/blog`;
-
 function BlogLayout() {
   const [queryClient] = useState(getQueryClient);
   return (
@@ -114,15 +108,21 @@ function BlogFrame() {
         <code>experimental_dataOf</code>, and wait for none. The link pipelines,
         so the browser sends them in one request, and the server fills in each
         input from the data before it.{' '}
-        <a className="underline" href={`${source}/-entries.ts`}>
+        <a
+          className="underline"
+          href={showcaseFileUrl(showcase, '-entries.ts')}
+        >
           How it works
         </a>{' '}
         ·{' '}
-        <a className="underline" href={`${source}/-trpc.ts`}>
+        <a className="underline" href={showcaseFileUrl(showcase, '-trpc.ts')}>
           The link
         </a>{' '}
         ·{' '}
-        <a className="underline" href={`${source}/-server/router.ts`}>
+        <a
+          className="underline"
+          href={showcaseFileUrl(showcase, '-server/router.ts')}
+        >
           The router
         </a>
       </p>
