@@ -1035,6 +1035,11 @@ describe.each([
       assert(author);
       // Also when the test fails: the response must end
       using _break = makeResource({}, () => delivered.resolve());
+      // Bounded: if the operation waited for the author, this fails rather
+      // than hangs, and the response then breaks off
+      const settled = vi.fn();
+      void postResult.then(settled, settled);
+      await vi.waitFor(() => expect(settled).toHaveBeenCalled());
       expect(await postResult).toMatchObject({ authorId: 'u1' });
       delivered.resolve();
       await expect(author.result).rejects.toThrow('The connection broke');
