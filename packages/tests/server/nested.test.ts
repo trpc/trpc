@@ -1031,6 +1031,63 @@ describe('httpBatchLink, without streaming', () => {
     await expect(list[0]!.edges.author).rejects.toThrow('cannot read ada');
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test("a call that read data the link can't deserialize ran on the server: its edge rejects with its own error", async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({ transformer: identity });
+    const teams = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id, teamId: 'team-ada' })),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no team' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            transformer: {
+              ...identity,
+              deserialize: (value: unknown) => {
+                if (isObject(value) && value['teamId'] === 'team-ada') {
+                  throw new Error('cannot read the author');
+                }
+                return value;
+              },
+            },
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => {
+        const author = q.author.query({ id: it.authorId });
+        return { author, team: q.team.query({ id: author.teamId }) };
+      }),
+    );
+
+    await expect(post.edges.author).rejects.toThrow(
+      'Unable to transform response from server',
+    );
+    await expect(post.edges.team).rejects.toThrow('no team');
+    expect(teams.mock.calls).toEqual([['team-ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('types', () => {
