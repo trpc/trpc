@@ -13,7 +13,8 @@ import { isPlainObject } from './utils';
  * is the same only as a date of the same time. Anything else, such as a
  * class instance a transformer keeps, is not, so the page is fetched by
  * itself rather than recorded with another cursor. No cursor isn't `null`,
- * no key isn't a key whose value is `undefined`, and `-0` isn't `0`.
+ * no key isn't a key whose value is `undefined`, a hole in an array isn't
+ * a value, and `-0` isn't `0`.
  */
 export function sameCursor(a: unknown, b: unknown): boolean {
   // `NaN` is the same cursor as `NaN`. `-0` is not `0`: a transformer that
@@ -31,7 +32,13 @@ export function sameCursor(a: unknown, b: unknown): boolean {
       Array.isArray(a) &&
       Array.isArray(b) &&
       a.length === b.length &&
-      a.every((item, index) => sameCursor(item, b[index]))
+      // Every index, also a hole: `every()` skips one, and a hole is not the
+      // value at that index, as a missing key isn't
+      Array.from(
+        { length: a.length },
+        (_, index) =>
+          index in a === index in b && sameCursor(a[index], b[index]),
+      ).every(Boolean)
     );
   }
   if (isPlainObject(a) && isPlainObject(b)) {

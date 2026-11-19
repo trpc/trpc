@@ -41,4 +41,13 @@ describe('sameCursor', () => {
     expect(sameCursor(new Date(0), new Date(0))).toBe(true);
     expect(sameCursor(new Date(0), new Date(1))).toBe(false);
   });
+
+  test('a hole in an array cursor is not the value at that index, which a transformer can tell apart', () => {
+    const holey = [, 2];
+    expect(sameCursor(holey, [1, 2])).toBe(false);
+    expect(sameCursor([1, 2], holey)).toBe(false);
+    expect(sameCursor(holey, [undefined, 2])).toBe(false);
+    expect(sameCursor(holey, [, 2])).toBe(true);
+    expect(sameCursor([1, 2], [1, 2])).toBe(true);
+  });
 });
