@@ -686,6 +686,19 @@ export function settlePipelinedCall(
 }
 
 /**
+ * Whether the server sent a result, not an error, at an index of the
+ * request. What is no envelope, such as `null`, is no result
+ */
+function sentResult(received: Outcome<HTTPResult | undefined>) {
+  return (
+    received.ok &&
+    !!received.data &&
+    isObject(received.data.json) &&
+    !('error' in received.data.json)
+  );
+}
+
+/**
  * Gives the calls of a batch their final states, each as its own result
  * arrives. Nothing waits for a result that isn't the call's own.
  */
@@ -702,8 +715,7 @@ function settlePipelinedBatch(opts: {
   // the order the results arrive
   for (const [index] of opts.ops.entries()) {
     void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
-      ok[index] =
-        received.ok && !!received.data && !('error' in received.data.json);
+      ok[index] = sentResult(received);
     });
   }
   for (const [offset, call] of opts.plan.calls.entries()) {

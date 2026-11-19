@@ -845,6 +845,37 @@ describe.each([
     },
   );
 
+  test.runIf(scenario.link === httpBatchLink)(
+    'an answer with `null` for an operation fails that operation alone: its calls keep their results, and nothing rejects unhandled',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const results: unknown[] = await res.json();
+          return Response.json([null, ...results.slice(1)], res);
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      await expect(postResult).rejects.toThrow();
+      expect(await author.result).toEqual({
+        data: { id: 'u1', teamId: 'team-of-u1' },
+      });
+    },
+  );
+
   test.runIf(scenario.link === httpBatchStreamLink)(
     'a response that breaks off fails what it had no result for: such calls are `unresolved`, as the client never had their results',
     async () => {
