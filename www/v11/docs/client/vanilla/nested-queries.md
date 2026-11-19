@@ -303,7 +303,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
       "1": { "error": { "message": "No author", "data": { "code": "NOT_FOUND" } } } } },
   { "items": {
       "0": { "result": { "data": { "items": [], "nextCursor": null } } },
-      "1": { "error": { "message": "The call this call reads its input from failed", "data": { "code": "PRECONDITION_FAILED" } } } } }
+      "1": { "error": { "message": "The call this call reads its input from failed", "data": { "code": "PRECONDITION_FAILED", "pipeline": "source-failed" } } } } }
 ]
 ```
 
@@ -312,6 +312,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 - **A call runs in a frame**: the items it runs for. A call that reads a call for every item runs in its frame, once for every item: call 2 runs for each author, and its run for item 1 reads run 1. What a call reads is in its frame, or in a frame its own is in, as call 0 is. A call for every item of `["pages", null, "items"]` can read a call for every item of `["pages"]` of the same call: its run for an item reads the run for that item's page. A call that reads calls whose frames don't nest, such as for the items of two different lists, is refused.
 - **Each run has its own `{ result }` or `{ error }`**, and fails by itself. A run that reads a failed run doesn't run. A list that can't run, as the call it is in failed, is an `{ error }` in place of its items, with a `PRECONDITION_FAILED`. What isn't a list has no items: `{ "items": {} }`.
 - **A call the server refused for a [limit](#limits) before any of it ran has `"pipeline": "not-run"` in its error's `data`**, beside what your error formatter puts there. The client then asks for it by itself. The error of a run, or of a list inside a call, has no such mark.
+- **The error the server sends in place of a call, a run or a list that reads a failed one has `"pipeline": "source-failed"` in its `data`**. That mark, not the `PRECONDITION_FAILED` code, is how the client tells it from an error your procedure threw: a procedure's own error has no mark, whatever its code.
 - **With `httpBatchStreamLink`, each level of `items` and each run is a value of its own**, so each run arrives as soon as it is ready.
 
 ### What your links see {#links}

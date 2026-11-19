@@ -28,7 +28,8 @@ import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
 import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
-import { isPipelineNotRun, markPipelineNotRun } from './pipeline/wire';
+import { isPipelineNotRun, markPipelineError } from './pipeline/wire';
+import type { PipelineErrorMark } from './pipeline/wire';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -610,7 +611,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      * that JSON can't carry, such as one an `errorFormatter` gave a `BigInt`,
      * fails only that call or run, as an `INTERNAL_SERVER_ERROR`: in the
      * formatter's shape, or in the default one if JSON can't carry that
-     * either. What the server refused before it ran is marked so, in each.
+     * either. What the server refused before it ran is marked so, in each,
+     * and so is what it sent in place of what reads a failed call or run.
      */
     const pipelinedErrorShape = (sending: {
       error: TRPCError;
@@ -620,27 +622,39 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       notRun: boolean;
     }): SentShape => {
       const path = sending.call?.path;
-      const shapeOf = (error: TRPCError, input: unknown): unknown => {
-        const shape = getErrorShape({
-          config,
-          ctx: ctxManager.valueOrUndefined(),
-          error,
-          input,
-          path,
-          type: sending.call?.procedure?._def.type ?? 'unknown',
-        });
-        return sending.notRun ? markPipelineNotRun(shape) : shape;
-      };
-      const plainOf = (error: TRPCError): unknown => {
-        const plain = getDefaultErrorShape({
-          error,
-          path,
-          isDev: config.isDev,
-        });
-        return sending.notRun ? markPipelineNotRun(plain) : plain;
-      };
+      const mark: PipelineErrorMark | null = sending.notRun
+        ? 'not-run'
+        : pipeline?.readFailedSource(sending.error)
+          ? 'source-failed'
+          : null;
+      const markedShape = (shape: unknown) =>
+        mark ? markPipelineError(shape, mark) : shape;
+      const shapeOf = (error: TRPCError, input: unknown): unknown =>
+        markedShape(
+          getErrorShape({
+            config,
+            ctx: ctxManager.valueOrUndefined(),
+            error,
+            input,
+            path,
+            type: sending.call?.procedure?._def.type ?? 'unknown',
+          }),
+        );
+      const plainOf = (error: TRPCError): unknown =>
+        markedShape(
+          getDefaultErrorShape({
+            error,
+            path,
+            isDev: config.isDev,
+          }),
+        );
       const transformer = config.transformer.output;
-      /** What is sent, if it has the mark where it is to have it */
+      /**
+       * What is sent, if it has the mark of a call refused before it ran where
+       * it is to have it. The mark of what reads a failed call isn't read back:
+       * that would decode output the server otherwise never reads, and an
+       * error a formatter's shape sends without it is taken as the call's own
+       */
       const marked = (sent: SentShape | null) =>
         sent && (!sending.notRun || carriesNotRun(transformer, sent))
           ? sent

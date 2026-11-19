@@ -258,12 +258,21 @@ function overTheWire(
     : transformer.deserialize(JSON.parse(json));
 }
 
+/**
+ * The errors the server made in place of a call, a run or a list that reads a
+ * failed one: see `readFailedSource`. Never one a procedure threw, whatever
+ * its code
+ */
+const sourceFailedErrors = new WeakSet<TRPCError>();
+
 /** What a call that reads a failed call gets */
 function sourceFailed() {
-  return new TRPCError({
+  const error = new TRPCError({
     code: 'PRECONDITION_FAILED',
     message: `The call this call reads its input from failed`,
   });
+  sourceFailedErrors.add(error);
+  return error;
 }
 
 /**
@@ -1673,6 +1682,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
      * as `markPipelineNotRun` does: a client can then ask for it by itself
      */
     isNotRun: (error: TRPCError) => refusedBeforeRunning.has(error),
+    /**
+     * Whether the error is the one the server sent in place of a call, a run
+     * or a list that reads a failed one, which didn't run: not an error a
+     * procedure threw, whatever its code. The response marks it so, as
+     * `markPipelineError` does with `source-failed`, so a client never has to
+     * tell it from the procedure's own by its code
+     */
+    readFailedSource: (error: TRPCError) => sourceFailedErrors.has(error),
     /**
      * Runs every call, and tells the calls that read a call's data how it
      * went. A call that reads values gets how it runs, which is `null` for

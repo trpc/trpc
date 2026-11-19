@@ -1,4 +1,3 @@
-import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
@@ -11,6 +10,7 @@ import {
   hasOwn,
   isObject,
   isPipelineNotRun,
+  isPipelineSourceFailed,
   pipelinedBatchBody,
   pipelinedBatchUrl,
   pipelineFrameOf,
@@ -706,13 +706,14 @@ function decodeCall(
 /**
  * A call's final state, from its own and what has arrived of its sources.
  * It didn't run if its error is the request's, in every slot: the server
- * refused the request as a whole. Nor if it is a `PRECONDITION_FAILED`
- * with a failed source that has arrived: the server sends that in place of
- * a call that reads a failed source, after the source's error, and one
- * still to come isn't why the call failed. Any other error is the call's
- * own: a source can fail in the response after the server filled in what
- * reads it, such as for data that serializes once and then throws, and the
- * call then ran.
+ * refused the request as a whole. Nor if the server marked its error as the
+ * one it sends in place of a call that reads a failed source
+ * (`isPipelineSourceFailed`), with a failed source that has arrived: the
+ * server sends it after the source's error, and one still to come isn't why
+ * the call failed. Any other error is the call's own, whatever its code: a
+ * source can fail in the response after the server filled in what reads it,
+ * such as for data that serializes once and then throws, and the call then
+ * ran.
  *
  * @param sourcesOk whether the server sent each source a result (`true`)
  * or an error (`false`), or `null` if that hasn't arrived
@@ -730,7 +731,7 @@ export function settlePipelinedCall(
   const { error } = own.outcome;
   const readFailedSource =
     isTRPCClientError(error) &&
-    error.shape?.code === TRPC_ERROR_CODES_BY_KEY.PRECONDITION_FAILED &&
+    isPipelineSourceFailed(error.data) &&
     sourcesOk.includes(false);
   return asWhole || readFailedSource ? { status: 'not-run', error } : own;
 }

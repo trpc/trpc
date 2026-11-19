@@ -1,4 +1,3 @@
-import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyProcedure,
   AnyRouter,
@@ -13,6 +12,7 @@ import {
   createRecursiveProxy,
   hasOwn,
   isObject,
+  isPipelineSourceFailed,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from './createTRPCClient';
@@ -979,19 +979,16 @@ export function experimental_nested<
 
   /**
    * Whether a run's error is what the server sends in place of a run that
-   * reads one it didn't make, or that failed: a `PRECONDITION_FAILED`, and a
-   * call whose data the input reads that the server refused or that failed
-   * on the server, for the run's items. Any other error is the run's own,
-   * at once. The server sends a failed source before the runs that read it,
+   * reads one it didn't make, or that failed: an error the server marked so
+   * (`isPipelineSourceFailed`), and a call whose data the input reads that
+   * the server refused or that failed on the server, for the run's items.
+   * Any other error is the run's own, at once, whatever its code. The server sends a failed source before the runs that read it,
    * so this resolves at the first one, and doesn't wait for a source still
    * to come. An error the client made, such as for a result it couldn't
    * deserialize, doesn't say the server didn't run it
    */
   function blockedBySource(call: Call, items: Items, error: unknown) {
-    if (
-      !isTRPCClientError(error) ||
-      error.shape?.code !== TRPC_ERROR_CODES_BY_KEY.PRECONDITION_FAILED
-    ) {
+    if (!isTRPCClientError(error) || !isPipelineSourceFailed(error.data)) {
       return Promise.resolve(false);
     }
     const sources = new Set(call.holes.map((hole) => hole.ref.call));

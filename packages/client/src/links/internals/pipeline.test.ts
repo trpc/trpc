@@ -52,9 +52,13 @@ describe('outcomes', () => {
 });
 
 describe('settlePipelinedCall', () => {
-  // What the server sends a call that reads a failed source
+  // What the server sends a call that reads a failed source: marked so
   const error = TRPCClientError.from({
-    error: { message: 'source failed', code: -32012, data: {} },
+    error: {
+      message: 'source failed',
+      code: -32012,
+      data: { pipeline: 'source-failed' },
+    },
   });
   const ranWithError: PipelinedCallSettled = {
     status: 'ran',
@@ -75,6 +79,19 @@ describe('settlePipelinedCall', () => {
         ok: false,
         error: TRPCClientError.from({
           error: { message: 'no team', code: -32004, data: {} },
+        }),
+      },
+    };
+    expect(settlePipelinedCall(own, [false], false)).toBe(own);
+  });
+
+  test("a call's own error with the code the server sends a call that reads a failed source, but without its mark, says it ran", () => {
+    const own: PipelinedCallSettled = {
+      status: 'ran',
+      outcome: {
+        ok: false,
+        error: TRPCClientError.from({
+          error: { message: 'no team', code: -32012, data: {} },
         }),
       },
     };

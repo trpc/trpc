@@ -68,6 +68,9 @@
  * - A call the server refused before any of its runs ran, for going over
  *   one of its limits, has `pipeline: 'not-run'` in its error's `data`. A
  *   client can ask for it by itself, as a call that wasn't sent.
+ * - The error the server sends in place of a call, a run or a list that
+ *   reads a failed one has `pipeline: 'source-failed'` in its `data`. An
+ *   error a procedure threw has no mark, whatever its code.
  * - Streamed, the `items` of a level and each of its items are values of
  *   their own, so each run arrives when it is ready, in any order.
  */
@@ -78,18 +81,25 @@
  */
 export const pipelineBatch = 'pipeline';
 
-/**
- * What the server puts in the `data` of the error of a call it refused before
- * any of its runs ran: a separate query is worth a try
- */
-const notRun = { key: 'pipeline', value: 'not-run' } as const;
+/** Where in an error's `data` the server puts its mark */
+const markKey = 'pipeline';
 
 /**
- * An error shape with the mark of a call the server refused before any of its
- * runs ran. Added after the error formatter, so no formatter drops it. A
- * shape that is no object is as it is
+ * What the server marks an error as, in its `data`. `not-run`: it refused the
+ * call before any of its runs ran, so a separate query is worth a try.
+ * `source-failed`: it is what the server sends in place of a call, a run or a
+ * list that reads a failed one, which didn't run
  */
-export function markPipelineNotRun<TShape>(shape: TShape): TShape {
+export type PipelineErrorMark = 'not-run' | 'source-failed';
+
+/**
+ * An error shape with a mark of the server's. Added after the error
+ * formatter, so no formatter drops it. A shape that is no object is as it is
+ */
+export function markPipelineError<TShape>(
+  shape: TShape,
+  mark: PipelineErrorMark,
+): TShape {
   if (typeof shape !== 'object' || shape === null) {
     return shape;
   }
@@ -98,9 +108,24 @@ export function markPipelineNotRun<TShape>(shape: TShape): TShape {
     ...shape,
     data: {
       ...(typeof data === 'object' && data !== null ? data : {}),
-      [notRun.key]: notRun.value,
+      [markKey]: mark,
     },
   };
+}
+
+/** Whether an error's `data` has the server's mark `mark` */
+function hasPipelineErrorMark(data: unknown, mark: PipelineErrorMark) {
+  return (
+    hasOwn(data, markKey) && (data as Record<string, unknown>)[markKey] === mark
+  );
+}
+
+/**
+ * An error shape with the mark of a call the server refused before any of its
+ * runs ran: see `markPipelineError`
+ */
+export function markPipelineNotRun<TShape>(shape: TShape): TShape {
+  return markPipelineError(shape, 'not-run');
 }
 
 /**
@@ -108,10 +133,15 @@ export function markPipelineNotRun<TShape>(shape: TShape): TShape {
  * its runs ran
  */
 export function isPipelineNotRun(data: unknown) {
-  return (
-    hasOwn(data, notRun.key) &&
-    (data as Record<string, unknown>)[notRun.key] === notRun.value
-  );
+  return hasPipelineErrorMark(data, 'not-run');
+}
+
+/**
+ * Whether an error's `data` says it is what the server sends in place of a
+ * call, a run or a list that reads a failed one: not an error of its own
+ */
+export function isPipelineSourceFailed(data: unknown) {
+  return hasPipelineErrorMark(data, 'source-failed');
 }
 
 /**
