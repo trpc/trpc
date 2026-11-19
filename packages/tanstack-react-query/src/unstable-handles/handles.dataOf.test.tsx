@@ -129,6 +129,11 @@ const createAppRouter = () => {
         calls('post.changing', undefined);
         return { tags: [{ id: `c${changes++}` }] };
       }),
+      /** Its ids one at a time, which a query collects into a list */
+      streamedIds: t.procedure.query(async function* () {
+        yield { id: 's1' };
+        yield { id: 's2' };
+      }),
       /** Its author comes later, as a stream sends it */
       withAuthorLater: t.procedure
         .input(z.object({ slug: z.string() }))
@@ -336,6 +341,26 @@ describe('dataOf', () => {
       ['post.bySlug', { slug: 'hello' }],
       ['author.byId', { id: 'u1' }],
     ]);
+  });
+
+  test('an entry whose procedure yields is typed as the list its query collects', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const ids = ensureEntry(trpc.post.streamedIds);
+
+    expectTypeOf(experimental_dataOf(ids)).toEqualTypeOf<{ id: string }[]>();
+    const [handles, data] = await loadHandles(trpc, {
+      ids,
+      authors: experimental_entryPerItem(experimental_dataOf(ids), (item) =>
+        prefetchEntry(trpc.author.byId, { id: item.id }),
+      ),
+    });
+    expectTypeOf(data.ids).toEqualTypeOf<{ id: string }[]>();
+    expect(data.ids).toEqual([{ id: 's1' }, { id: 's2' }]);
+    expect(
+      fromHandle(trpc, experimental_handleOfItem(handles.authors, { id: 's2' }))
+        .queryKey,
+    ).toEqual(trpc.author.byId.queryKey({ id: 's2' }));
   });
 
   test('is typed as the data, and holds none', async () => {

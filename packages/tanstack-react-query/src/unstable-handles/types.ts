@@ -3,6 +3,7 @@ import type {
   GetNextPageParamFunction,
 } from '@tanstack/react-query';
 import type { skipToken } from '@tanstack/react-query';
+import type { coerceAsyncIterableToArray } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
@@ -307,9 +308,13 @@ export type HandleOfEntry<TEntry> =
               ? HandlesOf<TEntry>
               : never;
 
+/**
+ * An entry's data, as its query has it: a procedure that yields has the list
+ * that `queryOptions()` collects its values into
+ */
 export type DataOfEntry<TEntry> =
   TEntry extends TRPCQueryEntry<infer TDef, any>
-    ? TDef['output']
+    ? coerceAsyncIterableToArray<TDef['output']>
     : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
       ? TRPCInfiniteData<TDef['input'], TDef['output']>
       : TEntry extends experimental_TRPCEntryFromData<infer TInner, any>
