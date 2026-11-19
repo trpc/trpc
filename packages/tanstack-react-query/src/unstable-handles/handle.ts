@@ -156,6 +156,9 @@ export function refetchRejectedHydration(
     if (
       isTRPCClientError(error) ||
       isCancelledError(error) ||
+      // Data written while it was pending, such as by `setQueryData()`,
+      // which a refetch would replace
+      query.state.data !== undefined ||
       query.state.fetchStatus !== 'idle' ||
       enabled(query) === false
     ) {

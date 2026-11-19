@@ -1269,6 +1269,32 @@ describe('runtime', () => {
       expect(t.resource.calls).toHaveBeenCalledTimes(1);
     });
 
+    test('a query that got data while it was pending is not refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const options = fromHandle(
+        browserTrpc,
+        t.handle as inferQueryHandle<TRPC['flaky']>,
+      );
+      // After the read watches the hydrated promise, before it rejects
+      t.browser.setQueryData(options.queryKey, { id: 'written' });
+      await vi.waitFor(() =>
+        expect(
+          t.browser.getQueryState(options.queryKey)?.errorUpdateCount,
+        ).toBe(1),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.browser.getQueryData(options.queryKey)).toEqual({
+        id: 'written',
+      });
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
+    });
+
     test("a read the QueryClient's defaults disable is not refetched", async () => {
       await using t = await setup('flaky');
       // Only for this procedure: the rest of the defaults stay
