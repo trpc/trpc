@@ -1,6 +1,20 @@
 import { describe, expect, test, vi } from 'vitest';
 import { createUnit, failed, ok, whenAll } from './outcome';
 
+describe('createUnit', () => {
+  test("a listener that throws doesn't keep the outcome from the others", async () => {
+    const unit = createUnit<number>();
+    const later = vi.fn();
+    unit.onSettled(() => {
+      throw new Error('listener threw');
+    });
+    unit.onSettled(later);
+    expect(() => unit.settle(ok(1))).toThrow('listener threw');
+    expect(later).toHaveBeenCalledExactlyOnceWith(ok(1));
+    expect(await unit.outcome).toEqual(ok(1));
+  });
+});
+
 describe('whenAll', () => {
   test('a unit that failed is reported while an earlier one is still pending', () => {
     const first = createUnit<number>();

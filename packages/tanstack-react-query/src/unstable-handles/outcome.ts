@@ -69,8 +69,19 @@ export function createUnit<TData, TError = unknown>(): Unit<TData, TError> {
         return;
       }
       state = { status: 'settled', outcome };
+      // Every listener is told, also after one that throws. The first throw
+      // is rethrown once they all have been
+      const thrown: { error: unknown }[] = [];
       for (const listener of listeners.splice(0)) {
-        listener(outcome);
+        try {
+          listener(outcome);
+        } catch (error) {
+          thrown.push({ error });
+        }
+      }
+      const [first] = thrown;
+      if (first) {
+        throw first.error;
       }
     },
     onSettled(listener) {
