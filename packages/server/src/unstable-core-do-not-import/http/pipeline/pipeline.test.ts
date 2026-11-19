@@ -4702,6 +4702,55 @@ describe('an input its transformer would send other than as the client sent it',
     },
   );
 
+  test.each([false, true])(
+    'is refused before it runs when a value it reads would not come back as it was written, so the client can send it by itself (for every item: %s)',
+    async (perItem) => {
+      // It reads a string that is the whole input in capitals, and leaves
+      // objects as they are: `{ id: 'abc' }` from a client keeps its `'abc'`
+      const capitals: CombinedDataTransformer = {
+        input: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) =>
+            typeof it === 'string' ? it.toUpperCase() : it,
+        },
+        output: transformers.none.output,
+      };
+      const echo = vi.fn((input: unknown) => input);
+      await using server = serve({
+        ...defaults,
+        transformer: capitals,
+        fns: { post: () => ({ ids: ['abc'], authorId: 'abc' }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call(
+        'echo',
+        { id: null },
+        perItem
+          ? reads({ from: post, path: ['ids'] }, { to: ['id'], path: [] })
+          : reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+      );
+
+      const res = await send({
+        ...defaults,
+        transformer: capitals,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message:
+            "A value this call reads doesn't come back through the input transformer as it was written, so the server can't fill it in",
+          data: { pipeline: 'not-run' },
+        },
+      });
+      expect(echo).not.toHaveBeenCalled();
+    },
+  );
+
   test('is refused before it runs when what the transformer reads of it is what JSON cannot carry', async () => {
     // It reads the string at `n` as a `BigInt`, which it writes as it is
     const bigints: CombinedDataTransformer = {

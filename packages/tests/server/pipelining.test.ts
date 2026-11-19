@@ -3672,7 +3672,7 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     expect(calls).toBe(0);
   });
 
-  test("whose input transformer reads it back as an object with a stateful `toJSON` is measured as JSON, and that object's `toJSON` runs once", async () => {
+  test("whose input transformer reads it back by itself as an object with a stateful `toJSON` is refused before it runs, and that object's `toJSON` runs once", async () => {
     let calls = 0;
     const t = initTRPC.create({
       transformer: {
@@ -3714,8 +3714,12 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     });
     const json = (await res.json()) as unknown[];
 
-    expect(json[1]).toEqual({ result: { data: 'ran' } });
-    expect(author).toHaveBeenCalledExactlyOnceWith({ v: 'x' });
+    // Inside a client's input `{ v: { stateful: true } }` it stays as it is,
+    // so the server can't fill it in as the client would send it
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+    expect(author).not.toHaveBeenCalled();
     expect(calls).toBe(1);
   });
 
