@@ -642,6 +642,14 @@ function mapInput(
       'experimental_nested(): an input can have stand-ins in plain objects, arrays and Dates, not in an instance of a class',
     );
   }
+  // A Map or a Set, as a transformer carries them, is read as it is now, as
+  // a plain object is. An instance of another class is sent as it is
+  if (isObject(value)) {
+    const proto: unknown = Object.getPrototypeOf(value);
+    if (proto === Map.prototype || proto === Set.prototype) {
+      return copyData(value, new Map());
+    }
+  }
   return value;
 }
 

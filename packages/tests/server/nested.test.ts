@@ -697,6 +697,46 @@ describe.each([
     });
   });
 
+  test('a `Map` or a `Set` in an input is read as it was when the query was made', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      echo: t.procedure
+        .input(
+          z.object({
+            map: z.map(z.string(), z.object({ name: z.string() })),
+            set: z.set(z.string()),
+          }),
+        )
+        .query((opts) => ({
+          map: [...opts.input.map.entries()],
+          set: [...opts.input.set],
+        })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+
+    const echoed = await experimental_nested(ctx.client, (q) => {
+      const ada = { name: 'ada' };
+      const map = new Map([['id', ada]]);
+      const set = new Set(['ada']);
+      const call = q.echo.query({ map, set });
+      ada.name = 'bob';
+      map.set('other', { name: 'eve' });
+      set.add('bob');
+      return call;
+    });
+
+    expect(echoed).toEqual({ map: [['id', { name: 'ada' }]], set: ['ada'] });
+  });
+
   test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
     const t = initTRPC.create({ transformer: superjson });
     const appRouter = t.router({
