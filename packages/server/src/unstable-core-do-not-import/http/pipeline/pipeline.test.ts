@@ -202,7 +202,8 @@ function serve(opts: {
           if (run?.kind === 'each') {
             const items = await run.each({
               // What a run returned is its data
-              read: (data) => data,
+              read: (data) =>
+                JSON.stringify(opts.transformer.output.serialize(data)),
               item: async (input) => {
                 const data = await fn(input);
                 // What can't go in the response is that run's error
@@ -2298,7 +2299,7 @@ describe('a call for every item', () => {
         try {
           if (run?.kind === 'each') {
             const runs = await run.each({
-              read: (data) => data,
+              read: (data) => JSON.stringify(data),
               item: async (input) => {
                 ran(input);
                 return input;

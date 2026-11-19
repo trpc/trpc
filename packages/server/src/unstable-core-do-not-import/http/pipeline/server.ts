@@ -295,18 +295,21 @@ class StillToCome extends Error {}
  */
 function readableData(
   transformer: CombinedDataTransformer['output'],
-  data: unknown,
+  data: RunData,
 ): Read<unknown> {
   try {
-    const json = JSON.stringify(
-      transformer.serialize(data),
-      (_key, value: unknown) => {
-        if (isPromise(value) || isAsyncIterable(value)) {
-          throw new StillToCome();
-        }
-        return value;
-      },
-    );
+    const json =
+      data.kind === 'json'
+        ? data.json
+        : JSON.stringify(
+            transformer.serialize(data.value),
+            (_key, value: unknown) => {
+              if (isPromise(value) || isAsyncIterable(value)) {
+                throw new StillToCome();
+              }
+              return value;
+            },
+          );
     return {
       ok: true,
       value:
@@ -322,6 +325,15 @@ function readableData(
     };
   }
 }
+
+/**
+ * The data of a run, for the calls that read it: as it was made, or as the
+ * JSON the output transformer made of it that the response sends, which is
+ * read without serializing it again
+ */
+type RunData =
+  | { kind: 'value'; value: unknown }
+  | { kind: 'json'; json: string | undefined };
 
 /**
  * A call's input as the client sent it: the JSON text of it, taken where the
@@ -691,8 +703,12 @@ export type PipelineRuns<TError, TData> = Promise<
 export type PipelineEach = <TError, TData>(run: {
   /** Runs it for one item: what the response has for the run */
   item: (input: unknown) => Promise<TData>;
-  /** The run's data, for the calls that read it, from what `item` gave */
-  read: (result: TData) => unknown;
+  /**
+   * The run's data, for the calls that read it, from what `item` gave: the
+   * JSON the output transformer made of it, as the response sends it.
+   * `undefined` for what JSON writes nothing for
+   */
+  read: (result: TData) => string | undefined;
   /**
    * What the response has for a run that failed, or for a list that can't
    * run. `notRun` is whether the server refused the whole call before any of
@@ -820,7 +836,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
 }) {
   const { limits } = opts;
   /** How a run went, settled once: its data, or that it has none to read */
-  type RunOutcome = { ok: true; data: unknown } | { ok: false };
+  type RunOutcome = { ok: true; data: RunData } | { ok: false };
   /** A run of a call, as the calls that read it see it */
   interface Run {
     outcome: Deferred<RunOutcome>;
@@ -1324,7 +1340,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const refusal = refusalOf(source, reads);
     return async function runEach<TError, TData>(run: {
       item: (input: unknown) => Promise<TData>;
-      read: (result: TData) => unknown;
+      read: (result: TData) => string | undefined;
       error: (failure: {
         cause: unknown;
         input: unknown;
@@ -1381,7 +1397,10 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           notCalled.resolve([]);
           try {
             const data = await run.item(input);
-            ran.outcome.resolve({ ok: true, data: run.read(data) });
+            ran.outcome.resolve({
+              ok: true,
+              data: { kind: 'json', json: run.read(data) },
+            });
             return { result: { data } };
           } catch (cause) {
             ran.outcome.resolve({ ok: false });
@@ -1583,7 +1602,11 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       calls.map((it) => {
         const result = run.call(it.call, it.run);
         void result.then(run.data).then(
-          (data) => it.once?.outcome.resolve({ ok: true, data }),
+          (data) =>
+            it.once?.outcome.resolve({
+              ok: true,
+              data: { kind: 'value', value: data },
+            }),
           () => {
             it.once?.outcome.resolve({ ok: false });
             // A call for every item that failed as a whole has no runs

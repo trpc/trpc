@@ -1,6 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  makeResource,
+} from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 /**
@@ -354,8 +358,85 @@ describe('what a pipelined response sends, serialized once', () => {
   });
 });
 
+/** A gate a procedure waits on: opened when the test ends too, so none hangs */
+function gateResource() {
+  const gate = createDeferred<void>();
+  return makeResource(gate, () => gate.resolve());
+}
+
+/** The text of a streamed response, as far as it has been read */
+function streamReader(res: Response) {
+  assert(res.body);
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let text = '';
+  return {
+    /**
+     * Reads until the text has `wanted` `count` times, or to the end for
+     * `null`. Rejects if the stream ends first, or after a
+     * second
+     */
+    async until(wanted: string | null, count: number) {
+      const has = () => wanted !== null && text.split(wanted).length > count;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`No ${wanted} in time, in: ${text}`)),
+          1000,
+        );
+      });
+      try {
+        while (!has()) {
+          const chunk = await Promise.race([reader.read(), timeout]);
+          if (chunk.done) {
+            assert(wanted === null, `The stream ended without ${wanted}`);
+            break;
+          }
+          text += chunk.value;
+        }
+        return text;
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+  };
+}
+
+/**
+ * A transformer that can't read back what has `changing`, though a client
+ * could, and a formatter whose `changing` is a string the first time it is
+ * read and a `BigInt` each time after
+ */
+const unreadable = initTRPC.create({
+  transformer: {
+    input: { serialize: (v: unknown) => v, deserialize: (v: unknown) => v },
+    output: {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => {
+        if (JSON.stringify(value).includes('"changing"')) {
+          throw new Error('Cannot decode');
+        }
+        return value;
+      },
+    },
+  },
+  errorFormatter: ({ shape }) => {
+    let reads = 0;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        get changing() {
+          reads += 1;
+          return reads === 1 ? 'first' : BigInt(reads);
+        },
+      },
+    };
+  },
+});
+
 describe('what a pipelined stream sends, serialized once', () => {
   test("sends a run's data as it was checked: data that serializes differently each time fails nothing, and the runs after it arrive", async () => {
+    using gate = gateResource();
     const t = initTRPC.create();
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
@@ -370,8 +451,8 @@ describe('what a pipelined stream sends, serialized once', () => {
           .input(z.object({ id: z.string() }))
           .query(async (opts) => {
             if (opts.input.id === 't2') {
-              // Arrives after the one that changes
-              await new Promise((resolve) => setTimeout(resolve, 10));
+              // Held until the client has the one that changes
+              await gate.promise;
               return { id: 't2' };
             }
             let reads = 0;
@@ -385,62 +466,35 @@ describe('what a pipelined stream sends, serialized once', () => {
       }),
       experimental_allowPipelining: true,
     });
-    const text = await res.text();
+    const stream = streamReader(res);
 
-    expect(text).toContain('"data":{"changing":"first"}');
-    expect(text).toContain('"data":{"id":"t2"}');
+    expect(await stream.until('"data":{"changing":"first"}', 1)).not.toContain(
+      '"data":{"id":"t2"}',
+    );
+    gate.resolve();
+    expect(await stream.until(null, 0)).toContain('"data":{"id":"t2"}');
   });
 
-  /**
-   * A transformer that can't read back what has `changing`, and a formatter
-   * whose `changing` is a string the first time it is read and a `BigInt`
-   * each time after
-   */
-  const unreadable = initTRPC.create({
-    transformer: {
-      input: { serialize: (v: unknown) => v, deserialize: (v: unknown) => v },
-      output: {
-        serialize: (value: unknown) => value,
-        deserialize: (value: unknown) => {
-          if (JSON.stringify(value).includes('"changing"')) {
-            throw new Error('Cannot decode');
+  /** `author` fails for `missing`, and waits for `gate` for any other id */
+  const unreadableRouterOf = (gate: Promise<void>) =>
+    unreadable.router({
+      post: unreadable.procedure.query(() => ({
+        authorId: 'missing',
+        tags: [{ id: 'missing' }, { id: 't1' }],
+      })),
+      author: unreadable.procedure
+        .input(z.object({ id: z.string() }))
+        .query(async (opts) => {
+          if (opts.input.id === 'missing') {
+            throw new TRPCError({ code: 'NOT_FOUND' });
           }
-          return value;
-        },
-      },
-    },
-    errorFormatter: ({ shape }) => {
-      let reads = 0;
-      return {
-        ...shape,
-        data: {
-          ...shape.data,
-          get changing() {
-            reads += 1;
-            return reads === 1 ? 'first' : BigInt(reads);
-          },
-        },
-      };
-    },
-  });
-  const unreadableRouter = unreadable.router({
-    post: unreadable.procedure.query(() => ({
-      authorId: 'missing',
-      tags: [{ id: 'missing' }, { id: 't1' }],
-    })),
-    author: unreadable.procedure
-      .input(z.object({ id: z.string() }))
-      .query(async (opts) => {
-        if (opts.input.id === 'missing') {
-          throw new TRPCError({ code: 'NOT_FOUND' });
-        }
-        // Arrives after the one that fails
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return { id: opts.input.id };
-      }),
-  });
+          await gate;
+          return { id: opts.input.id };
+        }),
+    });
 
   test("sends an error shape the transformer can't read back in the default shape: it fails nothing, and the runs after it arrive", async () => {
+    using gate = gateResource();
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
       req: pipelined({
@@ -448,17 +502,23 @@ describe('what a pipelined stream sends, serialized once', () => {
         pipe: { 1: authorOfPost, 2: authorOfEachTag },
         streams: true,
       }),
-      router: unreadableRouter,
+      router: unreadableRouterOf(gate.promise),
       experimental_allowPipelining: true,
     });
-    const text = await res.text();
+    const stream = streamReader(res);
 
-    expect(text.match(/"code":"NOT_FOUND"/g)).toHaveLength(2);
+    // Both errors, before the run that waits
+    expect(await stream.until('"code":"NOT_FOUND"', 2)).not.toContain(
+      '"data":{"id":"t1"}',
+    );
+    gate.resolve();
+    const text = await stream.until(null, 0);
     expect(text).not.toContain('"changing"');
     expect(text).toContain('"data":{"id":"t1"}');
   });
 
-  test("fails by itself a run whose data the transformer can't read back: the client couldn't either", async () => {
+  test("sends a run's data a client can read though the server can't read it back, and the runs after it arrive", async () => {
+    using gate = gateResource();
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
       req: pipelined({
@@ -476,20 +536,26 @@ describe('what a pipelined stream sends, serialized once', () => {
             if (opts.input.id === 't1') {
               return { changing: 'never' };
             }
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await gate.promise;
             return { id: opts.input.id };
           }),
       }),
       experimental_allowPipelining: true,
     });
-    const text = await res.text();
+    const stream = streamReader(res);
 
-    expect(text).toContain('"code":"INTERNAL_SERVER_ERROR"');
-    expect(text).not.toContain('"changing"');
+    expect(await stream.until('"data":{"changing":"never"}', 1)).not.toContain(
+      '"data":{"id":"t2"}',
+    );
+    gate.resolve();
+    const text = await stream.until(null, 0);
     expect(text).toContain('"data":{"id":"t2"}');
+    expect(text).not.toContain('INTERNAL_SERVER_ERROR');
   });
 
   test("keeps `pipeline: 'not-run'` in the default shape of an error the transformer can't read back", async () => {
+    using gate = gateResource();
+    gate.resolve();
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
       req: pipelined({
@@ -497,7 +563,7 @@ describe('what a pipelined stream sends, serialized once', () => {
         pipe: { 1: authorOfPost },
         streams: true,
       }),
-      router: unreadableRouter,
+      router: unreadableRouterOf(gate.promise),
       experimental_allowPipelining: { maxReadsPerCall: 0 },
     });
     const text = await res.text();
@@ -505,5 +571,126 @@ describe('what a pipelined stream sends, serialized once', () => {
     expect(text).toContain('"authorId":"missing"');
     expect(text).toContain('"pipeline":"not-run"');
     expect(text).not.toContain('"changing"');
+  });
+});
+
+describe('what a call reads of a run of a call for every item', () => {
+  test('is the data as it was checked and sent: data whose `toJSON` throws the second time fails no call that reads it', async () => {
+    const t = initTRPC.create();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: {
+          1: authorOfEachTag,
+          // Reads the run of call 1 for the same tag
+          2: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], from: 1, path: ['id'] }],
+          },
+        },
+        streams: false,
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ tags: [{ id: 't1' }] })),
+        author: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query((opts) => {
+            if (opts.input.id !== 't1') {
+              return { id: opts.input.id };
+            }
+            let reads = 0;
+            return {
+              toJSON: () => {
+                reads += 1;
+                if (reads > 1) {
+                  throw new Error('Read twice');
+                }
+                return { id: 'a' };
+              },
+            };
+          }),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toEqual({
+      items: { 0: { result: { data: { id: 'a' } } } },
+    });
+    expect(json[2]).toEqual({
+      items: { 0: { result: { data: { id: 'a' } } } },
+    });
+  });
+
+  test("fails only the call that reads it, if the server can't read it back", async () => {
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author,author',
+        pipe: {
+          1: authorOfEachTag,
+          2: {
+            each: { from: 0, path: ['tags'] },
+            reads: [{ to: ['id'], from: 1, path: ['changing'] }],
+          },
+        },
+        streams: false,
+      }),
+      router: unreadable.router({
+        post: unreadable.procedure.query(() => ({ tags: [{ id: 't1' }] })),
+        author: unreadable.procedure
+          .input(z.object({ id: z.string() }))
+          .query((opts) => ({ changing: opts.input.id })),
+      }),
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toEqual({
+      items: { 0: { result: { data: { changing: 't1' } } } },
+    });
+    expect(json[2]).toMatchObject({
+      items: { 0: { error: { data: { code: 'PRECONDITION_FAILED' } } } },
+    });
+  });
+});
+
+describe('an error shape whose `data` has a getter that throws', () => {
+  test('of a call refused before it ran, is an `INTERNAL_SERVER_ERROR` still marked so, and fails no other call', async () => {
+    const t = initTRPC.create({
+      errorFormatter: ({ shape }) => ({
+        ...shape,
+        data: {
+          ...shape.data,
+          get broken(): string {
+            throw new Error('Cannot read');
+          },
+        },
+      }),
+    });
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfPost },
+        streams: false,
+      }),
+      router: t.router({
+        post: t.procedure.query(() => ({ authorId: 'u1' })),
+        author: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query((opts) => opts.input),
+      }),
+      experimental_allowPipelining: { maxReadsPerCall: 0 },
+    });
+    const json = await res.json();
+
+    expect(json[0]).toEqual({ result: { data: { authorId: 'u1' } } });
+    expect(json[1]).toMatchObject({
+      error: {
+        data: { code: 'INTERNAL_SERVER_ERROR', pipeline: 'not-run' },
+      },
+    });
   });
 });
