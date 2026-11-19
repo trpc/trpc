@@ -148,9 +148,9 @@ export function refetchRejectedHydration(
     typeof defaulted.enabled === 'function'
       ? defaulted.enabled
       : () => defaulted.enabled;
-  const query = queryClient
-    .getQueryCache()
-    .find({ queryKey: options.queryKey, exact: true });
+  // By the hash the defaults give it: an exact `find()` hashes the key with
+  // each cached query's own hash, which can throw, such as for a bigint
+  const query = queryClient.getQueryCache().get(defaulted.queryHash);
   const promise = query?.promise;
   if (
     !query ||

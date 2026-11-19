@@ -6288,3 +6288,29 @@ describe('experimental_useHandles', () => {
     expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('a key that only a `queryKeyHashFn` the QueryClient has for it can hash', () => {
+  /** Hashes a bigint too, which the default hash throws on */
+  const bigintHash = (queryKey: readonly unknown[]) =>
+    JSON.stringify(queryKey, (_, value: unknown) =>
+      typeof value === 'bigint' ? `bigint:${value}` : value,
+    );
+
+  test("a handle read in the browser doesn't hash its key with another query's hash", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    resource.queryClient.setQueryDefaults([['big']], {
+      queryKeyHashFn: bigintHash,
+    });
+    // Another query, hashed with the default hash, before the handle's
+    await resource.queryClient.fetchQuery(
+      trpc.post.bySlug.queryOptions({ slug: 'hello' }),
+    );
+    const [handles] = await loadHandles(trpc, {
+      id: prefetchEntry(trpc.big.byId, { id: 1n }),
+    });
+
+    const options = fromHandle(trpc, handles.id);
+    await expect(resource.queryClient.fetchQuery(options)).resolves.toBe(1n);
+  });
+});
