@@ -93,6 +93,19 @@ const createAppRouter = () => {
               : (opts.input.cursor ?? 'null'),
           nextCursor: null,
         })),
+      /** A page for a cursor with an offset and an optional start */
+      sincePaged: t.procedure
+        .input(
+          z.object({
+            cursor: z
+              .object({ offset: z.number(), since: z.number().optional() })
+              .nullish(),
+          }),
+        )
+        .query((opts) => {
+          calls('post.sincePaged', opts.input);
+          return { cursor: opts.input.cursor ?? null, nextCursor: null };
+        }),
       /** Three pages of one post each, by authors `u0`, `u1` and `u2` */
       paged: t.procedure
         .input(z.object({ cursor: z.number().nullish() }))
@@ -806,6 +819,45 @@ describe('review regressions', () => {
     const rest = experimental_handleOfItem(handles.rest, data.first);
     expect(rest).toEqual(handles.direct);
     expect(resource.queryClient.getQueryData(rest.queryKey)).toEqual(data.rest);
+  });
+  test('a cursor partly from the data it is built from is finished with that data', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const first = ensureEntry(trpc.post.paged, { cursor: 0 });
+    const [handles, data] = await loadHandles(trpc, {
+      first,
+      rest: experimental_dataOf(first, (it) =>
+        prefetchInfiniteEntry(trpc.post.sincePaged, {
+          cursor: { offset: 5, since: it.nextCursor! },
+        }),
+      ),
+    });
+    expect(experimental_handleOfItem(handles.rest, data.first)).toEqual({
+      queryKey: trpc.post.sincePaged.infiniteQueryKey({}),
+      input: {},
+      initialCursor: { offset: 5, since: 1 },
+    });
+  });
+
+  test('an initialCursor option wins over a cursor from the data', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+
+    const first = ensureEntry(trpc.post.paged, { cursor: 0 });
+    const [handles, data] = await loadHandles(trpc, {
+      first,
+      rest: experimental_dataOf(first, (it) =>
+        prefetchInfiniteEntry(
+          trpc.post.sincePaged,
+          { cursor: { offset: 5, since: it.nextCursor! } },
+          { initialCursor: { offset: 7 } },
+        ),
+      ),
+    });
+    expect(
+      experimental_handleOfItem(handles.rest, data.first).initialCursor,
+    ).toEqual({ offset: 7 });
   });
 });
 

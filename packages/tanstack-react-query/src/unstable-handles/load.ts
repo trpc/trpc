@@ -206,15 +206,34 @@ function optionsFrom(
  * what comes from the item or that data, and where each of those goes
  */
 function unfinishedHandle(leaf: LinkedLeaf, data: SourceData) {
+  const itemInputs = leaf.state.refs.filter(leaf.fromItem).map((ref) => ({
+    to: ref.to,
+    path: ref.path.slice(leaf.itemDepth),
+  }));
+  const { initialCursor, ...handle } = toHandle(
+    optionsFrom(leaf, { data, item: null, holes: true }),
+    leaf.state.type,
+  );
+  if (
+    initialCursor === undefined ||
+    leaf.state.cursorFromOptions ||
+    !itemInputs.some((itemInput) => itemInput.to[0] === 'cursor')
+  ) {
+    return {
+      ...handle,
+      ...(initialCursor !== undefined && { initialCursor }),
+      itemInputs,
+    };
+  }
+  // A cursor partly from the item: what it has of it so far goes in the
+  // input, for `experimental_handleOfItem()` to fill in the rest of
   return {
-    ...toHandle(
-      optionsFrom(leaf, { data, item: null, holes: true }),
-      leaf.state.type,
-    ),
-    itemInputs: leaf.state.refs.filter(leaf.fromItem).map((ref) => ({
-      to: ref.to,
-      path: ref.path.slice(leaf.itemDepth),
-    })),
+    ...handle,
+    input: {
+      ...(handle['input'] as object | undefined),
+      cursor: initialCursor,
+    },
+    itemInputs,
   };
 }
 

@@ -307,7 +307,9 @@ export function experimental_handleOfItem(
     perItem.queryKey.length - 1
   ] as { input?: unknown; type?: unknown };
   // An infinite query's key has no cursor: it is the handle's `initialCursor`,
-  // as `infiniteQueryOptions()` takes it from the input
+  // as `infiniteQueryOptions()` takes it from the input. A cursor partly from
+  // the item is in the unfinished handle's input; an `initialCursor` option
+  // still wins
   const infinite = args.type === 'infinite' && isPlainObject(filled);
   const {
     cursor,

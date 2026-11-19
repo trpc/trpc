@@ -155,6 +155,11 @@ export interface EntryState {
   }) => EntryQueryOptions;
   /** How the entry's first request goes, decided when the entry is built */
   request: EntryRequest;
+  /**
+   * Whether an infinite entry's first cursor is its `initialCursor` option,
+   * which takes the place of a cursor in its input
+   */
+  cursorFromOptions: boolean;
   /** The entry's own `trpc.context`, which its requests go to the links with. `null` for none */
   context: Readonly<Record<PropertyKey, unknown>> | null;
   /** The `QueryClient` of the proxy that built the entry */
@@ -320,6 +325,10 @@ export function entry(opts: {
       opts: opts.opts,
       refs,
     }),
+    cursorFromOptions:
+      opts.type === 'infinite' &&
+      (opts.opts as { initialCursor?: unknown } | undefined)?.initialCursor !=
+        null,
     context: ownContextOf(queryOpts),
     queryClient: queryClientOf(ctx),
   });
