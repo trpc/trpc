@@ -52,21 +52,51 @@ describe('outcomes', () => {
 });
 
 describe('settlePipelinedCall', () => {
-  const error = new Error('failed');
+  // What the server sends a call that reads a failed source
+  const error = TRPCClientError.from({
+    error: { message: 'source failed', code: -32012, data: {} },
+  });
   const ranWithError: PipelinedCallSettled = {
     status: 'ran',
     outcome: { ok: false, error },
   };
 
   test('a call that failed with a failed source that has arrived did not run', () => {
-    expect(settlePipelinedCall(ranWithError, [true, false])).toEqual({
+    expect(settlePipelinedCall(ranWithError, [true, false], false)).toEqual({
       status: 'not-run',
       error,
     });
   });
 
+  test("a call's own error, with a failed source that has arrived, says it ran", () => {
+    const own: PipelinedCallSettled = {
+      status: 'ran',
+      outcome: {
+        ok: false,
+        error: TRPCClientError.from({
+          error: { message: 'no team', code: -32004, data: {} },
+        }),
+      },
+    };
+    expect(settlePipelinedCall(own, [false], false)).toBe(own);
+  });
+
+  test("a call whose error is the request's did not run", () => {
+    const refused = new Error('refused');
+    const own: PipelinedCallSettled = {
+      status: 'ran',
+      outcome: { ok: false, error: refused },
+    };
+    expect(settlePipelinedCall(own, [null], true)).toEqual({
+      status: 'not-run',
+      error: refused,
+    });
+  });
+
   test("a call's error is its own while no failed source has arrived", () => {
-    expect(settlePipelinedCall(ranWithError, [true, null])).toBe(ranWithError);
+    expect(settlePipelinedCall(ranWithError, [true, null], false)).toBe(
+      ranWithError,
+    );
   });
 
   test('a call with data ran, whatever its sources did', () => {
@@ -74,7 +104,7 @@ describe('settlePipelinedCall', () => {
       status: 'ran',
       outcome: { ok: true, data: { kind: 'once', data: 1 } },
     };
-    expect(settlePipelinedCall(ran, [false])).toBe(ran);
+    expect(settlePipelinedCall(ran, [false], false)).toBe(ran);
   });
 });
 

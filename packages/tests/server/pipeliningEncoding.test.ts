@@ -770,3 +770,55 @@ describe('an error shape whose `data` has a getter that throws', () => {
     });
   });
 });
+
+test("a run's data streams as it was made when the server's output transformer reads its JSON back as other data", async () => {
+  /** Every string in a value, in lower case */
+  const lower = (value: unknown): unknown =>
+    typeof value === 'string'
+      ? value.toLowerCase()
+      : Array.isArray(value)
+        ? value.map(lower)
+        : typeof value === 'object' && value !== null
+          ? Object.fromEntries(
+              Object.entries(value).map(([key, it]) => [key, lower(it)]),
+            )
+          : value;
+  // Writes data as it is, and reads it back in lower case: what the server
+  // reads back isn't what its clients read
+  const t = initTRPC.create({
+    transformer: {
+      input: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) => it,
+      },
+      output: { serialize: (it: unknown) => it, deserialize: lower },
+    },
+  });
+  const router = t.router({
+    post: t.procedure.query(() => ({ tags: [{ id: 't1' }] })),
+    author: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, name: 'ADA' })),
+  });
+  const request = (streams: boolean) =>
+    fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelined({
+        paths: 'post,author',
+        pipe: { 1: authorOfEachTag },
+        streams,
+      }),
+      router,
+      experimental_allowPipelining: true,
+    });
+
+  const json = await (await request(false)).json();
+  const text = await (await request(true)).text();
+
+  expect(json[1]).toEqual({
+    items: { 0: { result: { data: { id: 't1', name: 'ADA' } } } },
+  });
+  // The same data as the response that doesn't stream
+  expect(text).toContain('"name":"ADA"');
+  expect(text).not.toContain('"name":"ada"');
+});

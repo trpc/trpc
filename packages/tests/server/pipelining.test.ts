@@ -2779,19 +2779,20 @@ describe('a call of a pipelined batch, on its own', () => {
     assert(res.body);
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let text = '';
-    while (!text.includes('INTERNAL_SERVER_ERROR')) {
-      const chunk = await reader.read();
-      assert(!chunk.done, 'The stream ended without the error of the run');
-      text += chunk.value;
-    }
+    const readToEnd = (async () => {
+      for (let chunk = await reader.read(); !chunk.done;) {
+        text += chunk.value;
+        chunk = await reader.read();
+      }
+    })();
+    // Bounded: if the stream held the error back until `t1` ends, this fails
+    // rather than hangs, and `t1` is then released on the way out
+    await vi.waitFor(() => expect(text).toContain('INTERNAL_SERVER_ERROR'));
     // The first run's error arrived while the second run was still running
     expect(text).not.toContain('"data":{"id":"t1"}');
 
     released.resolve();
-    for (let chunk = await reader.read(); !chunk.done;) {
-      text += chunk.value;
-      chunk = await reader.read();
-    }
+    await readToEnd;
     expect(text).toContain('"data":{"id":"t1"}');
   });
 
@@ -3019,6 +3020,40 @@ describe('a pipelined batch that does not stream', () => {
       path: 'big',
       input: { id: 'u1' },
       type: 'query',
+    });
+  });
+
+  test('a call whose data has a getter that throws fails by itself, not the response', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      post: t.procedure.query(() => ({ authorId: 'u1' })),
+      broken: t.procedure.input(z.object({ id: z.string() })).query(() => ({
+        get id(): string {
+          throw new Error('Cannot read');
+        },
+      })),
+    });
+    const onError = vi.fn();
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,broken',
+        pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['authorId'] }] } },
+      }),
+      router,
+      experimental_allowPipelining: true,
+      onError,
+    });
+    const json = await res.json();
+
+    expect(json[0]).toEqual({ result: { data: { authorId: 'u1' } } });
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'INTERNAL_SERVER_ERROR', path: 'broken' } },
+    });
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0]![0]).toMatchObject({
+      path: 'broken',
+      input: { id: 'u1' },
     });
   });
 });
@@ -3671,7 +3706,7 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     expect(calls).toBe(0);
   });
 
-  test("whose input transformer reads it back as an object with a stateful `toJSON` is measured as JSON, and that object's `toJSON` runs once", async () => {
+  test("whose input transformer reads it back by itself as an object with a stateful `toJSON` is refused before it runs, and that object's `toJSON` runs once", async () => {
     let calls = 0;
     const t = initTRPC.create({
       transformer: {
@@ -3713,8 +3748,12 @@ describe('a value a call reads, made of code that runs when it is read', () => {
     });
     const json = (await res.json()) as unknown[];
 
-    expect(json[1]).toEqual({ result: { data: 'ran' } });
-    expect(author).toHaveBeenCalledExactlyOnceWith({ v: 'x' });
+    // Inside a client's input `{ v: { stateful: true } }` it stays as it is,
+    // so the server can't fill it in as the client would send it
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+    expect(author).not.toHaveBeenCalled();
     expect(calls).toBe(1);
   });
 
@@ -3806,6 +3845,85 @@ describe('the calls that read the same failed call or refused value', () => {
       expect(errors[0]).not.toBe(errors[1]);
     },
   );
+
+  test("a call refused before it ran is marked so, when the formatter's shape has a `toJSON` that drops the mark", async () => {
+    const formatted = initTRPC.create({
+      // A shape whose JSON is the shape as the formatter made it
+      errorFormatter: ({ shape }) => ({ ...shape, toJSON: () => shape }),
+    });
+    const withToJSON = formatted.router({
+      list: formatted.procedure.query(() => ({ items: [{ id: 'ada' }] })),
+      echo: formatted.procedure.input(z.unknown()).query((opts) => opts.input),
+    });
+    const read = {
+      reads: [{ to: ['id'], from: 0, path: ['items', null, 'id'] }],
+    };
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({ paths: 'list,echo', pipe: { 1: read } }),
+      router: withToJSON,
+      experimental_allowPipelining: true,
+    });
+    const json = await res.json();
+
+    expect(json[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST', pipeline: 'not-run' } },
+    });
+  });
+
+  test('each fail with an error of their own, for a value whose getter throws a `TRPCError`', async () => {
+    const identity = {
+      serialize: (it: unknown) => it,
+      deserialize: (it: unknown) => it,
+    };
+    // Reads `post`'s data back with an `id` getter that throws
+    const getters = initTRPC.create({
+      transformer: {
+        input: identity,
+        output: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) =>
+            isObject(it) && 'id' in it
+              ? Object.defineProperty({}, 'id', {
+                  enumerable: true,
+                  get: () => {
+                    throw new TRPCError({ code: 'FORBIDDEN', message: 'no' });
+                  },
+                })
+              : it,
+        },
+      },
+    });
+    const withGetters = getters.router({
+      post: getters.procedure.query(() => ({ id: 'ada' })),
+      echo: getters.procedure.input(z.unknown()).query((opts) => opts.input),
+    });
+    const errors: TRPCError[] = [];
+    const read = { reads: [{ to: ['id'], from: 0, path: ['id'] }] };
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({
+        paths: 'post,echo,echo',
+        pipe: { 1: read, 2: read },
+      }),
+      router: withGetters,
+      experimental_allowPipelining: true,
+      onError: (opts) => {
+        if (opts.path === 'echo') {
+          errors.push(opts.error);
+        }
+      },
+    });
+    const json = await res.json();
+
+    expect(json[1]).toMatchObject({ error: { data: { code: 'FORBIDDEN' } } });
+    expect(json[2]).toMatchObject({ error: { data: { code: 'FORBIDDEN' } } });
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).not.toBe(errors[1]);
+    for (const error of errors) {
+      expect(error).toMatchObject({ code: 'FORBIDDEN', message: 'no' });
+    }
+  });
 });
 
 describe.each([

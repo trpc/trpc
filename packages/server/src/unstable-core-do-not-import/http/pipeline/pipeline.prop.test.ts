@@ -141,8 +141,14 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
           ran += 1;
           const read = batch.calls[index]?.read;
           if (read?.kind === 'whole') {
-            // Only the value it reads counts, as the procedure got it
-            filled += sizeOf(isObject(input) ? input['w'] : undefined);
+            // The value it reads counts, as the procedure got it, or what
+            // its input grew by from what the client sent, if that is more:
+            // the key the value is written under, and its punctuation
+            const sent = { pad: 'p'.repeat(batch.calls[index]?.pad ?? 0) };
+            filled += Math.max(
+              sizeOf(isObject(input) ? input['w'] : undefined),
+              sizeOf(input) - sizeOf(sent),
+            );
           }
           const result = await data();
           onceData.set(index, result);

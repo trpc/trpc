@@ -28,7 +28,7 @@ import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
 import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
 import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
-import { markPipelineNotRun } from './pipeline/wire';
+import { isPipelineNotRun, markPipelineNotRun } from './pipeline/wire';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -341,12 +341,53 @@ function trySendableShape(opts: {
 }
 
 /**
+ * Whether an error shape, as it is sent, has the mark of a call refused
+ * before it ran: a shape with a `toJSON` of its own, or of its `data`, can
+ * write JSON without it. If the transformer can't read the JSON back, which
+ * a server need not do, it is taken to have it, as marked
+ */
+function carriesNotRun(
+  transformer: CombinedDataTransformer['output'],
+  shape: SentShape,
+) {
+  try {
+    const read: unknown = transformer.deserialize(JSON.parse(shape.json));
+    return isObject(read) && isPipelineNotRun(read['data']);
+  } catch {
+    return true;
+  }
+}
+
+/** Stands for JSON that the transformer doesn't read back to the same */
+const notReadBack = Symbol();
+
+/**
+ * Checked JSON read back through the transformer, for a stream to serialize
+ * again: only if what it reads serializes to the same JSON. A server need
+ * not read back what only its clients read, so its transformer can fail to,
+ * or read it as other data
+ */
+function readBack(
+  transformer: CombinedDataTransformer['output'],
+  json: string,
+): unknown {
+  try {
+    const value: unknown = transformer.deserialize(JSON.parse(json));
+    return JSON.stringify(transformer.serialize(value)) === json
+      ? value
+      : notReadBack;
+  } catch {
+    return notReadBack;
+  }
+}
+
+/**
  * The data of a run as a stream sends it. The stream serializes what it sends
  * itself, so it gets the checked JSON read back through the transformer,
  * which serializes to the same again: not the data as it was made, which
- * could serialize differently the second time. A server need not read back
- * what only its clients read, so if the transformer can't, the data as it
- * was made, as a stream sends any other call's
+ * could serialize differently the second time. If the transformer doesn't
+ * read it back to the same, the data as it was made, as a stream sends any
+ * other call's
  */
 function streamedValue(
   transformer: CombinedDataTransformer['output'],
@@ -355,30 +396,22 @@ function streamedValue(
   if (sent.json === undefined) {
     return sent;
   }
-  try {
-    return {
-      value: transformer.deserialize(JSON.parse(sent.json)),
-      json: sent.json,
-    };
-  } catch {
-    return sent;
-  }
+  const value = readBack(transformer, sent.json);
+  return value === notReadBack ? sent : { value, json: sent.json };
 }
 
 /**
  * An error shape as a stream sends it: the checked JSON read back through
- * the transformer, as for data. If the transformer can't read it back, the
- * default shape of the same error, which serializes to the same every time
+ * the transformer, as for data. If the transformer doesn't read it back to
+ * the same, the default shape of the same error, which serializes to the
+ * same every time
  */
 function streamedShape(
   transformer: CombinedDataTransformer['output'],
   shape: SentShape,
 ): unknown {
-  try {
-    return transformer.deserialize(JSON.parse(shape.json));
-  } catch {
-    return shape.plain;
-  }
+  const value = readBack(transformer, shape.json);
+  return value === notReadBack ? shape.plain : value;
 }
 
 /** The runs of a call that runs for every item, as far as they are ready */
@@ -607,13 +640,31 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         return sending.notRun ? markPipelineNotRun(plain) : plain;
       };
       const transformer = config.transformer.output;
+      /** What is sent, if it has the mark where it is to have it */
+      const marked = (sent: SentShape | null) =>
+        sent && (!sending.notRun || carriesNotRun(transformer, sent))
+          ? sent
+          : null;
       const sent = trySendableShape({
         transformer,
         shape: () => shapeOf(sending.error, sending.input),
         plain: plainOf(sending.error),
       });
       if (sent) {
-        return sent;
+        // A formatter's shape that is sent without the mark: the default
+        // shape of the same error, which has it
+        const withMark =
+          marked(sent) ??
+          marked(
+            trySendableShape({
+              transformer,
+              shape: () => plainOf(sending.error),
+              plain: plainOf(sending.error),
+            }),
+          );
+        if (withMark) {
+          return withMark;
+        }
       }
       const error = new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -621,11 +672,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
       const plain = plainOf(error);
       return (
-        trySendableShape({
-          transformer,
-          shape: () => shapeOf(error, undefined),
-          plain,
-        }) ?? {
+        marked(
+          trySendableShape({
+            transformer,
+            shape: () => shapeOf(error, undefined),
+            plain,
+          }),
+        ) ?? {
           value: plain,
           // Strings and numbers only, which JSON can carry
           json: JSON.stringify(transformer.serialize(plain)),
@@ -1139,13 +1192,34 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
-      (res): RPCResult => {
+      (res, index): RPCResult => {
         const [error, result] = res;
         if (error) {
           return res;
         }
 
-        if (isDataStream(result.data)) {
+        let streamLike: boolean;
+        try {
+          streamLike = isDataStream(result.data);
+        } catch (cause) {
+          if (!pipeline) {
+            throw cause;
+          }
+          // A getter of the data that throws, in a pipelined batch: it fails
+          // this call, as what JSON can't carry does, not the response
+          const call = info.calls[index]!;
+          const failure = getTRPCErrorFromUnknown(cause);
+          opts.onError?.({
+            error: failure,
+            path: call.path,
+            input: call.result(),
+            ctx: ctxManager.valueOrUndefined(),
+            type: call.procedure?._def.type ?? 'unknown',
+            req: opts.req,
+          });
+          return [failure, undefined];
+        }
+        if (streamLike) {
           return [
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',

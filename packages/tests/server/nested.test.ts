@@ -697,6 +697,77 @@ describe.each([
     });
   });
 
+  test('a `Map` or a `Set` in an input is read as it was when the query was made', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      echo: t.procedure
+        .input(
+          z.object({
+            map: z.map(z.string(), z.object({ name: z.string() })),
+            set: z.set(z.string()),
+          }),
+        )
+        .query((opts) => ({
+          map: [...opts.input.map.entries()],
+          set: [...opts.input.set],
+        })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+
+    const echoed = await experimental_nested(ctx.client, (q) => {
+      const ada = { name: 'ada' };
+      const map = new Map([['id', ada]]);
+      const set = new Set(['ada']);
+      const call = q.echo.query({ map, set });
+      ada.name = 'bob';
+      map.set('other', { name: 'eve' });
+      set.add('bob');
+      return call;
+    });
+
+    expect(echoed).toEqual({ map: [['id', { name: 'ada' }]], set: ['ada'] });
+  });
+
+  test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      data: t.procedure.query(() => {
+        const data: { id: string; self?: unknown } = { id: 'ada' };
+        data.self = data;
+        return data;
+      }),
+      echo: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => opts.input.id),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+
+    const data = await experimental_nested(ctx.client, (q) =>
+      q.data.query().with((it) => ({ echo: q.echo.query(it) })),
+    );
+
+    expect(data.node.id).toBe('ada');
+    expect(await data.edges.echo).toBe('ada');
+  });
+
   test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
     await using ctx = setup({ pipelining: true });
     class AuthorInput {
@@ -1344,6 +1415,64 @@ describe('httpBatchLink, without streaming', () => {
     expect(teams.mock.calls).toEqual([['team-ada']]);
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
+
+  test('a call that read a call whose response failed after the read ran on the server: its edge rejects with its own error', async () => {
+    const t = initTRPC.create();
+    const teams = vi.fn();
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure.input(z.object({ id: z.string() })).query(() => {
+        // The server serializes it once to fill in the team's input, and
+        // then fails to serialize it for the response
+        let serialized = 0;
+        return {
+          toJSON() {
+            serialized++;
+            if (serialized > 1) {
+              throw new Error('serialized twice');
+            }
+            return { teamId: 'team-ada' };
+          },
+        };
+      }),
+      team: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        teams(opts.input.id);
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'no team' });
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {
+      // quiet
+    });
+    using _restore = makeResource({}, () => warn.mockRestore());
+
+    const post = await experimental_nested(ctx.client, (q) =>
+      q.post.query().with((it) => {
+        const author = q.author.query({ id: it.authorId });
+        return { author, team: q.team.query({ id: author.teamId }) };
+      }),
+    );
+
+    await expect(post.edges.author).rejects.toMatchObject({
+      data: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    await expect(post.edges.team).rejects.toMatchObject({
+      message: 'no team',
+      data: { code: 'NOT_FOUND' },
+    });
+    expect(teams.mock.calls).toEqual([['team-ada']]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('types', () => {
@@ -1502,5 +1631,37 @@ describe('types', () => {
     expectTypeOf<experimental_StandIn<Data>['maybe']>().not.toHaveProperty(
       'id',
     );
+  });
+
+  test('a `Map` or a `Set` in data is read whole: its stand-in has no keys', () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const router = t.router({
+      data: t.procedure.query(() => ({
+        map: new Map([['id', 'ada']]),
+        set: new Set(['ada']),
+      })),
+      count: t.procedure.input(z.number()).query((opts) => opts.input),
+      names: t.procedure
+        .input(z.object({ map: z.map(z.string(), z.string()) }))
+        .query((opts) => [...opts.input.map.values()]),
+    });
+    const collections = {} as TRPCClient<typeof router>;
+    // What a client and a server read is the own keys of data, and a `Map`'s
+    // `size` and a `Set`'s are no own keys
+    expectTypeOf<
+      experimental_StandIn<Map<string, string>>
+    >().not.toHaveProperty('size');
+    expectTypeOf<experimental_StandIn<Set<string>>>().not.toHaveProperty(
+      'size',
+    );
+    check(() => {
+      void experimental_nested(collections, (q) =>
+        q.data.query().with((data) => ({
+          names: q.names.query({ map: data.map }),
+          // @ts-expect-error - a `Map`'s stand-in has no `size`
+          count: q.count.query(data.map.size),
+        })),
+      );
+    });
   });
 });

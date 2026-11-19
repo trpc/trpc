@@ -45,13 +45,18 @@ function createClient(opts: { readonly fetch: Fetch; readonly mode: Mode }) {
 export function loadPosts(opts: {
   readonly fetch: Fetch;
   readonly mode: Mode;
+  /** Stops every query of the load, those still to be sent too */
+  readonly signal: AbortSignal;
 }) {
-  return experimental_nested(createClient(opts), (q) =>
-    q.post.list.query().items.map((post) => ({
-      author: q.author.byId
-        .query({ id: post.authorId })
-        .with((author) => ({ team: q.team.byId.query({ id: author.teamId }) })),
-    })),
+  return experimental_nested(
+    createClient(opts),
+    (q) =>
+      q.post.list.query().items.map((post) => ({
+        author: q.author.byId.query({ id: post.authorId }).with((author) => ({
+          team: q.team.byId.query({ id: author.teamId }),
+        })),
+      })),
+    { signal: opts.signal },
   );
 }
 

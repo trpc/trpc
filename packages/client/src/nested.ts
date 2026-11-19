@@ -103,20 +103,23 @@ type StandInKeys<TValue> = [TValue] extends [readonly (infer TItem)[]]
         fn: (item: experimental_StandIn<TItem>) => TReturn,
       ) => experimental_NestedShape<MapItem<TItem, TReturn>[]>;
     }
-  : [TValue] extends [object]
-    ? {
-        readonly [
-          K in keyof TValue as K extends 'then'
-            ? // A stand-in is no promise: it has no `then` to read
-              never
-            : K extends string
-              ? IsAsync<TValue[K]> extends true
-                ? never
-                : K
-              : never
-        ]: experimental_StandIn<TValue[K]>;
-      }
-    : unknown;
+  : [TValue] extends [ReadonlyMap<unknown, unknown> | ReadonlySet<unknown>]
+    ? // Read whole: what is read of data is its own keys, and a `size` is none
+      unknown
+    : [TValue] extends [object]
+      ? {
+          readonly [
+            K in keyof TValue as K extends 'then'
+              ? // A stand-in is no promise: it has no `then` to read
+                never
+              : K extends string
+                ? IsAsync<TValue[K]> extends true
+                  ? never
+                  : K
+                : never
+          ]: experimental_StandIn<TValue[K]>;
+        }
+      : unknown;
 
 /**
  * Data that isn't there yet, in `experimental_nested()`'s callback. Put it, or
@@ -336,32 +339,54 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
 
 /**
  * A copy of data, also of the plain objects, arrays, Dates, Maps and Sets in
- * it, as a transformer can carry them
+ * it, as a transformer can carry them. `copies` has the copy of each object
+ * copied so far, so a cycle, or an object in two places, is one copy, as a
+ * transformer that keeps them gives them
  */
-function copyData(value: unknown): unknown {
+function copyData(value: unknown, copies: Map<object, unknown>): unknown {
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+  if (copies.has(value)) {
+    return copies.get(value);
+  }
   if (Array.isArray(value)) {
-    return value.map(copyData);
+    // Each hole stays one
+    const copy = new Array<unknown>(value.length);
+    copies.set(value, copy);
+    value.forEach((item, index) => {
+      copy[index] = copyData(item, copies);
+    });
+    return copy;
   }
   if (value instanceof Map) {
-    return new Map(
-      Array.from(Map.prototype.entries.call(value), ([key, item]) => [
-        copyData(key),
-        copyData(item),
-      ]),
-    );
+    const copy = new Map<unknown, unknown>();
+    copies.set(value, copy);
+    for (const [key, item] of Array.from(Map.prototype.entries.call(value))) {
+      copy.set(copyData(key, copies), copyData(item, copies));
+    }
+    return copy;
   }
   if (value instanceof Set) {
-    return new Set(Array.from(Set.prototype.values.call(value), copyData));
+    const copy = new Set<unknown>();
+    copies.set(value, copy);
+    for (const item of Array.from(Set.prototype.values.call(value))) {
+      copy.add(copyData(item, copies));
+    }
+    return copy;
   }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};
+    copies.set(value, copy);
     for (const key of Object.keys(value)) {
-      setOwn(copy, key, copyData(value[key]));
+      setOwn(copy, key, copyData(value[key], copies));
     }
     return copy;
   }
   if (value instanceof Date) {
-    return new Date(Date.prototype.getTime.call(value));
+    const copy = new Date(Date.prototype.getTime.call(value));
+    copies.set(value, copy);
+    return copy;
   }
   return value;
 }
@@ -372,7 +397,7 @@ function copyData(value: unknown): unknown {
  */
 function copyReads(value: unknown, paths: readonly Segment[][]): unknown {
   if (paths.some((path) => path.length === 0)) {
-    return copyData(value);
+    return copyData(value, new Map());
   }
   if (paths.length === 0 || typeof value !== 'object' || value === null) {
     return value;
@@ -619,6 +644,14 @@ function mapInput(
     throw new TypeError(
       'experimental_nested(): an input can have stand-ins in plain objects, arrays and Dates, not in an instance of a class',
     );
+  }
+  // A Map or a Set, as a transformer carries them, is read as it is now, as
+  // a plain object is. An instance of another class is sent as it is
+  if (isObject(value)) {
+    const proto: unknown = Object.getPrototypeOf(value);
+    if (proto === Map.prototype || proto === Set.prototype) {
+      return copyData(value, new Map());
+    }
   }
   return value;
 }

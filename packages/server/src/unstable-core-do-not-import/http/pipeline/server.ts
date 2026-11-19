@@ -266,6 +266,26 @@ function sourceFailed() {
   });
 }
 
+/**
+ * An error of its own, from what a read that many runs or calls share threw,
+ * for each that the read fails. A `TRPCError` it threw is copied, with its
+ * code, message, cause and stack: each that gets one, such as in `onError`,
+ * can change it
+ */
+function errorOfOwn(cause: unknown) {
+  const error = getTRPCErrorFromUnknown(cause);
+  if (error !== cause) {
+    return error;
+  }
+  const copy = new TRPCError({
+    code: error.code,
+    message: error.message,
+    cause: error.cause,
+  });
+  copy.stack = error.stack;
+  return copy;
+}
+
 /** What a call that reads data that is still to come gets */
 function stillToComeUnreadable() {
   return new TRPCError({
@@ -393,24 +413,52 @@ function cannotSendAsTheClient() {
 }
 
 /**
+ * A call refused as a value it reads, decoded by itself from the JSON it was
+ * written as, doesn't go back through the transformer of inputs to that JSON:
+ * see `writesBackAs`
+ */
+function cannotSendValueAsTheClient() {
+  const error = new TRPCError({
+    code: 'BAD_REQUEST',
+    message: `A value this call reads doesn't come back through the input transformer as it was written, so the server can't fill it in`,
+  });
+  refusalErrors.add(error);
+  return error;
+}
+
+/**
+ * Whether what the transformer of inputs read from `json` goes back through
+ * it to `json`. A transformer can read a string as an instance that it
+ * doesn't write back as that string, or read a value by itself other than
+ * as it reads it inside an input
+ */
+function writesBackAs(opts: {
+  transformer: CombinedDataTransformer['input'];
+  value: unknown;
+  json: string | undefined;
+}) {
+  try {
+    return JSON.stringify(opts.transformer.serialize(opts.value)) === opts.json;
+  } catch {
+    // What JSON can't carry, such as a `BigInt`, wasn't written
+    return false;
+  }
+}
+
+/**
  * Whether a call's input as the server read it goes back through the
  * transformer of inputs to what the client sent. Only then is it, with values
- * written in, what the client would send: a transformer can read a string as
- * an instance that it doesn't write back as that string
+ * written in, what the client would send
  */
 function comesBackAsSent(opts: {
   transformer: CombinedDataTransformer['input'];
   input: PipelineCallInput;
 }) {
-  try {
-    return (
-      JSON.stringify(opts.transformer.serialize(opts.input.decoded.value)) ===
-      opts.input.sent.json
-    );
-  } catch {
-    // What JSON can't carry, such as a `BigInt`, the client didn't send
-    return false;
-  }
+  return writesBackAs({
+    transformer: opts.transformer,
+    value: opts.input.decoded.value,
+    json: opts.input.sent.json,
+  });
 }
 
 /** What is held of a budget, or why taking from it was refused */
@@ -786,14 +834,16 @@ function itemsOf(opts: {
   if (!Array.isArray(list)) {
     return { kind: 'items', items: [] };
   }
-  const error = opts.tooLong(list.length);
+  const { length } = list;
+  const error = opts.tooLong(length);
   if (error) {
     return { kind: 'failed', error };
   }
-  // By index: a list with holes has a run for each of them too
+  // By index, up to the length that was checked: a list with holes has a run
+  // for each of them too, and a `keys` of the list's own isn't asked
   return {
     kind: 'items',
-    items: Array.from(list.keys(), (index) =>
+    items: Array.from({ length }, (_, index) =>
       Promise.resolve<PlacesNode<Place>>({
         kind: 'run',
         value: { indexes: [...opts.indexes, index], item: list[index] },
@@ -1033,9 +1083,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         // What else throws, such as a getter or what JSON can't carry, fails
         // each run that reads it
         error:
-          cause instanceof Refused
-            ? cause.refusal
-            : () => getTRPCErrorFromUnknown(cause),
+          cause instanceof Refused ? cause.refusal : () => errorOfOwn(cause),
       };
     }
   }
@@ -1311,7 +1359,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       if (!run.perItem) {
         charge(lengthOf(json));
       }
-      input = writePipelinePath({ input, to: read.to, value: decoded(json) });
+      const value = decoded(json);
+      // Written into the input, it is decoded again with the rest of it: as
+      // a client sends it only if it comes back as it was written
+      if (
+        json !== undefined &&
+        !writesBackAs({ transformer: opts.transformer.input, value, json })
+      ) {
+        throw cannotSendValueAsTheClient();
+      }
+      input = writePipelinePath({ input, to: read.to, value });
     }
     // The input as a client sends it filled in: serialized once, all of it,
     // so what is not there is `null` in a list and left out of an object

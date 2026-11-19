@@ -1186,7 +1186,48 @@ describe('a call for every item', () => {
     expect(echo).not.toHaveBeenCalled();
   });
 
-  test('a list of lists: a run for every item of the first, with the list of values of the second', async () => {
+  test('runs once for each index up to the length it checked, whatever the list says its keys are', async () => {
+    // Reads the list back with a `keys` of its own that gives only index 1
+    const ownKeys: CombinedDataTransformer = {
+      input: transformers.none.input,
+      output: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) => {
+          if (!isObject(it) || !Array.isArray(it['ids'])) {
+            return it;
+          }
+          const ids: unknown[] = [...it['ids']];
+          Object.defineProperty(ids, 'keys', { value: () => [1].values() });
+          return { ...it, ids };
+        },
+      },
+    };
+    const echo = vi.fn((input: unknown) => input);
+    await using server = serve({
+      ...defaults,
+      transformer: ownKeys,
+      fns: { list: () => ({ ids: ['ada', 'bob'] }), echo },
+    });
+    const list = sent('list', undefined);
+    const each = call(
+      'echo',
+      {},
+      reads({ from: list, path: ['ids'] }, { to: ['id'], path: [] }),
+    );
+
+    await send({
+      ...defaults,
+      transformer: ownKeys,
+      url: server.url,
+      method: 'GET',
+      sent: [list],
+      calls: [each],
+    });
+
+    expect(echo.mock.calls).toEqual([[{ id: 'ada' }], [{ id: 'bob' }]]);
+  });
+
+  test('a list of lists:a run for every item of the first, with the list of values of the second', async () => {
     const echo = vi.fn((input: unknown) => input);
     await using server = serve({
       ...defaults,
@@ -4654,6 +4695,55 @@ describe('an input its transformer would send other than as the client sent it',
           code: 'BAD_REQUEST',
           message:
             "This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in",
+          data: { pipeline: 'not-run' },
+        },
+      });
+      expect(echo).not.toHaveBeenCalled();
+    },
+  );
+
+  test.each([false, true])(
+    'is refused before it runs when a value it reads would not come back as it was written, so the client can send it by itself (for every item: %s)',
+    async (perItem) => {
+      // It reads a string that is the whole input in capitals, and leaves
+      // objects as they are: `{ id: 'abc' }` from a client keeps its `'abc'`
+      const capitals: CombinedDataTransformer = {
+        input: {
+          serialize: (it: unknown) => it,
+          deserialize: (it: unknown) =>
+            typeof it === 'string' ? it.toUpperCase() : it,
+        },
+        output: transformers.none.output,
+      };
+      const echo = vi.fn((input: unknown) => input);
+      await using server = serve({
+        ...defaults,
+        transformer: capitals,
+        fns: { post: () => ({ ids: ['abc'], authorId: 'abc' }), echo },
+      });
+      const post = sent('post', undefined);
+      const reader = call(
+        'echo',
+        { id: null },
+        perItem
+          ? reads({ from: post, path: ['ids'] }, { to: ['id'], path: [] })
+          : reads(null, { to: ['id'], from: post, path: ['authorId'] }),
+      );
+
+      const res = await send({
+        ...defaults,
+        transformer: capitals,
+        url: server.url,
+        method: 'POST',
+        sent: [post],
+        calls: [reader],
+      });
+
+      expect(res.of(reader)).toEqual({
+        error: {
+          code: 'BAD_REQUEST',
+          message:
+            "A value this call reads doesn't come back through the input transformer as it was written, so the server can't fill it in",
           data: { pipeline: 'not-run' },
         },
       });
