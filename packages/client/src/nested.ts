@@ -330,10 +330,24 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
   });
 }
 
-/** A copy of data, also of the plain objects, arrays and Dates in it */
+/**
+ * A copy of data, also of the plain objects, arrays, Dates, Maps and Sets in
+ * it, as a transformer can carry them
+ */
 function copyData(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(copyData);
+  }
+  if (value instanceof Map) {
+    return new Map(
+      Array.from(Map.prototype.entries.call(value), ([key, item]) => [
+        copyData(key),
+        copyData(item),
+      ]),
+    );
+  }
+  if (value instanceof Set) {
+    return new Set(Array.from(Set.prototype.values.call(value), copyData));
   }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};

@@ -23,6 +23,7 @@ import {
   isObject,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
+import superjson from 'superjson';
 import { z } from 'zod';
 
 interface Post {
@@ -635,6 +636,65 @@ describe.each([
 
     const author = await list[0]!.edges.author;
     expect(await author.edges.post).toEqual(posts[0]);
+  });
+
+  test('a query that asks by itself reads a `Map` or a `Set` as it arrived, not as the caller changed it', async () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const gate = createDeferred<void>();
+    const appRouter = t.router({
+      data: t.procedure.query(() => ({
+        id: 'ada',
+        map: new Map([['id', { name: 'ada' }]]),
+        set: new Set(['ada']),
+      })),
+      slow: t.procedure.input(z.string()).query(async () => {
+        await gate.promise;
+        return 'slow';
+      }),
+      echo: t.procedure
+        .input(
+          z.object({
+            map: z.map(z.string(), z.object({ name: z.string() })),
+            set: z.set(z.string()),
+          }),
+        )
+        .query((opts) => ({
+          map: [...opts.input.map.entries()],
+          set: [...opts.input.set],
+        })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer: superjson,
+          }),
+        ],
+      }),
+    });
+    // Also when the test fails: the server's slow call must end
+    using _release = makeResource({}, () => gate.resolve());
+
+    const data = await experimental_nested(ctx.client, (q) =>
+      q.data.query().with((it) => ({
+        // `slow` asks once the data has arrived, and `echo` once `slow` has,
+        // after the change below
+        slow: q.slow.query(it.id).with(() => ({
+          echo: q.echo.query({ map: it.map, set: it.set }),
+        })),
+      })),
+    );
+    data.node.map.get('id')!.name = 'bob';
+    data.node.map.set('other', { name: 'eve' });
+    data.node.set.add('bob');
+    gate.resolve();
+
+    const slow = await data.edges.slow;
+    expect(await slow.edges.echo).toEqual({
+      map: [['id', { name: 'ada' }]],
+      set: ['ada'],
+    });
   });
 
   test('a stand-in in an instance of a class in an input is refused before anything is sent', async () => {
