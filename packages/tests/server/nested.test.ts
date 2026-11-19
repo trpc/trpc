@@ -1632,4 +1632,36 @@ describe('types', () => {
       'id',
     );
   });
+
+  test('a `Map` or a `Set` in data is read whole: its stand-in has no keys', () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const router = t.router({
+      data: t.procedure.query(() => ({
+        map: new Map([['id', 'ada']]),
+        set: new Set(['ada']),
+      })),
+      count: t.procedure.input(z.number()).query((opts) => opts.input),
+      names: t.procedure
+        .input(z.object({ map: z.map(z.string(), z.string()) }))
+        .query((opts) => [...opts.input.map.values()]),
+    });
+    const collections = {} as TRPCClient<typeof router>;
+    // What a client and a server read is the own keys of data, and a `Map`'s
+    // `size` and a `Set`'s are no own keys
+    expectTypeOf<
+      experimental_StandIn<Map<string, string>>
+    >().not.toHaveProperty('size');
+    expectTypeOf<experimental_StandIn<Set<string>>>().not.toHaveProperty(
+      'size',
+    );
+    check(() => {
+      void experimental_nested(collections, (q) =>
+        q.data.query().with((data) => ({
+          names: q.names.query({ map: data.map }),
+          // @ts-expect-error - a `Map`'s stand-in has no `size`
+          count: q.count.query(data.map.size),
+        })),
+      );
+    });
+  });
 });

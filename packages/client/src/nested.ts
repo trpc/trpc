@@ -103,20 +103,23 @@ type StandInKeys<TValue> = [TValue] extends [readonly (infer TItem)[]]
         fn: (item: experimental_StandIn<TItem>) => TReturn,
       ) => experimental_NestedShape<MapItem<TItem, TReturn>[]>;
     }
-  : [TValue] extends [object]
-    ? {
-        readonly [
-          K in keyof TValue as K extends 'then'
-            ? // A stand-in is no promise: it has no `then` to read
-              never
-            : K extends string
-              ? IsAsync<TValue[K]> extends true
-                ? never
-                : K
-              : never
-        ]: experimental_StandIn<TValue[K]>;
-      }
-    : unknown;
+  : [TValue] extends [ReadonlyMap<unknown, unknown> | ReadonlySet<unknown>]
+    ? // Read whole: what is read of data is its own keys, and a `size` is none
+      unknown
+    : [TValue] extends [object]
+      ? {
+          readonly [
+            K in keyof TValue as K extends 'then'
+              ? // A stand-in is no promise: it has no `then` to read
+                never
+              : K extends string
+                ? IsAsync<TValue[K]> extends true
+                  ? never
+                  : K
+                : never
+          ]: experimental_StandIn<TValue[K]>;
+        }
+      : unknown;
 
 /**
  * Data that isn't there yet, in `experimental_nested()`'s callback. Put it, or
