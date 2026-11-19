@@ -6,7 +6,10 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Encoder, WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { jsonEncoder } from '@trpc/server/adapters/ws';
-import type { TRPCResponseMessage } from '@trpc/server/rpc';
+import type {
+  TRPC_ERROR_CODE_KEY,
+  TRPCResponseMessage,
+} from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import {
   isObject,
@@ -149,17 +152,20 @@ const failAndGreet = JSON.stringify([
   { id: 2, method: 'query', params: { path: 'greeting' } },
 ]);
 
-const fallbackError = {
-  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
-  message: 'Internal server error',
-  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
-};
+/** A shape that says nothing beyond the error's code */
+function fallbackError(code: TRPC_ERROR_CODE_KEY, httpStatus: number) {
+  return {
+    code: TRPC_ERROR_CODES_BY_KEY[code],
+    message: code,
+    data: { code, httpStatus },
+  };
+}
 
 function byId(responses: TRPCResponseMessage[]) {
   return [...responses].sort((a, b) => Number(a.id) - Number(b.id));
 }
 
-test('an errorFormatter that throws is reported, and the request gets a fallback error', async () => {
+test('an errorFormatter that throws is reported, and the request gets a fallback error with its code', async () => {
   const onError = vi.fn<OnError>();
   const router = routerWithErrorFormatter(() => {
     throw new Error('formatter bug');
@@ -173,7 +179,7 @@ test('an errorFormatter that throws is reported, and the request gets a fallback
 
   await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
   expect(byId(socket.responses())).toEqual([
-    { id: 1, error: fallbackError },
+    { id: 1, error: fallbackError('BAD_REQUEST', 400) },
     { id: 2, result: { type: 'data', data: 'hello' } },
   ]);
   expect(
@@ -197,14 +203,14 @@ test('an errorFormatter that throws without an onError is logged', async () => {
   });
 
   const error = await waitError(ctx.client.fail.query(), TRPCClientError);
-  expect(error.data?.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(error.data?.code).toBe('BAD_REQUEST');
   expect(consoleError).toHaveBeenCalledOnce();
   expect(consoleError.mock.calls[0]?.at(-1)).toMatchObject({
     message: 'formatter bug',
   });
 });
 
-test('an error reply that cannot be encoded is reported with its path, and the request gets a fallback error', async () => {
+test('an error reply that cannot be encoded is reported with its path, and the request gets a fallback error with its code', async () => {
   const onError = vi.fn<OnError>();
   const router = routerWithErrorFormatter(({ shape }) => ({
     ...shape,
@@ -219,7 +225,7 @@ test('an error reply that cannot be encoded is reported with its path, and the r
 
   await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
   expect(byId(socket.responses())).toEqual([
-    { id: 1, error: fallbackError },
+    { id: 1, error: fallbackError('BAD_REQUEST', 400) },
     { id: 2, result: { type: 'data', data: 'hello' } },
   ]);
   expect(
@@ -277,7 +283,7 @@ test('a failed createContext with an onError that throws still closes the connec
   ]);
 });
 
-test('a connection error reply that cannot be encoded gets the fallback error, so the connection is still rejected', async () => {
+test('a connection error reply that cannot be encoded gets a fallback error with its code, so the connection is still rejected', async () => {
   const onError = vi.fn<OnError>();
   const router = routerWithErrorFormatter(({ shape }) => ({
     ...shape,
@@ -294,14 +300,16 @@ test('a connection error reply that cannot be encoded gets the fallback error, s
   await using socket = await rawSocketResource(ctx.wssUrl);
 
   await socket.closed;
-  expect(socket.responses()).toEqual([{ id: null, error: fallbackError }]);
+  expect(socket.responses()).toEqual([
+    { id: null, error: fallbackError('UNAUTHORIZED', 401) },
+  ]);
   expect(onError.mock.calls.map(([opts]) => opts.error.cause?.name)).toEqual([
     undefined,
     'TypeError',
   ]);
 });
 
-test('an oversized batch whose error reply cannot be encoded gives every request the fallback error', async () => {
+test('an oversized batch whose error reply cannot be encoded gives every request a fallback error with its code', async () => {
   const onError = vi.fn<OnError>();
   const router = routerWithErrorFormatter(({ shape }) => ({
     ...shape,
@@ -316,8 +324,8 @@ test('an oversized batch whose error reply cannot be encoded gives every request
 
   await vi.waitFor(() => expect(socket.responses()).toHaveLength(2));
   expect(byId(socket.responses())).toEqual([
-    { id: 1, error: fallbackError },
-    { id: 2, error: fallbackError },
+    { id: 1, error: fallbackError('BAD_REQUEST', 400) },
+    { id: 2, error: fallbackError('BAD_REQUEST', 400) },
   ]);
   expect(onError.mock.calls.map(([opts]) => opts.error.cause?.name)).toEqual([
     undefined,

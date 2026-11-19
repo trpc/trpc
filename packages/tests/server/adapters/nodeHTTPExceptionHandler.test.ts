@@ -37,7 +37,7 @@ test('a streamed body that fails after its headers were sent is not written agai
   expect(uncaught.errors).toEqual([]);
 });
 
-test('a throwing errorFormatter gets an error response', async () => {
+test('a throwing errorFormatter gets an error response with its code', async () => {
   using uncaught = uncaughtErrors();
   const t = initTRPC.create({
     errorFormatter: () => {
@@ -58,10 +58,7 @@ test('a throwing errorFormatter gets an error response', async () => {
     TRPCClientError,
   );
 
-  expect(error.message).toBe('Internal server error');
-  expect(error.data).toEqual({
-    code: 'INTERNAL_SERVER_ERROR',
-    httpStatus: 500,
-  });
+  expect(error.message).toBe('CONFLICT');
+  expect(error.data).toEqual({ code: 'CONFLICT', httpStatus: 409 });
   expect(uncaught.errors).toEqual([]);
 });
