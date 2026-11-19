@@ -3217,6 +3217,85 @@ describe.each([
     ).toMatchObject({ id: 'u1' });
   });
 
+  test("a server row whose item key can't be held makes only the client's row at its place ask by itself", async () => {
+    // The server's list has a row whose id no query key can hold, as an app
+    // with a transformer for it can have, last
+    const addRow: TRPCLink<AnyRouter> =
+      () =>
+      ({ op, next }) =>
+        observable((observer) =>
+          next(op).subscribe({
+            next(value) {
+              const data = value.result.data as
+                | { items?: unknown[] }
+                | undefined;
+              observer.next(
+                op.path === 'post.paged' && data?.items
+                  ? ({
+                      ...value,
+                      result: {
+                        ...value.result,
+                        data: {
+                          ...data,
+                          items: [...data.items, { id: 'big', authorId: 1n }],
+                        },
+                      },
+                    } as typeof value)
+                  : value,
+              );
+            },
+            error: (error) => observer.error(error),
+            complete: () => observer.complete(),
+          }),
+        );
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [addRow],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The client's stale list has a row with an id a key can hold at that place
+    resource.queryClient.setQueryData(
+      trpc.post.paged.queryKey({}),
+      {
+        items: [
+          { id: 'p0', authorId: 'u0' },
+          { id: 'old', authorId: 'u9' },
+        ],
+        nextCursor: 1,
+      },
+      { updatedAt: 1 },
+    );
+
+    const posts = ensureEntry(trpc.post.paged, {});
+    await loadHandles(trpc, {
+      posts,
+      authors: experimental_entryPerItem(
+        experimental_dataOf(posts).items,
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 'u9' }),
+      ),
+    ).toMatchObject({ id: 'u9' });
+    // The first row's author is from the list's request. The second asked
+    // by itself
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+    expect(
+      resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
+    ).toEqual([
+      ['author.byId', { id: 'u0' }],
+      ['author.byId', { id: 'u9' }],
+    ]);
+  });
+
   test("an item whose run fails on the server has that run's own error, not an unknown one", async () => {
     await using resource = pipeliningCtx({
       link: scenario.link,
@@ -3249,7 +3328,7 @@ describe.each([
     expect(error?.cause.message).not.toBe('Unknown error');
   });
 
-  test("a server row whose item key can't be held makes only that row ask by itself", async () => {
+  test("a row whose item key can't be held fails by itself, and the row beside it still uses the list's request", async () => {
     // A row whose id no query key can hold, as an app with a transformer for
     // it can have, comes last in the list the client reads
     const addRow: TRPCLink<AnyRouter> =
