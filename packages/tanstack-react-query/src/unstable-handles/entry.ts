@@ -105,13 +105,20 @@ function planRequest(opts: {
   let input = replaceEntryDataRefs(opts.input, [], nothing);
   let cursorFromOptions = false;
   if (opts.type === 'infinite') {
-    // The first page's request, as `infiniteQueryOptions()` makes it
+    // The first page's request, as `infiniteQueryOptions()` makes it: its
+    // key has the input without `cursor` and `direction`, and the request
+    // adds a cursor only if there is one. A `cursor: undefined` is left out,
+    // as is one the server fills in, which it writes the key of itself
     const initialCursor = entryOpts?.initialCursor;
     cursorFromOptions = initialCursor != null;
-    const cursor =
-      initialCursor ?? (input as { cursor?: unknown } | null)?.cursor;
+    const {
+      cursor: inputCursor,
+      direction: _direction,
+      ...rest
+    } = (input ?? {}) as { cursor?: unknown; direction?: unknown };
+    const cursor = initialCursor ?? inputCursor;
     input = {
-      ...(input as object),
+      ...rest,
       ...(cursor !== undefined ? { cursor } : {}),
       direction: 'forward',
     };

@@ -599,6 +599,12 @@ export function beginEntries(opts: {
       void start(built).then(ok, own).then(started.settle);
     } else {
       const send = sendPipelined({ leaf, reads, list: null });
+      /** Whether the server fills in an infinite entry's whole cursor */
+      const serverFillsCursor =
+        state.request.kind === 'pipelined' &&
+        [...state.request.serverReads].some(
+          (ref) => ref.to.length === 1 && ref.to[0] === 'cursor',
+        );
       if (send && state.type === 'query') {
         // An infinite query's data is its pages, which no one request returns,
         // so the server can't read it for the entries that read this one
@@ -632,10 +638,14 @@ export function beginEntries(opts: {
                 if (
                   state.type === 'infinite' &&
                   // The call was for the first page
-                  !(
+                  (!(
                     context.direction === 'forward' &&
                     Object.is(context.pageParam, filled.data.initialPageParam)
-                  )
+                  ) ||
+                    // The server writes a cursor it fills in also when it is
+                    // `undefined`, which the page's own request leaves out
+                    (filled.data.initialPageParam === undefined &&
+                      serverFillsCursor))
                 ) {
                   return false;
                 }

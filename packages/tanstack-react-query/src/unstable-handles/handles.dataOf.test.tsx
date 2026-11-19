@@ -4750,6 +4750,74 @@ describe('a transformer that keeps what JSON drops', () => {
     });
   };
 
+  /** A server with superjson, which keeps a key whose value is `undefined`, and a batch link that pipelines */
+  const cursorPresenceCtx = () => {
+    const t = initTRPC.create({ transformer: superjson });
+    const appRouter = t.router({
+      /** A filter, and no next cursor */
+      source: t.procedure.query(() => ({
+        filter: 'a',
+        next: undefined as number | undefined,
+      })),
+      /** Whether its input has a `cursor` key */
+      presence: t.procedure
+        .input(
+          (raw: unknown) =>
+            raw as { filter?: string; cursor?: number | undefined },
+        )
+        .query((opts) => ({
+          hasCursor: 'cursor' in opts.input,
+          nextCursor: null,
+        })),
+    });
+    const resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          httpBatchLink({
+            url: opts.httpUrl,
+            transformer: superjson,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    return resource;
+  };
+
+  test("an infinite entry's first page has no cursor for an `undefined` one in its input, also from the server", async () => {
+    await using resource = cursorPresenceCtx();
+    const trpc = resource.optionsProxyClient;
+
+    const source = ensureEntry(trpc.source);
+    const [, data] = await loadHandles(trpc, {
+      source,
+      rest: ensureInfiniteEntry(trpc.presence, {
+        filter: experimental_dataOf(source).filter,
+        cursor: undefined,
+      }),
+    });
+
+    // As the page's own request: `infiniteQueryOptions()` leaves it out
+    expect(data.rest.pages).toEqual([{ hasCursor: false, nextCursor: null }]);
+  });
+
+  test("an infinite entry's first page has no cursor for one it reads that is `undefined`, also from the server", async () => {
+    await using resource = cursorPresenceCtx();
+    const trpc = resource.optionsProxyClient;
+
+    const source = ensureEntry(trpc.source);
+    const [, data] = await loadHandles(trpc, {
+      source,
+      rest: ensureInfiniteEntry(trpc.presence, {
+        cursor: experimental_dataOf(source).next,
+      }),
+    });
+
+    // As the page's own request: `infiniteQueryOptions()` leaves it out
+    expect(data.rest.pages).toEqual([{ hasCursor: false, nextCursor: null }]);
+  });
+
   test("a stale ensure entry's `0` is not the server's `-0` in another entry's input", async () => {
     await using resource = signedZeroCtx();
     const trpc = resource.optionsProxyClient;
