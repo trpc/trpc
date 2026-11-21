@@ -433,75 +433,71 @@ export function createRootHooks<
         return;
       }
       updateState(() => ({ ...initialStateConnecting, reset }));
-      const subscription = client.subscription(
-        path.join('.'),
-        input ?? undefined,
-        {
-          context: optsRef.current?.trpc?.context,
-          onStarted: () => {
-            optsRef.current.onStarted?.();
-            updateState((prev) => ({
-              ...prev,
-              status: 'pending',
-              error: null,
-            }));
-          },
-          onData: (data) => {
-            optsRef.current.onData?.(data);
-            updateState((prev) => ({
-              ...prev,
-              status: 'pending',
-              data,
-              error: null,
-            }));
-          },
-          onError: (error) => {
-            optsRef.current.onError?.(error);
-            updateState((prev) => ({
-              ...prev,
-              status: 'error',
-              error,
-            }));
-          },
-          onConnectionStateChange: (result) => {
-            updateState((prev) => {
-              switch (result.state) {
-                case 'idle':
-                  return {
-                    ...prev,
-                    status: result.state,
-                    error: null,
-                    data: undefined,
-                  };
-                case 'connecting':
-                  return {
-                    ...prev,
-                    error: result.error,
-                    status: result.state,
-                  };
-
-                case 'pending':
-                  // handled when data is / onStarted
-                  return prev;
-              }
-            });
-          },
-          onComplete: () => {
-            optsRef.current.onComplete?.();
-
-            // In the case of WebSockets, the connection might not be idle so `onConnectionStateChange` will not be called until the connection is closed.
-            // In this case, we need to set the state to idle manually.
-            updateState((prev) => ({
-              ...prev,
-              status: 'idle',
-              error: null,
-              data: undefined,
-            }));
-
-            // (We might want to add a `connectionState` to the state to track the connection state separately)
-          },
+      const subscription = client.subscription(path.join('.'), input, {
+        context: optsRef.current?.trpc?.context,
+        onStarted: () => {
+          optsRef.current.onStarted?.();
+          updateState((prev) => ({
+            ...prev,
+            status: 'pending',
+            error: null,
+          }));
         },
-      );
+        onData: (data) => {
+          optsRef.current.onData?.(data);
+          updateState((prev) => ({
+            ...prev,
+            status: 'pending',
+            data,
+            error: null,
+          }));
+        },
+        onError: (error) => {
+          optsRef.current.onError?.(error);
+          updateState((prev) => ({
+            ...prev,
+            status: 'error',
+            error,
+          }));
+        },
+        onConnectionStateChange: (result) => {
+          updateState((prev) => {
+            switch (result.state) {
+              case 'idle':
+                return {
+                  ...prev,
+                  status: result.state,
+                  error: null,
+                  data: undefined,
+                };
+              case 'connecting':
+                return {
+                  ...prev,
+                  error: result.error,
+                  status: result.state,
+                };
+
+              case 'pending':
+                // handled when data is / onStarted
+                return prev;
+            }
+          });
+        },
+        onComplete: () => {
+          optsRef.current.onComplete?.();
+
+          // In the case of WebSockets, the connection might not be idle so `onConnectionStateChange` will not be called until the connection is closed.
+          // In this case, we need to set the state to idle manually.
+          updateState((prev) => ({
+            ...prev,
+            status: 'idle',
+            error: null,
+            data: undefined,
+          }));
+
+          // (We might want to add a `connectionState` to the state to track the connection state separately)
+        },
+      });
 
       currentSubscriptionRef.current = subscription;
 

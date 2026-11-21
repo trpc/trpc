@@ -535,3 +535,45 @@ describe('reset - http', () => {
     utils.unmount();
   });
 });
+
+describe.each([
+  //
+  'http',
+  'ws',
+] as const)('useSubscription null input - %s', (protocol) => {
+  test('sends a null input to the procedure instead of dropping it', async () => {
+    const receivedInputs: unknown[] = [];
+    const t = initTRPC.create();
+    const router = t.router({
+      onEvent: t.procedure
+        .input(z.string().nullable())
+        .subscription(async function* (opts) {
+          receivedInputs.push(opts.input);
+          yield 'ok';
+        }),
+    });
+    await using ctx = getServerAndReactClient(router, {
+      subscriptions: protocol,
+    });
+    const onErrorMock = vi.fn();
+
+    function MyComponent() {
+      const sub = ctx.client.onEvent.useSubscription(null, {
+        onError: onErrorMock,
+      });
+      return <div>status:{sub.status}</div>;
+    }
+
+    const utils = render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:idle');
+    });
+    expect(onErrorMock).toHaveBeenCalledTimes(0);
+    expect(receivedInputs).toEqual([null]);
+  });
+});
