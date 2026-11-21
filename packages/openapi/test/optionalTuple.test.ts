@@ -1,7 +1,7 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
-import type { Document } from '../src/types';
+import { memoize } from './memoize';
 import { requireEnvelopeDataSchema } from './types';
 import { validateOpenApi } from './validateOpenApi';
 
@@ -12,24 +12,24 @@ const optionalTupleRouterPath = path.resolve(
 );
 
 describe('generateOpenAPIDocument optional tuple elements', () => {
-  let doc: Document;
-
-  beforeAll(async () => {
-    doc = await generateOpenAPIDocument(optionalTupleRouterPath, {
+  const getDoc = memoize(() =>
+    generateOpenAPIDocument(optionalTupleRouterPath, {
       exportName: 'OptionalTupleRouter',
       title: 'Optional Tuple API',
       version: '1.0.0',
-    });
-  });
+    }),
+  );
 
   it('produces a valid OpenAPI document', async () => {
+    const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
     const problems = await validateOpenApi(spec);
 
     expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
-  it('only requires the elements before the first optional one', () => {
+  it('only requires the elements before the first optional one', async () => {
+    const doc = await getDoc();
     // `[string, number?]` may serialise as a 1-element array; a minItems
     // equal to the full length makes consumers reject that payload.
     expect(
@@ -43,7 +43,8 @@ describe('generateOpenAPIDocument optional tuple elements', () => {
     });
   });
 
-  it('does not mistake an explicit undefined member for an optional one', () => {
+  it('does not mistake an explicit undefined member for an optional one', async () => {
+    const doc = await getDoc();
     // Every element of `[string | undefined, number]` is required; only the
     // `?` marker makes an element optional, not a `T | undefined` type.
     expect(
@@ -57,7 +58,8 @@ describe('generateOpenAPIDocument optional tuple elements', () => {
     });
   });
 
-  it('keeps tuples without optional elements fully required', () => {
+  it('keeps tuples without optional elements fully required', async () => {
+    const doc = await getDoc();
     expect(
       requireEnvelopeDataSchema({ doc, procPath: 'strictTriple' }),
     ).toEqual({
