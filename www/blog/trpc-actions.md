@@ -241,7 +241,7 @@ export function PostForm() {
       onSubmit={async (e) => {
         e.preventDefault();
         const title = new FormData(e.currentTarget).get('title') as string;
-        // Maybe show loading toast, etc etc. Endless possibilities
+        // Maybe show loading toast, etc. Endless possibilities
         await createPost({ title });
       }}
     >

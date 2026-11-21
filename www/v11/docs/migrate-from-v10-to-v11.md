@@ -313,7 +313,7 @@ See test [here](https://github.com/trpc/trpc/blob/743fa6aed8ac889d9c60f321c4b4ad
 
 You now set up data transformers in the `links`-array instead of when you initialize the tRPC-client;
 
-Wherever you have a HTTP Link you have to add `transformer: superjson` if you use transformers:
+Wherever you have an HTTP Link you have to add `transformer: superjson` if you use transformers:
 
 ```ts twoslash
 import { httpBatchLink } from '@trpc/client';
