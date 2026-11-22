@@ -105,6 +105,15 @@ function once<T>(fn: () => T): () => T {
   return (): T => {
     if (result === uncalled) {
       result = fn();
+      if (result instanceof Promise) {
+        const pending = result;
+        // Drop a rejected call so the next one runs `fn` again.
+        void pending.catch(() => {
+          if (result === pending) {
+            result = uncalled;
+          }
+        });
+      }
     }
     return result;
   };

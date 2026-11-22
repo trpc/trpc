@@ -218,4 +218,63 @@ describe('lazy loading routers', () => {
 
     expect(await parallel).toEqual(['one', 'two']);
   });
+
+  // regression: https://github.com/trpc/trpc/issues/8149
+  test('a failed lazy load is retried on the next call', async () => {
+    let attempts = 0;
+    const router = t.router({
+      user: lazy(async () => {
+        attempts++;
+        if (attempts === 1) {
+          throw new Error('chunk failed to load');
+        }
+        return t.router({
+          hello: t.procedure.query(() => 'hi'),
+        });
+      }),
+    });
+    const caller = router.createCaller({});
+
+    await expect(caller.user.hello()).rejects.toThrow('chunk failed to load');
+    expect(attempts).toBe(1);
+
+    expect(await caller.user.hello()).toBe('hi');
+    expect(attempts).toBe(2);
+  });
+
+  test('concurrent callers share one in-flight lazy load', async () => {
+    let release = (): void => {
+      throw new Error('release was not set');
+    };
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const loader = vi.fn(async () => {
+      await gate;
+      return t.router({
+        hello: t.procedure.query(() => 'hi'),
+      });
+    });
+    const caller = t.router({ user: lazy(loader) }).createCaller({});
+
+    const pending = Promise.all([caller.user.hello(), caller.user.hello()]);
+
+    expect(loader).toHaveBeenCalledTimes(1);
+    release();
+    expect(await pending).toEqual(['hi', 'hi']);
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  test('a successful lazy load is not repeated', async () => {
+    const loader = vi.fn(async () =>
+      t.router({
+        hello: t.procedure.query(() => 'hi'),
+      }),
+    );
+    const caller = t.router({ user: lazy(loader) }).createCaller({});
+
+    expect(await caller.user.hello()).toBe('hi');
+    expect(await caller.user.hello()).toBe('hi');
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
 });
