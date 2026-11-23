@@ -24,11 +24,11 @@ export default function Page() {
   });
 
   return (
-    <main>
+    <div>
       <h1>Edge runtime</h1>
       <pre id="query-key">
         {JSON.stringify(trpc.greeting.queryKey({ text: 'edge' }))}
       </pre>
-    </main>
+    </div>
   );
 }
