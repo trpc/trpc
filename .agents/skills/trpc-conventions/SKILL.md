@@ -17,11 +17,12 @@ description: tRPC's test setup and TypeScript conventions, which win where the g
 - Watch it fail, then pass: `pnpm vitest run <file>` from the repo root.
 - The PR's `Regression check:` line names the test and what it catches without the fix.
 - In new tests, wait on a condition with `vi.waitFor` rather than a fixed sleep.
+- No `beforeEach`, `beforeAll`, `afterEach` or `afterAll` (`vitest/no-hooks`). Each test sets up what it needs with `using`/`await using`: a helper returns a disposable that undoes its setup, such as `using _timers = fakeTimersResource()`. Share expensive read-only setup with a memoised getter instead of `beforeAll`.
 - Add tests; don't rewrite or weaken existing ones unless the expected behaviour changed and the PR says why.
 
 ## TypeScript
 
-- Internal (non-exported) parameters, properties and options are required: pass an explicit `null`, a literal string or a symbol. Optionals are only for the convenience of public APIs.
+- Internal (non-exported) parameters, properties and options are required. Pass absence explicitly as `null`, `undefined`, a literal or a symbol, whichever fits: `x: T | undefined` that every caller passes is fine, but not `x?: T` or an optional or defaulted parameter. Optionals are only conveniences on public APIs; normalise a public options object once at the boundary into a fully required internal shape.
 
   ```ts
   function connect(url: string, retry?: RetryOptions); // before

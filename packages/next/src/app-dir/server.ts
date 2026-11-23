@@ -35,6 +35,17 @@ import type {
 import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecorateRouterRecord } from './types';
 
+/**
+ * Next 16's `revalidateTag` takes a cache-life profile and warns without one;
+ * `{ expire: 0 }` keeps the immediate expiry one argument gave. Next 15 takes
+ * a single argument and ignores the second.
+ */
+function expireTag(tag: string) {
+  (revalidateTag as (tag: string, profile: { expire: number }) => void)(tag, {
+    expire: 0,
+  });
+}
+
 export type { ActionHandlerDef };
 
 /**
@@ -70,7 +81,7 @@ export function experimental_createTRPCNextAppDirServer<
 
     if (action === 'revalidate') {
       try {
-        revalidateTag(cacheTag);
+        expireTag(cacheTag);
         return Promise.resolve({ revalidated: true });
       } catch (cause) {
         return Promise.resolve({
@@ -233,7 +244,7 @@ export async function experimental_revalidateEndpoint(req: Request) {
     );
   }
 
-  revalidateTag(cacheTag);
+  expireTag(cacheTag);
   return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
     status: 200,
   });

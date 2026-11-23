@@ -2,7 +2,6 @@ import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
@@ -25,42 +24,38 @@ import { z } from 'zod';
  * `undefined`) as the initial pageParam.
  */
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const posts = [
-      { id: 0, title: 'first post' },
-      { id: 1, title: 'second post' },
-      { id: 2, title: 'third post' },
-    ];
+  const posts = [
+    { id: 0, title: 'first post' },
+    { id: 1, title: 'second post' },
+    { id: 2, title: 'third post' },
+  ];
 
-    const appRouter = t.router({
-      posts: t.procedure
-        .input(
-          z.object({
-            // Strict: required field, accepts null, no default.
-            // Must fail if cursor is not injected at all.
-            cursor: z.number().nullable(),
-          }),
-        )
-        .query(({ input }) => {
-          const offset = input.cursor ?? 0;
-          return {
-            items: [posts[offset]!],
-            nextCursor: offset + 1 < posts.length ? offset + 1 : null,
-          };
+  const appRouter = t.router({
+    posts: t.procedure
+      .input(
+        z.object({
+          // Strict: required field, accepts null, no default.
+          // Must fail if cursor is not injected at all.
+          cursor: z.number().nullable(),
         }),
-    });
+      )
+      .query(({ input }) => {
+        const offset = input.cursor ?? 0;
+        return {
+          items: [posts[offset]!],
+          nextCursor: offset + 1 < posts.length ? offset + 1 : null,
+        };
+      }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('issue #6862: useInfiniteQuery loads on initial render with strict nullable cursor', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
 
   function MyComponent() {
@@ -100,6 +95,7 @@ test('issue #6862: useInfiniteQuery loads on initial render with strict nullable
 });
 
 test('issue #6862: useInfiniteQuery works after refetch when cursor resets to initialCursor', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
 
   function MyComponent() {

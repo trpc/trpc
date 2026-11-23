@@ -124,6 +124,46 @@ Object {
   }
 });
 
+test('content-type replaces the default', async () => {
+  const t = initTRPC.create();
+
+  const appRouter = t.router({
+    q: t.procedure.query(() => 'q'),
+    m: t.procedure.mutation(() => 'm'),
+  });
+
+  await using ctx = testServerAndClientResource(appRouter, {
+    server: {
+      responseMeta() {
+        return {
+          headers: new Headers([
+            ['content-type', 'application/json; charset=utf-8'],
+          ]),
+        };
+      },
+    },
+  });
+
+  const ok = await fetch(`${ctx.httpUrl}/q`);
+  expect(ok.status).toBe(200);
+  expect(ok.headers.get('content-type')).toBe(
+    'application/json; charset=utf-8',
+  );
+
+  // rejected before the call runs
+  const unsupported = await fetch(`${ctx.httpUrl}/m`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'text/plain',
+    },
+    body: '{}',
+  });
+  expect(unsupported.status).toBe(415);
+  expect(unsupported.headers.get('content-type')).toBe(
+    'application/json; charset=utf-8',
+  );
+});
+
 describe('deprecated headers object', () => {
   test('set custom headers in beforeEnd', async () => {
     const onError = vi.fn();
@@ -240,5 +280,30 @@ Object {
 }
 `);
     }
+  });
+
+  test('content-type array replaces the default', async () => {
+    const t = initTRPC.create();
+
+    const appRouter = t.router({
+      q: t.procedure.query(() => 'q'),
+    });
+
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: {
+        responseMeta() {
+          return {
+            headers: {
+              'content-type': ['application/json; charset=utf-8'],
+            },
+          };
+        },
+      },
+    });
+
+    const res = await fetch(`${ctx.httpUrl}/q`);
+    expect(res.headers.get('content-type')).toBe(
+      'application/json; charset=utf-8',
+    );
   });
 });

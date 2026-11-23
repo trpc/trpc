@@ -24,5 +24,3 @@ logs
 !.env.example
 
 # Playwright
-test-results/
-playwright-report/

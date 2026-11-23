@@ -16,9 +16,12 @@
 
 > A tRPC wrapper around react-query.
 
+> [!WARNING]
+> `@trpc/react-query` is deprecated. It only gets bug fixes and will be removed in the next major version of tRPC. Use [`@trpc/tanstack-react-query`](https://trpc.io/docs/client/tanstack-react-query) instead. To move an existing project, follow the [migration guide](https://trpc.io/docs/client/tanstack-react-query/migrating).
+
 ## Documentation
 
-Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/react-query)
+Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/client/react)
 
 ## Installation
 
@@ -100,7 +103,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <!-- markdownlint-disable -->
 
 <p align="center">
-  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=b6cfa2a2" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
+  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/_/sponsor-cloud.png" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
 </p>
 
 ### Silver partners
