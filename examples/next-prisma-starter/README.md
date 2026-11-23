@@ -3,10 +3,10 @@
 ## Features
 
 - 🧙‍♂️ E2E typesafety with [tRPC](https://trpc.io)
-- ⚡ Full-stack React with Next.js
+- ⚡ Full-stack React with the Next.js App Router
 - ⚡ Database with Prisma
 - ⚙️ VSCode extensions
-- 🎨 ESLint + Prettier
+- 🎨 Oxlint + Oxfmt
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
@@ -15,7 +15,7 @@
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 pnpm
 pnpm dx
@@ -23,7 +23,7 @@ pnpm dx
 
 ### Requirements
 
-- Node >= 18.0.0
+- Node >= 20
 - Postgres
 
 ## Development
@@ -31,7 +31,7 @@ pnpm dx
 ### Start project
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-starter trpc-prisma-starter
 cd trpc-prisma-starter
 pnpm
 pnpm dx
@@ -73,8 +73,16 @@ Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints)
       <td>Prisma schema</td>
     </tr>
     <tr>
-      <td><a href="./src/pages/api/trpc/[trpc].ts"><code>./src/pages/api/trpc/[trpc].ts</code></a></td>
+      <td><a href="./src/app/api/trpc/[trpc]/route.ts"><code>./src/app/api/trpc/[trpc]/route.ts</code></a></td>
       <td>tRPC response handler</td>
+    </tr>
+    <tr>
+      <td><a href="./src/trpc"><code>./src/trpc</code></a></td>
+      <td>tRPC for client components (<code>client.tsx</code>) and server components (<code>server.tsx</code>)</td>
+    </tr>
+    <tr>
+      <td><a href="./src/app/page.tsx"><code>./src/app/page.tsx</code></a></td>
+      <td>A server component that loads the posts with <a href="https://trpc.io/docs/client/tanstack-react-query/handles">query handles</a> for the client components</td>
     </tr>
     <tr>
       <td><a href="./src/server/routers"><code>./src/server/routers</code></a></td>

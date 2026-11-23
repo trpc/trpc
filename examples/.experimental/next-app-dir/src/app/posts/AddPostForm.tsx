@@ -1,5 +1,15 @@
 'use client';
 
+import { Button } from '@shared/ui/components/button';
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@shared/ui/components/field';
+import { Input } from '@shared/ui/components/input';
+import { Spinner } from '@shared/ui/components/spinner';
+import { Textarea } from '@shared/ui/components/textarea';
 import toast from 'react-hot-toast';
 import { addPost } from './_data';
 import { addPostSchema } from './_data.schema';
@@ -13,6 +23,7 @@ export function AddPostForm() {
       content: 'this is a test post',
     },
   });
+  const { errors } = form.formState;
 
   return (
     <Form
@@ -32,30 +43,40 @@ export function AddPostForm() {
           });
       }}
     >
-      <div>
-        <input
-          type="text"
-          {...form.register('title')}
-          defaultValue={form.control._defaultValues.title}
-        />
-        {form.formState.errors.title && (
-          <div>Invalid title: {form.formState.errors.title.message}</div>
-        )}
-      </div>
+      <FieldGroup>
+        <Field data-invalid={!!errors.title}>
+          <FieldLabel htmlFor="title">Title</FieldLabel>
+          <Input
+            id="title"
+            type="text"
+            aria-invalid={!!errors.title}
+            {...form.register('title')}
+            defaultValue={form.control._defaultValues.title}
+          />
+          <FieldError errors={[errors.title]} />
+        </Field>
 
-      <div>
-        <input
-          type="text"
-          {...form.register('content')}
-          defaultValue={form.control._defaultValues.content}
-        />
-        {form.formState.errors.content && (
-          <div>Invalid content: {form.formState.errors.content.message}</div>
-        )}
-      </div>
-      <button type="submit" disabled={form.formState.isSubmitting}>
-        Add post
-      </button>
+        <Field data-invalid={!!errors.content}>
+          <FieldLabel htmlFor="content">Content</FieldLabel>
+          <Textarea
+            id="content"
+            rows={3}
+            aria-invalid={!!errors.content}
+            {...form.register('content')}
+            defaultValue={form.control._defaultValues.content}
+          />
+          <FieldError errors={[errors.content]} />
+        </Field>
+
+        <Button
+          type="submit"
+          className="self-start"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting && <Spinner />}
+          Add post
+        </Button>
+      </FieldGroup>
     </Form>
   );
 }

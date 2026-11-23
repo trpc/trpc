@@ -1,0 +1,53 @@
+---
+id: disabling-queries
+title: Disabling Queries
+sidebar_label: Disabling Queries
+slug: /client/react/disabling-queries
+section: "Client Usage"
+parent: "client/react"
+order: 66
+---
+
+:::warning Deprecated
+The classic React Query integration (`@trpc/react-query`) only gets bug fixes, and will be removed in the next major version of tRPC. New projects should use the [TanStack React Query integration](/docs/client/tanstack-react-query) (`@trpc/tanstack-react-query`). To move an existing project, follow the [migration guide](/docs/client/tanstack-react-query/migrating).
+:::
+
+To disable queries, you can pass `skipToken` as the first argument to `useQuery`, `useInfiniteQuery`, and `useSubscription`. This will prevent the query from being executed.
+
+### Typesafe conditional queries using `skipToken`
+
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  getUserByName: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return { name: input.name, email: 'user@example.com' };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
+import React, { useState } from 'react';
+import { skipToken } from '@tanstack/react-query';
+import { trpc } from './utils/trpc';
+
+export function MyComponent() {
+  const [name, setName] = useState<string | undefined>();
+
+  const result = trpc.getUserByName.useQuery(name ? { name: name } : skipToken);
+
+  return (
+    <div>{result.data?.name}</div>
+  );
+}
+```

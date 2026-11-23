@@ -430,13 +430,16 @@ test('create client with links', async () => {
 });
 
 describe('loggerLink', () => {
-  const logger = {
-    error: vi.fn(),
-    log: vi.fn(),
-  };
-  const logLink = loggerLink({
-    console: logger,
-  })(mockRuntime);
+  function setup() {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    const logLink = loggerLink({
+      console: logger,
+    })(mockRuntime);
+    return { logger, logLink };
+  }
   const okLink: OperationLink<AnyRouter> = () =>
     observable((o) => {
       o.next({
@@ -451,12 +454,8 @@ describe('loggerLink', () => {
       o.error(new TRPCClientError('..'));
     });
 
-  beforeEach(() => {
-    logger.error.mockReset();
-    logger.log.mockReset();
-  });
-
   test('query', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -485,6 +484,7 @@ describe('loggerLink', () => {
   });
 
   test('subscription', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -507,6 +507,7 @@ describe('loggerLink', () => {
   });
 
   test('mutation', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -530,6 +531,7 @@ describe('loggerLink', () => {
   });
 
   test('query 2', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, errorLink],
       op: {

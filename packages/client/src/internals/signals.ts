@@ -40,17 +40,31 @@ export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
 export function raceAbortSignals(
   ...signals: Maybe<AbortSignal>[]
 ): AbortSignal {
+  return raceAbortSignalsWithCleanup(...signals).signal;
+}
+
+// Completion can release input listeners without aborting a consumed response.
+export function raceAbortSignalsWithCleanup(...signals: Maybe<AbortSignal>[]) {
   const ac = new AbortController();
+  const cleanup = () => {
+    for (const signal of signals) {
+      signal?.removeEventListener('abort', onAbort);
+    }
+  };
+  const onAbort = () => {
+    cleanup();
+    ac.abort();
+  };
 
   for (const signal of signals) {
     if (signal?.aborted) {
-      ac.abort();
-    } else {
-      signal?.addEventListener('abort', () => ac.abort(), { once: true });
+      onAbort();
+      break;
     }
+    signal?.addEventListener('abort', onAbort, { once: true });
   }
 
-  return ac.signal;
+  return { signal: ac.signal, cleanup };
 }
 
 export function abortSignalToPromise(signal: AbortSignal): Promise<never> {
@@ -68,3 +82,36 @@ export function abortSignalToPromise(signal: AbortSignal): Promise<never> {
     );
   });
 }
+
+/**
+ * Polyfill for DOMException with AbortError name
+ */
+class AbortError extends Error {
+  constructor() {
+    const name = 'AbortError';
+    super(name);
+    this.name = name;
+    this.message = name;
+  }
+}
+
+/**
+ * Polyfill for `signal.throwIfAborted()`
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted
+ */
+export const throwIfAborted = (signal: Maybe<AbortSignal>) => {
+  if (!signal?.aborted) {
+    return;
+  }
+  // If available, use the native implementation
+  signal.throwIfAborted?.();
+
+  // If we have `DOMException`, use it
+  if (typeof DOMException !== 'undefined') {
+    throw new DOMException('AbortError', 'AbortError');
+  }
+
+  // Otherwise, use our own implementation
+  throw new AbortError();
+};

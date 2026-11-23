@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  inferAsyncIterableYield,
   inferClientTypes,
   inferProcedureErrorShape,
   inferProcedureInput,
@@ -16,27 +17,36 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
+import type {
+  TRPCSubscriptionCallbacks,
+  TRPCSubscriptionObserver,
+  TRPCSubscriptionWithoutCallbacks,
+} from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCTaggedPromise } from './safe';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
+ * The type of a client for a router.
+ * @deprecated Use {@link TRPCClient} instead. This will be removed in v12.
  * @public
- * @deprecated use {@link TRPCClient} instead, will be removed in v12
  **/
 export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
 /**
+ * The type of a client for a router.
+ * @deprecated Use {@link TRPCClient} instead. This will be removed in v12.
  * @public
- * @deprecated use {@link TRPCClient} instead, will be removed in v12
  **/
 export type CreateTRPCClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
 const untypedClientSymbol = Symbol.for('trpc_untypedClient');
 
 /**
+ * A typed client for a router, as `createTRPCClient` returns it. Each
+ * procedure has `.query()`, `.mutate()` or `.subscribe()`.
+ * @see https://trpc.io/docs/client/vanilla/infer-types
  * @public
  **/
 export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
@@ -49,7 +59,10 @@ export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
   [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
 };
 
-/** @internal */
+/**
+ * A procedure's types, as the client sees them.
+ * @internal
+ */
 export type TRPCResolverDef = {
   input: any;
   output: any;
@@ -62,7 +75,10 @@ type coerceAsyncGeneratorToIterable<T> =
     ? AsyncIterable<$T, $Return, $Next>
     : T;
 
-/** @internal */
+/**
+ * The `.query()` or `.mutate()` of a procedure on the client.
+ * @internal
+ */
 export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
@@ -71,14 +87,25 @@ export type Resolver<TDef extends TRPCResolverDef> = (
   TDef['errorShape']
 >;
 
-/** @internal */
-export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
-  input: TDef['input'],
-  opts: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
-    TRPCProcedureOptions,
-) => Unsubscribable;
+/**
+ * The `.subscribe()` of a subscription procedure on the client.
+ * @internal
+ */
+export type SubscriptionResolver<TDef extends TRPCResolverDef> = {
+  (
+    input: TDef['input'],
+    opts: TRPCSubscriptionCallbacks<TDef['output'], TRPCClientError<TDef>> &
+      TRPCProcedureOptions,
+  ): Unsubscribable;
+  <
+    TOpts extends TRPCProcedureOptions &
+      Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> =
+      TRPCProcedureOptions,
+  >(
+    input: TDef['input'],
+    opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<inferAsyncIterableYield<TDef['output']>>;
+};
 
 type DecorateProcedure<
   TType extends ProcedureType,
@@ -133,7 +160,10 @@ const clientCallTypeMap: Record<
   subscribe: 'subscription',
 };
 
-/** @internal */
+/**
+ * The procedure type of a client method: `query`, `mutate` or `subscribe`.
+ * @internal
+ */
 export const clientCallTypeToProcedureType = (
   clientCallType: string,
 ): ProcedureType => {
@@ -141,6 +171,7 @@ export const clientCallTypeToProcedureType = (
 };
 
 /**
+ * Wraps an untyped client in the typed proxy `createTRPCClient` returns.
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
@@ -162,6 +193,18 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   });
 }
 
+/**
+ * Creates a typed client for a router. Pass the router's type, and the
+ * links that send its calls.
+ * @example
+ * ```ts
+ * const client = createTRPCClient<AppRouter>({
+ *   links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
+ * });
+ * const post = await client.post.byId.query({ id: '1' });
+ * ```
+ * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
+ */
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ): TRPCClient<TRouter> {
@@ -171,7 +214,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 }
 
 /**
- * Get an untyped client from a proxy client
+ * The untyped client behind a typed client, which calls procedures by
+ * path string.
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(

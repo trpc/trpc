@@ -3,22 +3,15 @@ import { render } from '@testing-library/react';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import React, { useEffect } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 test('react types test', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
   function MyComponent() {
     const mutation = trpc.addPost.useMutation();
 
     useEffect(() => {
       mutation.mutate({ title: 123 as any });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
 
     if (mutation.error?.shape) {

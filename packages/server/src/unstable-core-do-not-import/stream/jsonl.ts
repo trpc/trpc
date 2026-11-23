@@ -58,7 +58,8 @@ type ChunkDefinitionKey =
 
 type ChunkIndex = number & { __chunkIndex: true };
 type ChunkValueType =
-  CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
+  | CHUNK_VALUE_TYPE_PROMISE
+  | CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 type ChunkDefinition = [
   key: ChunkDefinitionKey,
   type: ChunkValueType,
@@ -404,6 +405,10 @@ function createConsumerStream<THead>(
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamsManager(abortController: AbortController) {
+  let terminalState:
+    | { type: 'closed' }
+    | { type: 'errored'; reason: unknown }
+    | undefined;
   const controllerMap = new Map<
     ChunkIndex,
     ReturnType<typeof createStreamController>
@@ -439,6 +444,7 @@ function createStreamsManager(abortController: AbortController) {
         }
       },
       closed: false,
+      // A lazy iterable may acquire its reader after the source closes or errors.
       getReaderResource: () => {
         const reader = stream.getReader();
 
@@ -462,7 +468,6 @@ function createStreamsManager(abortController: AbortController) {
         enqueue: () => {
           // noop
         },
-        getReaderResource: null,
         error: () => {
           // noop
         },
@@ -480,6 +485,12 @@ function createStreamsManager(abortController: AbortController) {
     if (!c) {
       c = createStreamController();
       controllerMap.set(chunkId, c);
+      // Buffered values can reveal nested async values after the source ends.
+      if (terminalState?.type === 'closed') {
+        c.close();
+      } else if (terminalState?.type === 'errored') {
+        c.error(terminalState.reason);
+      }
     }
     return c;
   }
@@ -488,6 +499,10 @@ function createStreamsManager(abortController: AbortController) {
    * Cancels all pending controllers and rejects deferred promises
    */
   function cancelAll(reason: unknown) {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'errored', reason };
     for (const controller of controllerMap.values()) {
       controller.error(reason);
     }
@@ -497,6 +512,10 @@ function createStreamsManager(abortController: AbortController) {
    * Closes all pending controllers to preserve buffered data
    */
   function closeAll() {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'closed' };
     for (const controller of controllerMap.values()) {
       controller.close();
     }
@@ -545,7 +564,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const controller = streamManager.getOrCreate(chunkId);
 
     if (type === CHUNK_VALUE_TYPE_PROMISE) {
-      return run(async () => {
+      const promise = run(async () => {
         using reader = controller.getReaderResource();
 
         const { done, value } = await reader.read();
@@ -562,6 +581,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
             throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
         }
       });
+      // The promise is created eagerly, before anyone reads it, and may never be read.
+      promise.catch(() => {
+        // noop
+      });
+      return promise;
     }
     if (type === CHUNK_VALUE_TYPE_ASYNC_ITERABLE) {
       return run(async function* () {

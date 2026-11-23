@@ -2,6 +2,7 @@ import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import type { PathSeparator } from './http/pathSeparator';
 import type {
   AnyProcedure,
   ErrorHandlerOptions,
@@ -20,6 +21,9 @@ import {
   mergeWithoutOverrides,
 } from './utils';
 
+/**
+ * The procedures and sub-routers of a router, by name.
+ */
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
 }
@@ -35,6 +39,8 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 >;
 
 /**
+ * A router's record with every procedure turned into a function, as a
+ * caller has it.
  * @internal
  */
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
@@ -48,28 +54,31 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
 };
 
 /**
+ * Called when a procedure called through a caller throws.
  * @internal
  */
-
 export type RouterCallerErrorHandler<TContext> = (
   opts: ErrorHandlerOptions<TContext>,
 ) => void;
 
 /**
+ * Creates a caller from a context, or from a function that returns one.
+ * A function is called on each procedure call, so cache it (for example
+ * with `React.cache`).
  * @internal
  */
 export type RouterCaller<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = (
-  /**
-   * @note
-   * If passing a function, we recommend it's a cached function
-   * e.g. wrapped in `React.cache` to avoid unnecessary computations
-   */
   ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
   options?: {
+    /** Called when a procedure throws, before the error is rethrown. */
     onError?: RouterCallerErrorHandler<TRoot['ctx']>;
+    /**
+     * Passed to middleware and resolvers as `signal`. It doesn't stop a
+     * call by itself; the resolver has to check it.
+     */
     signal?: AbortSignal;
   },
 ) => DecorateRouterRecord<TRecord>;
@@ -80,6 +89,7 @@ export type RouterCaller<
 const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
   __brand: 'lazyMarker';
 };
+/** A router that `lazy()` loads on its first call. */
 export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 
 type LazyLoader<TAny> = {
@@ -89,19 +99,30 @@ type LazyLoader<TAny> = {
   key: string;
 };
 
-function once<T>(fn: () => T): () => T {
+function once<T>(fn: () => Promise<T>): () => Promise<T> {
   const uncalled = Symbol();
-  let result: T | typeof uncalled = uncalled;
-  return (): T => {
+  let result: Promise<T> | typeof uncalled = uncalled;
+  return (): Promise<T> => {
     if (result === uncalled) {
-      result = fn();
+      result = fn().catch((cause) => {
+        result = uncalled;
+        throw cause;
+      });
     }
     return result;
   };
 }
 
 /**
- * Lazy load a router
+ * Loads a router on its first call instead of at startup, which can make
+ * cold starts faster. Pass a function that imports the router, or a module
+ * whose only export is the router.
+ * @example
+ * ```ts
+ * const appRouter = router({
+ *   slow: lazy(() => import('./slow.js').then((m) => m.slowRouter)),
+ * });
+ * ```
  * @see https://trpc.io/docs/server/merging-routers#lazy-load
  */
 export function lazy<TRouter extends AnyRouter>(
@@ -141,6 +162,7 @@ function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
 }
 
 /**
+ * A router's definition: its config and procedures.
  * @internal
  */
 export interface RouterDef<
@@ -155,37 +177,62 @@ export interface RouterDef<
   lazy: Record<string, LazyLoader<AnyRouter>>;
 }
 
+/**
+ * A router: procedures and sub-routers under one root config.
+ * @see https://trpc.io/docs/server/routers
+ */
 export interface Router<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > {
   _def: RouterDef<TRoot, TRecord>;
   /**
-   * @see https://trpc.io/docs/v11/server/server-side-calls
+   * Creates a caller, which calls the router's procedures directly on the
+   * server, from a context.
+   * @see https://trpc.io/docs/server/server-side-calls#routercreatecaller
    */
   createCaller: RouterCaller<TRoot, TRecord>;
 }
 
+/**
+ * A router as `t.router()` returns it, with its procedures and sub-routers
+ * as properties.
+ */
 export type BuiltRouter<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = Router<TRoot, TRecord> & TRecord;
 
+/**
+ * The type of `t.router()`.
+ * @see https://trpc.io/docs/server/routers
+ */
 export interface RouterBuilder<TRoot extends AnyRootTypes> {
   <TIn extends CreateRouterOptions>(
     _: TIn,
   ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TIn>>;
 }
 
+/** Any router, for use in generic constraints. */
 export type AnyRouter = Router<any, any>;
 
+/** A router's root types: its context, metadata, error shape and transformer. */
 export type inferRouterRootTypes<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['$types'];
 
+/** The type of a router's context. */
 export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['ctx'];
+/**
+ * The shape of a router's errors, as its error formatter returns them.
+ * @see https://trpc.io/docs/server/error-formatting
+ */
 export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['errorShape'];
+/**
+ * The type of a router's metadata.
+ * @see https://trpc.io/docs/server/metadata
+ */
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
@@ -222,13 +269,23 @@ const reservedWords = [
   'apply',
 ];
 
-/** @internal */
+/**
+ * What `t.router()` takes: procedures, routers, lazy routers and nested
+ * objects of them, by name.
+ * @internal
+ */
 export type CreateRouterOptions = {
   [key: string]:
-    AnyProcedure | AnyRouter | CreateRouterOptions | Lazy<AnyRouter>;
+    | AnyProcedure
+    | AnyRouter
+    | CreateRouterOptions
+    | Lazy<AnyRouter>;
 };
 
-/** @internal */
+/**
+ * The record of the router `t.router()` builds from its options.
+ * @internal
+ */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
 > = {
@@ -309,9 +366,17 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       };
     }
 
+    const separator = config.pathSeparator;
+
     function step(from: CreateRouterOptions, path: readonly string[] = []) {
       const aggregate: RouterRecord = emptyObject();
       for (const [key, item] of Object.entries(from ?? {})) {
+        if (separator !== '.' && key.includes(separator)) {
+          // The URL `a_b_c` couldn't say which `_` splits a segment
+          throw new Error(
+            `Key "${[...path, key].join('.')}" contains the pathSeparator ${JSON.stringify(separator)}, so its URL would be ambiguous. Rename it or pick another pathSeparator.`,
+          );
+        }
         if (isLazy(item)) {
           lazy[[...path, key].join('.')] = createLazyLoader({
             path,
@@ -393,7 +458,7 @@ export async function getProcedureAtPath(
       return null;
     }
     // console.log('loading', key, '.......');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     const lazyRouter = _def.lazy[key]!;
     await lazyRouter.load();
 
@@ -404,6 +469,8 @@ export async function getProcedureAtPath(
 }
 
 /**
+ * Calls the procedure at `path`, throwing `NOT_FOUND` if there's none of
+ * that type.
  * @internal
  */
 export async function callProcedure(
@@ -440,6 +507,11 @@ export async function callProcedure(
   return proc(opts);
 }
 
+/**
+ * The type of `t.createCallerFactory()`: takes a router and returns its
+ * `createCaller`.
+ * @see https://trpc.io/docs/server/server-side-calls#create-caller
+ */
 export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
   <TRecord extends RouterRecord>(
     router: Pick<Router<TRoot, TRecord>, '_def'>,
@@ -503,7 +575,10 @@ export function createCallerFactory<
   };
 }
 
-/** @internal */
+/**
+ * The router `t.mergeRouters()` returns.
+ * @internal
+ */
 export type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
@@ -557,16 +632,29 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
     return prev;
   }, defaultTransformer);
 
+  const pathSeparator = routerList.reduce<PathSeparator>((prev, current) => {
+    const next = current._def._config.pathSeparator;
+    if (next === '.') {
+      return prev;
+    }
+    if (prev !== '.' && prev !== next) {
+      throw new Error('You seem to have several pathSeparators');
+    }
+    return next;
+  }, '.');
+
   const router = createRouterFactory({
+    // Options without a merge rule below come from the first router, so a
+    // new root option is carried over without being listed here.
+    ...routerList[0]?._def._config,
     errorFormatter,
     transformer,
+    pathSeparator,
     isDev: routerList.every((r) => r._def._config.isDev),
     allowOutsideOfServer: routerList.every(
       (r) => r._def._config.allowOutsideOfServer,
     ),
     isServer: routerList.every((r) => r._def._config.isServer),
-    $types: routerList[0]?._def._config.$types,
-    sse: routerList[0]?._def._config.sse,
   })(record);
 
   return router as MergeRouters<TRouters>;

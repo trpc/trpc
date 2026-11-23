@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { EventEmitter } from 'node:events';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { observable } from '@trpc/server/observable';
 import { createTRPCUntypedClient } from '../createTRPCUntypedClient';
 import { TRPCClientError } from '../TRPCClientError';
@@ -111,30 +112,27 @@ describe.each([1, 3])('after %i retries', (failures) => {
 });
 
 test('unsubscribing during the retry delay cancels the next attempt', () => {
-  vi.useFakeTimers();
-  try {
-    const cleanup = vi.fn();
-    const retry = vi.fn(() => true);
-    const client = createTRPCUntypedClient({
-      links: [
-        retryLink({ retry, retryDelayMs: () => 100 }),
-        () => () =>
-          observable((observer) => {
-            observer.error(new TRPCClientError('retry'));
-            return cleanup;
-          }),
-      ],
-    });
-    const subscription = client.subscription('messages', undefined, {});
-    expect(retry).toHaveBeenCalledTimes(1);
-    expect(cleanup).toHaveBeenCalledTimes(1);
-    subscription.unsubscribe();
-    vi.runAllTimers();
-    expect(retry).toHaveBeenCalledTimes(1);
-    expect(cleanup).toHaveBeenCalledTimes(1);
-  } finally {
-    vi.useRealTimers();
-  }
+  using timers = fakeTimersResource();
+  const cleanup = vi.fn();
+  const retry = vi.fn(() => true);
+  const client = createTRPCUntypedClient({
+    links: [
+      retryLink({ retry, retryDelayMs: () => 100 }),
+      () => () =>
+        observable((observer) => {
+          observer.error(new TRPCClientError('retry'));
+          return cleanup;
+        }),
+    ],
+  });
+  const ac = new AbortController();
+  client.subscription('messages', undefined, { signal: ac.signal });
+  expect(retry).toHaveBeenCalledTimes(1);
+  expect(cleanup).toHaveBeenCalledTimes(1);
+  ac.abort();
+  timers.runAllTimers();
+  expect(retry).toHaveBeenCalledTimes(1);
+  expect(cleanup).toHaveBeenCalledTimes(1);
 });
 
 test('unsubscribing from a synchronous retried result cleans up that attempt', () => {
@@ -179,41 +177,38 @@ test('unsubscribing from a synchronous retried result cleans up that attempt', (
 test.each(['retry', 'retryDelayMs'] as const)(
   'unsubscribing from %s does not schedule another attempt',
   (callback) => {
-    vi.useFakeTimers();
-    try {
-      const cleanup = vi.fn();
-      let attempts = 0;
-      let fail: () => void = () => {
-        throw new Error('Expected the first attempt to start');
-      };
-      const client = createTRPCUntypedClient({
-        links: [
-          retryLink({
-            retry: () => {
-              if (callback === 'retry') subscription.unsubscribe();
-              return true;
-            },
-            retryDelayMs: () => {
-              if (callback === 'retryDelayMs') subscription.unsubscribe();
-              return 100;
-            },
+    using timers = fakeTimersResource();
+    const cleanup = vi.fn();
+    let attempts = 0;
+    const ac = new AbortController();
+    let fail: () => void = () => {
+      throw new Error('Expected the first attempt to start');
+    };
+    const client = createTRPCUntypedClient({
+      links: [
+        retryLink({
+          retry: () => {
+            if (callback === 'retry') ac.abort();
+            return true;
+          },
+          retryDelayMs: () => {
+            if (callback === 'retryDelayMs') ac.abort();
+            return 100;
+          },
+        }),
+        () => () =>
+          observable((observer) => {
+            attempts++;
+            fail = () => observer.error(new TRPCClientError('retry'));
+            return cleanup;
           }),
-          () => () =>
-            observable((observer) => {
-              attempts++;
-              fail = () => observer.error(new TRPCClientError('retry'));
-              return cleanup;
-            }),
-        ],
-      });
-      const subscription = client.subscription('messages', undefined, {});
-      fail();
-      expect(vi.getTimerCount()).toBe(0);
-      vi.runAllTimers();
-      expect(attempts).toBe(1);
-      expect(cleanup).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
+      ],
+    });
+    client.subscription('messages', undefined, { signal: ac.signal });
+    fail();
+    expect(timers.getTimerCount()).toBe(0);
+    timers.runAllTimers();
+    expect(attempts).toBe(1);
+    expect(cleanup).toHaveBeenCalledTimes(1);
   },
 );

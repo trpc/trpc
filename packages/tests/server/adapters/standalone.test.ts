@@ -1,4 +1,4 @@
-import type { AddressInfo } from 'net';
+import net, { type AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import { TRPCError } from '@trpc/server';
@@ -7,6 +7,7 @@ import type {
   CreateHTTPHandlerOptions,
 } from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { initTRPC } from './../../../server/src/unstable-core-do-not-import/initTRPC';
@@ -56,19 +57,14 @@ function createClient(port: number, address: string) {
   });
 }
 
-let server: ReturnType<typeof createHTTPServer>;
-
 async function startServer(
   opts: CreateHTTPHandlerOptions<any> & { host?: string },
-): Promise<{
-  port: number;
-  address: string;
-}> {
-  server = createHTTPServer(opts);
+) {
+  const server = createHTTPServer(opts);
 
   // NOTE: Using custom hostname requires awaiting for `listening` event.
   // Prior to this event, it's not possible to retrieve resolved `port` and `address` values.
-  return new Promise((resolve, reject) => {
+  const info = await new Promise<AddressInfo>((resolve, reject) => {
     server.addListener('error', (err) => {
       reject(err);
     });
@@ -79,18 +75,22 @@ async function startServer(
     });
     server.listen(0, opts.host ?? '127.0.0.1');
   });
+
+  return makeAsyncResource(
+    { port: info.port, address: info.address },
+    () =>
+      new Promise<void>((resolve) => {
+        server.closeAllConnections();
+        server.close(() => resolve());
+      }),
+  );
 }
 
-afterEach(async () => {
-  if (server) {
-    server.close();
-  }
-});
-
 test('simple query', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const result = await client.hello.query({ who: 'test' });
@@ -102,9 +102,10 @@ test('simple query', async () => {
 });
 
 test('batched requests in body work correctly', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const res = await Promise.all([
@@ -115,9 +116,10 @@ test('batched requests in body work correctly', async () => {
 });
 
 test('error query', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   try {
@@ -129,7 +131,7 @@ test('error query', async () => {
 });
 
 test('middleware intercepts request', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     middleware: (_req, res, _next) => {
       res.statusCode = 419;
       res.end();
@@ -137,6 +139,7 @@ test('middleware intercepts request', async () => {
     },
     router,
   });
+  const { port, address } = $;
 
   const result = await fetch(`http://${address}:${port}`, {
     headers: {
@@ -147,12 +150,13 @@ test('middleware intercepts request', async () => {
 });
 
 test('middleware passes the request', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     middleware: (_req, _res, next) => {
       return next();
     },
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   const result = await client.hello.query({ who: 'test' });
@@ -164,10 +168,11 @@ test('middleware passes the request', async () => {
 });
 
 test('custom host', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     host: findPossibleLocalAddress(),
     router,
   });
+  const { port, address } = $;
   const client = createClient(port, address);
 
   expect(address).not.toEqual('127.0.0.1');
@@ -182,9 +187,10 @@ test('custom host', async () => {
 
 // https://github.com/trpc/trpc/issues/5522
 test('force content-type on mutations', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
 
   const mutUrl = `http://${address}:${port}/mut`;
   {
@@ -233,10 +239,28 @@ test('force content-type on mutations', async () => {
   }
 });
 
+test('basePath without a trailing slash', async () => {
+  await using $ = await startServer({
+    router,
+    basePath: '/trpc',
+  });
+  const { port, address } = $;
+  const input = encodeURIComponent(JSON.stringify({ who: 'test' }));
+
+  for (const path of ['/trpc/hello', '/trpc/hello/']) {
+    const res = await fetch(`http://${address}:${port}${path}?input=${input}`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      result: { data: { text: 'hello test' } },
+    });
+  }
+});
+
 test('bad url does not crash server', async () => {
-  const { port, address } = await startServer({
+  await using $ = await startServer({
     router,
   });
+  const { port, address } = $;
 
   const res = await fetch(`http://${address}:${port}`, {
     method: 'GET',
@@ -351,4 +375,70 @@ test('recipe: max batch size on the server', async () => {
   ).toBe(true);
 
   server.close();
+});
+
+// Regression check: without ending the body stream when the client
+// disconnects, this test hangs — the procedure never runs and onError never
+// fires
+test('calls onError when the client disconnects mid-body', async () => {
+  const onError = vi.fn();
+  let procedureRan = false;
+
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    longInput: t.procedure.input(z.string()).mutation(({ input }) => {
+      procedureRan = true;
+      return input;
+    }),
+  });
+
+  const server = createHTTPServer({
+    router: appRouter,
+    onError,
+  });
+
+  let receivedRequest = false;
+  server.once('request', () => {
+    receivedRequest = true;
+  });
+
+  server.listen(0);
+  const port = (server.address() as AddressInfo).port;
+
+  // a raw socket that sends half of a JSON body and then disconnects
+  const socket = net.connect(port, '127.0.0.1');
+  try {
+    await new Promise<void>((resolve) => socket.once('connect', resolve));
+
+    const body = 'x'.repeat(128);
+    socket.write(
+      [
+        'POST /longInput HTTP/1.1',
+        `Host: localhost:${port}`,
+        'content-type: application/json',
+        // claim more bytes than are sent, so the body can never end cleanly
+        `content-length: ${body.length + 1024}`,
+        '',
+        '',
+        body,
+      ].join('\r\n'),
+    );
+
+    // wait for the server to start handling the request
+    await vi.waitFor(() => expect(receivedRequest).toBe(true));
+
+    socket.destroy();
+
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1), {
+      timeout: 1500,
+    });
+
+    // the procedure must not have run with a partial body
+    expect(procedureRan).toBe(false);
+  } finally {
+    socket.destroy();
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
+  }
 });

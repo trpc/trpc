@@ -1,6 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import prettier from 'prettier';
+import { format } from 'oxfmt';
+
+type FormatExport = {
+  import: { types: string; default: string };
+  require: { types: string; default: string };
+};
+
+type ConditionalExport = FormatExport & { 'react-server'?: FormatExport };
+
+function formatExport(distPath: string): FormatExport {
+  return {
+    import: { types: `${distPath}.d.mts`, default: `${distPath}.mjs` },
+    require: { types: `${distPath}.d.cts`, default: `${distPath}.cjs` },
+  };
+}
 
 // minimal version of PackageJson type necessary
 export type PackageJson = {
@@ -8,14 +22,7 @@ export type PackageJson = {
   main: string;
   module: string;
   types: string;
-  exports: Record<
-    string,
-    | {
-        import: { default: string; types: string };
-        require: { types: string; default: string };
-      }
-    | string
-  >;
+  exports: Record<string, ConditionalExport | string>;
   files: string[];
   dependencies: Record<string, string>;
   pnpm: {
@@ -35,7 +42,13 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export async function generateEntrypoints(rawInputs: string[]) {
+export async function generateEntrypoints(
+  rawInputs: string[],
+  opts: {
+    /** A separate build of `src/index.ts` for the `react-server` export condition */
+    reactServer?: string;
+  } = {},
+) {
   const inputs = [...rawInputs];
   // set some defaults for the package.json
 
@@ -49,8 +62,14 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: { types: './dist/index.d.mts', default: './dist/index.mjs' },
-      require: { types: './dist/index.d.cts', default: './dist/index.cjs' },
+      // `react-server` has to come first: conditions match in order
+      ...(opts.reactServer && {
+        'react-server': formatExport(
+          './dist/' +
+            opts.reactServer.replace(/^src\//, '').replace(/\.(ts|tsx)$/, ''),
+        ),
+      }),
+      ...formatExport('./dist/index'),
     },
   };
 
@@ -126,9 +145,9 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.files.push('!**/*.test.*');
   pkgJson.files.push('!**/__tests__');
 
-  // Include TanStack Intent skills and bin directories when the package opts in
+  // Ship the agent skills that `prepack` writes from the docs, for TanStack Intent (https://trpc.io/docs/skills)
   if (pkgJson.keywords?.includes('tanstack-intent')) {
-    pkgJson.files.push('skills', '!skills/_artifacts', 'bin');
+    pkgJson.files.push('skills');
   }
 
   // Add `funding` in all packages
@@ -139,19 +158,34 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.peerDependencies['typescript'] = '>=5.7.2';
 
   // write package.json
-  const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
-    parser: 'json-stringify',
-    ...(await prettier.resolveConfig(pkgJsonPath)),
-  });
+  const formattedPkgJson = await formatWithRepoConfig(
+    pkgJsonPath,
+    JSON.stringify(pkgJson),
+  );
   fs.writeFileSync(pkgJsonPath, formattedPkgJson, 'utf8');
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.tasks.build ??= {};
   turboJson.tasks.build.outputs = [...scriptOutputs];
-  const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
-    parser: 'json',
-    ...(await prettier.resolveConfig(turboPath)),
-  });
+  const formattedTurboJson = await formatWithRepoConfig(
+    turboPath,
+    JSON.stringify(turboJson),
+  );
   fs.writeFileSync(turboPath, formattedTurboJson, 'utf8');
+}
+
+async function formatWithRepoConfig(fileName: string, source: string) {
+  const configPath = path.resolve(import.meta.dirname, '../.oxfmtrc.json');
+  const {
+    $schema: _schema,
+    ignorePatterns: _ignorePatterns,
+    overrides: _overrides,
+    ...config
+  } = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const result = await format(fileName, source, config);
+  if (result.errors.length > 0) {
+    throw new Error(`Failed to format ${fileName}`, { cause: result.errors });
+  }
+  return result.code;
 }

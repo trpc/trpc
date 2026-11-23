@@ -19,25 +19,67 @@ import {
   type inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
-import { abortSignalToPromise, raceAbortSignals } from '../internals/signals';
+import {
+  abortSignalToPromise,
+  raceAbortSignals,
+  throwIfAborted,
+} from '../internals/signals';
 import { getTransformer } from '../internals/transformer';
 import type { TransformerOptions } from '../internals/transformer';
 import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from './internals/subscriptions';
 import type { TRPCLink } from './types';
 
+/**
+ * Passed to {@link LocalLinkOptions.createContext}.
+ */
+export type LocalLinkCreateContextOptions = {
+  /**
+   * What tRPC knows about the call, like the `info` that adapters pass to
+   * their `createContext`.
+   */
+  info: {
+    /**
+     * Aborts when the call is cancelled or unsubscribed. Pass it on to work
+     * that creating the context starts, such as `fetch()` calls.
+     */
+    signal: AbortSignal;
+  };
+};
+
+/**
+ * Options for {@link localLink}.
+ *
+ * @see https://trpc.io/docs/client/links/localLink#options
+ */
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
+  /**
+   * The router to call.
+   * @see https://trpc.io/docs/client/links/localLink#router
+   */
   router: TRouter;
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  /**
+   * Creates the context for each call. `info.signal` aborts when the call
+   * is cancelled.
+   * @see https://trpc.io/docs/client/links/localLink#createcontext
+   */
+  createContext: (
+    opts: LocalLinkCreateContextOptions,
+  ) => Promise<inferRouterContext<TRouter>>;
+  /**
+   * Called when a procedure throws.
+   * @see https://trpc.io/docs/client/links/localLink#onerror
+   */
   onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 /**
- * localLink is a terminating link that allows you to make tRPC procedure calls directly in your application without going through HTTP.
+ * A terminating link that calls procedures on a router in the same process,
+ * without HTTP.
  *
  * @see https://trpc.io/docs/client/links/localLink
  */
-export function unstable_localLink<TRouter extends AnyRouter>(
+export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
@@ -73,7 +115,10 @@ export function unstable_localLink<TRouter extends AnyRouter>(
         async function runProcedure(newInput: unknown): Promise<unknown> {
           input = newInput;
 
-          ctx = await opts.createContext();
+          // don't start work for a call that was cancelled before it ran
+          throwIfAborted(signal);
+          ctx = await opts.createContext({ info: { signal } });
+          throwIfAborted(signal);
 
           return callProcedure({
             router: opts.router,
@@ -123,7 +168,10 @@ export function unstable_localLink<TRouter extends AnyRouter>(
           switch (op.type) {
             case 'query':
             case 'mutation': {
-              const result = await runProcedure(op.input);
+              const result = await Promise.race([
+                runProcedure(op.input),
+                signalPromise,
+              ]);
               if (!isAsyncIterable(result)) {
                 observer.next({
                   result: { data: transformChunk(result) },
@@ -286,8 +334,15 @@ export function unstable_localLink<TRouter extends AnyRouter>(
         };
       });
 }
+
 /**
- * @deprecated Renamed to `unstable_localLink`. This alias will be removed in a future major release.
+ * @deprecated Use {@link localLink} instead.
+ * @function
  */
-export const experimental_localLink: typeof unstable_localLink =
-  unstable_localLink;
+export const unstable_localLink = localLink;
+
+/**
+ * @deprecated Use {@link localLink} instead. This alias will be removed in a
+ * future major release.
+ */
+export const experimental_localLink = localLink;

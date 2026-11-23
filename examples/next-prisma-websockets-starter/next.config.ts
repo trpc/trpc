@@ -1,17 +1,12 @@
 import { NextConfig } from 'next';
 
 /**
- * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
+ * @see https://nextjs.org/docs/app/api-reference/config/next-config-js
  */
 export default {
-  serverRuntimeConfig: {
-    // Will only be available on the server side
-  },
-  publicRuntimeConfig: {
-    // Will be available on both server and client
-    APP_URL: process.env.APP_URL,
-    WS_URL: process.env.WS_URL,
-  },
-  /** We run eslint as a separate task in CI */
-  eslint: { ignoreDuringBuilds: !!process.env.CI },
+  // Bundling `ws` breaks its optional native helpers
+  serverExternalPackages: ['ws'],
+  transpilePackages: ['@shared/ui'],
+  /** Next.js only knows ESLint; we lint with oxlint as a separate task */
+  eslint: { ignoreDuringBuilds: true },
 } satisfies NextConfig;

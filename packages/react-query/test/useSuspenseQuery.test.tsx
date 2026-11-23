@@ -3,32 +3,27 @@ import { doNotExecute } from '@trpc/server/__tests__/suppressLogs';
 import { skipToken } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-      }),
-    });
+function setup() {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => '__result' as const),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 test('useSuspenseQuery()', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const [data, query1] = client.post.byId.useSuspenseQuery(
@@ -68,6 +63,7 @@ test('useSuspenseQuery()', async () => {
 });
 
 test('useSuspenseQuery shouldnt accept skipToken', async () => {
+  await using ctx = setup();
   // @ts-expect-error skip token not allowed in useSuspenseQuery
   doNotExecute(() => ctx.client.post.byId.useSuspenseQuery(skipToken));
 });

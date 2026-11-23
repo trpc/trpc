@@ -20,7 +20,6 @@ import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import type { InferQueryLikeData } from '@trpc/react-query/shared';
-import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -97,47 +96,43 @@ describe('polymorphism', () => {
   /**
    * Test setup
    */
-  const ctx = konn()
-    .beforeEach(() => {
-      const {
-        appRouter,
-        IssueExportsProvider,
-        DiscussionExportsProvider,
-        PullRequestExportsProvider,
-      } = createTRPCApi();
+  function setup() {
+    const {
+      appRouter,
+      IssueExportsProvider,
+      DiscussionExportsProvider,
+      PullRequestExportsProvider,
+    } = createTRPCApi();
 
-      const opts = testServerAndClientResource(appRouter);
-      const trpc = createTRPCReact<typeof appRouter>();
+    const opts = testServerAndClientResource(appRouter);
+    const trpc = createTRPCReact<typeof appRouter>();
 
-      const queryClient = new QueryClient();
+    const queryClient = new QueryClient();
 
-      function App(props: { children: ReactNode }) {
-        return (
-          <trpc.Provider
-            {...{ queryClient, client: getUntypedClient(opts.client) }}
-          >
-            <QueryClientProvider client={queryClient}>
-              {props.children}
-            </QueryClientProvider>
-          </trpc.Provider>
-        );
-      }
-      return {
-        ...opts,
-        App,
-        trpc,
-        IssueExportsProvider,
-        DiscussionExportsProvider,
-        PullRequestExportsProvider,
-      };
-    })
-    .afterEach(async (opts) => {
-      await opts?.close?.();
-    })
-    .done();
+    function App(props: { children: ReactNode }) {
+      return (
+        <trpc.Provider
+          {...{ queryClient, client: getUntypedClient(opts.client) }}
+        >
+          <QueryClientProvider client={queryClient}>
+            {props.children}
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+    return {
+      ...opts,
+      App,
+      trpc,
+      IssueExportsProvider,
+      DiscussionExportsProvider,
+      PullRequestExportsProvider,
+    };
+  }
 
   describe('simple factory', () => {
     test('can use a simple factory router with an abstract interface', async () => {
+      await using ctx = setup();
       const { trpc } = ctx;
 
       /**
@@ -203,6 +198,7 @@ describe('polymorphism', () => {
     });
 
     test('can use the abstract interface with a factory instance which has been merged with some extra procedures', async () => {
+      await using ctx = setup();
       const { trpc } = ctx;
 
       function DiscussionsExportPage() {
@@ -266,6 +262,7 @@ describe('polymorphism', () => {
 
   describe('sub-typed factory', () => {
     test('can use a sub-typed factory router with the interfaces from the supertype', async () => {
+      await using ctx = setup();
       const { trpc } = ctx;
 
       /**

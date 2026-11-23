@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["server", "showcase", "vitest.config.mts"],
+  "include": [
+    "server",
+    "showcase",
+    "suppressActWarnings.ts",
+    "vitest.config.mts"
+  ],
   "compilerOptions": {
     "skipLibCheck": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],

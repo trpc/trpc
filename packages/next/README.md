@@ -18,89 +18,69 @@
 
 ## Documentation
 
-Full documentation for `@trpc/next` can be found [here](https://trpc.io/docs/client/nextjs)
+Full documentation for tRPC with Next.js can be found [here](https://trpc.io/docs/client/nextjs).
 
-## Installation
+## Deprecated: `createTRPCNext` and `withTRPC`
 
-```bash
-# npm
-npm install @trpc/next @trpc/react-query @tanstack/react-query
+`createTRPCNext`, `withTRPC` and `ssr: true` (with `@trpc/next/ssrPrepass`) are built on `@trpc/react-query`, which only gets bug fixes and will be removed in the next major version of tRPC. For both the App Router and the Pages Router, use [`@trpc/tanstack-react-query`](https://trpc.io/docs/client/tanstack-react-query) instead:
 
-# Yarn
-yarn add @trpc/next @trpc/react-query @tanstack/react-query
+- [Set up with the App Router](https://trpc.io/docs/client/nextjs/app-router-setup)
+- [Set up with the Pages Router](https://trpc.io/docs/client/nextjs/pages-router/setup), and [move from `createTRPCNext`](https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext)
 
-# pnpm
-pnpm add @trpc/next @trpc/react-query @tanstack/react-query
+The experimental App Router helpers in `@trpc/next/app-dir/*` aren't deprecated.
 
-# Bun
-bun add @trpc/next @trpc/react-query @tanstack/react-query
-```
+## Sponsors
 
-## AI Agents
+If you enjoy working with tRPC and want to support us, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
 
-If you use an AI coding agent, install tRPC skills for better code generation:
+<!-- SPONSORS:LIST:START -->
+<!-- oxfmt-ignore-start -->
+<!-- markdownlint-disable -->
 
-```bash
-npx @tanstack/intent@latest install
-```
+<p align="center">
+  <a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/_/sponsor-cloud.png" width="600" alt="tRPC's sponsors, each drawn bigger the more they've given"/></a>
+</p>
 
-## Basic Example
+### Silver partners
 
-Setup tRPC in `utils/trpc.ts`.
+<table>
+  <tr>
+   <td align="center"><a href="https://www.coderabbit.ai/?utm_source=github&amp;utm_medium=referral&amp;ref=trpc&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/132028505?v=4&amp;s=300" width="150" alt="CodeRabbit"/><br />CodeRabbit</a></td>
+   <td align="center"><a href="https://greptile.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/140149887?v=4&amp;s=300" width="150" alt="Greptile"/><br />Greptile</a></td>
+   <td align="center"><a href="https://serpapi.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://github.com/serpapi.png?s=300" width="150" alt="SerpApi"/><br />SerpApi</a></td>
+  </tr>
+</table>
 
-```ts
-import { createTRPCNext, httpBatchLink } from '@trpc/next';
-// Import the router type from your server file
-import type { AppRouter } from '../pages/api/[trpc].ts';
+### Backers
 
-export const trpc = createTRPCNext<AppRouter>({
-  config() {
-    return {
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:3000/trpc',
-        }),
-      ],
-    };
-  },
-  ssr: false,
-});
-```
+<table>
+  <tr>
+   <td align="center"><a href="https://unkey.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/138932600?v=4&amp;s=200" width="100" alt="Unkey"/><br />Unkey</a></td>
+   <td align="center"><a href="https://github.com/hidrb"><img src="https://avatars.githubusercontent.com/u/77294655?v=4&amp;s=200" width="100" alt="Dr. B"/><br />Dr. B</a></td>
+   <td align="center"><a href="https://github.com/ryanmagoon"><img src="https://avatars.githubusercontent.com/u/5327290?v=4&amp;s=200" width="100" alt="Ryan Magoon"/><br />Ryan Magoon</a></td>
+   <td align="center"><a href="https://proxidize.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/70805857?v=4&amp;s=200" width="100" alt="Proxidize"/><br />Proxidize</a></td>
+   <td align="center"><a href="https://liminity.se/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/179804668?v=4&amp;s=200" width="100" alt="Liminity AB"/><br />Liminity AB</a></td>
+   <td align="center"><a href="https://bestkru.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/159320286?v=4&amp;s=200" width="100" alt="BestKru"/><br />BestKru</a></td>
+  </tr>
+  <tr>
+   <td align="center"><a href="https://maxgreenwald.me/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&amp;v=4&amp;s=200" width="100" alt="Max Greenwald"/><br />Max Greenwald</a></td>
+   <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&amp;v=4&amp;s=200" width="100" alt="Dmitry Maykov"/><br />Dmitry Maykov</a></td>
+   <td align="center"><a href="https://chrisbradley.dev/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&amp;v=4&amp;s=200" width="100" alt="Chris Bradley"/><br />Chris Bradley</a></td>
+   <td align="center"><a href="https://www.fanvue.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/72873652?v=4&amp;s=200" width="100" alt="fanvue"/><br />fanvue</a></td>
+   <td align="center"><a href="https://aerius.se/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/107723282?u=2639caa14ce293a0b6202c5766a40bb99ac9697e&amp;v=4&amp;s=200" width="100" alt="Aerius Ventilation AB"/><br />Aerius Ventilation AB</a></td>
+   <td align="center"><a href="https://automatio.ai/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/1984909?u=b7bf5bc40ed49df3c22f69d2da7b8d78709c49ed&amp;v=4&amp;s=200" width="100" alt="Stefan Smiljkovic"/><br />Stefan Smiljkovic</a></td>
+  </tr>
+  <tr>
+   <td align="center"><a href="https://iamkhan.io/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/6490268?u=59a369dc23fca0ed9943e5f020ff27ca968704d9&amp;v=4&amp;s=200" width="100" alt="Kalle"/><br />Kalle</a></td>
+   <td align="center"><a href="https://drizzle.team/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/108468352?v=4&amp;s=200" width="100" alt="Drizzle Team"/><br />Drizzle Team</a></td>
+   <td align="center"><a href="https://www.spencermckenney.com/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/15722950?u=e9b60ab93918fb2352b6357571cd67b9004d91e6&amp;v=4&amp;s=200" width="100" alt="Spencer McKenney"/><br />Spencer McKenney</a></td>
+   <td align="center"><a href="https://github.com/infodusha"><img src="https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&amp;v=4&amp;s=200" width="100" alt="Andrei Karushev"/><br />Andrei Karushev</a></td>
+   <td align="center"><a href="https://www.venue.ink/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://images.opencollective.com/venue-ink/49dbae6/logo.png?height=200" width="100" alt="Venue.ink"/><br />Venue.ink</a></td>
+   <td align="center"><a href="https://usevault.app/?ref=trpc&amp;utm_source=github&amp;utm_medium=referral&amp;utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/203708130?v=4&amp;s=200" width="100" alt="Vault"/><br />Vault</a></td>
+  </tr>
+</table>
 
-Hook up tRPC inside `_app.tsx`.
+<!-- markdownlint-restore -->
+<!-- oxfmt-ignore-end -->
 
-```ts
-import { trpc } from '~/utils/trpc';
-
-const App = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
-
-export default trpc.withTRPC(App);
-```
-
-Now you can query your API in any component.
-
-```ts
-import { trpc } from '~/utils/trpc';
-
-export function Hello() {
-  const { data, error, status } = trpc.greeting.useQuery({
-    name: 'tRPC',
-  });
-
-  if (error) {
-    return <p>{error.message}</p>;
-  }
-
-  if (status !== 'success') {
-    return <p>Loading...</p>;
-  }
-
-  return <div>{data && <p>{data.greeting}</p>}</div>;
-}
-```
-
-## Server components
-
-See https://trpc.io/docs/client/react/server-components
+<!-- SPONSORS:LIST:END -->

@@ -7,7 +7,9 @@ packages:
   - 'examples/minimal-per-procedure-errors/*'
   - 'examples/minimal-content-types/*'
   - 'www'
-  - 'www/og-image'
+  - 'www/api-reference'
+  - 'www/samples/*'
+  - 'tooling/*'
 publicHoistPattern:
   - '@types/*'
   - '!@types/parse-path'
@@ -21,6 +23,13 @@ preferWorkspacePackages: true
 linkWorkspacePackages: true
 nodeOptions: --no-warnings
 
+# Resolve only versions published at least 7 days ago (in minutes). Renovate's
+# minimumReleaseAge in .github/renovate.json matches it.
+minimumReleaseAge: 10080
+# Non-strict: in-range resolution still prefers mature versions, but a version
+# you pin explicitly (e.g. an urgent security fix) installs even if it is newer,
+# and Renovate's `pnpm update --no-save` works (pnpm/pnpm#14835).
+minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
@@ -44,38 +53,92 @@ allowBuilds:
   workerd: true
 
 catalog:
-  '@types/node': ^24.13.4
-  tsdown: 0.23.0
-  typescript: ^7.0.2
-  eslint: ^10.10.0
-  typescript-eslint: ^8.70.0
-  eslint-plugin-react: ^7.37.5
-  eslint-plugin-react-hooks: ^7.1.1
-  eslint-plugin-unicorn: ^74.0.0
-  '@eslint/compat': ^2.1.1
-  prettier: ^3.9.6
-  prettier-plugin-tailwindcss: ^0.8.1
-  '@ianvs/prettier-plugin-sort-imports': ^4.7.1
-  vitest: ^5.0.0
-  '@vitest/coverage-istanbul': ^5.0.0
-  '@vitest/ui': ^5.0.0
-  vite: ^8.3.0
-  jsdom: ^30.0.1
-  turbo: ^2.10.12
-  undici: ^8.10.2
-  ws: ^8.21.3
-  devalue: ^5.9.2
+  '@types/node': ^24.19.2
+  tsdown: 0.23.7
+  typescript: 7.1.0-beta
+  oxlint: ^1.92.0
+  oxlint-tsgolint: ^7.0.2006
+  '@oxlint/plugins': ^1.92.0
+  oxfmt: ^0.77.0
+  vitest: ^5.0.5
+  '@vitest/coverage-istanbul': ^5.0.5
+  '@vitest/ui': ^5.0.5
+  vite: ^8.3.3
+  jsdom: ^31.0.0
+  turbo: ^2.11.10
+  undici: ^8.12.2
+  ws: ^8.22.1
+  devalue: ^6.0.3
   valibot: ^1.5.0
-  fastify: ^5.12.4
-  '@hey-api/openapi-ts': ^0.99.0
-  '@fastify/websocket': ^11.3.0
-  fastify-plugin: ^6.0.0
-  next: ^15.5.25
-  '@lerna-lite/cli': ^5.6.3
-  '@lerna-lite/publish': ^5.6.3
+  fastify: ^5.12.6
+  '@hey-api/openapi-ts': 0.0.0-next-20260930190945
+  '@fastify/websocket': ^11.3.7
+  fastify-plugin: ^6.0.1
+  next: ^16.4.5
+  '@effect/platform-node': 4.1.2
+  effect: 4.1.2
+  '@tanstack/intent': 0.5.6
+  '@testing-library/dom': ^10.4.2
+  '@testing-library/jest-dom': ^7.0.1
+  '@testing-library/react': ^16.3.3
+  '@testing-library/user-event': ^14.6.8
+  event-source-polyfill: ^1.0.31
+  express: ^5.3.0
+  hash-sum: ^2.0.0
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  superjson: ^2.2.6
+  tsx: ^4.23.15
+  zod: ^4.2.1
+  '@tanstack/react-query': ^5.107.1
+  '@types/express': ^5.0.6
+  '@types/react': ^19.3.0
+  '@types/react-dom': ^19.3.0
+  myzod: ^1.12.1
+  superstruct: ^2.0.2
+  yup: ^1.7.1
+  tslib: ^2.9.1
+  dataloader: ^2.2.3
+  node-fetch: ^3.3.2
+  npm-run-all2: ^9.0.4
+  sury: 11.1.0
+  yaml: 2.9.1
 
 catalogs:
-  ts-api:
-    typescript: ^6.0.3
-patchedDependencies:
-  '@lerna-lite/core@5.6.3': patches/@lerna-lite__core@5.6.3.patch
+  www:
+    '@fastify/websocket': 11.3.7
+    lucide-react: 1.70.0
+    next-themes: 0.4.6
+    sonner: 2.0.8
+    shiki: 4.6.0
+    '@resvg/resvg-wasm': 2.6.2
+    '@tanstack/react-router': 1.170.46
+    '@tanstack/react-start': 1.169.5
+    '@types/aws-lambda': 8.10.164
+    '@types/cors': 2.8.19
+    '@types/event-source-polyfill': 1.0.5
+    '@types/express': 5.0.6
+    '@types/react': 19.3.0
+    '@types/react-dom': 19.3.0
+    '@types/ws': 8.18.2
+    '@vitejs/plugin-react': 6.2.1
+    arktype: 2.2.9
+    class-variance-authority: 0.7.1
+    cors: 2.8.6
+    date-fns: 4.4.0
+    effect: 4.1.2
+    event-source-polyfill: 1.0.31
+    express: 5.3.0
+    fastify: 5.12.8
+    react-dom: 19.3.1
+    react: 19.3.1
+    runtypes: 7.0.5
+    scale-codec: 0.13.0
+    server-only: 0.0.1
+    superjson: 2.2.6
+    superstruct: 2.0.2
+    tailwindcss: 4.3.5
+    typescript: 5.9.3
+    ws: 8.22.2
+    yup: 1.7.1
+    zod: 4.6.7

@@ -1,0 +1,991 @@
+@import '@shared/ui/globals.css';
+@import '@shikijs/twoslash/style-rich.css';
+@plugin '@tailwindcss/typography';
+
+/* How tall the sticky header (`SiteHeader`) is. */
+html {
+  --site-header: 3.5rem;
+  scroll-padding-top: calc(var(--site-header) + 1rem);
+}
+
+/* Below `md`, on the pages that show it, the header has the partners' line (`PartnersBar`) too. */
+@media (width < 48rem) {
+  html:has([data-partners-bar='shown']) {
+    --site-header: 5.75rem;
+  }
+}
+
+/* The home page's "As used by" marquee (`UsedBy`). */
+@theme {
+  --animate-used-by: used-by 60s linear infinite;
+
+  @keyframes used-by {
+    to {
+      translate: -50% 0;
+    }
+  }
+}
+
+/* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
+   comes into view: `pop` from hidden, or `boing` when they were already
+   showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is
+   resolved on `:root`, so one there can't read a delay set per bubble. */
+@theme {
+  --animate-sponsor-pop: sponsor-pop 0.9s ease-out both;
+  --animate-sponsor-boing: sponsor-boing 0.8s ease-out both;
+  --animate-sponsor-ripple: sponsor-ripple 0.9s ease-out forwards;
+  --animate-sponsor-confetti: sponsor-confetti 0.9s
+    cubic-bezier(0.2, 0.8, 0.4, 1) backwards;
+  --animate-sponsor-shimmer: sponsor-shimmer 7s ease-in-out infinite;
+  --animate-sponsor-you: sponsor-you 0.8s ease-out both;
+  --animate-sponsor-you-caption: sponsor-you-caption 0.6s ease-out both;
+
+  @keyframes sponsor-pop {
+    0% {
+      opacity: 0;
+      scale: 0.2;
+    }
+    50% {
+      opacity: 1;
+      scale: 1.35;
+    }
+    70% {
+      scale: 0.9;
+    }
+    85% {
+      scale: 1.06;
+    }
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  @keyframes sponsor-boing {
+    0%,
+    100% {
+      scale: 1;
+    }
+    30% {
+      scale: 1.3;
+    }
+    55% {
+      scale: 0.9;
+    }
+    75% {
+      scale: 1.06;
+    }
+  }
+
+  @keyframes sponsor-ripple {
+    0% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    100% {
+      opacity: 0;
+      scale: 1.9;
+    }
+  }
+
+  @keyframes sponsor-confetti {
+    0% {
+      opacity: 0;
+      top: 50%;
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      top: -75%;
+      scale: 0.4;
+    }
+  }
+
+  /* The reader's own bubble (`YouBubble`), last and calmly. It takes no
+     pointer until it's half in, as `both` holds the first frame while it waits. */
+  @keyframes sponsor-you {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      scale: 0.85;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      scale: 1;
+    }
+  }
+
+  /* Its caption, a little after it. */
+  @keyframes sponsor-you-caption {
+    0% {
+      opacity: 0;
+      pointer-events: none;
+      translate: -50% 4px;
+    }
+    100% {
+      opacity: 1;
+      pointer-events: auto;
+      translate: -50% 0;
+    }
+  }
+
+  /* A sheen that crosses the avatar once, then rests. */
+  @keyframes sponsor-shimmer {
+    0% {
+      background-position: 150% 0;
+    }
+    25%,
+    100% {
+      background-position: -50% 0;
+    }
+  }
+}
+
+/* In-page links glide to their heading. The router scrolls `instant`ly
+   (`scrollRestorationBehavior`), so a new page starts at the top. Off until
+   the page has mounted (`__root.tsx`), so opening a page at a heading jumps
+   there instead of gliding past content that is still loading. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-smooth-scroll] {
+    scroll-behavior: smooth;
+  }
+}
+
+/*
+ * Every color of the typography plugin, for both themes: one left out keeps
+ * the plugin's own, which is for one theme only. `prose.test.ts` checks it.
+ */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--link);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-code: var(--foreground);
+  /* What a code block without a language has, as nothing highlights it */
+  --tw-prose-pre-code: var(--foreground);
+  --tw-prose-pre-bg: var(--card);
+  --tw-prose-lead: var(--muted-foreground);
+  --tw-prose-captions: var(--muted-foreground);
+  --tw-prose-kbd: var(--foreground);
+  --tw-prose-kbd-shadows: var(--border);
+  --tw-prose-quotes: var(--muted-foreground);
+  --tw-prose-quote-borders: var(--border);
+  --tw-prose-hr: var(--border);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-counters: var(--muted-foreground);
+  --tw-prose-invert-body: var(--foreground);
+  --tw-prose-invert-headings: var(--foreground);
+  --tw-prose-invert-links: var(--link);
+  --tw-prose-invert-bold: var(--foreground);
+  --tw-prose-invert-code: var(--foreground);
+  --tw-prose-invert-pre-code: var(--foreground);
+  --tw-prose-invert-pre-bg: var(--card);
+  --tw-prose-invert-lead: var(--muted-foreground);
+  --tw-prose-invert-captions: var(--muted-foreground);
+  --tw-prose-invert-kbd: var(--foreground);
+  --tw-prose-invert-kbd-shadows: var(--border);
+  --tw-prose-invert-quotes: var(--muted-foreground);
+  --tw-prose-invert-quote-borders: var(--border);
+  --tw-prose-invert-hr: var(--border);
+  --tw-prose-invert-th-borders: var(--border);
+  --tw-prose-invert-td-borders: var(--border);
+  --tw-prose-invert-bullets: var(--muted-foreground);
+  --tw-prose-invert-counters: var(--muted-foreground);
+  line-height: 1.7;
+}
+
+.prose a {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+  overflow-wrap: break-word;
+}
+
+.prose a:hover {
+  text-decoration-color: currentColor;
+}
+
+.prose :where(h2, h3) {
+  letter-spacing: -0.01em;
+}
+/* Prose links are lighter than headings; a heading's own link isn't. */
+.prose .heading-anchor {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.heading-anchor::after {
+  content: '#';
+  margin-left: 0.4em;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+:where(h2, h3):hover .heading-anchor::after,
+.heading-anchor:focus-visible::after {
+  opacity: 1;
+}
+
+/* Inline code */
+.prose :where(:not(pre) > code) {
+  border-radius: 0.375rem;
+  background: var(--muted);
+  padding: 0.125em 0.3em;
+  font-size: 0.875em;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  box-decoration-break: clone;
+}
+
+.prose a :where(code) {
+  color: inherit;
+}
+
+.prose :where(:not(pre) > code)::before,
+.prose :where(:not(pre) > code)::after {
+  content: none;
+}
+
+/* Code blocks, highlighted at build time in both themes */
+.code-block {
+  position: relative;
+  margin-block: 1.5em;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--shiki-light-bg, var(--card));
+}
+
+.dark .code-block {
+  background: var(--shiki-dark-bg, var(--card));
+}
+
+.code-block pre {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: 0;
+  background: transparent !important;
+  padding: 1rem 1.125rem;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+.code-block pre:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.code-block .shiki,
+.code-block .shiki span {
+  color: var(--shiki-light);
+}
+
+.dark .code-block .shiki,
+.dark .code-block .shiki span {
+  color: var(--shiki-dark);
+}
+
+.code-title {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1.125rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--background);
+  padding: 0.125rem 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+/* Folded lines: “N collapsed lines”, opened from `DocBody`. A tab in the
+   indent is two columns, the same as `tab-size` on `pre` above. */
+.code-collapse {
+  display: block;
+}
+
+.code-collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0.25rem;
+  background: color-mix(in oklch, var(--foreground) 7%, transparent);
+  padding: 0 0.45em;
+  padding-inline-start: calc(var(--collapse-indent, 0) * 1ch + 0.45em);
+  color: var(--muted-foreground);
+  font: inherit;
+  line-height: inherit;
+  text-align: start;
+  cursor: pointer;
+  user-select: none;
+}
+
+.code-collapse-toggle:hover {
+  background: color-mix(in oklch, var(--foreground) 12%, transparent);
+  color: var(--foreground);
+}
+
+.code-collapse-toggle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.code-collapse-chevron {
+  flex: none;
+  width: 0.4em;
+  height: 0.4em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.05em) rotate(-45deg);
+}
+
+.code-collapse-toggle[aria-expanded='true'] .code-collapse-chevron {
+  transform: translateY(0.05em) rotate(45deg);
+}
+
+.code-collapse-body {
+  display: block;
+}
+
+/* Without hover, Copy always shows. A block with a title bar has it there;
+   one without makes room for it above its first line, except one-line
+   commands under tabs, which are short enough to sit beside it. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+
+  :not(.code-tabs) > .code-block:not(:has(> .code-title)) > pre {
+    padding-top: 2.25rem;
+  }
+}
+
+/* Twoslash: types on hover, and `^?` types pinned under their line */
+:root {
+  --twoslash-popup-bg: var(--popover);
+  --twoslash-popup-color: var(--popover-foreground);
+  --twoslash-border-color: var(--border);
+  --twoslash-docs-color: var(--muted-foreground);
+  --twoslash-docs-font: var(--font-sans);
+  --twoslash-code-font: var(--font-mono);
+  --twoslash-popup-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  /* A `// ^^^` range under a line, such as the handle APIs on the handles page */
+  --twoslash-highlighted-bg: color-mix(in oklab, var(--brand) 14%, transparent);
+  --twoslash-highlighted-border: color-mix(
+    in oklab,
+    var(--brand) 45%,
+    transparent
+  );
+}
+
+.twoslash-highlighted {
+  border-radius: 0.25rem;
+}
+
+.twoslash .twoslash-popup-container {
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  white-space: pre-wrap;
+}
+
+/* `DocBody` places hover popups on screen, so the code block's scrolling
+   doesn't clip them, and caps their height to the room it puts them in. A
+   long type scrolls inside its popup. */
+.twoslash
+  .twoslash-hover:not(.twoslash-query-persisted)
+  .twoslash-popup-container {
+  position: fixed;
+  max-width: min(40rem, calc(100vw - 1rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+  transform: none;
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) .twoslash-popup-arrow {
+  display: none;
+}
+
+/* Hovering a block marks its names faintly; the open one stands out. */
+.twoslash {
+  --twoslash-underline-color: color-mix(
+    in oklch,
+    currentColor 35%,
+    transparent
+  );
+}
+
+.twoslash .twoslash-hover:not(.twoslash-query-persisted) {
+  border-radius: 2px;
+  transition:
+    border-color 0.3s,
+    background-color 0.15s;
+}
+
+.twoslash .twoslash-hover[data-open] {
+  border-bottom-color: currentColor;
+  background-color: color-mix(in oklch, var(--foreground) 9%, transparent);
+}
+
+/* Once `installTwoslashHovers` runs, it opens popups (`data-open`), not
+   `:hover`, so a popup stays while the pointer moves into it. */
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover:not(.twoslash-query-persisted):not([data-open])
+  .twoslash-popup-container {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-twoslash-hovers]
+  .twoslash
+  .twoslash-hover[data-open]
+  .twoslash-popup-container {
+  opacity: 1;
+  pointer-events: auto;
+  user-select: text;
+  transition-duration: 0.1s;
+}
+
+/* A pinned popup says so, with its border. */
+.twoslash .twoslash-hover[data-pinned] .twoslash-popup-container {
+  border-color: color-mix(in oklch, var(--foreground) 35%, var(--border));
+}
+
+/* A type of several lines is a `pre` of its own, without a code block's
+   padding. */
+.code-block .twoslash-popup-code pre {
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: 1.5;
+}
+
+/* A popup's type isn't inline code: one background for the whole popup. */
+.twoslash .twoslash-popup-code {
+  border-radius: 0;
+  background: transparent;
+}
+
+/* A `^?` line is its indent (`build/popup-docs.ts`), then the pinned type,
+   which shrinks to the room right of the indent and wraps, instead of
+   running past the block. */
+.twoslash .twoslash-query-line {
+  display: flex;
+  align-items: flex-start;
+}
+
+.twoslash .twoslash-query-indent {
+  flex: none;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  min-width: 0;
+  margin-bottom: 1em;
+}
+
+.twoslash .twoslash-query-line .twoslash-popup-code pre {
+  white-space: pre-wrap;
+}
+
+/* A `^?` type ties the hover popup's z-index and comes later in the page, so
+   it would cover the type of a name hovered above it. */
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  z-index: 9;
+}
+
+/* A hover's JSDoc: its first paragraph, then `@param`, `@returns`, `@see`
+   and `@deprecated`, as markdown (`build/popup-docs.ts`). */
+.twoslash .twoslash-popup-docs {
+  max-width: 36rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.code-block .shiki .twoslash-popup-docs,
+.code-block .shiki .twoslash-popup-docs span {
+  color: var(--twoslash-docs-color);
+}
+
+.twoslash .twoslash-popup-docs p {
+  margin: 0;
+}
+
+.twoslash .twoslash-popup-docs p + p {
+  margin-top: 0.5em;
+}
+
+.twoslash .twoslash-popup-docs code {
+  border-radius: 0.25rem;
+  background: var(--muted);
+  padding: 0.05em 0.3em;
+  color: var(--popover-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  white-space: nowrap;
+}
+
+.twoslash .twoslash-popup-docs code::before,
+.twoslash .twoslash-popup-docs code::after {
+  content: none;
+}
+
+.code-block .shiki .twoslash-popup-docs a {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+.twoslash .twoslash-popup-docs-tags {
+  gap: 0.25em;
+}
+
+.code-block .shiki .twoslash-popup-docs-tag-name {
+  color: var(--popover-foreground);
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
+.twoslash .twoslash-error-line {
+  white-space: pre-wrap;
+}
+
+/* Tables scroll instead of overflowing the page */
+.prose table:not(:where(.not-prose *)) {
+  display: block;
+  overflow-x: auto;
+  font-size: 0.875em;
+}
+
+.prose :where(thead th):not(:where(.not-prose *)) {
+  white-space: nowrap;
+}
+
+/* GitHub-style alerts: > [!NOTE] */
+.callout {
+  --callout: var(--muted-foreground);
+  margin-block: 1.5em;
+  border: 1px solid color-mix(in oklch, var(--callout) 30%, var(--border));
+  border-left: 3px solid var(--callout);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--callout) 6%, transparent);
+  padding: 0.75rem 1rem;
+}
+
+.callout > :first-child {
+  margin-top: 0;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+.callout .callout-title {
+  margin-bottom: 0.25rem;
+  color: var(--callout);
+  font-size: 0.875em;
+  font-weight: 600;
+}
+
+.callout-note {
+  --callout: oklch(0.6 0.15 250);
+}
+
+.callout-tip {
+  --callout: oklch(0.6 0.15 155);
+}
+
+.callout-important {
+  --callout: oklch(0.6 0.18 300);
+}
+
+.callout-warning {
+  --callout: oklch(0.7 0.15 75);
+}
+
+.callout-caution {
+  --callout: oklch(0.6 0.2 25);
+}
+
+/* The blog's tweets (`blog/trpc-actions.md`), styled like Twitter's embedded tweets, as on trpc.io */
+figure.tweet {
+  --tweet-background: #ffffff;
+  --tweet-border: #cfd9de;
+  --tweet-color: #0f1419;
+  --tweet-secondary: #536471;
+  --tweet-link: #1d9bf0;
+  box-sizing: border-box;
+  margin-block: 1.5em;
+  border: 1px solid var(--tweet-border);
+  border-radius: 12px;
+  background: var(--tweet-background);
+  padding: 12px 16px 16px;
+  width: 100%;
+  max-width: 550px;
+  color: var(--tweet-color);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.3333;
+  text-align: left;
+}
+
+.dark figure.tweet {
+  --tweet-background: #15202b;
+  --tweet-border: #38444d;
+  --tweet-color: #f7f9f9;
+  --tweet-secondary: #8b98a5;
+}
+
+figure.tweet a,
+figure.tweet a:hover {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+figure.tweet .tweet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+figure.tweet .tweet-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+figure.tweet .tweet-avatar {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 9999px;
+  width: 48px;
+  height: 48px;
+}
+
+figure.tweet .tweet-author-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+figure.tweet .tweet-name,
+figure.tweet .tweet-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+figure.tweet .tweet-name {
+  font-weight: 700;
+}
+
+figure.tweet .tweet-username,
+figure.tweet .tweet-meta {
+  color: var(--tweet-secondary);
+}
+
+figure.tweet .tweet-bird {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  fill: #1da1f2;
+}
+
+figure.tweet .tweet-text {
+  margin: 12px 0;
+  box-shadow: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-style: normal;
+  font-weight: inherit;
+  font-size: 17px;
+  line-height: 1.375;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  quotes: none;
+}
+
+figure.tweet .tweet-text a,
+figure.tweet .tweet-footer a {
+  color: var(--tweet-link);
+}
+
+figure.tweet .tweet-archive {
+  font-size: 13px;
+}
+
+figure.tweet a.tweet-author:hover .tweet-name,
+figure.tweet .tweet-text a:hover,
+figure.tweet .tweet-meta a:hover {
+  text-decoration: underline;
+}
+
+figure.tweet .tweet-footer {
+  margin-top: 12px;
+  border-top: 1px solid var(--tweet-border);
+  padding-top: 12px;
+}
+
+figure.tweet .tweet-footer a {
+  display: block;
+  border: 1px solid var(--tweet-border);
+  border-radius: 9999px;
+  padding: 6px 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+figure.tweet .tweet-footer a:hover {
+  background: color-mix(in srgb, var(--tweet-link) 10%, transparent);
+}
+
+.prose details {
+  margin-block: 1.5em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+}
+
+/* Linked images are badges, in a row (the v11 introduction's). */
+.prose a > img {
+  display: inline-block;
+  margin-block: 0;
+}
+
+.prose summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Install commands and other tabbed blocks: one block shows at a time, the
+   reader's choice (`DocBody`) or else the first. */
+.code-tabs {
+  margin-block: 1.5em;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.code-tabs > .code-block,
+.code-tabs > [data-tab] > .code-block:only-child {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+/* A tab of prose and blocks, from the v11 docs' `<Tabs>`. */
+.code-tabs > div[data-tab]:not(.code-block) {
+  padding-inline: 1rem;
+}
+
+.code-tabs > div[data-tab]:not(.code-block):has(> .code-block:only-child) {
+  padding-inline: 0;
+}
+
+.code-tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.375rem 0.5rem;
+}
+
+.code-tab {
+  border-radius: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.code-tab:hover {
+  color: var(--foreground);
+}
+
+/* A tab kept in the URL is a link (`src/tabs.ts`). */
+.prose a.code-tab {
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.code-tab[aria-selected='true'] {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.code-tabs > [data-tab]:not([data-active]) {
+  display: none;
+}
+
+/* An install of `@trpc12/` packages, which aren't on npm yet. */
+.code-tabs[data-unpublished] {
+  position: relative;
+}
+
+.code-tabs[data-unpublished] > .code-tabs-list {
+  padding-right: 8.5rem;
+}
+
+.code-unpublished {
+  --unpublished: oklch(0.7 0.15 75);
+  position: absolute;
+  top: 0.375rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid color-mix(in oklch, var(--unpublished) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--unpublished) 12%, transparent);
+  padding: 0.0625rem 0.5rem;
+  color: color-mix(in oklch, var(--unpublished) 70%, var(--foreground));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+.code-unpublished::before {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: var(--unpublished);
+}
+
+/* `DocBody` sets it when the block's command is copied. */
+.code-unpublished[data-flash] {
+  animation: unpublished-shake 0.5s ease-in-out;
+}
+
+@keyframes unpublished-shake {
+  20%,
+  60% {
+    transform: translateX(-3px);
+  }
+  40%,
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-unpublished[data-flash] {
+    animation: none;
+  }
+}
+
+/* A `chart` fence's bars (`build/charts.ts`) */
+.bench-chart {
+  margin-block: 1.5em;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.bench-chart-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.bench-chart-title {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.bench-chart-better,
+.bench-chart-note {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+
+.bench-chart-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bench-chart-label {
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.bench-chart-track {
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.bench-chart-bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+}
+
+.bench-chart-value {
+  min-width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-label,
+.bench-chart-row[data-highlight] .bench-chart-value {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-bar {
+  background: var(--brand);
+}
+
+@media (max-width: 40rem) {
+  .bench-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .bench-chart-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

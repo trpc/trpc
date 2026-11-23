@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "sortPackageJson": false,
+  "ignorePatterns": ["prisma/migrations/migration_lock.toml"]
+}

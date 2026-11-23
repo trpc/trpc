@@ -1041,7 +1041,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
         yield 1 as number;
         yield 2;
         yield 3;
@@ -1107,7 +1107,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
         yield 1 as number;
         yield 2;
         yield 3;
@@ -1170,7 +1170,7 @@ describe('with transformer', () => {
 
     const router = t.router({
       iterable: t.procedure.query(async function* () {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
         yield 1 as number;
         yield 2;
         yield 3;

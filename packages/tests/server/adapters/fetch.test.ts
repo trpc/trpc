@@ -123,8 +123,8 @@ function createStreamSpy() {
 }
 
 async function startServer(
-  endpoint = '',
-  routerOptions?: AppRouterServerOptions,
+  endpoint: string,
+  routerOptions: AppRouterServerOptions | undefined,
 ) {
   const router = createAppRouter(routerOptions);
 
@@ -158,24 +158,12 @@ async function startServer(
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
-  return {
-    url,
-    close: server.close.bind(server),
-    router,
-    client,
-  };
+  return makeAsyncResource({ url, router, client }, () => server.close());
 }
 
 describe('with default server', () => {
-  let t: Awaited<ReturnType<typeof startServer>>;
-  beforeAll(async () => {
-    t = await startServer();
-  });
-  afterAll(async () => {
-    await t.close();
-  });
-
   test('simple query', async () => {
+    await using t = await startServer('', undefined);
     expect(
       await t.client.hello.query({
         who: 'test',
@@ -194,6 +182,7 @@ describe('with default server', () => {
   });
 
   test('streaming', async () => {
+    await using t = await startServer('', undefined);
     const spy = createStreamSpy();
 
     const client = createTRPCClient<AppRouter>({
@@ -222,12 +211,11 @@ describe('with default server', () => {
     'application/x-ndjson',
     'text/plain',
   ] as const)('streaming can opt into %s content-type', async (contentType) => {
-    const server = await startServer('', {
+    await using custom = await startServer('', {
       jsonl: {
         contentType,
       },
     });
-    await using custom = makeAsyncResource(server, server.close);
     const spy = createStreamSpy();
 
     const client = createTRPCClient<AppRouter>({
@@ -252,6 +240,7 @@ describe('with default server', () => {
   });
 
   test('query with headers', async () => {
+    await using t = await startServer('', undefined);
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
@@ -270,6 +259,7 @@ describe('with default server', () => {
   });
 
   test('response with headers', async () => {
+    await using t = await startServer('', undefined);
     const customLink: TRPCLink<AppRouter> = () => {
       return ({ next, op }) => {
         return next(op).pipe(
@@ -307,7 +297,7 @@ test.each([
   '/trpc/',
   '/x/y/z',
 ])('with "%s" endpoint', async (endpoint) => {
-  const custom = await startServer(endpoint);
+  await using custom = await startServer(endpoint, undefined);
   expect(
     await custom.client.hello.query({
       who: 'test',
@@ -315,25 +305,21 @@ test.each([
   ).toEqual({
     text: 'hello test',
   });
-
-  await custom.close();
 });
 
 // https://github.com/trpc/trpc/issues/5659
 test('mutation', async () => {
-  const t = await startServer();
+  await using t = await startServer('', undefined);
 
   const res = await Promise.all([
     t.client.helloMutation.mutate('world'),
     t.client.helloMutation.mutate('KATT'),
   ]);
   expect(res).toEqual(['hello world', 'hello KATT']);
-
-  await t.close();
 });
 
 test('batching', async () => {
-  const t = await startServer();
+  await using t = await startServer('', undefined);
 
   const normalResult = await (
     await fetch(`${t.url}/hello,foo?batch=1&input={}`)
@@ -347,14 +333,14 @@ test('batching', async () => {
 });
 
 test.each([
-  ['completes', 'completes'],
-  ['throws', 'throws'],
-  ['is cancelled', 'infinite'],
-  ['fails in responseMeta', 'responseMetaThrows'],
-  ['errors the stream', 'streamErrors'],
+  ['completes', 'completes', { startsTimer: true }],
+  ['throws', 'throws', { startsTimer: false }],
+  ['is cancelled', 'infinite', { startsTimer: true }],
+  ['fails in responseMeta', 'responseMetaThrows', { startsTimer: false }],
+  ['errors the stream', 'streamErrors', { startsTimer: true }],
 ] as const)(
-  'sse maxDurationMs timer is cleared when the subscription %s',
-  async (_, path) => {
+  'sse maxDurationMs timer is not left pending when the subscription %s',
+  async (_, path, { startsTimer }) => {
     const nonce = Math.floor(Math.random() * 1000);
     const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
 
@@ -436,17 +422,21 @@ test.each([
       await res.text();
     }
 
-    const maxDurationTimerIndex =
-      timeoutSpies.setTimeoutSpy.mock.calls.findIndex(
-        (args) => args[1] === MAX_DURATION_MS,
-      );
-    expect(maxDurationTimerIndex).not.toBe(-1);
-    const maxDurationTimerResult =
-      timeoutSpies.setTimeoutSpy.mock.results[maxDurationTimerIndex];
-    assert(maxDurationTimerResult?.type === 'return');
-
-    expect(timeoutSpies.clearTimeoutSpy).toHaveBeenCalledWith(
-      maxDurationTimerResult.value,
+    const maxDurationTimers = timeoutSpies.setTimeoutSpy.mock.calls.flatMap(
+      (args, index) => {
+        const result = timeoutSpies.setTimeoutSpy.mock.results[index];
+        return args[1] === MAX_DURATION_MS && result?.type === 'return'
+          ? [result.value]
+          : [];
+      },
     );
+    expect(maxDurationTimers).toHaveLength(startsTimer ? 1 : 0);
+
+    const clearedTimers = timeoutSpies.clearTimeoutSpy.mock.calls.map(
+      ([timer]) => timer,
+    );
+    expect(
+      maxDurationTimers.filter((timer) => !clearedTimers.includes(timer)),
+    ).toEqual([]);
   },
 );

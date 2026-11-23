@@ -1,6 +1,7 @@
 import type { ParserZodEsque } from '../parser';
 
 /**
+ * A validator tRPC ships for a special input type.
  * @internal
  */
 export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
@@ -10,19 +11,31 @@ export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
 // Should be the same possible types as packages/client/src/links/internals/contentTypes.ts isOctetType
 
 /**
+ * A `File`. Node 18 has no `File` type, but a `File` is always a `Blob`.
  * @internal
- *
- * File is only available from Node19+ but it always extends Blob so we can use that as a type until we eventually drop Node18
  */
 export interface FileLike extends Blob {
   readonly name: string;
 }
 
 /**
+ * The binary inputs a client can send with `octetInputParser`.
  * @internal
  */
 export type OctetInput = Blob | Uint8Array | FileLike;
 
+/**
+ * An input validator for binary data, such as a `File` or `Blob`. The
+ * resolver gets the input as a `ReadableStream`.
+ * @example
+ * ```ts
+ * t.procedure.input(octetInputParser).mutation(async ({ input }) => {
+ *   const bytes = await new Response(input).arrayBuffer();
+ *   return { size: bytes.byteLength };
+ * });
+ * ```
+ * @see https://trpc.io/docs/server/non-json-content-types#file-and-other-binary-type-inputs
+ */
 export const octetInputParser: UtilityParser<OctetInput, ReadableStream> = {
   _input: null as any as OctetInput,
   _output: null as any as ReadableStream,

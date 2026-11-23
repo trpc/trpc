@@ -41,7 +41,11 @@ function isNotFoundError(error: unknown) {
 }
 
 /**
- * Rethrow errors that should be handled by Next.js
+ * Turns a caught `TRPCError` into the Next.js control-flow error it stands
+ * for: a `NOT_FOUND` code calls `notFound()`, a `TRPCRedirectError` calls
+ * `redirect()`, and a `notFound()` or `redirect()` error in `cause` is
+ * rethrown. It only takes a `TRPCError`; rethrow Next.js's own errors, such
+ * as those `nextAppDirCaller` throws, yourself.
  */
 export const rethrowNextErrors = (error: TRPCError) => {
   if (error.code === 'NOT_FOUND') {
@@ -62,7 +66,7 @@ export const rethrowNextErrors = (error: TRPCError) => {
 
   // Before Next.js 15, we have to check and rethrow the error manually.
   if (isRedirectError(cause) || isNotFoundError(cause)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     throw cause!;
   }
 };
