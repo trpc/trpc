@@ -127,7 +127,7 @@ export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
 
 /**
  * Any tRPC query key, with or without a prefix.
- * @internal
+ * @public
  */
 export type AnyTRPCQueryKey =
   | TRPCQueryKeyWithoutPrefix
@@ -152,7 +152,7 @@ export type TRPCMutationKeyWithoutPrefix = [path: string[]];
 
 /**
  * Any tRPC mutation key, with or without a prefix.
- * @internal
+ * @public
  */
 export type AnyTRPCMutationKey =
   | TRPCMutationKeyWithoutPrefix

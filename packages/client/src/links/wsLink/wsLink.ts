@@ -69,7 +69,6 @@ export function wsLink<TRouter extends AnyRouter>(
           .request({
             op,
             transformer,
-            lastEventId: undefined,
           })
           .subscribe(observer);
 

@@ -1,5 +1,5 @@
 import type { ESTree } from '@oxlint/plugins';
-import { releaseTags, type ReleaseTag } from './releaseTags.ts';
+import { bindingNames, releaseTags, type ReleaseTag } from './releaseTags.ts';
 
 type Declaration =
   | ESTree.Function
@@ -36,8 +36,8 @@ const docOf = (sourceCode: SourceCode, node: ESTree.Node) =>
 /** The declarations in a top-level statement, with their names. */
 const declared = (node: ESTree.Node): [string, Declaration][] => {
   if (node.type === 'VariableDeclaration') {
-    return node.declarations.flatMap((d): [string, Declaration][] =>
-      d.id.type === 'Identifier' ? [[d.id.name, d]] : [],
+    return node.declarations.flatMap((d) =>
+      bindingNames(d.id).map((name): [string, Declaration] => [name, d]),
     );
   }
   if (
@@ -112,7 +112,10 @@ export interface TypeReference {
 /** The fields of AST nodes the walk below reads. */
 interface LooseNode {
   type: string;
-  name?: string;
+  name?: string | LooseNode;
+  callee?: LooseNode;
+  typeAnnotation?: LooseNode;
+  returnType?: LooseNode | null;
   left?: LooseNode;
   object?: LooseNode;
   typeName?: LooseNode;
@@ -125,7 +128,9 @@ interface LooseNode {
 
 const leftmost = (node: LooseNode | null | undefined): string | undefined => {
   if (!node) return undefined;
-  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'Identifier') {
+    return typeof node.name === 'string' ? node.name : undefined;
+  }
   if (node.type === 'TSQualifiedName') return leftmost(node.left);
   if (node.type === 'MemberExpression') return leftmost(node.object);
   return undefined;
@@ -138,16 +143,42 @@ const FUNCTIONS = new Set([
   'TSDeclareFunction',
 ]);
 
-/**
- * Names `node`'s type refers to: type references, `typeof`, `extends` and
- * `implements`. Function bodies and private class members aren't part of
- * the type, so they're skipped.
- */
-export const typeReferences = (node: ESTree.Node): TypeReference[] => {
-  const out: TypeReference[] = [];
+/** The `return` arguments in a function body, outside nested functions. */
+const returnedValues = (body: unknown): unknown[] => {
+  const out: unknown[] = [];
   const visit = (value: unknown) => {
     if (Array.isArray(value)) {
       for (const item of value) visit(item);
+      return;
+    }
+    if (!value || typeof value !== 'object' || !('type' in value)) return;
+    const n = value as LooseNode & { argument?: unknown };
+    if (FUNCTIONS.has(n.type) || n.type === 'ClassBody') return;
+    if (n.type === 'ReturnStatement') {
+      out.push(n.argument);
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (key !== 'parent') visit(child);
+    }
+  };
+  visit(body);
+  return out;
+};
+
+/**
+ * Names `node`'s type refers to: type references, `typeof`, `extends` and
+ * `implements`, and for functions without a return type, `new X()` and
+ * types in what they return. The rest of a function body and private class
+ * members aren't part of the type, so they're skipped. Type parameters
+ * aren't references.
+ */
+export const typeReferences = (node: ESTree.Node): TypeReference[] => {
+  const out: TypeReference[] = [];
+  const typeParameters = new Set<string>();
+  const visit = (value: unknown, returned: boolean) => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item, returned);
       return;
     }
     if (!value || typeof value !== 'object' || !('type' in value)) return;
@@ -157,6 +188,12 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
       if (name) out.push({ node: value as ESTree.Node, name });
     };
     switch (n.type) {
+      case 'TSTypeParameter':
+        if (typeof n.name === 'object') {
+          const name = leftmost(n.name);
+          if (name) typeParameters.add(name);
+        }
+        break;
       case 'TSTypeReference':
         add(n.typeName);
         break;
@@ -171,6 +208,17 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
       case 'ClassExpression':
         add(n.superClass);
         break;
+      case 'NewExpression':
+        if (returned) add(n.callee);
+        break;
+      // `x as T` has type `T`, whatever `x` is.
+      case 'TSAsExpression':
+      case 'TSTypeAssertion':
+        if (returned) {
+          visit(n.typeAnnotation, returned);
+          return;
+        }
+        break;
       case 'PropertyDefinition':
       case 'MethodDefinition':
         if (
@@ -181,14 +229,24 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
         }
         break;
     }
+    const isFunction = FUNCTIONS.has(n.type);
     for (const [key, child] of Object.entries(value)) {
       if (key === 'parent') continue;
-      if (key === 'body' && FUNCTIONS.has(n.type)) continue;
-      visit(child);
+      if (key === 'body' && isFunction) {
+        // Without a return type, what it returns is its type.
+        if (n.returnType) continue;
+        const expression =
+          child && typeof child === 'object' && 'type' in child
+            ? child.type !== 'BlockStatement'
+            : false;
+        visit(expression ? child : returnedValues(child), true);
+        continue;
+      }
+      visit(child, returned);
     }
   };
-  visit(node);
-  return out;
+  visit(node, false);
+  return out.filter((ref) => !typeParameters.has(ref.name));
 };
 
 /**

@@ -125,7 +125,7 @@ type DecorateProcedure<
       : never;
 
 /**
- * @internal
+ * @public
  */
 type DecoratedProcedureRecord<
   TRoot extends InferrableClientTypes,

@@ -42,6 +42,7 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     '/** @public */\ninterface Shape { a?: string }',
     '/** @internal */\nexport interface Opts { a: string | undefined }',
     '/** @internal */\nexport function f(a: string | undefined) {}',
+    'interface Worker { run(retries: number | undefined): void }',
     // Reachable from the package's `.` entry point, so public.
     {
       code: '/** @internal */\nexport function reached(a?: string) {}',
@@ -120,6 +121,18 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
         { message: defaulted('a') },
         { message: optional('b') },
       ],
+    },
+    {
+      code: 'interface Worker { run(retries?: number): void }',
+      errors: [{ message: optional('retries') }],
+    },
+    {
+      code: 'interface Callable { (a?: number): void }',
+      errors: [{ message: optional('a') }],
+    },
+    {
+      code: 'type Callback = (retry?: number) => void;',
+      errors: [{ message: optional('retry') }],
     },
     // A type only an internal declaration uses is internal.
     {

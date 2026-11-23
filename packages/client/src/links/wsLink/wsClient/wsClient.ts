@@ -32,8 +32,9 @@ import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
- * reconnection, keep-alive, and request management.
- * @internal
+ * reconnection, keep-alive, and request management. `createWSClient`
+ * returns one.
+ * @public
  */
 export class WsClient {
   /**
@@ -249,7 +250,7 @@ export class WsClient {
   }: {
     op: Pick<Operation, 'id' | 'type' | 'path' | 'input' | 'signal'>;
     transformer: CombinedDataTransformer;
-    lastEventId: string | undefined;
+    lastEventId?: string;
   }) {
     return observable<
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,

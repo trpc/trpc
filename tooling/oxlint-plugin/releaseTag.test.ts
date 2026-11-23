@@ -49,10 +49,24 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: 'interface Local {}\n/** @public */\nexport type X = Local;',
       filename: otherFile,
     },
-    // Function bodies aren't part of the type.
+    // What a function body doesn't return isn't part of its type.
     {
-      code: "import type { Hidden } from './internal';\n/** @public */\nexport function f() { return {} as Hidden; }",
+      code: "import type { Hidden } from './internal';\n/** @public */\nexport function f() { const x = {} as Hidden; return 1; }",
       filename: otherFile,
+    },
+    {
+      code: '/** @internal */\nexport class C {}\n/** @public */\nexport function f() { return new C() as unknown as undefined; }',
+      filename: otherFile,
+    },
+    // A type parameter isn't the declaration it shadows.
+    {
+      code: '/** @internal */\nexport interface Options {}\n/** @public */\nexport function identity<Options>(value: Options): Options { return value; }',
+      filename: otherFile,
+    },
+    // `export * as ns` makes what `ns.ts` exports reachable.
+    {
+      code: '/** @public */\nexport const inNamespace = 1;',
+      filename: join(src, 'ns.ts'),
     },
   ],
   invalid: [
@@ -112,6 +126,33 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: '/** @internal */\nexport type A = 1;\ntype L = { a: A };\n/** @public */\nexport type B = L;',
       filename: otherFile,
       errors: [{ message: leak('B', 'A') }],
+    },
+    {
+      code: 'export const { a, b } = { a: 1, b: 2 };',
+      filename: otherFile,
+      output: '/** @internal */\nexport const { a, b } = { a: 1, b: 2 };',
+      errors: [{ message: missing('a') }],
+    },
+    {
+      code: '/** @internal */\nexport const inNamespace = 1;',
+      filename: join(src, 'ns.ts'),
+      output: '/** @public */\nexport const inNamespace = 1;',
+      errors: [{ message: reachable('inNamespace') }],
+    },
+    {
+      code: "import type { Hidden } from './internal';\n/** @public */\nexport function f() { return {} as Hidden; }",
+      filename: otherFile,
+      errors: [{ message: leak('f', 'Hidden', ' in `internal.ts`') }],
+    },
+    {
+      code: '/** @internal */\nexport class C {}\n/** @public */\nexport const make = () => new C();',
+      filename: otherFile,
+      errors: [{ message: leak('make', 'C') }],
+    },
+    {
+      code: '/** @internal */\ninterface Hidden {}\n/** @public */\nexport type Options = Hidden;',
+      filename: otherFile,
+      errors: [{ message: leak('Options', 'Hidden') }],
     },
     {
       code: "import type { Hidden } from './internal';\n/** @public */\nexport function f(opts: Hidden) {}",

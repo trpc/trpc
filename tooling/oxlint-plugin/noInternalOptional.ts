@@ -50,6 +50,13 @@ export const noInternalOptional = defineRule({
     const checkMembers = (members: ESTree.Node[]) => {
       for (const member of members) {
         if (
+          member.type === 'TSCallSignatureDeclaration' ||
+          member.type === 'TSConstructSignatureDeclaration'
+        ) {
+          checkParams(member.params);
+          continue;
+        }
+        if (
           member.type !== 'TSPropertySignature' &&
           member.type !== 'TSMethodSignature' &&
           member.type !== 'PropertyDefinition'
@@ -63,7 +70,9 @@ export const noInternalOptional = defineRule({
             data: { name: text(member.key) },
           });
         }
-        if (member.type !== 'TSMethodSignature' && member.typeAnnotation) {
+        if (member.type === 'TSMethodSignature') {
+          checkParams(member.params);
+        } else if (member.typeAnnotation) {
           checkType(member.typeAnnotation.typeAnnotation);
         }
       }
@@ -74,6 +83,11 @@ export const noInternalOptional = defineRule({
         for (const constituent of type.types) checkType(constituent);
       } else if (type.type === 'TSTypeLiteral') {
         checkMembers(type.members);
+      } else if (
+        type.type === 'TSFunctionType' ||
+        type.type === 'TSConstructorType'
+      ) {
+        checkParams(type.params);
       }
     };
     const checkInlineType = (param: {

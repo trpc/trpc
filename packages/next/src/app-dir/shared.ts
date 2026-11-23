@@ -150,7 +150,7 @@ export interface ActionHandlerDef {
 
 // ts-prune-ignore-next
 /**
- * @internal
+ * @public
  */
 export type inferActionDef<
   TRoot extends AnyClientTypes,

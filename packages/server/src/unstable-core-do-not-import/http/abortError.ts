@@ -7,7 +7,11 @@ export function isAbortError(
   return isObject(error) && error['name'] === 'AbortError';
 }
 
-/** @internal */
-export function throwAbortError(): never {
-  throw new DOMException('AbortError', 'AbortError');
+/**
+ * Libraries outside tRPC call this with and without a message.
+ * @internal
+ */
+// oxlint-disable-next-line trpc/no-internal-optional
+export function throwAbortError(message = 'AbortError'): never {
+  throw new DOMException(message, 'AbortError');
 }

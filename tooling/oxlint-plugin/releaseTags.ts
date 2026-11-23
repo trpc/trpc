@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { parseSync } from 'oxc-parser';
 
 /**
  * A TSDoc release tag. `@public` means changing it needs a major release,
@@ -117,20 +118,12 @@ export const resolveImport = (
   ].find((candidate) => /\.tsx?$/.test(candidate) && existsSync(candidate));
 };
 
-const DECLARATION =
-  /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:async\s+)?(?:abstract\s+)?(?:function\*?|const|let|var|class|interface|type|enum)\s+([\w$]+)/gm;
-const NAME_LIST = /\{([^}]*)\}/;
-const RE_EXPORT =
-  /export\s+(?:type\s+)?\{([^}]*)\}\s*(?:from\s*['"]([^'"]+)['"])?/g;
-const STAR = /export\s*\*\s*(?:as\s+[\w$]+\s+)?from\s*['"]([^'"]+)['"]/g;
-const IMPORT = /import\s+(?:type\s+)?([^;]*?)\s+from\s*['"]([^'"]+)['"]/g;
-
 interface Binding {
   from: string;
   name: string;
 }
 
-/** What the regexes below find in a file, without parsing it. */
+/** What a file declares, imports and exports, read without type info. */
 interface ParsedFile {
   /** Top-level declarations, with their JSDoc's tags. */
   declared: Map<string, ReleaseTag[]>;
@@ -142,39 +135,71 @@ interface ParsedFile {
   reExports: Map<string, Binding>;
   /** `export * from` */
   stars: string[];
+  /** `export * as ns from`, by namespace name. */
+  namespaces: Map<string, string>;
   /** Named imports, by local name. */
   imports: Map<string, Binding>;
 }
 
-const stripComments = (text: string) =>
-  text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/[^\n]*/g, '$1');
+/** The fields of binding patterns `bindingNames` reads. */
+interface PatternLike {
+  type: string;
+  name?: string;
+  properties?: readonly PatternLike[];
+  elements?: readonly (PatternLike | null)[];
+  value?: PatternLike | null;
+  argument?: PatternLike | null;
+  left?: PatternLike | null;
+}
 
-/** `a, type b as c` as `[name, alias]` pairs. */
-const nameList = (list: string): [string, string][] =>
-  list
-    .split(',')
-    .map((part) => part.replace(/^\s*type\s+/, '').trim())
-    .filter(Boolean)
-    .map((part) => {
-      const [name = part, alias = name] = part.split(/\s+as\s+/);
-      return [name, alias];
-    });
-
-/** The value of the JSDoc ending right before `index`, skipping line comments. */
-const docBefore = (text: string, index: number): string => {
-  let before = text.slice(0, index);
-  for (;;) {
-    const trimmed = before.trimEnd();
-    const lineStart = trimmed.lastIndexOf('\n') + 1;
-    if (trimmed.slice(lineStart).trimStart().startsWith('//')) {
-      before = trimmed.slice(0, lineStart);
-      continue;
-    }
-    if (!trimmed.endsWith('*/')) return '';
-    const start = trimmed.lastIndexOf('/*');
-    // The comment's value, as the AST has it: `* text ` for `/** text */`.
-    return trimmed.startsWith('/**', start) ? trimmed.slice(start + 2, -2) : '';
+/** The names a binding pattern such as `{ a, b: [c] }` declares. */
+export const bindingNames = (pattern: PatternLike | null): string[] => {
+  if (!pattern) return [];
+  switch (pattern.type) {
+    case 'Identifier':
+      return pattern.name === undefined ? [] : [pattern.name];
+    case 'ObjectPattern':
+      return (pattern.properties ?? []).flatMap((p) =>
+        bindingNames(
+          p.type === 'RestElement' ? (p.argument ?? null) : (p.value ?? null),
+        ),
+      );
+    case 'ArrayPattern':
+      return (pattern.elements ?? []).flatMap((e) => bindingNames(e));
+    case 'RestElement':
+      return bindingNames(pattern.argument ?? null);
+    case 'AssignmentPattern':
+      return bindingNames(pattern.left ?? null);
+    default:
+      return [];
   }
+};
+
+type Program = ReturnType<typeof parseSync>['program'];
+type Statement = Program['body'][number];
+
+const moduleExportName = (node: {
+  type: string;
+  name?: string;
+  value?: unknown;
+}) => (node.type === 'Identifier' ? (node.name ?? '') : String(node.value));
+
+/** The names a declaration statement declares. */
+const declaredNames = (node: Statement): string[] => {
+  if (node.type === 'VariableDeclaration') {
+    return node.declarations.flatMap((d) => bindingNames(d.id));
+  }
+  if (
+    node.type === 'FunctionDeclaration' ||
+    node.type === 'TSDeclareFunction' ||
+    node.type === 'ClassDeclaration' ||
+    node.type === 'TSInterfaceDeclaration' ||
+    node.type === 'TSTypeAliasDeclaration' ||
+    node.type === 'TSEnumDeclaration'
+  ) {
+    return node.id ? [node.id.name] : [];
+  }
+  return [];
 };
 
 const parsed = new Map<string, ParsedFile | null>();
@@ -187,38 +212,70 @@ const parse = (file: string): ParsedFile | null => {
     return null;
   }
   const text = readFileSync(file, 'utf8');
+  const { program, comments } = parseSync(file, text);
+  const docs = comments.filter(
+    (c) => c.type === 'Block' && c.value.startsWith('*'),
+  );
+  /** The tags of the JSDoc right above `start`, past any line comments. */
+  const tagsAt = (start: number): ReleaseTag[] => {
+    let doc: (typeof docs)[number] | undefined;
+    for (const c of docs) if (c.end <= start) doc = c;
+    if (!doc) return [];
+    const gap = text.slice(doc.end, start).replace(/\/\/[^\n]*/g, '');
+    return gap.trim() === '' ? releaseTags(doc.value) : [];
+  };
   const result: ParsedFile = {
     declared: new Map(),
     exported: new Set(),
     localExports: new Map(),
     reExports: new Map(),
     stars: [],
+    namespaces: new Map(),
     imports: new Map(),
   };
-  for (const m of text.matchAll(DECLARATION)) {
-    const name = m[1];
-    if (name === undefined) continue;
-    if (m[0].startsWith('export')) result.exported.add(name);
-    // Overloads share the first signature's JSDoc.
-    if (!result.declared.has(name)) {
-      result.declared.set(name, releaseTags(docBefore(text, m.index)));
+  const declare = (statement: Statement, inner: Statement) => {
+    for (const name of declaredNames(inner)) {
+      // Overloads share the first signature's JSDoc.
+      if (!result.declared.has(name)) {
+        result.declared.set(name, tagsAt(statement.start));
+      }
+      if (inner !== statement) result.exported.add(name);
     }
-  }
-  const code = stripComments(text);
-  for (const [, list = '', from] of code.matchAll(RE_EXPORT)) {
-    for (const [name, alias] of nameList(list)) {
-      if (from === undefined) result.localExports.set(alias, name);
-      else result.reExports.set(alias, { from, name });
-    }
-  }
-  for (const [, from] of code.matchAll(STAR)) {
-    if (from !== undefined) result.stars.push(from);
-  }
-  for (const [, clause = '', from] of code.matchAll(IMPORT)) {
-    const list = NAME_LIST.exec(clause)?.[1];
-    if (list === undefined || from === undefined) continue;
-    for (const [name, alias] of nameList(list)) {
-      result.imports.set(alias, { from, name });
+  };
+  for (const statement of program.body) {
+    if (statement.type === 'ImportDeclaration') {
+      for (const specifier of statement.specifiers) {
+        if (specifier.type !== 'ImportSpecifier') continue;
+        result.imports.set(specifier.local.name, {
+          from: statement.source.value,
+          name: moduleExportName(specifier.imported),
+        });
+      }
+    } else if (statement.type === 'ExportAllDeclaration') {
+      if (statement.exported) {
+        result.namespaces.set(
+          moduleExportName(statement.exported),
+          statement.source.value,
+        );
+      } else {
+        result.stars.push(statement.source.value);
+      }
+    } else if (statement.type === 'ExportNamedDeclaration') {
+      if (statement.declaration) declare(statement, statement.declaration);
+      for (const specifier of statement.specifiers) {
+        const local = moduleExportName(specifier.local);
+        const exported = moduleExportName(specifier.exported);
+        if (statement.source) {
+          result.reExports.set(exported, {
+            from: statement.source.value,
+            name: local,
+          });
+        } else {
+          result.localExports.set(exported, local);
+        }
+      }
+    } else {
+      declare(statement, statement);
     }
   }
   parsed.set(file, result);
@@ -290,6 +347,9 @@ const reacher = () => {
       byFrom.set(from, picked);
     }
     for (const [from, picked] of byFrom) follow(from, picked);
+    for (const [alias, from] of info.namespaces) {
+      if (wants(alias)) follow(from, '*');
+    }
     for (const star of info.stars) follow(star, names);
   };
   return { byFile, collect };

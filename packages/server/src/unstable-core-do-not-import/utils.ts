@@ -83,7 +83,12 @@ export function identity<T>(it: T): T {
  * mistakes would be revealed at runtime then (hopefully during testing).
  * @internal
  */
-export function assert(condition: boolean, msg: string): asserts condition {
+export function assert(
+  condition: boolean,
+  // Libraries outside tRPC call this without a message.
+  // oxlint-disable-next-line trpc/no-internal-optional
+  msg = 'no additional info',
+): asserts condition {
   if (!condition) {
     throw new Error(`AssertionError: ${msg}`);
   }

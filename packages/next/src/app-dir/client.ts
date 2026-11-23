@@ -13,6 +13,8 @@ export {
   // ts-prune-ignore-next
   experimental_serverActionLink,
   // ts-prune-ignore-next
+  type UseTRPCActionOptions,
+  // ts-prune-ignore-next
   type UseTRPCActionResult,
 } from './create-action-hook';
 

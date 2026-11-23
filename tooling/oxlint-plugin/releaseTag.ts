@@ -169,7 +169,13 @@ export const releaseTag = defineRule({
           for (let next = queue.pop(); next; next = queue.pop()) {
             for (const ref of typeReferences(next)) {
               const local = declarations.get(ref.name);
-              if (local && !local.exported) {
+              // Untagged local declarations are part of the type; a local
+              // one tagged `@internal` is a leak like an exported one.
+              if (
+                local &&
+                !local.exported &&
+                !local.tags.includes('internal')
+              ) {
                 if (!visited.has(ref.name)) {
                   visited.add(ref.name);
                   queue.push(...local.declarations);

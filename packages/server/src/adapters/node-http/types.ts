@@ -78,7 +78,7 @@ export type NodeHTTPCreateContextOption<
 >;
 
 /**
- * @internal
+ * @public
  */
 type ConnectMiddleware<
   TRequest extends NodeHTTPRequest = NodeHTTPRequest,

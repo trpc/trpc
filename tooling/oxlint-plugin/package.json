@@ -12,6 +12,7 @@
   "devDependencies": {
     "@oxlint/plugins": "catalog:",
     "@types/node": "catalog:",
+    "oxc-parser": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
