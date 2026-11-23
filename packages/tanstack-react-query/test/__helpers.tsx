@@ -1,8 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
-import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { RenderResult } from '@testing-library/react';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';

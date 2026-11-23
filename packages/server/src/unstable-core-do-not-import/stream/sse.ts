@@ -2,7 +2,7 @@ import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/abortError';
 import type { MaybePromise } from '../types';
-import { emptyObject, identity, run } from '../utils';
+import { emptyObject, identity, noop, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
@@ -152,7 +152,11 @@ export function sseStreamProducer<TValue = unknown>(
         ? { id: value[0], data: value[1] }
         : { data: value };
 
-      chunk.data = JSON.stringify(serialize(chunk.data));
+      // `JSON.stringify` returns `undefined` for `undefined`, which would be
+      // written as the literal text `data: undefined` and fail to parse on
+      // the client. Write an empty `data:` line instead; the consumer reads
+      // that back as `undefined`.
+      chunk.data = JSON.stringify(serialize(chunk.data)) ?? '';
 
       if (chunk.id !== undefined) {
         lastEventId = chunk.id;
@@ -318,8 +322,9 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const createStream = () =>
-    new ReadableStream<ConsumerStreamResult<TConfig>>({
+  const createStream = () => {
+    let removeAbortListener: () => void = noop;
+    const stream = new ReadableStream<ConsumerStreamResult<TConfig>>({
       async start(controller) {
         const [url, init] = await Promise.all([opts.url(), opts.init()]);
         const eventSource = (_es = new opts.EventSource(
@@ -333,9 +338,21 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           event: null,
         });
 
-        eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
+        const addMessageListener = (
+          event: string,
+          listener: (msg: EventSourceLike.MessageEvent) => void,
+        ) => {
+          eventSource.addEventListener(event, (msg) => {
+            try {
+              listener(msg as EventSourceLike.MessageEvent);
+            } catch (cause) {
+              eventSource.close();
+              controller.error(cause);
+            }
+          });
+        };
 
+        addMessageListener(CONNECTED_EVENT, (msg) => {
           const options: SSEClientOptions = JSON.parse(msg.data);
 
           clientOptions = options;
@@ -346,9 +363,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           });
         });
 
-        eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
-
+        addMessageListener(SERIALIZED_ERROR_EVENT, (msg) => {
           controller.enqueue({
             type: 'serialized-error',
             error: deserialize(JSON.parse(msg.data)),
@@ -377,10 +392,11 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
             });
           }
         });
-        eventSource.addEventListener('message', (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
-
-          const chunk = deserialize(JSON.parse(msg.data));
+        addMessageListener('message', (msg) => {
+          // An empty `data:` line is how the server encodes `undefined`
+          // (see `sseStreamProducer`); `JSON.parse('')` would throw.
+          const chunk =
+            msg.data === '' ? undefined : deserialize(JSON.parse(msg.data));
 
           const def: SSEvent = {
             data: chunk,
@@ -407,19 +423,27 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           onAbort();
         } else {
           signal.addEventListener('abort', onAbort);
+          removeAbortListener = () =>
+            signal.removeEventListener('abort', onAbort);
         }
       },
       cancel() {
         _es?.close();
+        removeAbortListener();
       },
     });
+    return { stream, removeAbortListener: () => removeAbortListener() };
+  };
 
   const getStreamResource = () => {
-    let stream = createStream();
+    let { stream, removeAbortListener } = createStream();
     let reader = stream.getReader();
 
     async function dispose() {
-      await reader.cancel();
+      removeAbortListener();
+      await reader.cancel().catch(() => {
+        // An errored stream has already reported its failure through read().
+      });
       _es = null;
     }
 
@@ -431,7 +455,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         async recreate() {
           await dispose();
 
-          stream = createStream();
+          ({ stream, removeAbortListener } = createStream());
           reader = stream.getReader();
         },
       },

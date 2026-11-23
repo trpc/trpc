@@ -7,7 +7,6 @@ import type {
   DefaultErrorData,
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import * as v from 'valibot';
 import { z, ZodError } from 'zod';
 

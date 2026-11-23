@@ -6,7 +6,15 @@ import type { Operation, TRPCLink } from './types';
 function asArray<TType>(value: TType | TType[]) {
   return Array.isArray(value) ? value : [value];
 }
+/**
+ * Sends each operation down one of two link chains, based on `condition`.
+ *
+ * @see https://trpc.io/docs/client/links/splitLink
+ */
 export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+  /**
+   * Picks the chain for an operation.
+   */
   condition: (op: Operation) => boolean;
   /**
    * The link to execute next if the test function returns `true`.

@@ -9,7 +9,7 @@ export function iteratorResource<TYield, TReturn, TNext>(
   const iterator = iterable[Symbol.asyncIterator]();
 
   // @ts-expect-error - this is added in node 24 which we don't officially support yet
-  // eslint-disable-next-line no-restricted-syntax
+  // oxlint-disable-next-line trpc/no-symbol-dispose
   if (iterator[Symbol.asyncDispose]) {
     return iterator as AsyncIterator<TYield, TReturn, TNext> & AsyncDisposable;
   }

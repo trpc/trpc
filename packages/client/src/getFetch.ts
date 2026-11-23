@@ -4,6 +4,10 @@ type AnyFn = (...args: any[]) => unknown;
 
 const isFunction = (fn: unknown): fn is AnyFn => typeof fn === 'function';
 
+/**
+ * The `fetch` to use: `customFetchImpl` if given, or else the global one.
+ * Throws if there's none.
+ */
 export function getFetch(
   customFetchImpl?: FetchEsque | NativeFetchEsque,
 ): FetchEsque {
@@ -11,7 +15,6 @@ export function getFetch(
     return customFetchImpl as FetchEsque;
   }
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method
   if (typeof window !== 'undefined' && isFunction(window.fetch)) {
     return window.fetch.bind(window);
   }

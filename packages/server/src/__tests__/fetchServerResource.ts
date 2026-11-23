@@ -28,7 +28,7 @@ export function fetchServerResource(handler: Handler) {
         rawResponse: res,
       });
     }).catch((err) => {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.error(`Uncaught error in request handler`, err);
       throw err;
     });

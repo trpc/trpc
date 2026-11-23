@@ -7,16 +7,9 @@ import { getUntypedClient } from '@trpc/client';
 import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
 import React, { useState } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('invalidateQueries()', () => {
   test('queryClient.invalidateQueries()', async () => {
+    await using factory = createAppRouter();
     const { trpc, resolvers, client } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
@@ -87,6 +80,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('invalidateQueries()', async () => {
+    await using factory = createAppRouter();
     const { trpc, resolvers, App } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
@@ -150,6 +144,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('test invalidateQueries() with different args', async () => {
+    await using factory = createAppRouter();
     // ref  https://github.com/trpc/trpc/issues/1383
     const { trpc, client, App } = factory;
     function MyComponent() {
@@ -221,6 +216,7 @@ describe('invalidateQueries()', () => {
     }
   });
   test('test invalidateQueries() with a partial input', async () => {
+    await using factory = createAppRouter();
     const { trpc, client, App } = factory;
     function MyComponent() {
       const mockPostQuery1 = trpc.getMockPostByContent.useQuery(
@@ -301,6 +297,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('invalidate() with a falsy input only matches that input', async () => {
+    await using factory = createAppRouter();
     const { trpc, App, queryClient } = factory;
     function MyComponent() {
       const emptyQuery = trpc.count.useQuery('', { staleTime: Infinity });
@@ -341,7 +338,8 @@ describe('invalidateQueries()', () => {
   });
 });
 
-test('predicate type should be narrowed', () => {
+test('predicate type should be narrowed', async () => {
+  await using factory = createAppRouter();
   const { trpc } = factory;
   () => {
     const utils = trpc.useUtils();

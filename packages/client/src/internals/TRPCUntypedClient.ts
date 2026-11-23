@@ -2,7 +2,12 @@ import type {
   inferObservableValue,
   Unsubscribable,
 } from '@trpc/server/observable';
-import { observableToPromise, share } from '@trpc/server/observable';
+import {
+  observable,
+  observableToAsyncIterable,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
@@ -21,29 +26,91 @@ import type {
 import { TRPCClientError } from '../TRPCClientError';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
+/** The options of a call made with the untyped client. */
 export interface TRPCRequestOptions {
   /**
-   * Pass additional context to links
+   * Context for the links, such as a flag a `splitLink` reads.
+   * @see https://trpc.io/docs/client/links#managing-context
    */
   context?: OperationContext;
+  /**
+   * Aborts the call. With `httpBatchLink`, the request is only aborted once
+   * every call in its batch is, so an aborted call can still get a result.
+   */
   signal?: AbortSignal;
 }
 
+/** The callbacks a subscription takes on the client. */
 export interface TRPCSubscriptionObserver<TValue, TError> {
+  /** Called when the link sends a `started` result. */
   onStarted: (opts: { context: OperationContext | undefined }) => void;
+  /** Called with each event. */
   onData: (value: inferAsyncIterableYield<TValue>) => void;
+  /** Called when the subscription ends with an error. */
   onError: (err: TError) => void;
+  /**
+   * Called when the link sends a `stopped` result. Not every link sends
+   * one; `localLink` doesn't.
+   */
   onStopped: () => void;
+  /** Called when the subscription's observable completes, for any reason. */
   onComplete: () => void;
+  /** Called when the connection connects, drops or reconnects. */
   onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
 
-/** @internal */
+type ObserverKey = keyof TRPCSubscriptionObserver<unknown, unknown>;
+
+/**
+ * Subscription options without callbacks: `TOpts` must not have any of the
+ * callback keys, not even set to `undefined`.
+ * @internal
+ */
+export type TRPCSubscriptionWithoutCallbacks<TOpts> = TOpts & {
+  // `keyof` a union only has its shared keys, so this one catches each member
+  [TKey in ObserverKey]?: never;
+} & {
+  [TKey in keyof TOpts & ObserverKey]: never;
+};
+
+/**
+ * Subscription callbacks, at least one of which is defined.
+ * @internal
+ */
+export type TRPCSubscriptionCallbacks<TValue, TError> = Partial<
+  TRPCSubscriptionObserver<TValue, TError>
+> &
+  {
+    [TKey in ObserverKey]: Pick<TRPCSubscriptionObserver<TValue, TError>, TKey>;
+  }[ObserverKey];
+
+const observerKeys: ObserverKey[] = [
+  'onStarted',
+  'onData',
+  'onError',
+  'onStopped',
+  'onComplete',
+  'onConnectionStateChange',
+];
+
+/**
+ * The options of `createTRPCClient`.
+ * @internal
+ */
 export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
+  /**
+   * The links each call goes through, in order. The last one must send
+   * the call, such as `httpBatchLink`.
+   * @see https://trpc.io/docs/client/links
+   */
   links: TRPCLink<TRouter>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 
+/**
+ * A client that calls procedures by path string, without types.
+ * `createTRPCClient` wraps one.
+ */
 export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   private readonly links: OperationLink<TInferrable>[];
   public readonly runtime: TRPCClientRuntime;
@@ -94,6 +161,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       throw TRPCClientError.from(err as Error);
     }
   }
+  /** Calls a query. */
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'query',
@@ -103,6 +171,7 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
+  /** Calls a mutation. */
   public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
       type: 'mutation',
@@ -112,14 +181,38 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
+  /**
+   * Starts a subscription. With callbacks, returns what stops it. Without,
+   * returns an async iterator to read it with `for await`, which `signal`,
+   * `break` or `return()` stops. It can be iterated once.
+   * @see https://trpc.io/docs/client/vanilla/setup#5-use-subscriptions
+   */
+  public subscription(
+    path: string,
+    input: unknown,
+    opts: TRPCSubscriptionCallbacks<unknown, TRPCClientError<AnyRouter>> &
+      TRPCRequestOptions,
+  ): Unsubscribable;
+  public subscription<
+    TOpts extends TRPCRequestOptions &
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> =
+      TRPCRequestOptions,
+  >(
+    path: string,
+    input: unknown,
+    opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<unknown>;
   public subscription(
     path: string,
     input: unknown,
     opts: Partial<
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
-      TRPCRequestOptions,
-  ): Unsubscribable {
+      TRPCRequestOptions = {},
+  ): Unsubscribable | AsyncIterableIterator<unknown> {
+    const hasCallbacks = observerKeys.some(
+      (key) => typeof opts[key] === 'function',
+    );
     const observable$ = this.$request({
       type: 'subscription',
       path,
@@ -127,6 +220,40 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       context: opts.context,
       signal: opts.signal,
     });
+    if (!hasCallbacks) {
+      const data$ = observable<unknown, TRPCClientError<AnyRouter>>(
+        (observer) =>
+          observable$.subscribe({
+            next(envelope) {
+              if (
+                envelope.result.type === 'data' ||
+                envelope.result.type === undefined
+              ) {
+                observer.next(envelope.result.data);
+              }
+            },
+            error: (err) => observer.error(err),
+            complete: () => observer.complete(),
+          }),
+      );
+      const iterator = observableToAsyncIterable(
+        data$,
+        opts.signal ?? new AbortController().signal,
+      );
+      // a second loop over the same iterator would split the data with the
+      // first, or end straight away once the first has left
+      let iterated = false;
+      iterator[Symbol.asyncIterator] = () => {
+        if (iterated) {
+          throw new Error(
+            'A subscription can only be iterated once. Call subscribe() again for another loop.',
+          );
+        }
+        iterated = true;
+        return iterator;
+      };
+      return iterator;
+    }
     return observable$.subscribe({
       next(envelope) {
         switch (envelope.result.type) {

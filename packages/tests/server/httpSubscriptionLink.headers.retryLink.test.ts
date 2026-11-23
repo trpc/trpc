@@ -13,167 +13,162 @@ import {
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventSourcePolyfill } from 'event-source-polyfill';
-import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const orderedResults: number[] = [];
-const ctx = konn()
-  .beforeEach(() => {
-    //
-    // This is the heart of the test, the client will send this along and the server
-    // will increment it on each createContext(). If the latest version is
-    // always sent then the server will always receive the latest version
-    let incrementingTestHeader = 1;
+function setup() {
+  //
+  // This is the heart of the test, the client will send this along and the server
+  // will increment it on each createContext(). If the latest version is
+  // always sent then the server will always receive the latest version
+  let incrementingTestHeader = 1;
 
-    const onIterableInfiniteSpy =
-      vi.fn<(args: { input: { lastEventId?: number } }) => void>();
+  const onIterableInfiniteSpy =
+    vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new EventEmitter();
-    const eeEmit = (data: number | Error) => {
-      ee.emit('data', data);
-    };
+  const ee = new EventEmitter();
+  const eeEmit = (data: number | Error) => {
+    ee.emit('data', data);
+  };
 
-    const t = initTRPC.create({
-      transformer: superjson,
-    });
-    orderedResults.length = 0;
-    const infiniteYields = vi.fn();
+  const t = initTRPC.create({
+    transformer: superjson,
+  });
+  orderedResults.length = 0;
+  const infiniteYields = vi.fn();
 
-    const router = t.router({
-      sub: {
-        iterableInfinite: t.procedure
-          .input(
-            z.object({
-              lastEventId: z.coerce.number().min(0).optional(),
-            }),
-          )
-          .subscription(async function* (opts) {
-            onIterableInfiniteSpy({
-              input: opts.input,
-            });
-            let idx = opts.input.lastEventId ?? -1;
-            while (true) {
-              idx++;
-              yield tracked(String(idx), idx);
-              await sleep();
-              infiniteYields();
-            }
+  const router = t.router({
+    sub: {
+      iterableInfinite: t.procedure
+        .input(
+          z.object({
+            lastEventId: z.coerce.number().min(0).optional(),
           }),
-      },
-    });
-
-    const linkSpy: TRPCLink<typeof router> = () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
+        )
+        .subscription(async function* (opts) {
+          onIterableInfiniteSpy({
+            input: opts.input,
           });
-          return unsubscribe;
-        });
-      };
-    };
-
-    const recreateOnErrorTypes: string[] = [];
-
-    const opts = testServerAndClientResource(router, {
-      server: {
-        onError(_err) {
-          // console.error('caught server error:', _err.error.message);
-        },
-        createContext(opts) {
-          // console.log(
-          //   'new connection made with x-test:',
-          //   opts.req.headers['x-test'],
-          //   'expecting to be to be:',
-          //   incrementingTestHeader,
-          // );
-
-          const expectedHeader = `x-test: ${incrementingTestHeader}`;
-          const receivedHeader = `x-test: ${opts.req.headers['x-test']}`;
-          if (expectedHeader !== receivedHeader) {
-            throw new TRPCError({
-              code: 'UNAUTHORIZED',
-              message: 'x-test header mismatch. this means the test has failed',
-            });
+          let idx = opts.input.lastEventId ?? -1;
+          while (true) {
+            idx++;
+            yield tracked(String(idx), idx);
+            await sleep();
+            infiniteYields();
           }
+        }),
+    },
+  });
 
-          // Increment header so next time a connection is made we expect this version
-          incrementingTestHeader++;
+  const linkSpy: TRPCLink<typeof router> = () => {
+    // here we just got initialized in the app - this happens once per app
+    // useful for storing cache for instance
+    return ({ next, op }) => {
+      // this is when passing the result to the next link
+      // each link needs to return an observable which propagates results
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            orderedResults.push(value.result.data as number);
+            observer.next(value);
+          },
+          error: observer.error,
+        });
+        return unsubscribe;
+      });
+    };
+  };
 
-          return {};
-        },
+  const recreateOnErrorTypes: string[] = [];
+
+  const opts = testServerAndClientResource(router, {
+    server: {
+      onError(_err) {
+        // console.error('caught server error:', _err.error.message);
       },
-      client(opts) {
-        return {
-          links: [
-            linkSpy,
-            splitLink({
-              condition: (op) => op.type === 'subscription',
-              true: [
-                retryLink({
-                  retry(opts) {
-                    const { error } = opts;
-                    const code = error.data?.code;
-                    if (!code) {
-                      return false;
-                    }
+      createContext(opts) {
+        // console.log(
+        //   'new connection made with x-test:',
+        //   opts.req.headers['x-test'],
+        //   'expecting to be to be:',
+        //   incrementingTestHeader,
+        // );
 
-                    if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
-                      // console.log(
-                      //   'Restarting EventSource due to 401/403 error',
-                      // );
-                      return true;
-                    }
+        const expectedHeader = `x-test: ${incrementingTestHeader}`;
+        const receivedHeader = `x-test: ${opts.req.headers['x-test']}`;
+        if (expectedHeader !== receivedHeader) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'x-test header mismatch. this means the test has failed',
+          });
+        }
+
+        // Increment header so next time a connection is made we expect this version
+        incrementingTestHeader++;
+
+        return {};
+      },
+    },
+    client(opts) {
+      return {
+        links: [
+          linkSpy,
+          splitLink({
+            condition: (op) => op.type === 'subscription',
+            true: [
+              retryLink({
+                retry(opts) {
+                  const { error } = opts;
+                  const code = error.data?.code;
+                  if (!code) {
                     return false;
-                  },
-                }),
-                httpSubscriptionLink({
-                  url: opts.httpUrl,
-                  transformer: superjson,
-                  EventSource: EventSourcePolyfill,
-                  eventSourceOptions() {
-                    return {
-                      headers: {
-                        'x-test': String(incrementingTestHeader),
-                      },
-                    };
-                  },
-                }),
-              ],
-              false: httpBatchStreamLink({
+                  }
+
+                  if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
+                    // console.log(
+                    //   'Restarting EventSource due to 401/403 error',
+                    // );
+                    return true;
+                  }
+                  return false;
+                },
+              }),
+              httpSubscriptionLink({
                 url: opts.httpUrl,
                 transformer: superjson,
+                EventSource: EventSourcePolyfill,
+                eventSourceOptions() {
+                  return {
+                    headers: {
+                      'x-test': String(incrementingTestHeader),
+                    },
+                  };
+                },
               }),
+            ],
+            false: httpBatchStreamLink({
+              url: opts.httpUrl,
+              transformer: superjson,
             }),
-          ],
-        };
-      },
-    });
-    return {
-      ...opts,
-      ee,
-      eeEmit,
-      infiniteYields,
-      onIterableInfiniteSpy,
-    };
-  })
-  .afterEach(async (opts) => {
-    await opts?.close?.();
-  })
-  .done();
+          }),
+        ],
+      };
+    },
+  });
+  return {
+    ...opts,
+    ee,
+    eeEmit,
+    infiniteYields,
+    onIterableInfiniteSpy,
+  };
+}
 
 test('disconnect and reconnect with updated headers', async () => {
+  await using ctx = setup();
   const { client } = ctx;
 
   const onStarted =

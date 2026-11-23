@@ -31,12 +31,15 @@ test('subscription required parameters and result', () => {
     // @ts-expect-error must pass input
     client.subscription('foo');
 
-    // @ts-expect-error must pass options
+    // options are optional, e.g. when only iterating
     client.subscription('foo', { bar: 1 });
 
     const subResult = client.subscription('foo', { bar: 1 }, {});
 
-    expectTypeOf<typeof subResult>().toEqualTypeOf<Unsubscribable>();
+    expectTypeOf<typeof subResult>().toEqualTypeOf<
+      AsyncIterableIterator<unknown>
+    >();
+    expectTypeOf<typeof subResult>().not.toMatchTypeOf<Unsubscribable>();
   });
 });
 

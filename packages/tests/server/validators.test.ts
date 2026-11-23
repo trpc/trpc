@@ -251,6 +251,55 @@ test('zod v4 transform mixed input/output', async () => {
   `);
 });
 
+test.each([
+  ['zod v3', zod3.object({ n: zod3.number() }), zod3.ZodError],
+  ['zod v4', zod4.object({ n: zod4.number() }), zod4.ZodError],
+])(
+  '%s sync schema never takes the async path',
+  async (_name, schema, ZodError) => {
+    const parseAsync = vi.spyOn(schema, 'parseAsync');
+    const t = initTRPC.create();
+
+    const router = t.router({
+      q: t.procedure
+        .input(schema)
+        .output(schema)
+        .query((opts) => opts.input),
+    });
+    const caller = router.createCaller({});
+
+    expect(await caller.q({ n: 1 })).toEqual({ n: 1 });
+
+    const err = await waitError(caller.q({ n: '1' } as any), TRPCError);
+    expect(err.code).toBe('BAD_REQUEST');
+    expect(err.cause).toBeInstanceOf(ZodError);
+
+    expect(parseAsync).not.toHaveBeenCalled();
+  },
+);
+
+test.each([
+  ['zod v3', zod3.string().refine(async (value) => value === 'foo')],
+  ['zod v4', zod4.string().refine(async (value) => value === 'foo')],
+])('%s async schema tries the sync path only once', async (_name, schema) => {
+  const parse = vi.spyOn(schema, 'parse');
+  const parseAsync = vi.spyOn(schema, 'parseAsync');
+  const t = initTRPC.create();
+
+  const router = t.router({
+    q: t.procedure.input(schema).query((opts) => opts.input),
+  });
+  const caller = router.createCaller({});
+
+  expect(await caller.q('foo')).toBe('foo');
+  expect(await caller.q('foo')).toBe('foo');
+  const err = await waitError(caller.q('bar'), TRPCError);
+  expect(err.code).toBe('BAD_REQUEST');
+
+  expect(parse).toHaveBeenCalledTimes(1);
+  expect(parseAsync).toHaveBeenCalledTimes(3);
+});
+
 test('valibot', async () => {
   const t = initTRPC.create();
 
@@ -512,7 +561,7 @@ test('effect schema', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({ text: Schema.String })))
+      .input(Schema.toStandardSchemaV1(Schema.Struct({ text: Schema.String })))
       .query((opts) => {
         const { input } = opts;
         expectTypeOf(input).toEqualTypeOf<{ readonly text: string }>();
@@ -529,9 +578,7 @@ test('effect schema', async () => {
   await expect(
     // @ts-expect-error this only accepts {text: string}
     ctx.client.num.query({ text: 123 }),
-  ).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Expected string, actual 123]`,
-  );
+  ).rejects.toMatchInlineSnapshot(`[TRPCClientError: Expected string]`);
 });
 
 test('runtypes', async () => {

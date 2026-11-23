@@ -3,7 +3,7 @@
  *
  * @see https://www.prisma.io/docs/guides/database/seed-database
  */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma';
 
 const prisma = new PrismaClient();
 

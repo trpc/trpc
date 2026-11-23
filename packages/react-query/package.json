@@ -1,8 +1,9 @@
 {
   "name": "@trpc/react-query",
   "type": "module",
-  "version": "11.22.0",
+  "version": "11.29.11",
   "description": "The tRPC React library",
+  "deprecated": "@trpc/react-query only gets bug fixes and will be removed in the next major version of tRPC. Use @trpc/tanstack-react-query instead: https://trpc.io/docs/client/tanstack-react-query/migrating",
   "author": "KATT",
   "license": "MIT",
   "main": "./dist/index.cjs",
@@ -17,7 +18,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "lint": "eslint --cache src",
+    "lint": "oxlint src",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "exports": {
@@ -74,42 +75,34 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "eslintConfig": {
-    "rules": {
-      "react-hooks/exhaustive-deps": "error",
-      "no-restricted-imports": [
-        "error",
-        "@trpc/react-query"
-      ]
-    }
-  },
   "peerDependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.22.0",
-    "@trpc/server": "11.22.0",
+    "@trpc/client": "11.29.11",
+    "@trpc/server": "11.29.11",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/query-sync-storage-persister": "^5.80.2",
-    "@tanstack/react-query": "^5.80.3",
-    "@tanstack/react-query-persist-client": "^5.80.3",
-    "@testing-library/dom": "^10.0.0",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.1.0",
-    "@testing-library/user-event": "^14.4.3",
-    "@trpc/client": "11.22.0",
-    "@trpc/server": "11.22.0",
-    "@types/express": "^5.0.0",
+    "@tanstack/query-sync-storage-persister": "^5.107.1",
+    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-query-persist-client": "^5.107.1",
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "@types/express": "catalog:",
     "@types/node": "catalog:",
-    "@types/react": "^19.1.0",
-    "eslint": "catalog:",
-    "express": "^5.0.0",
+    "@types/react": "catalog:",
+    "express": "catalog:",
     "next": "catalog:",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tsdown": "catalog:",
-    "tslib": "^2.8.1",
+    "tslib": "catalog:",
     "typescript": "catalog:",
     "zod": "npm:zod@^3.0.0",
     "zod-form-data": "npm:zod-form-data@^2.0.1"

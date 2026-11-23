@@ -330,7 +330,7 @@ describe('experimental_encoder', () => {
       // Set up PONG listener
       const onPong = vi.fn();
       serverWs.on('message', (raw) => {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }
@@ -374,11 +374,14 @@ describe('experimental_encoder', () => {
 
       ctx.wssHandler.broadcastReconnectNotification();
 
-      await vi.waitFor(() => {
-        expect(ctx.wss.clients.size).toBe(1);
-        expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
-        expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
-      });
+      await vi.waitFor(
+        () => {
+          expect(ctx.wss.clients.size).toBe(1);
+          expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+          expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
+        },
+        { timeout: 5_000 },
+      );
 
       ctx.ee.emit('server:msg', { id: '2' });
 

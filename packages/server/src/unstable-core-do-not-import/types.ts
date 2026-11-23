@@ -18,11 +18,13 @@ export type Simplify<TType> = TType extends any[] | Date
   : { [K in keyof TType]: TType[K] };
 
 /**
+ * An object with string keys whose values may be `undefined`.
  * @public
  */
 export type Dict<TType> = Record<string, TType | undefined>;
 
 /**
+ * A value, or a promise of one.
  * @public
  */
 export type MaybePromise<TType> = Promise<TType> | TType;
@@ -35,7 +37,8 @@ export type FilterKeys<TObj extends object, TFilter> = {
  * @internal
  */
 export type Result<TType, TErr = unknown> =
-  { ok: true; value: TType } | { ok: false; error: TErr };
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
 
 /**
  * @internal
@@ -94,7 +97,7 @@ export type Overwrite<TType, TWith> = TWith extends any
   ? TType extends object
     ? {
         [
-          K in  // Exclude index signature from keys
+          K in // Exclude index signature from keys
             | keyof WithoutIndexSignature<TType>
             | keyof WithoutIndexSignature<TWith>
         ]: K extends keyof TWith
@@ -155,10 +158,16 @@ export type IntersectionError<TKey extends string> =
 /**
  * @internal
  */
-export type ProtectedIntersection<TType, TWith> = keyof TType &
-  keyof TWith extends never
-  ? TType & TWith
-  : IntersectionError<string & keyof TType & keyof TWith>;
+export type ProtectedIntersection<TType, TWith> =
+  // When `keyof TWith` is (or includes) the bare `string` index signature -
+  // e.g. `TWith` originates from `AnyTRPCRouter` (`Router<any, any>`) - every
+  // key of `TType` trivially overlaps with it. Skip collision detection in
+  // that case instead of reporting a false-positive collision for every key.
+  string extends keyof TWith
+    ? TType & TWith
+    : keyof TType & keyof TWith extends never
+      ? TType & TWith
+      : IntersectionError<string & keyof TType & keyof TWith>;
 
 /**
  * @internal

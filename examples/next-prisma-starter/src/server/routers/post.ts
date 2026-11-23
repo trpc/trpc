@@ -1,9 +1,9 @@
 /**
  *
- * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
+ * This is an example router, you can delete this file and then update `./_app.ts`
  */
 import { router, publicProcedure } from '../trpc';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '../../../generated/prisma';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '~/server/prisma';

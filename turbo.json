@@ -1,7 +1,8 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": [
-    ".eslintrc.config.js",
+    ".oxlintrc.json",
+    "tooling/oxlint-plugin/**",
     "tsconfig.json",
     "tsconfig.build.json",
     "scripts/**"
@@ -10,9 +11,15 @@
     "CI",
     "NODE_ENV",
     "DATABASE_URL",
+    "DIRECT_URL",
+    "APP_URL",
+    "WS_URL",
     "NEXTAUTH_SECRET",
     "AUTH_GITHUB_ID",
-    "AUTH_GITHUB_SECRET"
+    "AUTH_GITHUB_SECRET",
+    "VERCEL_ENV",
+    "VERCEL_BRANCH_URL",
+    "VERCEL_PROJECT_PRODUCTION_URL"
   ],
   "tasks": {
     "prebuild": {
@@ -28,8 +35,26 @@
         "docs/typedoc/**"
       ]
     },
+    "www#build": {
+      "dependsOn": ["^build", "prebuild"],
+      "env": [
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "SENTRY_*",
+        "VERCEL",
+        "VERCEL_GIT_COMMIT_REF",
+        "VERCEL_GIT_COMMIT_SHA",
+        "VERCEL_URL",
+        "GITHUB_REF_NAME",
+        "GITHUB_SHA"
+      ],
+      "outputs": [".vercel/output/**", "dist/**"]
+    },
     "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "examples-tanstack-start-sse-chat#build": {
+      "dependsOn": ["^build", "prebuild"],
+      "outputs": [".output/**", ".vercel/output/**"]
     },
     "examples-minimal-per-procedure-errors#build": {
       "outputs": ["client/dist/**", "server/dist/**"]

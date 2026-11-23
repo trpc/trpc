@@ -1,14 +1,13 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
-  "eslint.workingDirectories": [
-    { "pattern": "./examples/**" },
-    { "pattern": "./packages/*" },
-    { "pattern": "./www/*" }
-  ],
+  "oxc.typeAware": true,
+  "eslint.enable": false,
+  "prettier.enable": false,
   "search.exclude": {
     "/www/versioned_docs": true,
     "/www/.docusaurus": true,
