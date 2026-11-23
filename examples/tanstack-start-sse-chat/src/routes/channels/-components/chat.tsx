@@ -39,7 +39,7 @@ import {
 } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
-type LivePostsSubscription = ReturnType<typeof useLivePosts>['subscription'];
+type LivePostsSubscription = ReturnType<typeof useLivePosts>;
 
 function SubscriptionStatus(props: { subscription: LivePostsSubscription }) {
   const { subscription } = props;
@@ -86,14 +86,12 @@ export function Chat(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
     title: React.ReactNode;
-    // Live posts for this channel only; the page picks them out
-    livePosts: PostType[] | undefined;
     subscription: LivePostsSubscription;
     whoIsTyping: string[];
   }>,
 ) {
   const channelId = props.posts.input.channelId;
-  const channelPosts = useChannelPosts(props.posts, props.livePosts);
+  const channelPosts = useChannelPosts(props.posts);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const session = useSession();
@@ -119,15 +117,14 @@ export function Chat(
               variant="outline"
               size="sm"
               disabled={
-                channelPosts.query.fetchStatus !== 'idle' ||
-                !channelPosts.query.hasNextPage
+                channelPosts.fetchStatus !== 'idle' || !channelPosts.hasNextPage
               }
               onClick={() => {
-                void channelPosts.query.fetchNextPage();
+                void channelPosts.fetchNextPage();
               }}
             >
               {run(() => {
-                switch (channelPosts.query.fetchStatus) {
+                switch (channelPosts.fetchStatus) {
                   case 'fetching':
                     return (
                       <>
@@ -143,7 +140,7 @@ export function Chat(
                       </>
                     );
                   case 'idle':
-                    return channelPosts.query.hasNextPage
+                    return channelPosts.hasNextPage
                       ? 'Load more'
                       : 'Fetched everything!';
                 }
@@ -151,48 +148,16 @@ export function Chat(
             </Button>
           </div>
 
-          {channelPosts.messages.map((item) => {
-            const isMe = item.name === session?.user?.name;
-
-            return (
-              <Message key={item.id} align={isMe ? 'end' : 'start'}>
-                <MessageAvatar>
-                  <Avatar>
-                    <AvatarImage
-                      src={`https://github.com/${item.name}.png`}
-                      alt=""
-                    />
-                    <AvatarFallback className="text-xs font-medium">
-                      {item.name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </MessageAvatar>
-                <MessageContent>
-                  <Bubble variant={isMe ? 'default' : 'outline'}>
-                    <BubbleContent className="whitespace-pre-wrap">
-                      {item.text}
-                    </BubbleContent>
-                  </Bubble>
-                  <MessageFooter className="gap-1">
-                    <a
-                      href={`https://github.com/${item.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      {item.name}
-                    </a>
-                    ·
-                    <time dateTime={item.createdAt.toISOString()}>
-                      {isToday(item.createdAt)
-                        ? formatDistanceToNow(item.createdAt) + ' ago'
-                        : format(item.createdAt, 'MMM d, yyyy h:mm a')}
-                    </time>
-                  </MessageFooter>
-                </MessageContent>
-              </Message>
-            );
-          })}
+          {/* `pages[0]` is the newest page, so show the pages in reverse */}
+          {channelPosts.data.pages
+            .map((page, index) => (
+              <PostPage
+                key={index}
+                posts={page.items}
+                myName={session?.user?.name}
+              />
+            ))
+            .toReversed()}
         </div>
       </div>
 
@@ -231,6 +196,61 @@ export function Chat(
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * One page of posts. Unchanged pages keep their `posts` array, so React
+ * Compiler reuses their output when a new post lands on the newest page.
+ */
+function PostPage(
+  props: Readonly<{ posts: PostType[]; myName: string | null | undefined }>,
+) {
+  return (
+    <>
+      {props.posts.map((item) => {
+        const isMe = item.name === props.myName;
+
+        return (
+          <Message key={item.id} align={isMe ? 'end' : 'start'}>
+            <MessageAvatar>
+              <Avatar>
+                <AvatarImage
+                  src={`https://github.com/${item.name}.png`}
+                  alt=""
+                />
+                <AvatarFallback className="text-xs font-medium">
+                  {item.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </MessageAvatar>
+            <MessageContent>
+              <Bubble variant={isMe ? 'default' : 'outline'}>
+                <BubbleContent className="whitespace-pre-wrap">
+                  {item.text}
+                </BubbleContent>
+              </Bubble>
+              <MessageFooter className="gap-1">
+                <a
+                  href={`https://github.com/${item.name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {item.name}
+                </a>
+                ·
+                <time dateTime={item.createdAt.toISOString()}>
+                  {isToday(item.createdAt)
+                    ? formatDistanceToNow(item.createdAt) + ' ago'
+                    : format(item.createdAt, 'MMM d, yyyy h:mm a')}
+                </time>
+              </MessageFooter>
+            </MessageContent>
+          </Message>
+        );
+      })}
+    </>
   );
 }
 
