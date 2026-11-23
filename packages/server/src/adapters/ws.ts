@@ -213,22 +213,26 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
+    /** Releases the id after cleanup, cancelling closed-socket work on every exit. */
     function registerSubscription(
       id: number | string,
       subscription: AbortController,
     ) {
       clientSubscriptions.set(id, subscription);
       return makeResource({}, () => {
+        if (
+          client.readyState !== WEBSOCKET_OPEN &&
+          !subscription.signal.aborted
+        ) {
+          subscription.abort();
+        }
         clientSubscriptions.delete(id);
       });
     }
 
-    if (opts.keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = opts.keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
-    }
-
+    /** Drops replies once closing starts, before the close event cancels work. */
     function respond(untransformedJSON: TRPCResponseMessage) {
+      if (client.readyState !== WEBSOCKET_OPEN) return;
       client.send(
         encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
@@ -400,11 +404,44 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * - the context promise will be created immediately on connection if no connectionParams are expected
      * - if connection params are expected, they will be created once received
      */
+    /**
+     * Anyone can send an upgrade with a `Host` or path `URL` can't parse,
+     * such as `Host: []`. Throwing here would escape the `connection` event
+     * and crash the process, so close that connection instead.
+     */
+    let url: URL;
+    try {
+      url = createURL(req);
+    } catch (cause) {
+      const info: ErrorInfo = {
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        req,
+        input: undefined,
+      };
+      callOnError(info);
+      // the socket can still error while it closes, and an `error` event
+      // with no listener would crash the process too
+      client.on('error', (error) => {
+        callOnError({ ...info, error: getTRPCErrorFromUnknown(error) });
+      });
+      client.close(1008, 'Invalid URL');
+      return;
+    }
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
+
     let ctxPromise =
-      createURL(req).searchParams.get('connectionParams') === '1'
+      url.searchParams.get('connectionParams') === '1'
         ? null
         : createCtxPromise(() => null);
 
+    /** Runs a decoded call; deferred subscription admission must respect disconnects. */
     async function handleRequest(
       msg: TRPCClientOutgoingMessage,
       batchIndex: number,
@@ -492,6 +529,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
 
+      /** Keeps a subscription owned until admission, iteration and disposal settle. */
       const execute = async () => {
         // Registered before any await so that a stop or a disconnect during
         // context creation or the procedure call cancels the subscription.
@@ -507,7 +545,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           throw res.error;
         }
 
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
+        ) {
           return;
         }
 
@@ -550,6 +591,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
+        // Closing precedes the close event: cancel signal-owned work before
+        // releasing the id or waiting for cleanup. Conversion would subscribe
+        // immediately, so leave a late observable untouched.
+        if (client.readyState !== WEBSOCKET_OPEN) {
+          abort();
+          if (isObservable(result)) return;
+        }
+
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
@@ -557,7 +606,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         // A failed iterator cleanup is reported to the server only: the
         // client still gets `stopped`, so a subscription that completed or
         // was stopped doesn't turn into a failed one.
-        if (abortController.signal.aborted) {
+        if (
+          abortController.signal.aborted ||
+          client.readyState !== WEBSOCKET_OPEN
+        ) {
+          abort();
           try {
             // dispose the iterator without consuming it
             await using _iterator = iteratorResource(iterable);

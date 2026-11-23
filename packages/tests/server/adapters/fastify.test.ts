@@ -20,6 +20,7 @@ import type {
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
 import fetch from 'node-fetch';
@@ -214,25 +215,26 @@ function createServer(opts: ServerOptions) {
   return { instance, stop };
 }
 
-const orderedResults: number[] = [];
-const linkSpy: TRPCLink<AppRouter> = () => {
-  // here we just got initialized in the app - this happens once per app
-  // useful for storing cache for instance
-  return ({ next, op }) => {
-    // this is when passing the result to the next link
-    // each link needs to return an observable which propagates results
-    return observable((observer) => {
-      const unsubscribe = next(op).subscribe({
-        next(value) {
-          orderedResults.push(value.result.data as number);
-          observer.next(value);
-        },
-        error: observer.error,
+function createLinkSpy(orderedResults: number[]): TRPCLink<AppRouter> {
+  return () => {
+    // here we just got initialized in the app - this happens once per app
+    // useful for storing cache for instance
+    return ({ next, op }) => {
+      // this is when passing the result to the next link
+      // each link needs to return an observable which propagates results
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            orderedResults.push(value.result.data as number);
+            observer.next(value);
+          },
+          error: observer.error,
+        });
+        return unsubscribe;
       });
-      return unsubscribe;
-    });
+    };
   };
-};
+}
 
 interface ClientOptions {
   headers?: HTTPHeaders;
@@ -242,9 +244,10 @@ interface ClientOptions {
 function createClient(opts: ClientOptions) {
   const host = `localhost:${opts.port}${config.prefix}`;
   const wsClient = createWSClient({ url: `ws://${host}` });
+  const orderedResults: number[] = [];
   const client = createTRPCClient<AppRouter>({
     links: [
-      linkSpy,
+      createLinkSpy(orderedResults),
       splitLink({
         condition(op) {
           return op.type === 'subscription';
@@ -267,7 +270,7 @@ function createClient(opts: ClientOptions) {
     ],
   });
 
-  return { client, wsClient };
+  return { client, wsClient, orderedResults };
 }
 
 function createBatchClient(opts: ClientOptions) {
@@ -290,7 +293,7 @@ interface AppOptions {
   serverOptions?: Partial<ServerOptions>;
 }
 
-async function createApp(opts: AppOptions = {}) {
+async function createApp(opts: AppOptions) {
   const { appRouter, ee } = createAppRouter();
   const { instance, stop } = createServer({
     ...(opts.serverOptions ?? {}),
@@ -299,24 +302,22 @@ async function createApp(opts: AppOptions = {}) {
 
   const url = new URL(await instance.listen({ port: 0 }));
 
-  const { client } = createClient({ ...opts.clientOptions, port: url.port });
+  const { client, orderedResults } = createClient({
+    ...opts.clientOptions,
+    port: url.port,
+  });
 
-  return { server: instance, stop, client, ee, url, opts };
+  return makeAsyncResource(
+    { server: instance, client, ee, url, opts, orderedResults },
+    stop,
+  );
 }
 
-let app: Awaited<ReturnType<typeof createApp>>;
-
 describe('anonymous user', () => {
-  beforeEach(async () => {
-    orderedResults.length = 0;
-    app = await createApp();
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
+  const setup = () => createApp({});
 
   test('fetch POST', async () => {
+    await using app = await setup();
     const data = { text: 'life', life: 42 };
     const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',
@@ -339,6 +340,7 @@ describe('anonymous user', () => {
   });
 
   test('query', async () => {
+    await using app = await setup();
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
     expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
@@ -357,6 +359,7 @@ describe('anonymous user', () => {
   });
 
   test('mutation', async () => {
+    await using app = await setup();
     expect(
       await app.client.editPost.mutate({
         id: '42',
@@ -370,6 +373,7 @@ describe('anonymous user', () => {
   });
 
   test('batched requests in body work correctly', async () => {
+    await using app = await setup();
     const { client } = createBatchClient({
       ...app.opts.clientOptions,
       port: app.url.port,
@@ -383,6 +387,7 @@ describe('anonymous user', () => {
   });
 
   test('does not bind other websocket connection', async () => {
+    await using app = await setup();
     const client = new WebSocket(`ws://localhost:${app.url.port}/ws`);
 
     await new Promise<void>((resolve, reject) => {
@@ -406,6 +411,7 @@ describe('anonymous user', () => {
   });
 
   test('subscription', async () => {
+    await using app = await setup();
     app.ee.once('subscription:created', () => {
       setTimeout(() => {
         app.ee.emit('server:msg', {
@@ -470,15 +476,17 @@ describe('anonymous user', () => {
   });
 
   test('streaming', async () => {
+    await using app = await setup();
     const results = await Promise.all([
       app.client.deferred.query({ wait: 3 }),
       app.client.deferred.query({ wait: 1 }),
       app.client.deferred.query({ wait: 2 }),
     ]);
     expect(results).toEqual([3, 1, 2]);
-    expect(orderedResults).toEqual([1, 2, 3]);
+    expect(app.orderedResults).toEqual([1, 2, 3]);
   });
   test('multipart/formdata', async () => {
+    await using app = await setup();
     const fd = new FormData();
     fd.set('id', 'bar');
 
@@ -491,15 +499,11 @@ describe('anonymous user', () => {
 });
 
 describe('authorized user', () => {
-  beforeEach(async () => {
-    app = await createApp({ clientOptions: { headers: { username: 'nyan' } } });
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
+  const setup = () =>
+    createApp({ clientOptions: { headers: { username: 'nyan' } } });
 
   test('query', async () => {
+    await using app = await setup();
     expect(await app.client.hello.query()).toMatchInlineSnapshot(`
       Object {
         "text": "hello nyan",
@@ -508,6 +512,7 @@ describe('authorized user', () => {
   });
 
   test('request info', async () => {
+    await using app = await setup();
     const info = await app.client.request.info.query();
 
     if (info.url) {
@@ -533,6 +538,7 @@ describe('authorized user', () => {
   });
 
   test('mutation', async () => {
+    await using app = await setup();
     expect(
       await app.client.editPost.mutate({
         id: '42',
@@ -549,20 +555,17 @@ describe('authorized user', () => {
 });
 
 describe('anonymous user with fastify-plugin', () => {
-  beforeEach(async () => {
-    app = await createApp({ serverOptions: { fastifyPluginWrapper: true } });
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
+  const setup = () =>
+    createApp({ serverOptions: { fastifyPluginWrapper: true } });
 
   test('fetch GET', async () => {
+    await using app = await setup();
     const req = await fetch(`http://localhost:${app.url.port}/hello`);
     expect(await req.json()).toEqual({ hello: 'GET' });
   });
 
   test('fetch POST', async () => {
+    await using app = await setup();
     const data = { text: 'life', life: 42 };
     const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',
@@ -582,6 +585,7 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   test('query', async () => {
+    await using app = await setup();
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
     expect(await app.client.hello.query()).toMatchInlineSnapshot(`
           Object {
@@ -602,35 +606,26 @@ describe('anonymous user with fastify-plugin', () => {
 
 // https://github.com/trpc/trpc/issues/4820
 describe('regression #4820 - content type parser already set', () => {
-  beforeEach(async () => {
-    app = await createApp({
+  const setup = () =>
+    createApp({
       serverOptions: {
         fastifyPluginWrapper: true,
         withContentTypeParser: true,
       },
     });
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
 
   test('query', async () => {
+    await using app = await setup();
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
   });
 });
 
 // https://github.com/trpc/trpc/issues/5530
 describe('issue #5530 - cannot receive new WebSocket messages after receiving 16 kB', () => {
-  beforeEach(async () => {
-    app = await createApp();
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
+  const setup = () => createApp({});
 
   test('query', async () => {
+    await using app = await setup();
     const data = 'A'.repeat(8192);
 
     for (let i = 0; i < 4; i++) {
@@ -640,15 +635,9 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
 });
 
 describe('maxBodySize', () => {
-  beforeEach(async () => {
-    app = await createApp({ serverOptions: { maxBodySize: 1024 } });
-  });
+  const setup = () => createApp({ serverOptions: { maxBodySize: 1024 } });
 
-  afterEach(async () => {
-    await app.stop();
-  });
-
-  function postForm(id: string) {
+  function postForm(app: { url: URL }, id: string) {
     const fd = new FormData();
     fd.set('id', id);
     return globalThis.fetch(
@@ -658,14 +647,16 @@ describe('maxBodySize', () => {
   }
 
   test('accepts a multipart body within the limit', async () => {
-    const res = await postForm('bar');
+    await using app = await setup();
+    const res = await postForm(app, 'bar');
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ result: { data: { id: 'bar' } } });
   });
 
   test('rejects a multipart body over the limit', async () => {
-    const res = await postForm('x'.repeat(10_000));
+    await using app = await setup();
+    const res = await postForm(app, 'x'.repeat(10_000));
 
     expect(res.status).toBe(413);
     expect(await res.json()).toMatchObject({
@@ -677,19 +668,15 @@ describe('maxBodySize', () => {
 describe('issue #7502 - keepAlive must register a single ping interval', () => {
   const pingMs = 250;
 
-  beforeEach(async () => {
-    app = await createApp({
+  const setup = () =>
+    createApp({
       serverOptions: {
         keepAlive: { enabled: true, pingMs, pongWaitMs: 10_000 },
       },
     });
-  });
-
-  afterEach(async () => {
-    await app.stop();
-  });
 
   test('sends one ping per interval', async () => {
+    await using app = await setup();
     const socket = new WebSocket(
       `ws://localhost:${app.url.port}${config.prefix}`,
     );

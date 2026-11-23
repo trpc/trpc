@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { getEventListeners } from 'node:events';
+import type { ServerResponse } from 'node:http';
+import { testServerAndClientResource } from '../__tests__/testClientResource';
 import { createTRPCUntypedClient, httpBatchLink, httpLink } from '@trpc/client';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 describe.each([
   ['httpLink', httpLink],
@@ -236,3 +239,102 @@ test.each([false, true])(
     }
   },
 );
+
+describe('httpBatchStreamLink abort listener cleanup', () => {
+  const t = initTRPC.context<{ res: ServerResponse }>().create();
+  const router = t.router({
+    value: t.procedure.query(() => 'ok'),
+    fail: t.procedure.query(() => {
+      throw new TRPCError({ code: 'BAD_REQUEST' });
+    }),
+    ticks: t.procedure.query(async function* () {
+      for (let i = 0; ; i++) {
+        yield i;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }),
+    dropsConnection: t.procedure.query(async function* ({ ctx }) {
+      for (let i = 0; ; i++) {
+        yield i;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        if (i === 2) ctx.res.destroy();
+      }
+    }),
+  });
+
+  test.each(['value', 'fail'] as const)(
+    'removes caller listeners after %s',
+    async (path) => {
+      await using ctx = testServerAndClientResource(router, {
+        clientLink: 'httpBatchStreamLink',
+      });
+      const controller = new AbortController();
+      for (let i = 0; i < 5; i++) {
+        await ctx.client[path]
+          .query(undefined, { signal: controller.signal })
+          .catch(() => null);
+      }
+      expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
+    },
+  );
+
+  test('keeps a streamed result cancellable after the query resolves', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const controller = new AbortController();
+    const ticks = await ctx.client.ticks.query(undefined, {
+      signal: controller.signal,
+    });
+    const seen: number[] = [];
+    await expect(async () => {
+      for await (const tick of ticks) {
+        seen.push(tick);
+        if (tick === 2) controller.abort();
+        if (tick === 10) break;
+      }
+    }).rejects.toThrow();
+    expect(seen).toEqual([0, 1, 2]);
+    expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
+  });
+
+  test('cancels a batch holding a failed query and a streamed query', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const controller = new AbortController();
+    const [, ticks] = await Promise.all([
+      ctx.client.fail
+        .query(undefined, { signal: controller.signal })
+        .catch(() => null),
+      ctx.client.ticks.query(undefined, { signal: controller.signal }),
+    ]);
+    const seen: number[] = [];
+    await expect(async () => {
+      for await (const tick of ticks) {
+        seen.push(tick);
+        if (tick === 2) controller.abort();
+        if (tick === 10) break;
+      }
+    }).rejects.toThrow();
+    expect(seen).toEqual([0, 1, 2]);
+  });
+
+  test('removes caller listeners when the response stream fails', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const controller = new AbortController();
+    const ticks = await ctx.client.dropsConnection.query(undefined, {
+      signal: controller.signal,
+    });
+    await expect(async () => {
+      for await (const _tick of ticks) {
+        // drain until the connection drops
+      }
+    }).rejects.toThrow();
+    await vi.waitFor(() =>
+      expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0),
+    );
+  });
+});

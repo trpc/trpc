@@ -1,3 +1,5 @@
+import { cardDay } from './card-day.ts';
+import { dailyVersion, ogImagePath } from './og/version.ts';
 import { blog, type CopiedVersion, docPath, site } from './site.ts';
 
 type JsonValue =
@@ -98,18 +100,21 @@ export function postDate(date: string) {
   }).format(new Date(`${date}T00:00:00Z`));
 }
 
-/** Where a page's social card is served (`routes/og.$.ts`). */
-export function ogImagePath(path: string) {
-  return `/og${path === '/' ? '/index' : path}.png`;
-}
-
 /** Social cards' size, in pixels. */
 export const ogImageSize = { height: 630, width: 1200 } as const;
 
-/** A page's social card, as an absolute URL on the deployment that serves it. */
+/**
+ * A page's social card, as an absolute URL on the deployment that serves it,
+ * with the cards' version and the day (`cardDay`) in its path
+ * (`og/version.ts`), so social sites fetch it again when the cards change,
+ * and daily for the avatars and numbers they fetch.
+ */
 export function ogImageUrl(path: string) {
   return new URL(
-    ogImagePath(path),
+    ogImagePath(
+      path,
+      dailyVersion(import.meta.env.OG_CARDS_VERSION, cardDay()),
+    ),
     import.meta.env.DEPLOYMENT_ORIGIN || site.url,
   ).href;
 }

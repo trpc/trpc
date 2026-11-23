@@ -24,6 +24,27 @@ interface Request {
   message: TRPCClientOutgoingMessage;
   end: Promise<void>;
   callbacks: TCallbacks;
+  /**
+   * The socket the request was sent on, or `null` while it's outgoing.
+   */
+  ws: WebSocket | null;
+  /**
+   * The socket a subscription is moving to. `ws` keeps delivering until this
+   * one confirms the subscription with `started`.
+   */
+  successor: WebSocket | null;
+  /**
+   * The event ids `ws` delivered while the subscription was moving, which
+   * its successor replays and are dropped from it.
+   */
+  overlapEventIds: Set<string> | null;
+  /**
+   * The sockets a subscription moved from, each until everything it sent
+   * before the stop has arrived. Their events without ids are still
+   * delivered, since the new socket may have started listening after they
+   * were sent.
+   */
+  movedFrom: Set<WebSocket>;
 }
 
 /**
@@ -35,6 +56,15 @@ interface Request {
  *   For subscriptions, multiple responses may be received until the subscription is closed.
  */
 export class RequestManager {
+  constructor(
+    private readonly opts: {
+      /**
+       * Called when a deletion leaves no outgoing or pending request.
+       */
+      onIdle: () => void;
+    },
+  ) {}
+
   /**
    * Stores requests that are outgoing, meaning they are registered but not yet sent over the WebSocket.
    */
@@ -46,6 +76,12 @@ export class RequestManager {
    * that may receive multiple responses.
    */
   private pendingRequests: Record<MessageId, Request> = {};
+
+  /**
+   * Subscriptions sent again under a new id, by their earlier id, while
+   * sockets they moved from may still send events under that one.
+   */
+  private drainingRequests: Record<MessageId, Request> = {};
 
   /**
    * Registers a new request by adding it to the outgoing queue and setting up
@@ -62,6 +98,10 @@ export class RequestManager {
       id: String(message.id),
       message,
       end,
+      ws: null,
+      successor: null,
+      overlapEventIds: null,
+      movedFrom: new Set(),
       callbacks: {
         next: callbacks.next,
         complete: () => {
@@ -92,12 +132,21 @@ export class RequestManager {
    * registers its request before the failed request with that id is deleted.
    */
   public delete(message: TRPCClientOutgoingMessage) {
+    const wasInFlight = this.hasRequestsInFlight();
     this.outgoingRequests = this.outgoingRequests.filter(
       (request) => request.message !== message,
     );
     const id = String(message.id);
     if (this.pendingRequests[id]?.message === message) {
       delete this.pendingRequests[id];
+    }
+    for (const [drainingId, request] of Object.entries(this.drainingRequests)) {
+      if (request.message === message) {
+        delete this.drainingRequests[drainingId];
+      }
+    }
+    if (wasInFlight && !this.hasRequestsInFlight()) {
+      this.opts.onIdle();
     }
   }
 
@@ -107,16 +156,46 @@ export class RequestManager {
    * The caller is expected to handle the actual sending of the requests
    * (e.g., sending them over the network) after this method is called.
    *
+   * @param ws - The socket the requests are sent on.
    * @returns The list of requests that were transitioned to the pending state.
    */
-  public flush() {
+  public flush(ws: WebSocket | null = null) {
     const requests = this.outgoingRequests;
     this.outgoingRequests = [];
 
     for (const request of requests) {
+      request.ws = ws;
+      request.successor = null;
+      request.movedFrom = new Set();
       this.pendingRequests[request.id] = request;
     }
     return requests;
+  }
+
+  /**
+   * Moves a pending request back to the outgoing queue, to be sent again
+   * with `id`. Its earlier id then matches only the sockets it's still
+   * draining; see `getDrainingRequest()`.
+   */
+  public requeue(
+    message: TRPCClientOutgoingMessage,
+    id: TRPCClientOutgoingMessage['id'],
+  ) {
+    const earlierId = String(message.id);
+    const request = this.pendingRequests[earlierId];
+    if (request?.message !== message) return;
+
+    delete this.pendingRequests[earlierId];
+    if (request.movedFrom.size) this.drainingRequests[earlierId] = request;
+    message.id = id;
+    this.outgoingRequests.push({
+      ...request,
+      id: String(id),
+      ws: null,
+      successor: null,
+      overlapEventIds: null,
+      movedFrom: new Set(),
+    });
   }
 
   /**
@@ -134,6 +213,33 @@ export class RequestManager {
     if (messageId === null) return null;
 
     return this.pendingRequests[String(messageId)];
+  }
+
+  /**
+   * Retrieves a subscription sent again under a new id by its earlier id,
+   * while a socket it moved from may still send events under that one.
+   */
+  public getDrainingRequest(messageId: MessageIdLike) {
+    if (messageId === null) return null;
+
+    return this.drainingRequests[String(messageId)];
+  }
+
+  /**
+   * Retrieves the subscriptions sent again under a new id whose earlier id
+   * is still in use on a socket they moved from.
+   */
+  public getDrainingRequests() {
+    return Object.values(this.drainingRequests);
+  }
+
+  /**
+   * Forgets the earlier ids of subscriptions no longer draining any socket.
+   */
+  public deleteDrained() {
+    for (const [id, request] of Object.entries(this.drainingRequests)) {
+      if (!request.movedFrom.size) delete this.drainingRequests[id];
+    }
   }
 
   /**
@@ -193,5 +299,12 @@ export class RequestManager {
    */
   public hasOutgoingRequests() {
     return this.outgoingRequests.length > 0;
+  }
+
+  /**
+   * Checks if any request is outgoing or pending, including subscriptions.
+   */
+  public hasRequestsInFlight() {
+    return this.hasOutgoingRequests() || this.hasPendingRequests();
   }
 }

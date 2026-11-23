@@ -173,6 +173,47 @@ describe('packTarballs', () => {
       ),
     60_000,
   );
+
+  it(
+    "keeps @trpc/react-query's `deprecated`, which deprecates each version it publishes",
+    () =>
+      run(
+        Effect.gen(function* () {
+          const fs = yield* FileSystem.FileSystem;
+          const path = yield* Path.Path;
+          const { deprecated } = JSON.parse(
+            yield* fs.readFileString(
+              path.join(
+                import.meta.dirname,
+                '../../../packages/react-query/package.json',
+              ),
+            ),
+          ) as { deprecated?: string };
+          expect(deprecated).toContain('@trpc/tanstack-react-query');
+
+          const root = yield* repo;
+          const dir = yield* fs.makeTempDirectoryScoped();
+          yield* writeJson(
+            path.join(root, 'packages', 'react-query', 'package.json'),
+            { name: '@trpc/react-query', version: '11.23.0', deprecated },
+          );
+          yield* packTarballs(
+            root,
+            new Map([['@trpc/react-query', '11.23.0']]),
+            dir,
+          );
+          const packed = JSON.parse(
+            yield* output(dir, 'tar', [
+              '-xzOf',
+              tarballName('@trpc/react-query', '11.23.0'),
+              'package/package.json',
+            ]),
+          ) as { deprecated?: string };
+          expect(packed.deprecated).toBe(deprecated);
+        }),
+      ),
+    60_000,
+  );
 });
 
 describe('readTarballs', () => {

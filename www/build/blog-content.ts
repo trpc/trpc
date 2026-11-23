@@ -5,6 +5,7 @@ import { parse as parseYaml } from 'yaml';
 
 import type { Post, PostMeta } from '../src/content/types.ts';
 import { ContentError, messageOf } from './content-error.ts';
+import { isPopupsId } from './lazy-popups.ts';
 import { renderMarkdown } from './markdown.ts';
 
 export interface BlogOptions {
@@ -120,6 +121,12 @@ function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
   return Effect.runPromise(Effect.provide(effect, NodeServices.layer));
 }
 
+interface RenderedPost {
+  /** The post's hover popups, a module of their own (`post.md?popups`). */
+  readonly popups: ReadonlyArray<string>;
+  readonly post: Post;
+}
+
 /**
  * Compiles the blog's posts (`blog/*.md`) at build time, as `content.ts`
  * does the docs: each post imports as a module of pre-highlighted HTML, and
@@ -130,7 +137,7 @@ function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
  */
 export function blogContent(options: BlogOptions): Plugin {
   const resolvedManifestId = `\0${options.manifestId}`;
-  const rendered = new Map<string, Promise<Post>>();
+  const rendered = new Map<string, Promise<RenderedPost>>();
   let manifest: Promise<ReadonlyArray<PostMeta>> | undefined;
 
   const renderPost = Effect.fn('renderPost')(function* (source: Source) {
@@ -160,7 +167,8 @@ export function blogContent(options: BlogOptions): Plugin {
       headings: result.headings,
       html: result.html,
     };
-    return post;
+    const page: RenderedPost = { popups: result.popups, post };
+    return page;
   });
 
   function render(source: Source) {
@@ -210,8 +218,9 @@ export function blogContent(options: BlogOptions): Plugin {
       if (this.environment.mode === 'dev') {
         rendered.delete(file);
       }
-      const post = await render(source);
-      return { code: `export default ${JSON.stringify(post)};`, map: null };
+      const page = await render(source);
+      const exported = isPopupsId(id) ? page.popups : page.post;
+      return { code: `export default ${JSON.stringify(exported)};`, map: null };
     },
   };
 }

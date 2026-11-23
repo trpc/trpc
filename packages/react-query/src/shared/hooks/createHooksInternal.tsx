@@ -20,7 +20,6 @@ import {
 } from '@trpc/client';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -30,10 +29,7 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import {
-  buildQueryFromAsyncIterable,
-  useHookResult,
-} from '../../internals/trpcResult';
+import { fetchQueryData, useHookResult } from '../../internals/trpcResult';
 import type {
   QueriesResults,
   TRPCUseQueries,
@@ -222,19 +218,12 @@ export function createRootHooks<
                     : { signal: null }),
                 },
               };
-
-              const result = await client.query(
-                ...getClientArgs(queryKey, actualOpts),
-              );
-
-              if (isAsyncIterable(result)) {
-                return buildQueryFromAsyncIterable(
-                  result,
-                  queryClient,
-                  queryKey,
-                );
-              }
-              return result;
+              return fetchQueryData({
+                context: queryFunctionContext,
+                fallback: { client: queryClient, queryKey },
+                request: () =>
+                  client.query(...getClientArgs(queryKey, actualOpts)),
+              });
             },
       },
       queryClient,
@@ -278,7 +267,12 @@ export function createRootHooks<
               },
             };
 
-            return context.client.query(...getClientArgs(queryKey, actualOpts));
+            return fetchQueryData({
+              context: queryFunctionContext,
+              fallback: { client: context.queryClient, queryKey },
+              request: () =>
+                context.client.query(...getClientArgs(queryKey, actualOpts)),
+            });
           },
     });
   }
@@ -311,7 +305,12 @@ export function createRootHooks<
             },
           };
 
-          return context.client.query(...getClientArgs(queryKey, actualOpts));
+          return fetchQueryData({
+            context: queryFunctionContext,
+            fallback: { client: context.queryClient, queryKey },
+            request: () =>
+              context.client.query(...getClientArgs(queryKey, actualOpts)),
+          });
         },
       },
       context.queryClient,
@@ -434,75 +433,71 @@ export function createRootHooks<
         return;
       }
       updateState(() => ({ ...initialStateConnecting, reset }));
-      const subscription = client.subscription(
-        path.join('.'),
-        input ?? undefined,
-        {
-          context: optsRef.current?.trpc?.context,
-          onStarted: () => {
-            optsRef.current.onStarted?.();
-            updateState((prev) => ({
-              ...prev,
-              status: 'pending',
-              error: null,
-            }));
-          },
-          onData: (data) => {
-            optsRef.current.onData?.(data);
-            updateState((prev) => ({
-              ...prev,
-              status: 'pending',
-              data,
-              error: null,
-            }));
-          },
-          onError: (error) => {
-            optsRef.current.onError?.(error);
-            updateState((prev) => ({
-              ...prev,
-              status: 'error',
-              error,
-            }));
-          },
-          onConnectionStateChange: (result) => {
-            updateState((prev) => {
-              switch (result.state) {
-                case 'idle':
-                  return {
-                    ...prev,
-                    status: result.state,
-                    error: null,
-                    data: undefined,
-                  };
-                case 'connecting':
-                  return {
-                    ...prev,
-                    error: result.error,
-                    status: result.state,
-                  };
-
-                case 'pending':
-                  // handled when data is / onStarted
-                  return prev;
-              }
-            });
-          },
-          onComplete: () => {
-            optsRef.current.onComplete?.();
-
-            // In the case of WebSockets, the connection might not be idle so `onConnectionStateChange` will not be called until the connection is closed.
-            // In this case, we need to set the state to idle manually.
-            updateState((prev) => ({
-              ...prev,
-              status: 'idle',
-              error: null,
-              data: undefined,
-            }));
-
-            // (We might want to add a `connectionState` to the state to track the connection state separately)
-          },
+      const subscription = client.subscription(path.join('.'), input, {
+        context: optsRef.current?.trpc?.context,
+        onStarted: () => {
+          optsRef.current.onStarted?.();
+          updateState((prev) => ({
+            ...prev,
+            status: 'pending',
+            error: null,
+          }));
         },
-      );
+        onData: (data) => {
+          optsRef.current.onData?.(data);
+          updateState((prev) => ({
+            ...prev,
+            status: 'pending',
+            data,
+            error: null,
+          }));
+        },
+        onError: (error) => {
+          optsRef.current.onError?.(error);
+          updateState((prev) => ({
+            ...prev,
+            status: 'error',
+            error,
+          }));
+        },
+        onConnectionStateChange: (result) => {
+          updateState((prev) => {
+            switch (result.state) {
+              case 'idle':
+                return {
+                  ...prev,
+                  status: result.state,
+                  error: null,
+                  data: undefined,
+                };
+              case 'connecting':
+                return {
+                  ...prev,
+                  error: result.error,
+                  status: result.state,
+                };
+
+              case 'pending':
+                // handled when data is / onStarted
+                return prev;
+            }
+          });
+        },
+        onComplete: () => {
+          optsRef.current.onComplete?.();
+
+          // In the case of WebSockets, the connection might not be idle so `onConnectionStateChange` will not be called until the connection is closed.
+          // In this case, we need to set the state to idle manually.
+          updateState((prev) => ({
+            ...prev,
+            status: 'idle',
+            error: null,
+            data: undefined,
+          }));
+
+          // (We might want to add a `connectionState` to the state to track the connection state separately)
+        },
+      });
 
       currentSubscriptionRef.current = subscription;
 
@@ -564,7 +559,8 @@ export function createRootHooks<
     });
 
     // request option should take priority over global
-    const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
     const hook = __useInfiniteQuery(
       {
@@ -622,7 +618,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     __usePrefetchInfiniteQuery({
       ...opts,
@@ -668,7 +666,9 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount =
-      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     const hook = __useSuspenseInfiniteQuery(
       {
@@ -720,9 +720,14 @@ export function createRootHooks<
       ) => unknown;
     },
   ) => {
-    const { ssrState, queryClient, prefetchQuery, client } = useContext();
+    const { ssrState, queryClient, prefetchQuery, client, abortOnUnmount } =
+      useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
+    );
 
     const queries = queriesCallback(proxy);
 
@@ -758,9 +763,13 @@ export function createRootHooks<
       >,
     ) => readonly UseQueryOptionsForUseSuspenseQueries<any, any, any, any>[],
   ) => {
-    const { queryClient, client } = useContext();
+    const { queryClient, client, abortOnUnmount } = useContext();
 
-    const proxy = createUseQueries(client);
+    const proxy = createUseQueries(
+      client,
+      config?.abortOnUnmount ?? abortOnUnmount,
+      queryClient,
+    );
 
     const queries = queriesCallback(proxy);
 

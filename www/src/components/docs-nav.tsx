@@ -159,8 +159,9 @@ function NavItem(props: {
     <li>
       <div className="flex items-center gap-0.5">
         <Link
-          // A parent's path prefixes its children's, which would make it active too.
-          activeOptions={{ exact: true }}
+          // A parent's path prefixes its children's, which would make it active
+          // too. A query, such as `?framework=`, doesn't change the page.
+          activeOptions={{ exact: true, includeSearch: false }}
           activeProps={{
             'aria-current': 'page',
             className:

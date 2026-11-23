@@ -28,7 +28,7 @@ A collection of resources on tRPC.
 | trpc-cli - Turn a tRPC router into a type-safe, fully documented CLI                                     | https://github.com/mmkal/trpc-cli                            |
 | trpc-live - Live query solution for tRPC                                                                 | https://github.com/strblr/trpc-live                          |
 | trpc-navigation-plugin - Fix goto-definition with emit declarations                                      | https://github.com/ebg1223/trpc-navigation-plugin            |
-| oRPC - OpenAPI support for your tRPC routers                                                             | https://orpc.unnoq.com/docs/openapi/integrations/trpc        |
+| oRPC - OpenAPI support for your tRPC routers                                                             | https://orpc.dev/docs/openapi/integrations/trpc              |
 | Prisma tRPC Generator - Automatically generate tRPC routers from Prisma schemas                          | https://github.com/omar-dulaimi/prisma-trpc-generator        |
 | tRPC Shield - Permission system for tRPC                                                                 | https://github.com/omar-dulaimi/trpc-shield                  |
 | Prisma tRPC Shield Generator - Generate tRPC Shield permissions from Prisma schema                       | https://github.com/omar-dulaimi/prisma-trpc-shield-generator |
@@ -51,12 +51,14 @@ A collection of resources on tRPC.
 | Description                                                                                         | Link                                                        |
 | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | create-t3-app - Scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma) | https://create.t3.gg                                        |
+| create-faster - Scaffold apps or monorepos from blueprints (Next.js, tRPC, Drizzle, TanStack Query)  | https://create.plvo.dev/docs/modules/api/trpc               |
 | sidebase - Scaffold a starter project using sidebase (Nuxt 3, tRPC, Tailwind CSS, Prisma)           | https://sidebase.io                                         |
 | Create JD App - Scaffold a starter project using the JD Stack (SolidStart, tRPC, Tailwind, Prisma)  | https://github.com/OrJDev/create-jd-app                     |
 | Create tRPC App - Create tRPC-powered apps with one command                                         | https://github.com/omar-dulaimi/create-trpc-app             |
 | viteRPC - Monorepo template powered by Vite (Vite, tRPC, Tailwind CSS)                              | https://web.archive.org/web/20241114210459/https://github.com/mnik01/viteRPC                           |
 | Start UI [web] - Opinionated frontend starter (tRPC, Prisma, Next.js, Chakra UI)                    | https://github.com/bearstudio/start-ui-web                  |
 | Nx Plugin for AWS - Scaffold a project using tRPC with Nx, and deploy to AWS with CDK or Terraform  | https://awslabs.github.io/nx-plugin-for-aws/en/guides/trpc/ |
+| create-fate - Scaffold full-stack fate apps, with tRPC as one backend option                        | https://fate.technology/guide/getting-started               |
 
 ### Library adapters
 
@@ -81,6 +83,8 @@ A collection of resources on tRPC.
 | trpc-redis - tRPC adapter using Redis as a transport layer                                          | https://github.com/cobeo2004/trpc-redis                               |
 | NestJS-tRPC - An opinionated approach to building end-to-end typesafe APIs with tRPC within NestJS. | https://www.nestjs-trpc.io/                                           |
 | vscode-trpc - tRPC adapter for VS Code extension development                                        | https://github.com/wszgrcy/vscode-toolkit                             |
+| HyperFetch - Call tRPC procedures as typed requests with caching, React hooks and subscriptions     | https://hyperfetch.bettertyped.com/docs/integrations/adapter-trpc/overview/ |
+| fate - Relay-inspired data client with normalized caching, composable views, and tRPC integration   | https://fate.technology/integrations/server#trpc-fate-setup           |
 
 ## 🍀 Starting points, example projects, etc
 
@@ -110,6 +114,7 @@ A collection of resources on tRPC.
 | Build a Public tRPC API: trpc-openapi vs ts-rest                                                    | https://catalins.tech/public-api-trpc/                                                      |
 | Next.js + Expo + tRPC Monorepo Boilerplate                                                          | https://github.com/monsieursam/boilerplate-next-expo-trpc                                   |
 | Next.js + Express + BetterAuth + Prisma + bun + shadcn + tRPC Monorepo Boilerplate                  | https://github.com/KitsuneKode/template-nextjs-express-trpc-better-auth-monorepo            |
+| Electron AppStack - Electron starter with type-safe tRPC IPC, React, SQLite, auto update, signing   | https://electron-appstack.com                                                               |
 
 ## 🏁 Open-source projects using tRPC
 

@@ -4,45 +4,40 @@ import { dehydrate } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const appRouter = t.router({
-      post: t.router({
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().default(0),
-              foo: z.literal('bar').optional().default('bar'),
-            }),
-          )
-          .query(({ input }) => {
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
+  const appRouter = t.router({
+    post: t.router({
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().default(0),
+            foo: z.literal('bar').optional().default('bar'),
           }),
-      }),
-    });
+        )
+        .query(({ input }) => {
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
+        }),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('with input', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
   function MyComponent() {
     const utils = client.useContext();
@@ -129,6 +124,7 @@ test('with input', async () => {
 });
 
 test('w/o input', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
   function MyComponent() {
     const utils = client.useContext();

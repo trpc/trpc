@@ -25,7 +25,12 @@ import {
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import {
+  loadHandles,
+  prefetchEntry,
+  fromHandle,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import {
   ChevronRightIcon,
   HashIcon,
@@ -40,9 +45,13 @@ import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
 export const Route = createFileRoute('/')({
-  loader: (opts) => ({
-    channels: opts.context.trpc.channel.list.unstable_$prefetch(),
-  }),
+  loader: async (opts) => {
+    const { trpc } = opts.context;
+    const [handles] = await loadHandles(trpc, {
+      channels: prefetchEntry(trpc.channel.list),
+    });
+    return handles;
+  },
   component: Home,
 });
 
@@ -130,13 +139,11 @@ function Home() {
 
 function ChannelList(
   props: Readonly<{
-    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+    channels: inferQueryHandle<TRPC['channel']['list']>;
   }>,
 ) {
   const trpc = useTRPC();
-  const channelsQuery = useSuspenseQuery(
-    trpc.unstable_$fromHandle(props.channels),
-  );
+  const channelsQuery = useSuspenseQuery(fromHandle(trpc, props.channels));
 
   if (channelsQuery.data.length === 0) {
     return (

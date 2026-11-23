@@ -71,6 +71,7 @@
     "www/api-reference/out/",
     "www/.vercel/",
     ".agents/skills/*/",
-    "!.agents/skills/trpc-conventions/"
+    "!.agents/skills/trpc-conventions/",
+    "!.agents/skills/pr-agent-callout/"
   ]
 }

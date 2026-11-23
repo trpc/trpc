@@ -241,7 +241,7 @@ export function PostForm() {
       onSubmit={async (e) => {
         e.preventDefault();
         const title = new FormData(e.currentTarget).get('title') as string;
-        // Maybe show loading toast, etc etc. Endless possibilities
+        // Maybe show loading toast, etc. Endless possibilities
         await createPost({ title });
       }}
     >
@@ -350,7 +350,6 @@ import { Ratelimit } from '@unkey/ratelimit';
 export const rateLimitedAction = protectedAction.use(async (opts) => {
   const unkey = new Ratelimit({
     rootKey: process.env.UNKEY_ROOT_KEY!,
-    async: true,
     duration: '10s',
     limit: 5,
     namespace: `trpc_${opts.path}`,
@@ -419,7 +418,6 @@ import { Ratelimit } from '@unkey/ratelimit';
 export const rateLimitedAction = protectedAction.use(async (opts) => {
   const unkey = new Ratelimit({
     rootKey: process.env.UNKEY_ROOT_KEY!,
-    async: true,
     duration: '10s',
     limit: 5,
     namespace: `trpc_${opts.path}`,

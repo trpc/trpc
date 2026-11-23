@@ -22,6 +22,8 @@ import type {
 } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
 import type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
+
+export type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
 import { getPlanner } from './getPlanner';
 
 /**

@@ -367,7 +367,7 @@ In the `_app` from [step 6](#6-configure-_apptsx), change three things:
 | `abortOnUnmount` in `config`                    | `trpc: { abortOnUnmount: true }` on each query. See [Aborting Procedure Calls](./aborting-procedure-calls.md)                          |
 | `queryClientConfig`                             | The options you pass to `new QueryClient()` in `makeQueryClient`                                                                       |
 
-The [migration guide](/docs/client/tanstack-react-query/migrating) covers the hooks in detail, and has a codemod for them that's still a work in progress.
+The [migration guide](/docs/client/tanstack-react-query/migrating) covers the hooks in detail. Its [codemod](/docs/client/tanstack-react-query/migrating#codemod-migration) moves the setup, `_app` and the hooks for you.
 
 `ssr: true` rendered the page over and over until no query was fetching. With `getServerSideProps`, you pick which queries run on the server, and Next.js keeps [Automatic Static Optimization](https://nextjs.org/docs/pages/building-your-application/rendering/automatic-static-optimization) for pages that don't need them.
 

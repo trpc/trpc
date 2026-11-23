@@ -66,7 +66,9 @@ type TransformerOptions<T> = {};
 // ---cut---
 type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
-  createContext: () => Promise<inferRouterContext<TRouter>>;
+  createContext: (opts: {
+    info: { signal: AbortSignal };
+  }) => Promise<inferRouterContext<TRouter>>;
   onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 ```
@@ -78,6 +80,25 @@ The tRPC router instance to use for procedure calls.
 ### createContext
 
 A function that creates the context for each procedure call. This is called for each request and should return a promise that resolves to the context object.
+
+It receives `info.signal`, which aborts when the call is cancelled, for example when you pass `signal` to `.query()` or unsubscribe. Pass it on to slow work like database or `fetch()` calls. The same signal reaches your procedures as `opts.signal`. If the call is cancelled before or while the context is created, the procedure doesn't run.
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({});
+declare function getSession(opts: { signal: AbortSignal }): Promise<{}>;
+// ---cut---
+import { localLink } from '@trpc/client';
+
+localLink({
+  router: appRouter,
+  createContext: async (opts) => {
+    const session = await getSession({ signal: opts.info.signal });
+    return { session };
+  },
+});
+```
 
 ### onError
 

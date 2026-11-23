@@ -1,7 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 
 /**
  * For reference,
@@ -10,28 +9,24 @@ import { konn } from 'konn';
 
 const fixtureData = ['1', '2'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const appRouter = t.router({
-      post: t.router({
-        list: t.procedure.query(() => ({
-          posts: fixtureData,
-          foo: 'bar' as const,
-        })),
-      }),
-    });
+  const appRouter = t.router({
+    post: t.router({
+      list: t.procedure.query(() => ({
+        posts: fixtureData,
+        foo: 'bar' as const,
+      })),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 describe('placeholderData', async () => {
-  test('invalid placeholderData should typeerror', () => {
+  test('invalid placeholderData should typeerror', async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     ignoreErrors(() => {
@@ -90,7 +85,8 @@ describe('placeholderData', async () => {
     });
   });
 
-  test('good placeholderData does not typeerror', () => {
+  test('good placeholderData does not typeerror', async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     ignoreErrors(() => {
@@ -116,7 +112,8 @@ describe('placeholderData', async () => {
 });
 
 describe('initialData', async () => {
-  test('invalid initialData should typeerror', () => {
+  test('invalid initialData should typeerror', async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     ignoreErrors(() => {
@@ -180,7 +177,8 @@ describe('initialData', async () => {
     });
   });
 
-  test('good initialData does not typeerror', () => {
+  test('good initialData does not typeerror', async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     ignoreErrors(() => {

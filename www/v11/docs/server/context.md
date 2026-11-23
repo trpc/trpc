@@ -108,20 +108,30 @@ export async function createContext() {
 // @filename: router.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
-export const appRouter = t.router({});
+export const appRouter = t.router({
+  greeting: t.procedure.query(() => 'hello'),
+});
 export type AppRouter = typeof appRouter;
 
 // @filename: helpers.ts
 // ---cut---
-// 3. Server-side helpers (Next.js-specific, see /docs/client/nextjs/pages-router/server-side-helpers)
-import { createServerSideHelpers } from '@trpc/react-query/server';
+// 3. Prefetching on the server, see /docs/client/tanstack-react-query/server-components
+import { dehydrate, QueryClient } from '@tanstack/react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './context';
 import { appRouter } from './router';
 
-const helpers = createServerSideHelpers({
-  router: appRouter,
-  ctx: await createContext(),
-});
+// Call once per request, e.g. in `getServerSideProps`
+export async function prefetchGreeting() {
+  const queryClient = new QueryClient();
+  const trpc = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: await createContext(),
+    queryClient,
+  });
+  await queryClient.prefetchQuery(trpc.greeting.queryOptions());
+  return dehydrate(queryClient);
+}
 ```
 
 ## Example code
