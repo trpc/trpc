@@ -1,5 +1,6 @@
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
 
+/** @internal */
 export function inputWithTrackedEventId(
   input: unknown,
   lastEventId: string | undefined,

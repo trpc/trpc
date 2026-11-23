@@ -5,6 +5,7 @@ import { emptyObject, isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
+/** @internal */
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   return (
     (headers.get('trpc-accept') as TRPCAcceptHeader | null) ??
@@ -17,6 +18,7 @@ export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   );
 }
 
+/** @internal */
 export function getLastEventId(opts: {
   headers: Headers;
   searchParams: URLSearchParams;
@@ -35,7 +37,7 @@ type GetRequestInfoOptions = {
   searchParams: URLSearchParams;
   headers: Headers;
   router: AnyRouter;
-  maxBatchSize?: number;
+  maxBatchSize: number | undefined;
 };
 
 type ContentTypeHandler = {
@@ -332,6 +334,7 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   });
 }
 
+/** @internal */
 export async function getRequestInfo(
   opts: GetRequestInfoOptions,
 ): Promise<TRPCRequestInfo> {

@@ -10,6 +10,7 @@ type BatchItem<TKey, TValue> = {
 type Batch<TKey, TValue> = {
   items: BatchItem<TKey, TValue>[];
 };
+/** @internal */
 export type BatchLoader<TKey, TValue> = {
   validate: (keys: TKey[]) => boolean;
   fetch: (keys: TKey[]) => Promise<TValue[] | Promise<TValue>[]>;
@@ -28,6 +29,7 @@ const throwFatalError = () => {
  * Dataloader that's very inspired by https://github.com/graphql/dataloader
  * Less configuration, no caching, and allows you to cancel requests
  * When cancelling a single fetch the whole batch will be cancelled only when _all_ items are cancelled
+ * @internal
  */
 export function dataLoader<TKey, TValue>(
   batchLoader: BatchLoader<TKey, TValue>,

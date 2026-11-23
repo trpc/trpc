@@ -107,6 +107,7 @@ const docs = 'https://trpc.io/docs/client/tanstack-react-query/migrating';
  * gets a `TODO(@trpc/upgrade)` comment.
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating#codemod-migration
+ * @public
  */
 export default function transform(
   file: FileInfo,
@@ -930,4 +931,5 @@ export default function transform(
   }
 }
 
+/** @public */
 export const parser = 'tsx';

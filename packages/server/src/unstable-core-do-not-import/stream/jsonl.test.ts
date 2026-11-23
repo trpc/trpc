@@ -77,6 +77,8 @@ test('encode/decode with superjson', async () => {
     from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController,
+    onError: undefined,
+    formatError: undefined,
   });
 
   {
@@ -143,6 +145,7 @@ test('encode/decode - error', async () => {
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
     abortController,
+    formatError: undefined,
   });
 
   {
@@ -224,6 +227,8 @@ test('decode - bad data', async () => {
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
       abortController,
+      onError: undefined,
+      formatError: undefined,
     });
     expect(true).toBe(false);
   } catch (err) {
@@ -281,6 +286,8 @@ test('e2e, create server', async () => {
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController,
+    onError: undefined,
+    formatError: undefined,
   });
 
   {
@@ -352,6 +359,8 @@ test('e2e, client aborts request halfway through', async () => {
     from: res.body!,
     onError: onConsumerErrorSpy,
     abortController: clientAbort,
+    deserialize: undefined,
+    formatError: undefined,
   });
 
   const iterable = await head[0];
@@ -422,6 +431,8 @@ test('e2e, client aborts request halfway through - through breaking async iterab
     from: res.body!,
     onError: onConsumerErrorSpy,
     abortController: clientAbort,
+    deserialize: undefined,
+    formatError: undefined,
   });
   const iterable = await head[0];
 
@@ -479,6 +490,8 @@ test('e2e, encode/decode - maxDepth', async () => {
     from: res.body!,
     deserialize: SuperJSON.deserialize,
     abortController: ac,
+    onError: undefined,
+    formatError: undefined,
   });
 
   {
@@ -532,6 +545,8 @@ test('should work to throw after stream is closed', async () => {
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController: new AbortController(),
+    onError: undefined,
+    formatError: undefined,
   });
 
   const head0 = await head[0]; // consume the stream
@@ -592,6 +607,8 @@ test('e2e, withPing', async () => {
     from: original,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController: new AbortController(),
+    onError: undefined,
+    formatError: undefined,
   });
 
   {
@@ -647,6 +664,8 @@ test('regression: encode/decode with superjson at top level', async () => {
     from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController,
+    onError: undefined,
+    formatError: undefined,
   });
 
   expect(aggregated).toMatchInlineSnapshot(`
@@ -691,6 +710,8 @@ test('regression: buffered chunks preserved on normal stream completion', async 
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController,
+    onError: undefined,
+    formatError: undefined,
   });
 
   const iterable = await head[0];
@@ -737,6 +758,9 @@ test.each([false, true])(
     const [head] = await jsonlStreamConsumer<typeof data>({
       from: streamFromLines(truncated ? lines.slice(0, -1) : lines),
       abortController,
+      deserialize: undefined,
+      onError: undefined,
+      formatError: undefined,
     });
     await vi.waitFor(() => expect(abortController.signal.aborted).toBe(true));
 
@@ -783,6 +807,9 @@ test.each([
     const [head] = await jsonlStreamConsumer<typeof data>({
       from: streamFromLines(opts.missing ? lines.slice(0, 2) : lines),
       abortController,
+      deserialize: undefined,
+      onError: undefined,
+      formatError: undefined,
     });
     await vi.waitFor(() => expect(abortController.signal.aborted).toBe(true));
 
@@ -830,6 +857,8 @@ test.each([new Error('Response interrupted'), undefined])(
       from: body.readable,
       abortController: new AbortController(),
       onError,
+      deserialize: undefined,
+      formatError: undefined,
     });
     await writer.write(new TextEncoder().encode('{"0":[[0],[null,1,0]]}\n'));
     const [head] = await pendingHead;
@@ -873,6 +902,8 @@ test('regression: iterable errors when stream ends cleanly mid-iteration', async
     from: streamFromLines(lines.slice(0, 4)),
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController: new AbortController(),
+    onError: undefined,
+    formatError: undefined,
   });
 
   const iterable = await head[0];
@@ -916,6 +947,8 @@ test('regression: promise rejects when stream ends cleanly before resolution', a
     from: streamFromLines(lines.slice(0, 2)),
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController: new AbortController(),
+    onError: undefined,
+    formatError: undefined,
   });
 
   const value = await head[0];
@@ -949,6 +982,9 @@ test('regression: rejected chunk that is never read does not cause an unhandled 
         JSON.stringify([1, 1, { msg: 'nobody reads this' }]),
       ]),
       abortController: new AbortController(),
+      deserialize: undefined,
+      onError: undefined,
+      formatError: undefined,
     });
 
     expect(await head[0]).toEqual({ result: { data: 'ok' } });
@@ -975,6 +1011,9 @@ test('regression: stream closing before head rejects headDeferred with descripti
   const rejection = await jsonlStreamConsumer({
     from: emptyStream,
     abortController,
+    deserialize: undefined,
+    onError: undefined,
+    formatError: undefined,
   }).catch((e) => e);
 
   // Without the fix, close calls closeOrAbort(undefined) which rejects with undefined.

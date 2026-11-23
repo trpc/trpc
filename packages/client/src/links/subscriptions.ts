@@ -18,6 +18,7 @@ interface ConnectionPendingState extends ConnectionStateBase<null> {
   state: 'pending';
 }
 
+/** @public */
 export type TRPCConnectionState<TError> =
   | ConnectionIdleState
   | ConnectionConnectingState<TError>

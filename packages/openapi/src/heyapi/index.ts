@@ -7,12 +7,14 @@ import type {
 /**
  * A tRPC data transformer, such as `superjson`.
  * @see https://trpc.io/docs/openapi#transformers
+ * @public
  */
 export type DataTransformerOptions =
   | TRPCDataTransformer
   | TRPCCombinedDataTransformer;
 /**
  * tRPC options for {@link configureTRPCHeyApiClient}.
+ * @public
  */
 export interface TRPCHeyApiClientOptions {
   /**
@@ -25,11 +27,13 @@ export interface TRPCHeyApiClientOptions {
 
 /**
  * The `~resolvers` type of the `@hey-api/typescript` plugin.
+ * @public
  */
 export type HeyAPIResolvers = Plugins.HeyApiTypeScript.Resolvers;
 
 /**
  * The config of a hey-api fetch client.
+ * @public
  */
 export type HeyApiConfig = ReturnType<
   Plugins.HeyApiClientFetch.Client['getConfig']
@@ -37,6 +41,7 @@ export type HeyApiConfig = ReturnType<
 
 /**
  * The parts of a hey-api client config that tRPC sets.
+ * @public
  */
 export type TRPCHeyApiClientConfig = Required<
   Pick<HeyApiConfig, 'querySerializer'>
@@ -71,6 +76,7 @@ function resolveTransformer(
  * ```
  *
  * @see https://trpc.io/docs/openapi#hey-api-typescript
+ * @public
  */
 export function createTRPCHeyApiTypeResolvers(): HeyAPIResolvers {
   return {
@@ -90,7 +96,7 @@ export function createTRPCHeyApiTypeResolvers(): HeyAPIResolvers {
 }
 
 /**
- * @internal - Prefer `configureTRPCHeyApiClient`
+ * @public - Prefer `configureTRPCHeyApiClient`
  */
 export function createTRPCHeyApiClientConfig(opts?: TRPCHeyApiClientOptions) {
   const transformer = opts?.transformer
@@ -139,7 +145,7 @@ export function createTRPCHeyApiClientConfig(opts?: TRPCHeyApiClientOptions) {
 }
 
 /**
- * @internal - Prefer `configureTRPCHeyApiClient`
+ * @public - Prefer `configureTRPCHeyApiClient`
  */
 export function createTRPCErrorInterceptor(
   transformerOpts: DataTransformerOptions,
@@ -175,6 +181,7 @@ export function createTRPCErrorInterceptor(
  * ```
  *
  * @see https://trpc.io/docs/openapi#with-a-transformer-superjson-devalue-etc
+ * @public
  */
 export function configureTRPCHeyApiClient(
   client: Plugins.HeyApiClientFetch.Client,

@@ -1,4 +1,5 @@
 /* oxlint-disable typescript/no-non-null-assertion */
+/** @internal */
 export function createDeferred<TValue = void>() {
   let resolve: (value: TValue) => void;
   let reject: (error: unknown) => void;
@@ -9,4 +10,5 @@ export function createDeferred<TValue = void>() {
 
   return { promise, resolve: resolve!, reject: reject! };
 }
+/** @internal */
 export type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;

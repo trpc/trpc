@@ -1,9 +1,15 @@
-/** What `subscribe()` returns: call `unsubscribe()` to stop. */
+/**
+ * What `subscribe()` returns: call `unsubscribe()` to stop.
+ * @public
+ */
 export interface Unsubscribable {
   /** Stops the subscription and runs its teardown. */
   unsubscribe(): void;
 }
-/** Stops a subscription. */
+/**
+ * Stops a subscription.
+ * @public
+ */
 export type UnsubscribeFn = () => void;
 interface Subscribable<TValue, TError> {
   /** Starts the observable, sending what it emits to `observer`. */
@@ -13,6 +19,7 @@ interface Subscribable<TValue, TError> {
  * A stream of values, which starts when you subscribe to it. Links pass
  * results along as observables.
  * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @public
  */
 export interface Observable<TValue, TError> extends Subscribable<
   TValue,
@@ -58,7 +65,10 @@ export interface Observable<TValue, TError> extends Subscribable<
   ): Observable<TValue2, TError2>;
 }
 
-/** Gets an observable's values, its error, and its end. */
+/**
+ * Gets an observable's values, its error, and its end.
+ * @public
+ */
 export interface Observer<TValue, TError> {
   /** Gets each value. */
   next: (value: TValue) => void;
@@ -68,15 +78,24 @@ export interface Observer<TValue, TError> {
   complete: () => void;
 }
 
-/** What the function passed to `observable()` returns to clean up on unsubscribe. */
+/**
+ * What the function passed to `observable()` returns to clean up on unsubscribe.
+ * @public
+ */
 export type TeardownLogic =
   // | SubscriptionLike
   Unsubscribable | UnsubscribeFn | void;
 
-/** A function of one argument. */
+/**
+ * A function of one argument.
+ * @public
+ */
 export type UnaryFunction<TSource, TReturn> = (source: TSource) => TReturn;
 
-/** Turns one observable into another, for `pipe()`. */
+/**
+ * Turns one observable into another, for `pipe()`.
+ * @public
+ */
 export type OperatorFunction<
   TValueBefore,
   TErrorBefore,
@@ -87,7 +106,10 @@ export type OperatorFunction<
   Subscribable<TValueAfter, TErrorAfter>
 >;
 
-/** An operator that keeps the value and error types. */
+/**
+ * An operator that keeps the value and error types.
+ * @public
+ */
 export type MonoTypeOperatorFunction<TValue, TError> = OperatorFunction<
   TValue,
   TError,

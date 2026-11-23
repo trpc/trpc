@@ -7,6 +7,7 @@ import type { TRPC_ERROR_CODE_NUMBER } from './codes';
  * The error object of an error response: a JSON-RPC code, a message and
  * any `data` the error formatter adds.
  * @see https://trpc.io/docs/rpc#error-response
+ * @public
  */
 export interface TRPCErrorShape<TData extends object = object> {
   code: TRPC_ERROR_CODE_NUMBER;
@@ -56,7 +57,10 @@ export namespace JSONRPC2 {
 
 /////////////////////////// HTTP envelopes ///////////////////////
 
-/** A call to a procedure. */
+/**
+ * A call to a procedure.
+ * @public
+ */
 export interface TRPCRequest extends JSONRPC2.Request<
   ProcedureType,
   {
@@ -69,7 +73,10 @@ export interface TRPCRequest extends JSONRPC2.Request<
   }
 > {}
 
-/** The `result` of a successful response. */
+/**
+ * The `result` of a successful response.
+ * @public
+ */
 export interface TRPCResult<TData = unknown> {
   data: TData;
   type?: 'data';
@@ -82,6 +89,7 @@ export interface TRPCResult<TData = unknown> {
 /**
  * A successful response.
  * @see https://trpc.io/docs/rpc#successful-response
+ * @public
  */
 export interface TRPCSuccessResponse<TData> extends JSONRPC2.ResultResponse<
   TRPCResult<TData>
@@ -90,6 +98,7 @@ export interface TRPCSuccessResponse<TData> extends JSONRPC2.ResultResponse<
 /**
  * An error response.
  * @see https://trpc.io/docs/rpc#error-response
+ * @public
  */
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,
@@ -98,6 +107,7 @@ export interface TRPCErrorResponse<
 /**
  * A response to a call: a success or an error.
  * @see https://trpc.io/docs/rpc#http-response-specification
+ * @public
  */
 export type TRPCResponse<
   TData = unknown,
@@ -109,6 +119,7 @@ export type TRPCResponse<
 /**
  * A call to a procedure over WebSockets, with the id its responses carry.
  * @see https://trpc.io/docs/server/websockets#websockets-rpc-specification
+ * @public
  */
 export type TRPCRequestMessage = TRPCRequest & {
   id: JSONRPC2.RequestId;
@@ -117,6 +128,7 @@ export type TRPCRequestMessage = TRPCRequest & {
 /**
  * The client asks the server to stop a subscription.
  * @see https://trpc.io/docs/server/websockets#to-cancel-a-subscription-call-subscriptionstop
+ * @public
  */
 export interface TRPCSubscriptionStopNotification extends JSONRPC2.BaseRequest<'subscription.stop'> {
   id: null;
@@ -124,12 +136,14 @@ export interface TRPCSubscriptionStopNotification extends JSONRPC2.BaseRequest<'
 
 /**
  * The notifications a WebSocket client sends.
+ * @public
  */
 export type TRPCClientOutgoingRequest = TRPCSubscriptionStopNotification;
 
 /**
  * Any message a WebSocket client sends.
  * @see https://trpc.io/docs/server/websockets#websockets-rpc-specification
+ * @public
  */
 export type TRPCClientOutgoingMessage =
   | TRPCRequestMessage
@@ -139,6 +153,7 @@ export type TRPCClientOutgoingMessage =
  * A result sent over WebSockets: data, or a subscription's `started` or
  * `stopped` event.
  * @see https://trpc.io/docs/server/websockets#subscription-response-shape
+ * @public
  */
 export interface TRPCResultMessage<TData> extends JSONRPC2.ResultResponse<
   | { type: 'started'; data?: never }
@@ -149,6 +164,7 @@ export interface TRPCResultMessage<TData> extends JSONRPC2.ResultResponse<
 /**
  * A response sent over WebSockets, with the id of the call it answers.
  * @see https://trpc.io/docs/server/websockets#response
+ * @public
  */
 export type TRPCResponseMessage<
   TData = unknown,
@@ -161,6 +177,7 @@ export type TRPCResponseMessage<
 /**
  * The server asks the client to reconnect, for example before a restart.
  * @see https://trpc.io/docs/server/websockets#notifications-from-server-to-client
+ * @public
  */
 export interface TRPCReconnectNotification extends JSONRPC2.BaseRequest<'reconnect'> {
   id: JSONRPC2.RequestId;
@@ -168,12 +185,14 @@ export interface TRPCReconnectNotification extends JSONRPC2.BaseRequest<'reconne
 
 /**
  * The notifications a WebSocket client receives.
+ * @public
  */
 export type TRPCClientIncomingRequest = TRPCReconnectNotification;
 
 /**
  * Any message a WebSocket client receives.
  * @see https://trpc.io/docs/server/websockets#websockets-rpc-specification
+ * @public
  */
 export type TRPCClientIncomingMessage<
   TResult = unknown,
@@ -183,6 +202,7 @@ export type TRPCClientIncomingMessage<
 /**
  * The connection params a WebSocket client sends as its first message.
  * @see https://trpc.io/docs/server/websockets#connection-params
+ * @public
  */
 export interface TRPCConnectionParamsMessage extends JSONRPC2.BaseRequest<'connectionParams'> {
   data: TRPCRequestInfo['connectionParams'];

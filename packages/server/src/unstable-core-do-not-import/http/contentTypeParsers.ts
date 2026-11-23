@@ -2,7 +2,7 @@ import type { ParserZodEsque } from '../parser';
 
 /**
  * A validator tRPC ships for a special input type.
- * @internal
+ * @public
  */
 export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
   parse: (input: unknown) => TOutput;
@@ -12,7 +12,7 @@ export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
 
 /**
  * A `File`. Node 18 has no `File` type, but a `File` is always a `Blob`.
- * @internal
+ * @public
  */
 export interface FileLike extends Blob {
   readonly name: string;
@@ -20,7 +20,7 @@ export interface FileLike extends Blob {
 
 /**
  * The binary inputs a client can send with `octetInputParser`.
- * @internal
+ * @public
  */
 export type OctetInput = Blob | Uint8Array | FileLike;
 
@@ -35,6 +35,7 @@ export type OctetInput = Blob | Uint8Array | FileLike;
  * });
  * ```
  * @see https://trpc.io/docs/server/non-json-content-types#file-and-other-binary-type-inputs
+ * @public
  */
 export const octetInputParser: UtilityParser<OctetInput, ReadableStream> = {
   _input: null as any as OctetInput,

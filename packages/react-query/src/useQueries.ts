@@ -17,7 +17,7 @@ import type {
 } from './shared';
 
 /**
- * @internal
+ * @public
  */
 export type UseQueryOptionsForUseQueries<
   TQueryFnData = unknown,
@@ -30,7 +30,7 @@ export type UseQueryOptionsForUseQueries<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type UseQueryOptionsForUseSuspenseQueries<
   TQueryFnData = unknown,
@@ -43,13 +43,13 @@ export type UseQueryOptionsForUseSuspenseQueries<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type TrpcQueryOptionsForUseQueries<TOutput, TData, TError> =
   DistributiveOmit<UseTRPCQueryOptions<TOutput, TData, TError>, 'queryKey'>;
 
 /**
- * @internal
+ * @public
  */
 export type TrpcQueryOptionsForUseSuspenseQueries<TOutput, TData, TError> =
   DistributiveOmit<
@@ -58,7 +58,7 @@ export type TrpcQueryOptionsForUseSuspenseQueries<TOutput, TData, TError> =
   >;
 
 /**
- * @internal
+ * @public
  */
 export declare type QueriesResults<
   TQueriesOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
@@ -76,7 +76,7 @@ export declare type QueriesResults<
 };
 
 /**
- * @internal
+ * @public
  */
 export declare type SuspenseQueriesResults<
   TQueriesOptions extends UseQueryOptionsForUseSuspenseQueries<
@@ -123,7 +123,7 @@ type GetOptions<TQueryOptions> =
     : never;
 
 /**
- * @internal
+ * @public
  */
 export type QueriesOptions<
   TQueriesOptions extends any[],
@@ -156,7 +156,7 @@ type GetSuspenseOptions<TQueryOptions> =
     : never;
 
 /**
- * @internal
+ * @public
  */
 export type SuspenseQueriesOptions<
   TQueriesOptions extends any[],
@@ -184,7 +184,7 @@ export type SuspenseQueriesOptions<
           : UseQueryOptionsForUseSuspenseQueries[];
 
 /**
- * @internal
+ * @public
  */
 export type TRPCUseQueries<TRouter extends AnyRouter> = {
   <
@@ -229,7 +229,7 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = {
 };
 
 /**
- * @internal
+ * @public
  */
 export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = {
   <

@@ -70,6 +70,7 @@ type inferSubscriptionOutput<TOutput> =
       >
     : TypeError<'Subscription output could not be inferred'>;
 
+/** @public */
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
   invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
@@ -104,7 +105,7 @@ type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 /**
  * What a resolver passed to `.query()`, `.mutation()` or `.subscription()`
  * gets.
- * @internal
+ * @public
  */
 export interface ProcedureResolverOptions<
   TContext,
@@ -152,6 +153,7 @@ type ProcedureResolver<
 >;
 
 type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
+/** @public */
 export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
@@ -168,6 +170,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
  * The options a resolver built from this procedure builder gets: its
  * `ctx`, `input` and so on. Use it to type helpers that resolvers call.
  * @see https://trpc.io/docs/server/procedures#inferProcedureBuilderResolverOptions
+ * @public
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
@@ -207,6 +210,7 @@ export type inferProcedureBuilderResolverOptions<
  * Builds a procedure step by step. Each method returns a new builder, so a
  * builder can be the base of many procedures.
  * @see https://trpc.io/docs/server/procedures
+ * @public
  */
 export interface ProcedureBuilder<
   TContext,
@@ -559,8 +563,9 @@ function createNewBuilder(
   });
 }
 
+/** @internal */
 export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
-  initDef: Partial<AnyProcedureBuilderDef> = {},
+  initDef: Partial<AnyProcedureBuilderDef>,
 ): ProcedureBuilder<
   TContext,
   TMeta,
@@ -698,7 +703,7 @@ function createResolver(
 
 /**
  * What calling a procedure takes.
- * @internal
+ * @public
  */
 export interface ProcedureCallOptions<TContext> {
   ctx: TContext;

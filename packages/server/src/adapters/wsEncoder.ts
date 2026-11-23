@@ -9,6 +9,7 @@
  *   decode: (data) => myFormat.parse(data),
  * };
  * ```
+ * @public
  */
 export interface Encoder {
   /** Encodes a message to send. */
@@ -19,6 +20,7 @@ export interface Encoder {
 
 /**
  * The default encoder: JSON in text frames.
+ * @public
  */
 export const jsonEncoder: Encoder = {
   encode: (data) => JSON.stringify(data),

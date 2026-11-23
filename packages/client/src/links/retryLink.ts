@@ -38,6 +38,7 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
  * id.
  *
  * @see https://trpc.io/docs/client/links/retryLink
+ * @public
  */
 export function retryLink<TInferrable extends InferrableClientTypes>(
   opts: RetryLinkOptions<TInferrable>,

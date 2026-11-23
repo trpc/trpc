@@ -6,6 +6,7 @@ import type { HTTPHeaders, Operation } from './types';
 /**
  * The options of `httpBatchLink`.
  * @see https://trpc.io/docs/client/links/httpBatchLink#options
+ * @public
  */
 export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {

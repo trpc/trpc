@@ -33,6 +33,7 @@ import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
+ * @internal
  */
 export class WsClient {
   /**
@@ -208,6 +209,7 @@ export class WsClient {
             TRPCClientError.from(
               new TRPCWebSocketClosedError({
                 message: 'Closed before connection was established',
+                cause: undefined,
               }),
             ),
           ),
@@ -247,7 +249,7 @@ export class WsClient {
   }: {
     op: Pick<Operation, 'id' | 'type' | 'path' | 'input' | 'signal'>;
     transformer: CombinedDataTransformer;
-    lastEventId?: string;
+    lastEventId: string | undefined;
   }) {
     return observable<
       OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,

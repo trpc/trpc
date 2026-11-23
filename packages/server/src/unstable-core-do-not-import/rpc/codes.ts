@@ -7,6 +7,7 @@ import type { InvertKeyValue, ValueOf } from '../types';
  * use the range JSON-RPC leaves for servers, `-32000` to `-32099`, ending
  * in the digits of the matching HTTP status.
  * @see https://trpc.io/docs/rpc#error-codes---json-rpc-20-error-codes
+ * @public
  */
 export const TRPC_ERROR_CODES_BY_KEY = {
   /**
@@ -46,6 +47,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 /**
  * The tRPC error code of each JSON-RPC 2.0 error code.
  * @see https://trpc.io/docs/rpc#error-codes---json-rpc-20-error-codes
+ * @public
  */
 export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   typeof TRPC_ERROR_CODES_BY_KEY
@@ -69,17 +71,22 @@ export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   [-32099]: 'CLIENT_CLOSED_REQUEST',
 };
 
-/** A JSON-RPC 2.0 error code tRPC sends, such as `-32004`. */
+/**
+ * A JSON-RPC 2.0 error code tRPC sends, such as `-32004`.
+ * @public
+ */
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 /**
  * A tRPC error code, such as `'NOT_FOUND'`.
  * @see https://trpc.io/docs/server/error-handling#error-codes
+ * @public
  */
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
 
 /**
  * tRPC error codes that are considered retryable
  * With out of the box SSE, the client will reconnect when these errors are encountered
+ * @internal
  */
 export const retryableRpcCodes: TRPC_ERROR_CODE_NUMBER[] = [
   TRPC_ERROR_CODES_BY_KEY.BAD_GATEWAY,

@@ -18,6 +18,7 @@ import {
 import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
 
+/** @public */
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
    * The `TRPCClient`

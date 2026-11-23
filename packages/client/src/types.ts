@@ -4,6 +4,7 @@
  * @remarks
  * If you need a property that you know exists but doesn't exist on this
  * interface, go ahead and add it.
+ * @public
  */
 export type FetchEsque = (
   input: RequestInfo | URL | string,
@@ -13,12 +14,14 @@ export type FetchEsque = (
 /**
  * A simpler version of the native fetch function's type for packages with
  * their own fetch types, such as undici and node-fetch.
+ * @public
  */
 export type NativeFetchEsque = (
   url: URL | string,
   init?: NodeFetchRequestInitEsque,
 ) => Promise<ResponseEsque>;
 
+/** @public */
 export interface NodeFetchRequestInitEsque {
   body?: string;
 }
@@ -29,6 +32,7 @@ export interface NodeFetchRequestInitEsque {
  * @remarks
  * If you need a property that you know exists but doesn't exist on this
  * interface, go ahead and add it.
+ * @public
  */
 export interface RequestInitEsque {
   /**
@@ -55,11 +59,13 @@ export interface RequestInitEsque {
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
  * @see ReadableStream from lib.dom.d.ts
+ * @public
  */
 export type WebReadableStreamEsque = {
   getReader: () => ReadableStreamDefaultReader<Uint8Array>;
 };
 
+/** @public */
 export type NodeJSReadableStreamEsque = {
   on(
     eventName: string | symbol,
@@ -70,6 +76,7 @@ export type NodeJSReadableStreamEsque = {
 /**
  * A subset of the standard Response properties needed by tRPC internally.
  * @see Response from lib.dom.d.ts
+ * @public
  */
 export interface ResponseEsque {
   readonly ok: boolean;
@@ -84,7 +91,7 @@ export interface ResponseEsque {
 }
 
 /**
- * @internal
+ * @public
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 

@@ -15,6 +15,7 @@ import type { UseTRPCSuspenseQueryResult } from '../hooks/types';
 
 /**
  * Use to request a query route which matches a given query procedure's interface
+ * @public
  */
 export type QueryLike<
   TRoot extends AnyRootTypes,
@@ -36,6 +37,7 @@ export type QueryLike<
 
 /**
  * Use to unwrap a QueryLike's input
+ * @public
  */
 export type InferQueryLikeInput<TQueryLike> =
   TQueryLike extends DecoratedQuery<infer $Def>
@@ -46,6 +48,7 @@ export type InferQueryLikeInput<TQueryLike> =
 
 /**
  * Use to unwrap a QueryLike's data output
+ * @public
  */
 export type InferQueryLikeData<TQueryLike> =
   TQueryLike extends DecoratedQuery<infer $Def>

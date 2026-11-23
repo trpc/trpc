@@ -32,6 +32,7 @@ function isErrorLike(value: unknown): value is Error {
   );
 }
 
+/** @internal */
 export function getCauseFromUnknown(cause: unknown): Error | undefined {
   if (cause instanceof Error) {
     return cause;
@@ -60,6 +61,7 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
  * Turns anything thrown into a `TRPCError`. A `TRPCError` is returned as
  * is; anything else becomes an `INTERNAL_SERVER_ERROR` with it as the
  * cause.
+ * @public
  */
 export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   if (cause instanceof TRPCError) {
@@ -91,6 +93,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
  * throw new TRPCError({ code: 'NOT_FOUND', message: 'No such post' });
  * ```
  * @see https://trpc.io/docs/server/error-handling#throwing-errors
+ * @public
  */
 export class TRPCError extends Error {
   // oxlint-disable-next-line typescript/ban-ts-comment

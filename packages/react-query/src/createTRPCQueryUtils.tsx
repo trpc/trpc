@@ -11,6 +11,7 @@ import { createUtilityFunctions } from './utils/createUtilityFunctions';
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/react/createTRPCQueryUtils
+ * @public
  */
 export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   opts: CreateQueryUtilsOptions<TRouter>,

@@ -123,7 +123,7 @@ function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
 /**
  * Resolves with an observable's first value. Rejects if it errors or
  * completes first. It doesn't unsubscribe after the first value.
- * @internal
+ * @public
  */
 export function observableToPromise<TValue>(
   observable: Observable<TValue, unknown>,
@@ -169,7 +169,7 @@ export function observableToPromise<TValue>(
  * If unsubscribing throws, `return()` rejects with the error, and completion
  * or an error from the observable rethrows it. On abort, it rejects the
  * `next()` after the queued values instead, as an error would.
- * @internal
+ * @public
  */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,

@@ -40,7 +40,7 @@ type GetQueryOptions<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type UseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
@@ -72,7 +72,7 @@ type GetSuspenseQueryOptions<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type UseSuspenseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
@@ -89,7 +89,7 @@ export type UseSuspenseQueriesProcedureRecord<
 
 /**
  * Create proxy for `useQueries` options
- * @internal
+ * @public
  */
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,

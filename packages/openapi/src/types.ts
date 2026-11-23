@@ -1,8 +1,10 @@
 import type { OpenAPIV3_1 as BaseOpenAPIV3_1 } from 'openapi-types';
 
+/** @public */
 export type Replace<TTarget, TReplaceWith> = Omit<TTarget, keyof TReplaceWith> &
   TReplaceWith;
 
+/** @public */
 export type SchemaType =
   | 'array'
   | 'boolean'
@@ -12,19 +14,30 @@ export type SchemaType =
   | 'object'
   | 'string';
 
+/** @public */
 export type PrimitiveSchemaType = SchemaType;
 
+/** @public */
 export type HttpMethods = BaseOpenAPIV3_1.HttpMethods;
+/** @public */
 export type ReferenceObject = BaseOpenAPIV3_1.ReferenceObject;
+/** @public */
 export type ExampleObject = BaseOpenAPIV3_1.ExampleObject;
+/** @public */
 export type DiscriminatorObject = BaseOpenAPIV3_1.DiscriminatorObject;
+/** @public */
 export type ExternalDocumentationObject =
   BaseOpenAPIV3_1.ExternalDocumentationObject;
+/** @public */
 export type XMLObject = BaseOpenAPIV3_1.XMLObject;
+/** @public */
 export type LinkObject = BaseOpenAPIV3_1.LinkObject;
+/** @public */
 export type SecuritySchemeObject = BaseOpenAPIV3_1.SecuritySchemeObject;
+/** @public */
 export type ServerObject = BaseOpenAPIV3_1.ServerObject;
 
+/** @public */
 export type SchemaObject = Replace<
   BaseOpenAPIV3_1.BaseSchemaObject,
   {
@@ -52,13 +65,16 @@ export type SchemaObject = Replace<
   }
 >;
 
+/** @public */
 export type SchemaLike = SchemaObject;
 
+/** @public */
 export interface ArraySchemaObject extends SchemaObject {
   type: 'array';
   items: SchemaObject | false;
 }
 
+/** @public */
 export type MediaTypeObject = Replace<
   BaseOpenAPIV3_1.MediaTypeObject,
   {
@@ -67,6 +83,7 @@ export type MediaTypeObject = Replace<
   }
 >;
 
+/** @public */
 export interface ParameterBaseObject extends Replace<
   BaseOpenAPIV3_1.ParameterBaseObject,
   {
@@ -76,13 +93,16 @@ export interface ParameterBaseObject extends Replace<
   }
 > {}
 
+/** @public */
 export interface ParameterObject extends ParameterBaseObject {
   name: string;
   in: string;
 }
 
+/** @public */
 export type HeaderObject = ParameterBaseObject;
 
+/** @public */
 export type RequestBodyObject = Replace<
   BaseOpenAPIV3_1.RequestBodyObject,
   {
@@ -90,6 +110,7 @@ export type RequestBodyObject = Replace<
   }
 >;
 
+/** @public */
 export type ResponseObject = Replace<
   BaseOpenAPIV3_1.ResponseObject,
   {
@@ -99,8 +120,10 @@ export type ResponseObject = Replace<
   }
 >;
 
+/** @public */
 export type ResponsesObject = Record<string, ReferenceObject | ResponseObject>;
 
+/** @public */
 export type OperationObject<T extends {} = {}> = Replace<
   BaseOpenAPIV3_1.OperationObject<T>,
   {
@@ -112,6 +135,7 @@ export type OperationObject<T extends {} = {}> = Replace<
 > &
   T;
 
+/** @public */
 export type PathItemObject<T extends {} = {}> = Replace<
   BaseOpenAPIV3_1.PathItemObject<T>,
   {
@@ -121,13 +145,16 @@ export type PathItemObject<T extends {} = {}> = Replace<
   [method in HttpMethods]?: OperationObject<T>;
 };
 
+/** @public */
 export type PathsObject<T extends {} = {}, TPath extends {} = {}> = Record<
   string,
   (PathItemObject<T> & TPath) | undefined
 >;
 
+/** @public */
 export type CallbackObject = Record<string, PathItemObject | ReferenceObject>;
 
+/** @public */
 export type ComponentsObject = Replace<
   BaseOpenAPIV3_1.ComponentsObject,
   {
@@ -142,6 +169,7 @@ export type ComponentsObject = Replace<
   }
 >;
 
+/** @public */
 export type Document<T extends {} = {}> = Replace<
   BaseOpenAPIV3_1.Document<T>,
   {

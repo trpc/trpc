@@ -271,6 +271,7 @@ type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 /**
  * Handles a Fetch API `Request` for a router and returns its `Response`.
  * Every adapter uses it; call it to write your own.
+ * @public
  */
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,

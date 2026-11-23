@@ -7,6 +7,7 @@ const isFunction = (fn: unknown): fn is AnyFn => typeof fn === 'function';
 /**
  * The `fetch` to use: `customFetchImpl` if given, or else the global one.
  * Throws if there's none.
+ * @public
  */
 export function getFetch(
   customFetchImpl?: FetchEsque | NativeFetchEsque,

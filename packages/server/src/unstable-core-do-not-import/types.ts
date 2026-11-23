@@ -10,7 +10,7 @@
 export type Maybe<TType> = TType | null | undefined;
 
 /**
- * @internal
+ * @public
  * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
 export type Simplify<TType> = TType extends any[] | Date
@@ -29,6 +29,7 @@ export type Dict<TType> = Record<string, TType | undefined>;
  */
 export type MaybePromise<TType> = Promise<TType> | TType;
 
+/** @internal */
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
@@ -50,7 +51,7 @@ export type Filter<TObj extends object, TFilter> = Pick<
 
 /**
  * Unwrap return type if the type is a function (sync or async), else use the type as is
- * @internal
+ * @public
  */
 export type Unwrap<TType> = TType extends (...args: any[]) => infer R
   ? Awaited<R>
@@ -58,7 +59,7 @@ export type Unwrap<TType> = TType extends (...args: any[]) => infer R
 
 /**
  * Makes the object recursively optional
- * @internal
+ * @public
  */
 export type DeepPartial<TObject> = TObject extends object
   ? {
@@ -68,7 +69,7 @@ export type DeepPartial<TObject> = TObject extends object
 
 /**
  * Omits the key without removing a potential union
- * @internal
+ * @public
  */
 export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
   ? Omit<TObj, TKey>
@@ -79,7 +80,7 @@ export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
  * Fixes issues with iterating over keys of objects with index signatures.
  * Without this, iterations over keys of objects with index signatures will lose
  * type information about the keys and only the index signature will remain.
- * @internal
+ * @public
  */
 export type WithoutIndexSignature<TObj> = {
   [
@@ -88,7 +89,7 @@ export type WithoutIndexSignature<TObj> = {
 };
 
 /**
- * @internal
+ * @public
  * Overwrite properties in `TType` with properties in `TWith`
  * Only overwrites properties when the type to be overwritten
  * is an object. Otherwise it will just use the type from `TWith`.
@@ -114,7 +115,7 @@ export type Overwrite<TType, TWith> = TWith extends any
   : never;
 
 /**
- * @internal
+ * @public
  */
 export type ValidateShape<TActualShape, TExpectedShape> =
   TActualShape extends TExpectedShape
@@ -132,6 +133,7 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     : TPick
   : TType;
 
+/** @public */
 export type KeyFromValue<
   TValue,
   TType extends Record<PropertyKey, PropertyKey>,
@@ -139,6 +141,7 @@ export type KeyFromValue<
   [K in keyof TType]: TValue extends TType[K] ? K : never;
 }[keyof TType];
 
+/** @public */
 export type InvertKeyValue<TType extends Record<PropertyKey, PropertyKey>> = {
   [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
 };
@@ -150,13 +153,13 @@ export type InvertKeyValue<TType extends Record<PropertyKey, PropertyKey>> = {
  */
 
 /**
- * @internal
+ * @public
  */
 export type IntersectionError<TKey extends string> =
   `The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
 
 /**
- * @internal
+ * @public
  */
 export type ProtectedIntersection<TType, TWith> =
   // When `keyof TWith` is (or includes) the bare `string` index signature -
@@ -170,23 +173,27 @@ export type ProtectedIntersection<TType, TWith> =
       : IntersectionError<string & keyof TType & keyof TWith>;
 
 /**
- * @internal
+ * @public
  * Returns the raw input type of a procedure
  */
 export type GetRawInputFn = () => Promise<unknown>;
 
 const _errorSymbol = Symbol();
+/** @internal */
 export type ErrorSymbol = typeof _errorSymbol;
+/** @public */
 export type TypeError<TMessage extends string> = TMessage & {
   _: typeof _errorSymbol;
 };
+/** @public */
 export type ValueOf<TObj> = TObj[keyof TObj];
 
+/** @public */
 export type coerceAsyncIterableToArray<TValue> =
   TValue extends AsyncIterable<infer $Inferred> ? $Inferred[] : TValue;
 
 /**
- * @internal
+ * @public
  * Infers the type of the value yielded by an async iterable
  */
 export type inferAsyncIterableYield<T> =

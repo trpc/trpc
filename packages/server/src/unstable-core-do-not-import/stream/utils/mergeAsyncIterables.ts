@@ -73,6 +73,7 @@ interface MergedAsyncIterables<TYield> extends AsyncIterable<
  * Other iterables will not continue to be processed.
  *
  * @template TYield The type of values yielded by the input iterables
+ * @internal
  */
 export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
   let state: 'idle' | 'pending' | 'done' = 'idle';

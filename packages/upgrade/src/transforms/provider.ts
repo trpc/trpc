@@ -43,6 +43,7 @@ const nextDocs =
  *   in place of `trpc.withTRPC()`.
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating#codemod-migration
+ * @public
  */
 export default function transform(
   file: FileInfo,
@@ -285,7 +286,7 @@ export default function transform(
             (j.ObjectProperty.check(p) ||
               j.Property.check(p) ||
               j.ObjectMethod.check(p)) &&
-            staticKeyName(j, p) === name,
+            staticKeyName(j, p.key, p.computed ?? false) === name,
         );
       const valueOf = (name: string): ExpressionKind | null => {
         const p = option(name);
@@ -382,7 +383,8 @@ export default function transform(
                   r.properties.some(
                     (p) =>
                       (j.ObjectProperty.check(p) || j.Property.check(p)) &&
-                      staticKeyName(j, p) === 'queryClientConfig',
+                      staticKeyName(j, p.key, p.computed ?? false) ===
+                        'queryClientConfig',
                   ),
               )
               ? 'yes'
@@ -646,7 +648,10 @@ export function withTRPC<TInitialProps extends object>(
         // `overrides`, `abortOnUnmount`… must not vanish without a word
         ...opts.properties
           // No spreads here: a setup with one is left for hand migration
-          .map((p) => staticKeyName(j, p as { key: unknown }))
+          .map((p) => {
+            const property = p as { key: unknown; computed?: boolean };
+            return staticKeyName(j, property.key, property.computed ?? false);
+          })
           .filter(
             (key) =>
               ![
@@ -696,7 +701,7 @@ export function withTRPC<TInitialProps extends object>(
       const input = object.properties.find(
         (p) =>
           (j.ObjectProperty.check(p) || j.Property.check(p)) &&
-          staticKeyName(j, p) === 'input',
+          staticKeyName(j, p.key, p.computed ?? false) === 'input',
       );
       return input ? (input as { value: ExpressionKind }).value : null;
     };
@@ -946,4 +951,5 @@ function withoutLocations<T>(value: T): T {
   return value;
 }
 
+/** @public */
 export const parser = 'tsx';

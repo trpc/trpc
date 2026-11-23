@@ -8,13 +8,14 @@ export declare const errorShapeTag: unique symbol;
 /**
  * The promise a client's `.query()` or `.mutate()` returns, tagged with
  * the procedure's error shape for `safe()`.
+ * @public
  */
 export type TRPCTaggedPromise<TData, TErrorShape> = Promise<TData> & {
   readonly [errorShapeTag]: TErrorShape;
 };
 
 /**
- * @internal
+ * @public
  */
 export type inferSafeError<TErrorShape> = TRPCClientError<{
   errorShape: TErrorShape;
@@ -24,6 +25,7 @@ export type inferSafeError<TErrorShape> = TRPCClientError<{
 /**
  * What `safe()` resolves to: `[data, undefined]` or `[undefined, error]`.
  * @see https://trpc.io/docs/client/vanilla/error-handling#errors-as-values-with-safe
+ * @public
  */
 export type SafeResult<TData, TErrorShape> =
   | readonly [data: TData, error: undefined]
@@ -43,6 +45,7 @@ export type SafeResult<TData, TErrorShape> =
  * const id = post.id;
  * ```
  * @see https://trpc.io/docs/client/vanilla/error-handling#errors-as-values-with-safe
+ * @public
  */
 export async function safe<TData, TErrorShape>(
   promise: TRPCTaggedPromise<TData, TErrorShape>,

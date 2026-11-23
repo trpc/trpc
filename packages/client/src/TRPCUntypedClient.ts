@@ -26,7 +26,10 @@ import type {
 import { TRPCClientError } from './TRPCClientError';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
-/** The options of a call made with the untyped client. */
+/**
+ * The options of a call made with the untyped client.
+ * @public
+ */
 export interface TRPCRequestOptions {
   /**
    * Context for the links, such as a flag a `splitLink` reads.
@@ -40,7 +43,10 @@ export interface TRPCRequestOptions {
   signal?: AbortSignal;
 }
 
-/** The callbacks a subscription takes on the client. */
+/**
+ * The callbacks a subscription takes on the client.
+ * @public
+ */
 export interface TRPCSubscriptionObserver<TValue, TError> {
   /** Called when the link sends a `started` result. */
   onStarted: (opts: { context: OperationContext | undefined }) => void;
@@ -64,7 +70,7 @@ type ObserverKey = keyof TRPCSubscriptionObserver<unknown, unknown>;
 /**
  * Subscription options without callbacks: `TOpts` must not have any of the
  * callback keys, not even set to `undefined`.
- * @internal
+ * @public
  */
 export type TRPCSubscriptionWithoutCallbacks<TOpts> = TOpts & {
   // `keyof` a union only has its shared keys, so this one catches each member
@@ -75,7 +81,7 @@ export type TRPCSubscriptionWithoutCallbacks<TOpts> = TOpts & {
 
 /**
  * Subscription callbacks, at least one of which is defined.
- * @internal
+ * @public
  */
 export type TRPCSubscriptionCallbacks<TValue, TError> = Partial<
   TRPCSubscriptionObserver<TValue, TError>
@@ -95,7 +101,7 @@ const observerKeys: ObserverKey[] = [
 
 /**
  * The options of `createTRPCClient`.
- * @internal
+ * @public
  */
 export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
   /**
@@ -110,6 +116,7 @@ export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
 /**
  * A client that calls procedures by path string, without types.
  * `createTRPCClient` wraps one.
+ * @public
  */
 export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   private readonly links: OperationLink<TInferrable>[];

@@ -40,6 +40,7 @@ import React, { useState } from 'react';
  *
  * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ * @public
  */
 export type WithTRPCConfig<TRouter extends AnyRouter> =
   CreateTRPCClientOptions<TRouter> &
@@ -66,6 +67,7 @@ type WithTRPCOptions<TRouter extends AnyRouter> =
  *
  * @deprecated part of `ssr: true`, which is built on `@trpc/react-query`.
  * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ * @public
  */
 export type TRPCPrepassHelper = (opts: {
   parent: WithTRPCSSROptions<AnyRouter>;
@@ -77,6 +79,7 @@ export type TRPCPrepassHelper = (opts: {
  *
  * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ * @public
  */
 export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
@@ -112,6 +115,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
  *
  * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ * @public
  */
 export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
@@ -126,6 +130,7 @@ export type WithTRPCNoSSROptions<TRouter extends AnyRouter> =
  *
  * @deprecated part of `ssr: true`, which is built on `@trpc/react-query`.
  * @see https://trpc.io/docs/client/nextjs/pages-router/ssr
+ * @public
  */
 export type TRPCPrepassProps<
   TRouter extends AnyRouter,
@@ -158,6 +163,7 @@ export type TRPCPrepassProps<
  * @deprecated built on `@trpc/react-query`, which only gets bug fixes. Mount
  * `TRPCProvider` from `@trpc/tanstack-react-query` in `_app` instead.
  * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ * @public
  */
 export function withTRPC<
   TRouter extends AnyRouter,

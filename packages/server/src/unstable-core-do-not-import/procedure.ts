@@ -3,6 +3,7 @@ import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { inferAsyncIterableYield } from './types';
 
+/** @public */
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
  * A procedure's kind: `'query'`, `'mutation'` or `'subscription'`.
@@ -19,7 +20,7 @@ interface BuiltProcedureDef {
 
 /**
  * A built procedure, as a router holds it.
- * @internal
+ * @public
  */
 export interface Procedure<
   TType extends ProcedureType,
@@ -55,17 +56,26 @@ export interface Procedure<
   (opts: ProcedureCallOptions<unknown>): Promise<TDef['output']>;
 }
 
-/** A built query procedure. */
+/**
+ * A built query procedure.
+ * @public
+ */
 export interface QueryProcedure<
   TDef extends BuiltProcedureDef,
 > extends Procedure<'query', TDef> {}
 
-/** A built mutation procedure. */
+/**
+ * A built mutation procedure.
+ * @public
+ */
 export interface MutationProcedure<
   TDef extends BuiltProcedureDef,
 > extends Procedure<'mutation', TDef> {}
 
-/** A built subscription procedure. */
+/**
+ * A built subscription procedure.
+ * @public
+ */
 export interface SubscriptionProcedure<
   TDef extends BuiltProcedureDef,
 > extends Procedure<'subscription', TDef> {}
@@ -73,6 +83,7 @@ export interface SubscriptionProcedure<
 /**
  * A subscription procedure that returns an observable.
  * @deprecated Return an async generator from `.subscription()` instead.
+ * @public
  */
 export interface LegacyObservableSubscriptionProcedure<
   TDef extends BuiltProcedureDef,
@@ -80,16 +91,28 @@ export interface LegacyObservableSubscriptionProcedure<
   _observable: true;
 }
 
-/** Any query procedure, for use in generic constraints. */
+/**
+ * Any query procedure, for use in generic constraints.
+ * @public
+ */
 export type AnyQueryProcedure = QueryProcedure<any>;
-/** Any mutation procedure, for use in generic constraints. */
+/**
+ * Any mutation procedure, for use in generic constraints.
+ * @public
+ */
 export type AnyMutationProcedure = MutationProcedure<any>;
-/** Any subscription procedure, for use in generic constraints. */
+/**
+ * Any subscription procedure, for use in generic constraints.
+ * @public
+ */
 export type AnySubscriptionProcedure =
   | SubscriptionProcedure<any>
   | LegacyObservableSubscriptionProcedure<any>;
 
-/** Any procedure, for use in generic constraints. */
+/**
+ * Any procedure, for use in generic constraints.
+ * @public
+ */
 export type AnyProcedure =
   | AnyQueryProcedure
   | AnyMutationProcedure
@@ -98,19 +121,21 @@ export type AnyProcedure =
 /**
  * The input type a procedure takes, before its validators run.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-individual-procedure-types
+ * @public
  */
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
   undefined extends inferProcedureParams<TProcedure>['$types']['input']
     ? void | inferProcedureParams<TProcedure>['$types']['input']
     : inferProcedureParams<TProcedure>['$types']['input'];
 
-/** @internal */
+/** @public */
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
 /**
  * The output type a procedure returns, after its output validator runs.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-individual-procedure-types
+ * @public
  */
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['$types']['output'];
@@ -118,6 +143,7 @@ export type inferProcedureOutput<TProcedure> =
 /**
  * The input type a subscription procedure takes.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-individual-procedure-types
+ * @public
  */
 export type inferSubscriptionInput<
   TProcedure extends AnySubscriptionProcedure,
@@ -126,6 +152,7 @@ export type inferSubscriptionInput<
 /**
  * The type of each event a subscription procedure emits.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-individual-procedure-types
+ * @public
  */
 export type inferSubscriptionOutput<
   TProcedure extends AnySubscriptionProcedure,
@@ -135,7 +162,7 @@ export type inferSubscriptionOutput<
     : inferAsyncIterableYield<inferProcedureOutput<TProcedure>>;
 
 /**
- * @internal
+ * @public
  */
 export interface ErrorHandlerOptions<TContext> {
   error: TRPCError;

@@ -24,6 +24,7 @@ import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
  * What `createContext` gets in the Next.js API route adapter: `req`, `res`
  * and the request's `info`.
  * @see https://trpc.io/docs/server/adapters/nextjs
+ * @public
  */
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,
@@ -41,6 +42,7 @@ export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
  * The file must be named `[trpc].ts`. For the App Router, use
  * `fetchRequestHandler`.
  * @see https://trpc.io/docs/server/adapters/nextjs#nextjs-example
+ * @public
  */
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,

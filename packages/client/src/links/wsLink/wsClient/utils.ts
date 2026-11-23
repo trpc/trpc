@@ -9,8 +9,9 @@ import type {
 import { resultOf } from '../../urlWithConnectionParams';
 import type { Encoder } from './encoder';
 
+/** @internal */
 export class TRPCWebSocketClosedError extends Error {
-  constructor(opts: { message: string; cause?: unknown }) {
+  constructor(opts: { message: string; cause: unknown }) {
     super(opts.message, {
       cause: opts.cause,
     });
@@ -24,6 +25,7 @@ export class TRPCWebSocketClosedError extends Error {
  * would skip the rest of the client's bookkeeping (e.g. end the reconnect
  * loop, or, with event-emitter based WebSockets such as `ws`, skip the other
  * listeners for that event), so it is rethrown asynchronously instead.
+ * @internal
  */
 export function callUserCallback(callback: () => void) {
   try {
@@ -38,6 +40,7 @@ export function callUserCallback(callback: () => void) {
 /**
  * Utility class for managing a timeout that can be started, stopped, and reset.
  * Useful for scenarios where the timeout duration is reset dynamically based on events.
+ * @internal
  */
 export class ResettableTimeout {
   private timeout: ReturnType<typeof setTimeout> | undefined;
@@ -69,6 +72,7 @@ export class ResettableTimeout {
   }
 }
 
+/** @internal */
 // Ponyfill for Promise.withResolvers https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers
 export function withResolvers<T>() {
   let resolve: (value: T | PromiseLike<T>) => void;
@@ -86,6 +90,7 @@ export function withResolvers<T>() {
  * Resolves a WebSocket URL and optionally appends connection parameters.
  *
  * If connectionParams are provided, appends 'connectionParams=1' query parameter.
+ * @internal
  */
 export async function prepareUrl(urlOptions: UrlOptionsWithConnectionParams) {
   const url = await resultOf(urlOptions.url);
@@ -99,6 +104,7 @@ export async function prepareUrl(urlOptions: UrlOptionsWithConnectionParams) {
   return url + connectionParams;
 }
 
+/** @internal */
 export async function buildConnectionMessage(
   connectionParams: CallbackOrValue<TRPCRequestInfo['connectionParams']>,
   encoder: Encoder,

@@ -23,6 +23,7 @@ import type { Operation, TRPCLink } from './types';
  * request.
  *
  * @see https://trpc.io/docs/client/links/httpBatchLink
+ * @public
  */
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,

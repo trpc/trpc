@@ -62,6 +62,7 @@ interface RouterMeta {
 /**
  * Options for {@link generateOpenAPIDocument}.
  * @see https://trpc.io/docs/openapi#programmatic
+ * @public
  */
 export interface GenerateOptions {
   /**
@@ -1851,6 +1852,7 @@ function buildOpenAPIDocument(opts: {
  * ```
  *
  * @see https://trpc.io/docs/openapi#programmatic
+ * @public
  */
 export async function generateOpenAPIDocument(
   routerFilePath: string,

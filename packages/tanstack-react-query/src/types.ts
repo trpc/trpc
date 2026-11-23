@@ -3,14 +3,14 @@ import type { TRPCRequestOptions } from '@trpc/client';
 
 /**
  * Turn a set of optional properties into required
- * @internal
+ * @public
  */
 export type WithRequired<TObj, TKey extends keyof TObj> = TObj & {
   [P in TKey]-?: TObj[P];
 };
 
 /**
- * @internal
+ * @public
  */
 export type ResolverDef = {
   input: any;
@@ -26,18 +26,19 @@ export type ResolverDef = {
 type CursorInput = { cursor?: any };
 /**
  * An input that may have a `cursor`, as used by infinite queries.
+ * @public
  */
 export type OptionalCursorInput = CursorInput | void;
 
 /**
- * @internal
+ * @public
  */
 export type ExtractCursorType<TInput> = TInput extends CursorInput
   ? TInput['cursor']
   : unknown;
 
 /**
- * @internal
+ * @public
  */
 export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
   TOutput,
@@ -117,6 +118,7 @@ export type TRPCQueryKeyWithPrefix = [
 /**
  * A tRPC query key, with a prefix if `TPrefixEnabled` is `true`.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
+ * @public
  */
 export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
   TPrefixEnabled extends true
@@ -125,6 +127,7 @@ export type TRPCQueryKey<TPrefixEnabled extends boolean = false> =
 
 /**
  * Any tRPC query key, with or without a prefix.
+ * @internal
  */
 export type AnyTRPCQueryKey =
   | TRPCQueryKeyWithoutPrefix
@@ -149,6 +152,7 @@ export type TRPCMutationKeyWithoutPrefix = [path: string[]];
 
 /**
  * Any tRPC mutation key, with or without a prefix.
+ * @internal
  */
 export type AnyTRPCMutationKey =
   | TRPCMutationKeyWithoutPrefix
@@ -177,12 +181,12 @@ export type FeatureFlags = {
 };
 
 /**
- * @internal
+ * @public
  */
 export type ofFeatureFlags<T extends FeatureFlags> = T;
 
 /**
- * @internal
+ * @public
  */
 export type KeyPrefixOptions<TFeatureFlags extends FeatureFlags> =
   TFeatureFlags['keyPrefix'] extends true

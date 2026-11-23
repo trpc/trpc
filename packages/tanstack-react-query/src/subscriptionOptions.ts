@@ -59,6 +59,7 @@ interface TRPCSubscriptionOptionsOut<
 /**
  * The `subscriptionOptions` helper on a subscription procedure. Returns options for {@link useSubscription}.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ * @public
  */
 export interface TRPCSubscriptionOptions<
   TDef extends ResolverDef,
@@ -89,6 +90,7 @@ export interface TRPCSubscriptionOptions<
 }
 /**
  * The status of a subscription.
+ * @public
  */
 export type TRPCSubscriptionStatus =
   | 'idle'
@@ -98,6 +100,7 @@ export type TRPCSubscriptionStatus =
 
 /**
  * Fields shared by every {@link useSubscription} result.
+ * @public
  */
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   /**
@@ -120,6 +123,7 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
 
 /**
  * Result while the subscription is not running.
+ * @public
  */
 export interface TRPCSubscriptionIdleResult<
   TOutput,
@@ -131,6 +135,7 @@ export interface TRPCSubscriptionIdleResult<
 
 /**
  * Result while connecting or reconnecting.
+ * @public
  */
 export interface TRPCSubscriptionConnectingResult<
   TOutput,
@@ -143,6 +148,7 @@ export interface TRPCSubscriptionConnectingResult<
 
 /**
  * Result while connected and waiting for data.
+ * @public
  */
 export interface TRPCSubscriptionPendingResult<
   TOutput,
@@ -154,6 +160,7 @@ export interface TRPCSubscriptionPendingResult<
 
 /**
  * Result after an error that stopped the subscription.
+ * @public
  */
 export interface TRPCSubscriptionErrorResult<
   TOutput,
@@ -166,6 +173,7 @@ export interface TRPCSubscriptionErrorResult<
 
 /**
  * The result of {@link useSubscription}. Check `status` to narrow it.
+ * @public
  */
 export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
@@ -230,6 +238,7 @@ export const trpcSubscriptionOptions = <
  * ```
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ * @public
  */
 export function useSubscription<TOutput, TError>(
   opts: TRPCSubscriptionOptionsOut<TOutput, TError, any>,

@@ -77,7 +77,7 @@ const trackResult = <T extends object>(
 };
 
 /**
- * @internal
+ * @public
  */
 export function createRootHooks<
   TRouter extends AnyRouter,
@@ -804,7 +804,7 @@ export function createRootHooks<
 
 /**
  * Infer the type of a `createReactQueryHooks` function
- * @internal
+ * @public
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,

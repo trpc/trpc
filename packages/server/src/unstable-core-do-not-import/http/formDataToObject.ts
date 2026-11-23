@@ -67,6 +67,7 @@ function set(
   }
 }
 
+/** @internal */
 export function formDataToObject(formData: FormData) {
   const obj: Record<string, unknown> = emptyObject();
 

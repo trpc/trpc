@@ -15,7 +15,7 @@ import type { Serialize } from './serialize';
 /**
  * A procedure's output as the client gets it: as is with a transformer,
  * or as it comes out of JSON without one.
- * @internal
+ * @public
  */
 export type inferTransformedProcedureOutput<
   TInferrable extends InferrableClientTypes,
@@ -27,7 +27,7 @@ export type inferTransformedProcedureOutput<
 /**
  * The error shapes a procedure's errors can have: the router's shape, plus
  * one for each `.errors()` call.
- * @internal
+ * @public
  */
 export type inferProcedureErrorShape<
   TInferrable extends InferrableClientTypes,
@@ -40,7 +40,7 @@ export type inferProcedureErrorShape<
 
 /**
  * A subscription's events as the client gets them.
- * @internal
+ * @public
  */
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,
@@ -49,7 +49,7 @@ export type inferTransformedSubscriptionOutput<
   ? Serialize<inferObservableValue<inferProcedureOutput<TProcedure>>>
   : inferObservableValue<inferProcedureOutput<TProcedure>>;
 
-/** @internal */
+/** @public */
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
   TRoot extends AnyClientTypes,
@@ -73,6 +73,7 @@ export type GetInferenceHelpers<
  * type PostByIdInput = inferRouterInputs<AppRouter>['post']['byId'];
  * ```
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-input--output-types
+ * @public
  */
 export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'input',
@@ -84,6 +85,7 @@ export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
  * The output types of every procedure in a router, by path, as the client
  * gets them.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-input--output-types
+ * @public
  */
 export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'output',

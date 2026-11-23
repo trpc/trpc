@@ -53,6 +53,7 @@ type HandleQueryKey<
 /**
  * A serializable reference to a query, from `loadHandles()`.
  * Pass it to a component and read it with `fromHandle(trpc, handle)`.
+ * @public
  */
 export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
   /**
@@ -68,6 +69,7 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
 /**
  * A serializable reference to an infinite query, from `loadHandles()`.
  * Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
+ * @public
  */
 export interface TRPCInfiniteQueryHandle<
   TDef extends ResolverDef = ResolverDef,
@@ -87,12 +89,16 @@ export interface TRPCInfiniteQueryHandle<
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
 }
 
-/** Any query or infinite query handle. */
+/**
+ * Any query or infinite query handle.
+ * @public
+ */
 export type AnyTRPCHandle = TRPCQueryHandle<any> | TRPCInfiniteQueryHandle<any>;
 
 /**
  * How `loadHandles` starts an entry's query, named after the
  * `QueryClient` method it calls: `prefetchQuery`, `fetchQuery` or `ensureQueryData`.
+ * @public
  */
 export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
 
@@ -100,6 +106,7 @@ export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
  * A query for `loadHandles()` to start, from `prefetchEntry`, `fetchEntry` or
  * `ensureEntry`.
  * Creating it starts nothing.
+ * @public
  */
 export interface TRPCQueryEntry<
   TDef extends ResolverDef = ResolverDef,
@@ -112,6 +119,7 @@ export interface TRPCQueryEntry<
 /**
  * An infinite query for `loadHandles()` to start, from `prefetchInfiniteEntry`,
  * `fetchInfiniteEntry` or `ensureInfiniteEntry`. Creating it starts nothing.
+ * @public
  */
 export interface TRPCInfiniteQueryEntry<
   TDef extends ResolverDef = ResolverDef,
@@ -121,7 +129,10 @@ export interface TRPCInfiniteQueryEntry<
   readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
 }
 
-/** Any query or infinite query entry. */
+/**
+ * Any query or infinite query entry.
+ * @public
+ */
 export type AnyTRPCEntry =
   | TRPCQueryEntry<any, any>
   | TRPCInfiniteQueryEntry<any, any>;
@@ -130,6 +141,7 @@ export type AnyTRPCEntry =
  * What `loadHandles()` takes per key: an entry, or TanStack Query's
  * `skipToken` to start nothing for that key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#conditional-queries
+ * @public
  */
 export type TRPCLoadEntries = Record<string, AnyTRPCEntry | typeof skipToken>;
 
@@ -183,6 +195,7 @@ type ResultsOf<TEntries extends TRPCLoadEntries> = {
  * What `loadHandlesSettled()` has for a fetch or ensure entry: its data, or
  * the error it failed with.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ * @public
  */
 export type TRPCEntryResult<TDef extends ResolverDef, TData> =
   | { readonly status: 'success'; readonly data: TData }
@@ -193,6 +206,7 @@ export type TRPCEntryResult<TDef extends ResolverDef, TData> =
  * for every entry, by the entry's key, and `undefined` for a `skipToken`; return them
  * from the loader. `data` has the data of every fetch and ensure entry, by the entry's key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#loader-data
+ * @public
  */
 export type TRPCLoadedHandles<TEntries extends TRPCLoadEntries> = readonly [
   handles: HandlesOf<TEntries>,
@@ -203,13 +217,17 @@ export type TRPCLoadedHandles<TEntries extends TRPCLoadEntries> = readonly [
  * What `loadHandlesSettled()` resolves to: `[handles, results]`. `results`
  * has a `TRPCEntryResult` for every fetch and ensure entry, by the entry's key.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ * @public
  */
 export type TRPCSettledHandles<TEntries extends TRPCLoadEntries> = readonly [
   handles: HandlesOf<TEntries>,
   results: ResultsOf<TEntries>,
 ];
 
-/** Options for an entry */
+/**
+ * Options for an entry
+ * @public
+ */
 export interface TRPCEntryOptions
   extends
     Pick<
@@ -228,6 +246,7 @@ type HandleGetNextPageParam<TDef extends ResolverDef> =
  * Options for an infinite query entry. Pass `pages` and `getNextPageParam`
  * to load several pages up front.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+ * @public
  */
 export type TRPCInfiniteEntryOptions<TDef extends ResolverDef> =
   TRPCEntryOptions & {
@@ -259,6 +278,7 @@ type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
  * type PostHandle = inferQueryHandle<TRPC['post']['byId']>;
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
+ * @public
  */
 export type inferQueryHandle<TProcedure extends DecorateQueryProcedure<any>> =
   TProcedure extends DecorateQueryProcedure<infer TDef>
@@ -268,6 +288,7 @@ export type inferQueryHandle<TProcedure extends DecorateQueryProcedure<any>> =
 /**
  * The handle type of an infinite query procedure, for typing props.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
+ * @public
  */
 export type inferInfiniteQueryHandle<
   TProcedure extends DecorateInfiniteQueryProcedure<any>,
@@ -640,6 +661,7 @@ function entry(opts: {
  * });
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
+ * @public
  */
 export function isTRPCEntryError<TDef extends ResolverDef>(
   error: unknown,
@@ -681,6 +703,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * return handles;
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles
+ * @public
  */
 export function loadHandles<
   TFeatureFlags extends FeatureFlags,
@@ -716,6 +739,7 @@ export function loadHandles<
  * }
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
+ * @public
  */
 export function loadHandlesSettled<
   TFeatureFlags extends FeatureFlags,
@@ -736,6 +760,7 @@ export function loadHandlesSettled<
  * `queryClient.prefetchQuery`. It never makes the load reject: errors surface where
  * the handle is read. Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
+ * @public
  */
 export function prefetchEntry<TDef extends ResolverDef>(
   procedure: DecorateQueryProcedure<TDef>,
@@ -761,6 +786,7 @@ export function prefetchEntry(
  * cached data is used only if it isn't stale. The load rejects if the request fails.
  * Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
+ * @public
  */
 export function fetchEntry<TDef extends ResolverDef>(
   procedure: DecorateQueryProcedure<TDef>,
@@ -787,6 +813,7 @@ export function fetchEntry(
  * when the cache has no data, and the load rejects if that request fails. Stale data is
  * refetched in the background. Creating the entry starts nothing.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
+ * @public
  */
 export function ensureEntry<TDef extends ResolverDef>(
   procedure: DecorateQueryProcedure<TDef>,
@@ -810,6 +837,7 @@ export function ensureEntry(
 /**
  * Like `prefetchEntry`, for an infinite query. Loads the first page unless `pages` is set.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+ * @public
  */
 export function prefetchInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
@@ -829,6 +857,7 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
 /**
  * Like `fetchEntry`, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+ * @public
  */
 export function fetchInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
@@ -848,6 +877,7 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
 /**
  * Like `ensureEntry`, for an infinite query.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+ * @public
  */
 export function ensureInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
@@ -870,6 +900,7 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
  * input. Pass them to `useQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`, etc.
  * `trpc` is the proxy or a router on the handle's path, usually `useTRPC()`.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#reading-a-handle
+ * @public
  */
 export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
   trpc: DecorateRouterKeyable<NoInfer<TDef['featureFlags']>>,

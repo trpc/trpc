@@ -26,6 +26,7 @@ const pongCallbacks = new WeakMap<WebSocket, ((() => void) | null)[]>();
  * Sends "PING" on `ws` and calls `onPong`, if given, once its "PONG"
  * arrives. The server answers in order, so by then everything it sent before
  * it read this "PING" has arrived too.
+ * @internal
  */
 export function sendPing(ws: WebSocket, onPong: (() => void) | null) {
   let callbacks = pongCallbacks.get(ws);
@@ -106,8 +107,9 @@ function setupPingInterval(
   });
 }
 
+/** @internal */
 export interface WebSocketConnectionOptions {
-  WebSocketPonyfill?: typeof WebSocket;
+  WebSocketPonyfill: typeof WebSocket | undefined;
   urlOptions: UrlOptionsWithConnectionParams;
   keepAlive: PingPongOptions & {
     enabled: boolean;
@@ -118,6 +120,7 @@ export interface WebSocketConnectionOptions {
 /**
  * Manages a WebSocket connection with support for reconnection, keep-alive mechanisms,
  * and observable state tracking.
+ * @internal
  */
 export class WsConnection {
   static connectCount = 0;
@@ -246,6 +249,7 @@ export class WsConnection {
 
 /**
  * Provides a backward-compatible representation of the connection state.
+ * @internal
  */
 export function backwardCompatibility(connection: WsConnection) {
   if (connection.isOpen()) {

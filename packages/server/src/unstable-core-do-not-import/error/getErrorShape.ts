@@ -6,7 +6,7 @@ import type { TRPCError } from './TRPCError';
 /**
  * The shape of an error as the client gets it: from a procedure's
  * `.errors()` formatter if one ran, or else from the root error formatter.
- * @internal
+ * @public
  */
 export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   config: RootConfig<TRoot>;

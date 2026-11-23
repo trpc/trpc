@@ -16,6 +16,7 @@ import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag, generateCacheTags } from '../shared';
 
+/** @public */
 export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   /**
    * The router to call.
@@ -43,6 +44,7 @@ export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
  * `splitLink`.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(

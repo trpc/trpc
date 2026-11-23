@@ -55,6 +55,7 @@ interface TRPCMutationOptionsOut<
 /**
  * The `mutationOptions` helper on a mutation procedure. Returns options for `useMutation`.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ * @public
  */
 export interface TRPCMutationOptions<
   TDef extends ResolverDef,
@@ -78,7 +79,7 @@ export interface TRPCMutationOptions<
 }
 
 /**
- * @internal
+ * @public
  */
 export interface MutationOptionsOverride {
   onSuccess: (opts: {

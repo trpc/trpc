@@ -32,6 +32,7 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
   : false;
 
 /* oxfmt-ignore */
+/** @public */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
@@ -55,7 +56,7 @@ export type Serialize<T> =
  * but the value type is only resolved when it is used, so a recursive type
  * such as `Prisma.JsonValue` does not expand forever.
  * @see https://github.com/trpc/trpc/issues/6997
- * @internal
+ * @public
  */
 export type SerializeRecord<T, K extends PropertyKey> = {
   [P in K]: Serialize<T[keyof T]>;
@@ -80,7 +81,7 @@ type SerializeObjectKey<T extends Record<any, any>, K> =
   K;
 /**
  * JSON serialize objects (not including arrays) and classes
- * @internal
+ * @public
  **/
 export type SerializeObject<T extends object> = {
   [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;

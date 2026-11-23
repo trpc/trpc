@@ -71,6 +71,7 @@ type HTTPSubscriptionLinkOptions<
  * A terminating link that runs subscriptions over Server-Sent Events.
  *
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+ * @public
  */
 export function httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
@@ -253,5 +254,6 @@ export function httpSubscriptionLink<
 
 /**
  * @deprecated Use {@link httpSubscriptionLink} instead.
+ * @public
  */
 export const unstable_httpSubscriptionLink = httpSubscriptionLink;

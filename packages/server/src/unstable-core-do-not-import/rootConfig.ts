@@ -6,7 +6,7 @@ import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
  * The initial generics that are used in the init function
- * @internal
+ * @public
  */
 export interface RootTypes {
   ctx: object;
@@ -20,6 +20,7 @@ export interface RootTypes {
  *
  * `application/json` remains the default for backwards compatibility, while
  * other string values are allowed for tooling or infrastructure compatibility.
+ * @public
  */
 export type JSONLContentType =
   | 'application/json'
@@ -27,6 +28,7 @@ export type JSONLContentType =
   | 'application/x-ndjson'
   | (string & {});
 
+/** @public */
 export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
   /**
    * The `content-type` header to use for batch stream responses.
@@ -39,6 +41,7 @@ export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
 
 /**
  * The default check to see if we're in a server
+ * @internal
  */
 export const isServerDefault: boolean =
   typeof window === 'undefined' ||
@@ -50,6 +53,7 @@ export const isServerDefault: boolean =
 
 /**
  * The default check to see if we're in development
+ * @internal
  */
 export function isDevDefault(): boolean {
   // oxlint-disable-next-line typescript/dot-notation
@@ -59,7 +63,7 @@ export function isDevDefault(): boolean {
 /**
  * The config of a tRPC root object, with the defaults filled in.
  * @see https://trpc.io/docs/server/routers#runtime-configuration
- * @internal
+ * @public
  */
 export interface RootConfig<TTypes extends RootTypes> {
   /**
@@ -138,11 +142,14 @@ export interface RootConfig<TTypes extends RootTypes> {
 /**
  * The root types: context, metadata, error shape and whether there's a
  * transformer.
- * @internal
+ * @public
  */
 export type CreateRootTypes<TGenerics extends RootTypes> = TGenerics;
 
-/** Any root types, for use in generic constraints. */
+/**
+ * Any root types, for use in generic constraints.
+ * @public
+ */
 export type AnyRootTypes = CreateRootTypes<{
   ctx: any;
   meta: any;
@@ -157,6 +164,7 @@ type PartialIf<TCondition extends boolean, TType> = TCondition extends true
 /**
  * Adds a `createContext` option to an adapter's options. It's optional
  * when the context is an empty object.
+ * @public
  */
 export type CreateContextCallback<
   TContext,

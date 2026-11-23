@@ -39,6 +39,7 @@ import type {
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
+/** @public */
 export type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   /**
    * Call this router directly, without HTTP.
@@ -50,6 +51,7 @@ export type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
   ctx: inferRouterContext<TRouter>;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/** @public */
 export interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   /**
    * Call procedures through this tRPC client.
@@ -57,10 +59,12 @@ export interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
   client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
+/** @public */
 export type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
+/** @public */
 export type SSGFns =
   | 'queryOptions'
   | 'infiniteQueryOptions'
@@ -70,7 +74,7 @@ export type SSGFns =
   | 'prefetchInfinite';
 
 /**
- * @internal
+ * @public
  */
 export type DecoratedProcedureSSGRecord<
   TRoot extends AnyRootTypes,
@@ -95,6 +99,7 @@ type AnyDecoratedProcedure = Pick<DecorateQueryProcedure<any, any>, SSGFns>;
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/nextjs/pages-router/server-side-helpers
+ * @public
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,

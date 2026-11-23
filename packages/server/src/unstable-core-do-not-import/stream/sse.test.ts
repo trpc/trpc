@@ -43,6 +43,7 @@ test.each(['connected', 'message', 'serialized-error'])(
       init: () => ({}),
       signal: ac.signal,
       EventSource: EventSourcePolyfill,
+      deserialize: undefined,
     });
     const iterator = stream[Symbol.asyncIterator]();
     const first = await iterator.next();
@@ -424,6 +425,7 @@ test('SSE consumer releases the abort listener when its stream reconnects', asyn
     signal: abortCtrl.signal,
     init: () => ({}),
     EventSource: FakeEventSource,
+    deserialize: undefined,
   });
 
   const RECONNECTS = 4; // 1 initial stream + 4 reconnects

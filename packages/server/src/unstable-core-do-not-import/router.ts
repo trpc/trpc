@@ -23,6 +23,7 @@ import {
 
 /**
  * The procedures and sub-routers of a router, by name.
+ * @public
  */
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
@@ -41,7 +42,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * A router's record with every procedure turned into a function, as a
  * caller has it.
- * @internal
+ * @public
  */
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
@@ -55,7 +56,7 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
 
 /**
  * Called when a procedure called through a caller throws.
- * @internal
+ * @public
  */
 export type RouterCallerErrorHandler<TContext> = (
   opts: ErrorHandlerOptions<TContext>,
@@ -65,7 +66,7 @@ export type RouterCallerErrorHandler<TContext> = (
  * Creates a caller from a context, or from a function that returns one.
  * A function is called on each procedure call, so cache it (for example
  * with `React.cache`).
- * @internal
+ * @public
  */
 export type RouterCaller<
   TRoot extends AnyRootTypes,
@@ -89,7 +90,10 @@ export type RouterCaller<
 const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
   __brand: 'lazyMarker';
 };
-/** A router that `lazy()` loads on its first call. */
+/**
+ * A router that `lazy()` loads on its first call.
+ * @public
+ */
 export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 
 type LazyLoader<TAny> = {
@@ -124,6 +128,7 @@ function once<T>(fn: () => Promise<T>): () => Promise<T> {
  * });
  * ```
  * @see https://trpc.io/docs/server/merging-routers#lazy-load
+ * @public
  */
 export function lazy<TRouter extends AnyRouter>(
   importRouter: () => Promise<
@@ -163,7 +168,7 @@ function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
 
 /**
  * A router's definition: its config and procedures.
- * @internal
+ * @public
  */
 export interface RouterDef<
   TRoot extends AnyRootTypes,
@@ -180,6 +185,7 @@ export interface RouterDef<
 /**
  * A router: procedures and sub-routers under one root config.
  * @see https://trpc.io/docs/server/routers
+ * @public
  */
 export interface Router<
   TRoot extends AnyRootTypes,
@@ -197,6 +203,7 @@ export interface Router<
 /**
  * A router as `t.router()` returns it, with its procedures and sub-routers
  * as properties.
+ * @public
  */
 export type BuiltRouter<
   TRoot extends AnyRootTypes,
@@ -206,6 +213,7 @@ export type BuiltRouter<
 /**
  * The type of `t.router()`.
  * @see https://trpc.io/docs/server/routers
+ * @public
  */
 export interface RouterBuilder<TRoot extends AnyRootTypes> {
   <TIn extends CreateRouterOptions>(
@@ -213,25 +221,36 @@ export interface RouterBuilder<TRoot extends AnyRootTypes> {
   ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TIn>>;
 }
 
-/** Any router, for use in generic constraints. */
+/**
+ * Any router, for use in generic constraints.
+ * @public
+ */
 export type AnyRouter = Router<any, any>;
 
-/** A router's root types: its context, metadata, error shape and transformer. */
+/**
+ * A router's root types: its context, metadata, error shape and transformer.
+ * @public
+ */
 export type inferRouterRootTypes<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['$types'];
 
-/** The type of a router's context. */
+/**
+ * The type of a router's context.
+ * @public
+ */
 export type inferRouterContext<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['ctx'];
 /**
  * The shape of a router's errors, as its error formatter returns them.
  * @see https://trpc.io/docs/server/error-formatting
+ * @public
  */
 export type inferRouterError<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['errorShape'];
 /**
  * The type of a router's metadata.
  * @see https://trpc.io/docs/server/metadata
+ * @internal
  */
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
@@ -272,7 +291,7 @@ const reservedWords = [
 /**
  * What `t.router()` takes: procedures, routers, lazy routers and nested
  * objects of them, by name.
- * @internal
+ * @public
  */
 export type CreateRouterOptions = {
   [key: string]:
@@ -284,7 +303,7 @@ export type CreateRouterOptions = {
 
 /**
  * The record of the router `t.router()` builds from its options.
- * @internal
+ * @public
  */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
@@ -481,7 +500,7 @@ export async function getProcedureAtPath(
 /**
  * Calls the procedure at `path`, throwing `NOT_FOUND` if there's none of
  * that type.
- * @internal
+ * @public
  */
 export async function callProcedure(
   opts: ProcedureCallOptions<unknown> & {
@@ -521,6 +540,7 @@ export async function callProcedure(
  * The type of `t.createCallerFactory()`: takes a router and returns its
  * `createCaller`.
  * @see https://trpc.io/docs/server/server-side-calls#create-caller
+ * @public
  */
 export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
   <TRecord extends RouterRecord>(
@@ -528,6 +548,7 @@ export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
   ): RouterCaller<TRoot, TRecord>;
 }
 
+/** @internal */
 export function createCallerFactory<
   TRoot extends AnyRootTypes,
 >(): RouterCallerFactory<TRoot> {
@@ -587,7 +608,7 @@ export function createCallerFactory<
 
 /**
  * The router `t.mergeRouters()` returns.
- * @internal
+ * @public
  */
 export type MergeRouters<
   TRouters extends AnyRouter[],
@@ -600,6 +621,7 @@ export type MergeRouters<
   ? MergeRouters<Tail, TRoot, Head['_def']['record'] & TRecord>
   : BuiltRouter<TRoot, TRecord>;
 
+/** @internal */
 export function mergeRouters<TRouters extends AnyRouter[]>(
   ...routerList: [...TRouters]
 ): MergeRouters<TRouters> {

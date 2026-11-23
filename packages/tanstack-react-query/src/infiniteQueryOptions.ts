@@ -99,6 +99,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/** @public */
 export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
@@ -126,6 +127,7 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/** @public */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
@@ -148,6 +150,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/** @public */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
@@ -178,6 +181,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
 /**
  * The `infiniteQueryOptions` helper on a query procedure. Returns options for `useInfiniteQuery`, `prefetchInfiniteQuery` and so on.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ * @public
  */
 export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -264,6 +268,7 @@ type AnyTRPCInfiniteQueryOptionsOut<TFeatureFlags extends FeatureFlags> =
     >
   | UndefinedTRPCInfiniteQueryOptionsOut<any, any, any, any, TFeatureFlags>;
 
+/** @internal */
 export function trpcInfiniteQueryOptions<
   TFeatureFlags extends FeatureFlags,
 >(args: {

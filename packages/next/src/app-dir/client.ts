@@ -24,6 +24,7 @@ type QueryResult = {
  * Creates a tRPC client for App Router client components.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<

@@ -10,6 +10,7 @@ import type { TRPCQueryKey } from '../getQueryKey';
 import type { TRPCQueryOptionsResult } from '../shared';
 import type { TRPCHookResult } from '../shared/hooks/types';
 
+/** @internal */
 export function createTRPCOptionsResult(value: {
   path: readonly string[];
 }): TRPCQueryOptionsResult['trpc'] {
@@ -22,6 +23,7 @@ export function createTRPCOptionsResult(value: {
 
 /**
  * Makes a stable reference of the `trpc` prop
+ * @internal
  */
 export function useHookResult(value: {
   path: readonly string[];

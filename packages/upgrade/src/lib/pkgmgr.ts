@@ -9,6 +9,7 @@ function getPackageManager() {
   return 'npm';
 }
 
+/** @internal */
 export async function installPackage(packageName: string) {
   const packageManager = getPackageManager();
   const installCmd = packageManager === 'yarn' ? 'add' : 'install';
@@ -23,6 +24,7 @@ export async function installPackage(packageName: string) {
   }
 }
 
+/** @internal */
 export async function uninstallPackage(packageName: string) {
   const packageManager = getPackageManager();
   const uninstallCmd = packageManager === 'yarn' ? 'remove' : 'uninstall';

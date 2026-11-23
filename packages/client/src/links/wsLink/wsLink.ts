@@ -19,6 +19,7 @@ import { callUserCallback } from './wsClient/utils';
  * Options for {@link wsLink}.
  *
  * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
+ * @public
  */
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   /**
@@ -31,6 +32,7 @@ export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
  * A terminating link that sends calls over a WebSocket.
  *
  * @see https://trpc.io/docs/client/links/wsLink
+ * @public
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
@@ -67,6 +69,7 @@ export function wsLink<TRouter extends AnyRouter>(
           .request({
             op,
             transformer,
+            lastEventId: undefined,
           })
           .subscribe(observer);
 

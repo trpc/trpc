@@ -1,6 +1,9 @@
 import type { AnyRootTypes } from '../rootConfig';
 
-/** The root types a client needs: the error shape and whether there's a transformer. */
+/**
+ * The root types a client needs: the error shape and whether there's a transformer.
+ * @public
+ */
 export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
 /**
@@ -29,6 +32,7 @@ type RootConfigLike = {
 /**
  * Anything a client's root types can be read from: a router, a root
  * object, a root config or the types themselves.
+ * @public
  */
 export type InferrableClientTypes =
   | RouterLike
@@ -43,6 +47,7 @@ type PickTypes<T extends AnyClientTypes> = {
 /**
  * The root types a client needs, read from a router, a root object or a
  * root config.
+ * @public
  */
 export type inferClientTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientTypes

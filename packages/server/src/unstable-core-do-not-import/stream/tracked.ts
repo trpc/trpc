@@ -3,10 +3,16 @@ const trackedSymbol = Symbol();
 type TrackedId = string & {
   __brand: 'TrackedId';
 };
-/** An event wrapped by `tracked()`, with its id. */
+/**
+ * An event wrapped by `tracked()`, with its id.
+ * @public
+ */
 export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
-/** A tracked event as the client gets it. */
+/**
+ * A tracked event as the client gets it.
+ * @public
+ */
 export interface TrackedData<TData> {
   /**
    * The event's id, which the client sends back as `lastEventId` when it
@@ -21,12 +27,16 @@ export interface TrackedData<TData> {
 /**
  * Wraps an event with an id, so a client can resume from it.
  * @deprecated Use `tracked(id, data)` instead.
+ * @public
  */
 export function sse<TData>(event: { id: string; data: TData }) {
   return tracked(event.id, event.data);
 }
 
-/** Whether a value was made by `tracked()`. */
+/**
+ * Whether a value was made by `tracked()`.
+ * @public
+ */
 export function isTrackedEnvelope<TData>(
   value: unknown,
 ): value is TrackedEnvelope<TData> {
@@ -42,6 +52,7 @@ export function isTrackedEnvelope<TData>(
  * yield tracked(post.id, post);
  * ```
  * @see https://trpc.io/docs/server/subscriptions#tracked
+ * @public
  */
 export function tracked<TData>(
   id: string,
@@ -61,6 +72,9 @@ export function tracked<TData>(
   return [id as TrackedId, data, trackedSymbol];
 }
 
-/** The type a client gets for an event, unwrapping `tracked()` events. */
+/**
+ * The type a client gets for an event, unwrapping `tracked()` events.
+ * @public
+ */
 export type inferTrackedOutput<TData> =
   TData extends TrackedEnvelope<infer $Data> ? TrackedData<$Data> : TData;

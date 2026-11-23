@@ -8,6 +8,7 @@ import { WsClient } from './wsClient/wsClient';
  * `wsLink`.
  *
  * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
+ * @public
  */
 export function createWSClient(opts: WebSocketClientOptions) {
   return new WsClient(opts);
@@ -15,6 +16,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
 /**
  * The client returned by {@link createWSClient}.
+ * @public
  */
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 

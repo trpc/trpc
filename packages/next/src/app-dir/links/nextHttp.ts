@@ -10,6 +10,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTags } from '../shared';
 
+/** @public */
 export interface NextLinkBaseOptions {
   /**
    * How many seconds Next.js caches a response. `false` caches it until it is
@@ -24,12 +25,14 @@ export interface NextLinkBaseOptions {
   batch?: boolean;
 }
 
+/** @public */
 export type NextLinkSingleOptions<TRoot extends AnyRootTypes> =
   NextLinkBaseOptions &
     Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
       batch?: false;
     };
 
+/** @public */
 export type NextLinkBatchOptions<TRoot extends AnyRootTypes> =
   NextLinkBaseOptions &
     Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
@@ -41,6 +44,7 @@ export type NextLinkBatchOptions<TRoot extends AnyRootTypes> =
  * they can be revalidated.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_nextHttpLink<TRouter extends AnyRouter>(

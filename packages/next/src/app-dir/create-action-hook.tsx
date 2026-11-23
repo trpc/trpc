@@ -83,6 +83,7 @@ interface UseTRPCActionLoadingResult<
  * `status` to narrow it.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export type UseTRPCActionResult<TDef extends ActionHandlerDef> =
@@ -100,6 +101,7 @@ type ActionContext = {
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_serverActionLink<
@@ -153,7 +155,11 @@ export function experimental_serverActionLink<
       });
 }
 
-interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
+/**
+ * Options for the hook `experimental_createActionHook` returns.
+ * @public
+ */
+export interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: ActionError<TDef>) => MaybePromise<void>;
 }
@@ -163,6 +169,7 @@ interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_createActionHook<

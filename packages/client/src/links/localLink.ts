@@ -32,6 +32,7 @@ import type { TRPCLink } from './types';
 
 /**
  * Passed to {@link LocalLinkOptions.createContext}.
+ * @public
  */
 export type LocalLinkCreateContextOptions = {
   /**
@@ -51,6 +52,7 @@ export type LocalLinkCreateContextOptions = {
  * Options for {@link localLink}.
  *
  * @see https://trpc.io/docs/client/links/localLink#options
+ * @public
  */
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
   /**
@@ -78,6 +80,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
  * without HTTP.
  *
  * @see https://trpc.io/docs/client/links/localLink
+ * @public
  */
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
@@ -338,11 +341,13 @@ export function localLink<TRouter extends AnyRouter>(
 /**
  * @deprecated Use {@link localLink} instead.
  * @function
+ * @public
  */
 export const unstable_localLink = localLink;
 
 /**
  * @deprecated Use {@link localLink} instead. This alias will be removed in a
  * future major release.
+ * @public
  */
 export const experimental_localLink = localLink;

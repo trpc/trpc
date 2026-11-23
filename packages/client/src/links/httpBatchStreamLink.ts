@@ -27,6 +27,7 @@ import type { Operation, TRPCLink } from './types';
  * `httpBatchLink`, plus `streamHeader`.
  *
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink#options
+ * @public
  */
 export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
   HTTPBatchLinkOptions<TRoot> & {
@@ -48,6 +49,7 @@ type BatchStreamOperation = Operation & {
  * response back as soon as it is ready.
  *
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+ * @public
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
   opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
@@ -267,5 +269,6 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
 /**
  * @deprecated Use {@link httpBatchStreamLink} instead.
+ * @public
  */
 export const unstable_httpBatchStreamLink = httpBatchStreamLink;

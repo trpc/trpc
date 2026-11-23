@@ -9,7 +9,7 @@ import type {
  * @internal
  */
 export type CoercedTransformerParameters = {
-  transformer?: DataTransformerOptions;
+  transformer: DataTransformerOptions | undefined;
 };
 
 type TransformerOptionYes = {
@@ -32,7 +32,7 @@ type TransformerOptionNo = {
 };
 
 /**
- * @internal
+ * @public
  */
 export type TransformerOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,

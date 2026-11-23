@@ -26,7 +26,10 @@ import type {
   MaybePromise,
 } from '../../unstable-core-do-not-import';
 
-/** A Node.js HTTP/1 or HTTP/2 request, as the Node.js adapters take it. */
+/**
+ * A Node.js HTTP/1 or HTTP/2 request, as the Node.js adapters take it.
+ * @public
+ */
 export type NodeHTTPRequest = DistributiveOmit<
   http.IncomingMessage | http2.Http2ServerRequest,
   'socket'
@@ -45,7 +48,10 @@ export type NodeHTTPRequest = DistributiveOmit<
     | Partial<http2.Http2ServerRequest['socket']>;
 };
 
-/** A Node.js HTTP/1 or HTTP/2 response, as the Node.js adapters take it. */
+/**
+ * A Node.js HTTP/1 or HTTP/2 response, as the Node.js adapters take it.
+ * @public
+ */
 export type NodeHTTPResponse = DistributiveOmit<
   http.ServerResponse | http2.Http2ServerResponse,
   'write'
@@ -58,7 +64,10 @@ export type NodeHTTPResponse = DistributiveOmit<
 
   write: (chunk: string | Uint8Array) => boolean;
 };
-/** The Node.js adapters' `createContext` option. */
+/**
+ * The Node.js adapters' `createContext` option.
+ * @public
+ */
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
@@ -80,7 +89,10 @@ type ConnectMiddleware<
 // `opts` into an object literal merges the new properties into the trailing
 // non-generic member, which makes `{ ...opts, req, res, path }` unassignable
 // to `NodeHTTPRequestHandlerOptions` (https://github.com/trpc/trpc/issues/6057)
-/** The options of the Node.js adapters. */
+/**
+ * The options of the Node.js adapters.
+ * @public
+ */
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -105,7 +117,10 @@ export type NodeHTTPHandlerOptions<
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
-/** The options of `nodeHTTPRequestHandler`. */
+/**
+ * The options of `nodeHTTPRequestHandler`.
+ * @public
+ */
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -124,13 +139,17 @@ export type NodeHTTPRequestHandlerOptions<
  * What `createContext` gets in the Node.js adapters: `req`, `res` and the
  * request's `info`.
  * @see https://trpc.io/docs/server/context#creating-the-context
+ * @public
  */
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
   info: TRPCRequestInfo;
 };
-/** The `createContext` function the Node.js adapters take. */
+/**
+ * The `createContext` function the Node.js adapters take.
+ * @public
+ */
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,
   TRequest,

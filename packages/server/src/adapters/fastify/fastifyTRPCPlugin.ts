@@ -21,6 +21,7 @@ import { fastifyRequestHandler } from './fastifyRequestHandler';
 /**
  * The options of `fastifyTRPCPlugin`.
  * @see https://trpc.io/docs/server/adapters/fastify#fastify-plugin-options
+ * @public
  */
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   /** The path the router is served at, such as `/trpc`. */
@@ -47,6 +48,7 @@ export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
  * request's `info`. With `useWSS`, WebSocket connections get the raw
  * `IncomingMessage` as `req` and the `WebSocket` as `res` instead.
  * @see https://trpc.io/docs/server/adapters/fastify#create-the-context
+ * @public
  */
 export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<
   FastifyRequest,
@@ -64,6 +66,7 @@ export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<
  * });
  * ```
  * @see https://trpc.io/docs/server/adapters/fastify#create-fastify-server
+ * @public
  */
 export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   fastify: FastifyInstance,

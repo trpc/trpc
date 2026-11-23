@@ -8,8 +8,10 @@ import type {
 } from 'aws-lambda';
 import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 
+/** @public */
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
+/** @internal */
 export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
@@ -27,7 +29,7 @@ function determinePayloadFormat(event: LambdaEvent): string {
 }
 
 /** 1:1 mapping of v1 or v2 input events, deduces which is which.
- * @internal
+ * @public
  **/
 export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
@@ -214,6 +216,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
   },
 };
 
+/** @internal */
 export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
   const version = determinePayloadFormat(event);
   let processor: Processor<TEvent>;

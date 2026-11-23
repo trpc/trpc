@@ -17,7 +17,7 @@ import type {
 } from '../shared';
 
 /**
- * @internal
+ * @public
  */
 export type InferQueryOptions<
   TRoot extends AnyRootTypes,
@@ -34,7 +34,7 @@ export type InferQueryOptions<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type InferMutationOptions<
   TRoot extends AnyRootTypes,
@@ -48,7 +48,7 @@ export type InferMutationOptions<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type InferQueryResult<
   TRoot extends AnyRootTypes,
@@ -59,7 +59,7 @@ export type InferQueryResult<
 >;
 
 /**
- * @internal
+ * @public
  */
 export type InferMutationResult<
   TRoot extends AnyRootTypes,
@@ -94,6 +94,7 @@ type inferReactQueryProcedureOptionsInner<
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/react/infer-types#infer-react-query-options-based-on-your-router
+ * @public
  */
 export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> =
   inferReactQueryProcedureOptionsInner<

@@ -16,6 +16,7 @@ type ResolverDef = {
   errorShape: any;
 };
 
+/** @internal */
 export type DecorateProcedureServer<
   TType extends ProcedureType,
   TDef extends ResolverDef,
@@ -38,6 +39,7 @@ export type DecorateProcedureServer<
         }
       : never;
 
+/** @internal */
 export type NextAppDirDecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,

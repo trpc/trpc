@@ -31,6 +31,7 @@ import type {
 
 const HELPERS = ['prefetch', 'prefetchInfinite'];
 
+/** @public */
 export type DecorateProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
@@ -55,6 +56,7 @@ export type DecorateProcedure<
   ) => Promise<void>;
 };
 
+/** @public */
 export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
@@ -68,6 +70,7 @@ export type DecorateRouterRecord<
     : never;
 };
 
+/** @public */
 export type Caller<TRouter extends AnyRouter> = ReturnType<
   RouterCaller<inferRouterRootTypes<TRouter>, TRouter['_def']['record']>
 >;
@@ -99,6 +102,7 @@ export type Caller<TRouter extends AnyRouter> = ReturnType<
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/react/server-components
+ * @public
  */
 export function createHydrationHelpers<TRouter extends AnyRouter>(
   caller: AnyRouter extends TRouter

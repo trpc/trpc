@@ -58,7 +58,7 @@ type ResolverDef = {
   errorShape: any;
 };
 /**
- * @internal
+ * @public
  */
 export interface ProcedureUseQuery<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
@@ -92,7 +92,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
 }
 
 /**
- * @internal
+ * @public
  */
 export type ProcedureUsePrefetchQuery<TDef extends ResolverDef> = (
   input: TDef['input'] | SkipToken,
@@ -180,6 +180,7 @@ type trpcInfiniteData<TDef extends ResolverDef> = Simplify<
 //   queryClient?: QueryClient,
 // ): UseInfiniteQueryResult<TData, TError>;
 
+/** @public */
 export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   // 1st
   <TData = trpcInfiniteData<TDef>>(
@@ -262,6 +263,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
 //   queryClient?: QueryClient,
 // ): UseSuspenseInfiniteQueryResult<TData, TError>;
 
+/** @public */
 export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = <
   TData = trpcInfiniteData<TDef>,
 >(
@@ -288,7 +290,7 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = <
 ];
 
 /**
- * @internal
+ * @public
  */
 export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
   TDef['input'] extends CursorInput
@@ -314,7 +316,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
     : object;
 
 /**
- * @internal
+ * @public
  */
 export type DecoratedQueryMethods<TDef extends ResolverDef> = {
   /**
@@ -342,11 +344,12 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
 };
 
 /**
- * @internal
+ * @public
  */
 export type DecoratedQuery<TDef extends ResolverDef> =
   MaybeDecoratedInfiniteQuery<TDef> & DecoratedQueryMethods<TDef>;
 
+/** @public */
 export type DecoratedMutation<TDef extends ResolverDef> = {
   /**
    * @see https://trpc.io/docs/client/react/useMutation
@@ -395,7 +398,7 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   >;
 }
 /**
- * @internal
+ * @public
  */
 export type DecorateProcedure<
   TType extends ProcedureType,
@@ -414,7 +417,7 @@ export type DecorateProcedure<
       : never;
 
 /**
- * @internal
+ * @public
  */
 export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
@@ -438,7 +441,7 @@ export type DecorateRouterRecord<
 };
 
 /**
- * @internal
+ * @public
  */
 export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
@@ -476,6 +479,7 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
  * @deprecated `@trpc/react-query` only gets bug fixes and will be removed in
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
+ * @public
  */
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
@@ -534,6 +538,7 @@ export function createHooksInternal<
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/react/setup
+ * @public
  */
 export function createTRPCReact<
   TRouter extends AnyRouter,

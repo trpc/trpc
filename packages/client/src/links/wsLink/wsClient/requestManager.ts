@@ -7,6 +7,7 @@ import type {
 import type { TRPCClientError } from '../../../TRPCClientError';
 import { withResolvers } from './utils';
 
+/** @internal */
 export type TCallbacks = Observer<
   TRPCResponseMessage<unknown, inferRouterError<AnyTRPCRouter>>,
   TRPCClientError<AnyTRPCRouter>
@@ -54,6 +55,7 @@ interface Request {
  * - **Outgoing requests**: Requests that are queued and waiting to be sent.
  * - **Pending requests**: Requests that have been sent and are in flight awaiting a response.
  *   For subscriptions, multiple responses may be received until the subscription is closed.
+ * @internal
  */
 export class RequestManager {
   constructor(
@@ -159,7 +161,7 @@ export class RequestManager {
    * @param ws - The socket the requests are sent on.
    * @returns The list of requests that were transitioned to the pending state.
    */
-  public flush(ws: WebSocket | null = null) {
+  public flush(ws: WebSocket | null) {
     const requests = this.outgoingRequests;
     this.outgoingRequests = [];
 

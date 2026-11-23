@@ -1,7 +1,7 @@
 import type { TRPCQueryKey } from '../getQueryKey';
 
 /**
- * @internal
+ * @public
  */
 export function getClientArgs<TOptions>(
   queryKey: TRPCQueryKey,

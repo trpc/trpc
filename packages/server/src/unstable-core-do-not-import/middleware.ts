@@ -12,7 +12,7 @@ import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isAsyncIterable, isObject } from './utils';
 
-/** @internal */
+/** @public */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
 };
@@ -42,7 +42,7 @@ interface MiddlewareErrorResult<
 /**
  * What a middleware's `next()` returns, and what the middleware must
  * return in turn.
- * @internal
+ * @public
  */
 export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
@@ -51,7 +51,7 @@ export type MiddlewareResult<_TContextOverride> =
 /**
  * A reusable middleware, as `t.middleware()` returns it.
  * @see https://trpc.io/docs/server/middlewares
- * @internal
+ * @public
  */
 export interface MiddlewareBuilder<
   TContext,
@@ -102,7 +102,7 @@ export interface MiddlewareBuilder<
  * A middleware: it gets the call's options and must return the result of
  * calling `next()`, optionally with a new `ctx` or `input`.
  * @see https://trpc.io/docs/server/middlewares
- * @internal
+ * @public
  */
 export type MiddlewareFunction<
   TContext,
@@ -145,9 +145,15 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-/** Any middleware function, for use in generic constraints. */
+/**
+ * Any middleware function, for use in generic constraints.
+ * @public
+ */
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
-/** Any middleware builder, for use in generic constraints. */
+/**
+ * Any middleware builder, for use in generic constraints.
+ * @internal
+ */
 export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
@@ -193,6 +199,7 @@ export function createMiddlewareFactory<
  * metadata and input types you give it.
  * @deprecated Use `.concat()` with a procedure builder instead.
  * @see https://trpc.io/docs/server/middlewares#concat
+ * @public
  */
 export const experimental_standaloneMiddleware = <
   TCtx extends {

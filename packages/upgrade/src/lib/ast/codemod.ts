@@ -11,22 +11,30 @@ import type {
   Statement,
 } from 'jscodeshift';
 
-/** What the builders take as an expression, e.g. `j.callExpression(callee)` */
+/**
+ * What the builders take as an expression, e.g. `j.callExpression(callee)`
+ * @internal
+ */
 export type ExpressionKind = NonNullable<
   Parameters<JSCodeshift['returnStatement']>[0]
 >;
 
+/** @internal */
 export interface Codemod {
   readonly j: JSCodeshift;
   readonly root: Collection;
 }
 
+/** @internal */
 export type FunctionNode =
   | FunctionDeclaration
   | FunctionExpression
   | ArrowFunctionExpression;
 
-/** The quote the file's imports use, so new imports match them. */
+/**
+ * The quote the file's imports use, so new imports match them.
+ * @internal
+ */
 export function quoteOf(source: string): 'single' | 'double' {
   const match = /\bfrom\s+(['"])/.exec(source);
   return match?.[1] === '"' ? 'double' : 'single';
@@ -36,6 +44,7 @@ export function quoteOf(source: string): 'single' | 'double' {
  * Makes `name` from `source` usable in the file, adding it to a named import
  * from `source` or as a new import after the last one. Returns the local
  * name to use, e.g. `useRQQuery` for `import { useQuery as useRQQuery }`.
+ * @internal
  */
 export function ensureNamedImport(
   { j, root }: Codemod,
@@ -180,6 +189,7 @@ const addedImports = new WeakMap<Collection, ImportDeclaration[]>();
  * `root` as source code, without two things recast does to a file whose
  * statements changed: `'use client';;`, and a blank line between the
  * imports and the ones `ensureNamedImport` added.
+ * @internal
  */
 export function printSource({ j, root }: Codemod, source: string): string {
   const quote = quoteOf(source);
@@ -213,7 +223,10 @@ export function printSource({ j, root }: Codemod, source: string): string {
   return output;
 }
 
-/** The identifier at the root of `a.b.c` or `a['b'].c`, if any. */
+/**
+ * The identifier at the root of `a.b.c` or `a['b'].c`, if any.
+ * @internal
+ */
 export function rootIdentifierName(
   j: JSCodeshift,
   node: ASTNode,
@@ -228,6 +241,7 @@ export function rootIdentifierName(
 /**
  * The names a function's parameters bind: `a`, `{ b, c: d }` → d, `[e]`,
  * `...f`, `g = 1`. Not names inside type annotations.
+ * @internal
  */
 export function paramBindings(
   j: JSCodeshift,
@@ -313,6 +327,7 @@ function isFunctionPath(j: JSCodeshift, path: ASTPath): boolean {
  * The component or hook `path` is in: the closest enclosing function named
  * like a component or a hook, else the outermost enclosing function. Hooks
  * and `useTRPC()` go at the top of it.
+ * @internal
  */
 export function findHookScope(
   j: JSCodeshift,
@@ -336,7 +351,10 @@ export function findHookScope(
   return outermost;
 }
 
-/** The statements of a function body, turning `() => x` into `() => { return x; }`. */
+/**
+ * The statements of a function body, turning `() => x` into `() => { return x; }`.
+ * @internal
+ */
 export function bodyStatements(
   j: JSCodeshift,
   fn: ASTPath<FunctionNode>,
@@ -348,7 +366,10 @@ export function bodyStatements(
   return (node.body as { body: Statement[] }).body;
 }
 
-/** Whether `fn`'s own body, not a function nested in it, declares `name`. */
+/**
+ * Whether `fn`'s own body, not a function nested in it, declares `name`.
+ * @internal
+ */
 export function declaresAtTop(
   j: JSCodeshift,
   fn: ASTPath<FunctionNode>,
@@ -372,6 +393,7 @@ export function declaresAtTop(
 /**
  * Puts `const name = init()` at the top of `fn`, unless `fn` declares `name`
  * at its top level already.
+ * @internal
  */
 export function ensureDeclaredAtTop(
   j: JSCodeshift,
@@ -393,7 +415,10 @@ export function ensureDeclaredAtTop(
   );
 }
 
-/** `base`, or `base2`, `base3`… if `fn` uses that name already. */
+/**
+ * `base`, or `base2`, `base3`… if `fn` uses that name already.
+ * @internal
+ */
 export function uniqueName(
   j: JSCodeshift,
   fn: ASTPath<FunctionNode>,
@@ -416,6 +441,7 @@ export function uniqueName(
  * Whether `name` at `path` refers to a binding something between `path` and
  * `scope` declares, e.g. a nested callback's own `utils` parameter, rather
  * than to `declarator`. `scope` is the function or block that declares it.
+ * @internal
  */
 export function isShadowed(
   j: JSCodeshift,
@@ -489,6 +515,7 @@ export function isShadowed(
 /**
  * Inserts `statement` right after `declarator`'s own declaration, first
  * splitting `const a = f(), b = a` so `b` still runs after `statement`.
+ * @internal
  */
 export function insertAfterDeclarator(
   j: JSCodeshift,
@@ -522,7 +549,10 @@ export function insertAfterDeclarator(
   body.splice(at, 1, ...replacement);
 }
 
-/** Whether `path` is an identifier used as a value, not a property name or key. */
+/**
+ * Whether `path` is an identifier used as a value, not a property name or key.
+ * @internal
+ */
 export function isValueReference(j: JSCodeshift, path: ASTPath): boolean {
   const parent = path.parent?.node;
   if (!parent) {
@@ -580,7 +610,10 @@ export function isValueReference(j: JSCodeshift, path: ASTPath): boolean {
   return true;
 }
 
-/** Whether `path` is inside `ancestor`. */
+/**
+ * Whether `path` is inside `ancestor`.
+ * @internal
+ */
 export function isInside(path: ASTPath, ancestor: ASTPath): boolean {
   for (let current: ASTPath | null = path; current; current = current.parent) {
     if (current.node === ancestor.node) {
@@ -593,6 +626,7 @@ export function isInside(path: ASTPath, ancestor: ASTPath): boolean {
 /**
  * Replaces the import of `oldName` from any module with `newNames` from the
  * same module, or adds `newNames` next to it if `keepOld`.
+ * @internal
  */
 export function replaceImportedName(
   { j, root }: Codemod,
@@ -640,7 +674,10 @@ export function replaceImportedName(
   return changed;
 }
 
-/** `// TODO(@trpc/upgrade): …` above the statement holding `path`. */
+/**
+ * `// TODO(@trpc/upgrade): …` above the statement holding `path`.
+ * @internal
+ */
 export function addTodo(j: JSCodeshift, path: ASTPath, message: string): void {
   let statement: ASTPath | null = path;
   while (
@@ -669,13 +706,16 @@ export function addTodo(j: JSCodeshift, path: ASTPath, message: string): void {
   target.comments = [...(target.comments ?? []), comment];
 }
 
-/** `a`, `'a'` or `"a"` as an object key; null for computed or other keys. */
+/**
+ * `a`, `'a'` or `"a"` as an object key; null for computed or other keys.
+ * @internal
+ */
 export function staticKeyName(
   j: JSCodeshift,
-  property: { key: unknown; computed?: boolean | undefined },
+  key: unknown,
+  computed: boolean,
 ): string | null {
-  const { key } = property;
-  if (j.Identifier.check(key)) return property.computed ? null : key.name;
+  if (j.Identifier.check(key)) return computed ? null : key.name;
   if (j.StringLiteral.check(key)) return key.value;
   if (j.Literal.check(key) && typeof key.value === 'string') return key.value;
   return null;
@@ -705,6 +745,7 @@ const SETUP_MEMBERS = new Set([
  * when the setup is `api`, else the setup's own name. Two modules can both
  * export `api`, so an alias counts only when the file uses it like a setup:
  * `trpc.post.byId.useQuery()`, `<trpc.Provider>`.
+ * @internal
  */
 export function localSetupName(
   { j, root }: Codemod,

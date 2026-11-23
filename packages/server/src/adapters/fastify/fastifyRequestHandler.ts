@@ -23,7 +23,10 @@ import {
   type NodeHTTPCreateContextOption,
 } from '../node-http';
 
-/** The options of the Fastify adapter's request handler. */
+/**
+ * The options of the Fastify adapter's request handler.
+ * @public
+ */
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
@@ -38,6 +41,7 @@ export type FastifyHandlerOptions<
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
+/** @public */
 export type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
@@ -51,6 +55,7 @@ export type FastifyRequestHandlerOptions<
 /**
  * Handles one Fastify request for a router. `fastifyTRPCPlugin` uses it;
  * call it yourself to mount tRPC on your own route.
+ * @public
  */
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,

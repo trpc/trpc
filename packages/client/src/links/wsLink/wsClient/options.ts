@@ -5,6 +5,7 @@ import type { Encoder } from './encoder';
  * Options for `createWSClient`.
  *
  * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
+ * @public
  */
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
@@ -72,8 +73,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
 /**
  * Default options for lazy WebSocket connections.
  * Determines whether the connection should be established lazily and defines the delay before closure.
+ * @internal
  */
 export type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
+/** @internal */
 export const lazyDefaults: LazyOptions = {
   enabled: false,
   closeMs: 0,
@@ -82,10 +85,12 @@ export const lazyDefaults: LazyOptions = {
 /**
  * Default options for the WebSocket keep-alive mechanism.
  * Configures whether keep-alive is enabled and specifies the timeout and interval for ping-pong messages.
+ * @internal
  */
 export type KeepAliveOptions = Required<
   NonNullable<WebSocketClientOptions['keepAlive']>
 >;
+/** @internal */
 export const keepAliveDefaults: KeepAliveOptions = {
   enabled: false,
   pongTimeoutMs: 1_000,
@@ -96,6 +101,7 @@ export const keepAliveDefaults: KeepAliveOptions = {
  * Calculates a delay for exponential backoff based on the retry attempt index.
  * The delay starts at 0 for the first attempt and doubles for each subsequent attempt,
  * capped at 30 seconds.
+ * @internal
  */
 export const exponentialBackoff = (attemptIndex: number) => {
   return attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);

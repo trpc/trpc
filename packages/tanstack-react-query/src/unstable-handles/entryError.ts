@@ -4,6 +4,7 @@ import type { TRPC_ERROR_CODE_KEY, TRPCError } from '@trpc/server';
 import { getTRPCErrorFromUnknown } from '@trpc/server/unstable-core-do-not-import';
 import type { ResolverDef } from '../types';
 
+/** @public */
 export type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
   transformer: TDef['transformer'];
   errorShape: TDef['errorShape'];
@@ -13,6 +14,7 @@ export type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
  * What `loadHandles()` rejects with when a fetch or ensure entry fails. It
  * names the entry, and keeps the request's error as `cause`.
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-ensure
+ * @public
  */
 export class TRPCEntryError<
   TDef extends ResolverDef = ResolverDef,
@@ -51,6 +53,7 @@ function codeOfShape(data: unknown): TRPC_ERROR_CODE_KEY | undefined {
   return typeof code === 'string' ? (code as TRPC_ERROR_CODE_KEY) : undefined;
 }
 
+/** @internal */
 export function entryCause(error: unknown) {
   if (isTRPCClientError(error)) {
     return { cause: error, code: codeOfShape(error.data) };
