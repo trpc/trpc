@@ -20,7 +20,6 @@ import {
 import { Spinner } from '@shared/ui/components/spinner';
 import { Textarea } from '@shared/ui/components/textarea';
 import { useMutation } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import {
@@ -32,7 +31,11 @@ import {
 import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
+import {
+  useChannelPosts,
+  useThrottledIsTypingMutation,
+  type useLivePosts,
+} from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
 function SubscriptionStatus(props: {
@@ -82,13 +85,14 @@ export function Chat(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
     title: React.ReactNode;
+    livePosts: ReturnType<typeof useLivePosts>;
+    whoIsTyping: string[];
   }>,
 ) {
   const channelId = props.posts.input.channelId;
-  const trpc = useTRPC();
-  const livePosts = useLivePosts(props.posts);
-  const currentlyTyping = useSubscription(
-    trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
+  const channelPosts = useChannelPosts(
+    props.posts,
+    props.livePosts.postsByChannel[channelId],
   );
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -102,7 +106,7 @@ export function Chat(
           <HashIcon className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{props.title}</span>
         </h2>
-        <SubscriptionStatus subscription={livePosts.subscription} />
+        <SubscriptionStatus subscription={props.livePosts.subscription} />
       </header>
       <div
         className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto"
@@ -115,15 +119,15 @@ export function Chat(
               variant="outline"
               size="sm"
               disabled={
-                livePosts.query.fetchStatus !== 'idle' ||
-                !livePosts.query.hasNextPage
+                channelPosts.query.fetchStatus !== 'idle' ||
+                !channelPosts.query.hasNextPage
               }
               onClick={() => {
-                void livePosts.query.fetchNextPage();
+                void channelPosts.query.fetchNextPage();
               }}
             >
               {run(() => {
-                switch (livePosts.query.fetchStatus) {
+                switch (channelPosts.query.fetchStatus) {
                   case 'fetching':
                     return (
                       <>
@@ -139,7 +143,7 @@ export function Chat(
                       </>
                     );
                   case 'idle':
-                    return livePosts.query.hasNextPage
+                    return channelPosts.query.hasNextPage
                       ? 'Load more'
                       : 'Fetched everything!';
                 }
@@ -147,7 +151,7 @@ export function Chat(
             </Button>
           </div>
 
-          {livePosts.messages?.map((item) => {
+          {channelPosts.messages.map((item) => {
             const isMe = item.name === session?.user?.name;
 
             return (
@@ -216,9 +220,9 @@ export function Chat(
             </div>
           )}
           <p className="h-4 text-xs text-muted-foreground italic">
-            {currentlyTyping.data?.length
-              ? `${listWithAnd(currentlyTyping.data)} ${pluralize(
-                  currentlyTyping.data.length,
+            {props.whoIsTyping.length
+              ? `${listWithAnd(props.whoIsTyping)} ${pluralize(
+                  props.whoIsTyping.length,
                   'is',
                   'are',
                 )} typing...`

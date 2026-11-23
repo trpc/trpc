@@ -21,8 +21,8 @@ class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
 }
 
 export interface MyEvents {
-  add: [channelId: string, data: PostType];
-  isTypingUpdate: [channelId: string, who: WhoIsTyping];
+  add: [post: PostType];
+  isTypingUpdate: [];
 }
 
 // Local to this server instance, fed by `onPubSubEvent()` below
@@ -40,7 +40,21 @@ function setTyping(channelId: string, name: string, typing: boolean) {
   } else {
     return;
   }
-  ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId]);
+  ee.emit('isTypingUpdate');
+}
+
+/**
+ * Who is typing in each channel, leaving out channels where nobody is
+ */
+function getWhoIsTyping() {
+  const result: Record<string, string[]> = {};
+  for (const [channelId, who] of Object.entries(currentlyTyping)) {
+    const names = Object.keys(who).toSorted();
+    if (names.length > 0) {
+      result[channelId] = names;
+    }
+  }
+  return result;
 }
 
 async function onPubSubEvent(event: PubSubEvent) {
@@ -55,7 +69,7 @@ async function onPubSubEvent(event: PubSubEvent) {
         where: (fields, ops) => ops.eq(fields.id, event.postId),
       });
       if (post) {
-        ee.emit('add', event.channelId, post);
+        ee.emit('add', post);
       }
       return;
     }
@@ -74,21 +88,21 @@ export function ensureListening() {
   });
 }
 
-// every 1s, clear old "isTyping"
+// every 3s, clear old "isTyping"
 setInterval(() => {
-  const updatedChannels = new Set<string>();
+  let changed = false;
   const now = Date.now();
-  for (const [channelId, typers] of Object.entries(currentlyTyping)) {
-    for (const [key, value] of Object.entries(typers ?? {})) {
+  for (const typers of Object.values(currentlyTyping)) {
+    for (const [name, value] of Object.entries(typers)) {
       if (now - value.lastTyped.getTime() > 3e3) {
-        delete typers[key];
-        updatedChannels.add(channelId);
+        delete typers[name];
+        changed = true;
       }
     }
   }
-  updatedChannels.forEach((channelId) => {
-    ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId] ?? {});
-  });
+  if (changed) {
+    ee.emit('isTypingUpdate');
+  }
 }, 3e3).unref();
 
 export const channelRouter = {
@@ -121,42 +135,35 @@ export const channelRouter = {
       });
     }),
 
-  whoIsTyping: publicProcedure
-    .input(
-      z.object({
-        channelId: z.string().uuid(),
-      }),
-    )
-    .subscription(async function* (opts) {
-      const { channelId } = opts.input;
+  /**
+   * Who is typing in every channel, so that switching channels doesn't need a
+   * new subscription. The client picks out the channel it shows.
+   */
+  whoIsTyping: publicProcedure.subscription(async function* (opts) {
+    // Listen before reading the current state, so no update is missed in between
+    const updates = ee.toIterable('isTypingUpdate', { signal: opts.signal });
+    await ensureListening();
 
-      await ensureListening();
-
-      let lastIsTyping = '';
-
-      /**
-       * yield who is typing if it has changed
-       * won't yield if it's the same as last time
-       */
-      function* maybeYield(who: WhoIsTyping) {
-        const idx = Object.keys(who).toSorted().toString();
-        if (idx === lastIsTyping) {
-          return;
-        }
-        yield Object.keys(who);
-
-        lastIsTyping = idx;
+    let lastSent = '';
+    /**
+     * yield who is typing if it has changed
+     * won't yield if it's the same as last time
+     */
+    function* maybeYield() {
+      const whoIsTyping = getWhoIsTyping();
+      const key = JSON.stringify(whoIsTyping);
+      if (key === lastSent) {
+        return;
       }
+      lastSent = key;
+      yield whoIsTyping;
+    }
 
-      // emit who is currently typing
-      yield* maybeYield(currentlyTyping[channelId] ?? {});
+    // emit who is currently typing
+    yield* maybeYield();
 
-      for await (const [channelId, who] of ee.toIterable('isTypingUpdate', {
-        signal: opts.signal,
-      })) {
-        if (channelId === opts.input.channelId) {
-          yield* maybeYield(who);
-        }
-      }
-    }),
+    for await (const _ of updates) {
+      yield* maybeYield();
+    }
+  }),
 } satisfies TRPCRouterRecord;

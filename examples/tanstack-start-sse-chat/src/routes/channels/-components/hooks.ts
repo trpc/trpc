@@ -1,6 +1,6 @@
 import {
-  skipToken,
   useMutation,
+  useQueryClient,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
 import { useSubscription } from '@trpc/tanstack-react-query';
@@ -8,6 +8,7 @@ import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import * as React from 'react';
 import { useTRPC, type TRPC } from '~/lib/trpc';
+import type { PostType } from '~/server/db/schema';
 
 /**
  * Set isTyping with a throttle of 1s
@@ -40,10 +41,60 @@ export function useThrottledIsTypingMutation(channelId: string) {
   }, [mutate, channelId]);
 }
 
-export function useLivePosts(
+/**
+ * Subscribes to new posts in every channel, so switching channels doesn't
+ * resubscribe. Collects them by channel id, including channels that haven't
+ * been opened yet.
+ */
+export function useLivePosts() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [postsByChannel, setPostsByChannel] = React.useState<
+    Record<string, PostType[]>
+  >({});
+
+  // Once a post has arrived, `httpSubscriptionLink` resumes from its id when it reconnects
+  const canResume = React.useRef(false);
+
+  const subscription = useSubscription(
+    trpc.post.onAdd.subscriptionOptions(
+      {},
+      {
+        onStarted() {
+          if (!canResume.current) {
+            // The stream only has posts from now on, so refetch the channels loaded before it
+            void queryClient.invalidateQueries({
+              queryKey: trpc.post.infinite.pathKey(),
+            });
+          }
+        },
+        onData(event) {
+          canResume.current = true;
+          const post = event.data;
+          setPostsByChannel((current) => ({
+            ...current,
+            [post.channelId]: [...(current[post.channelId] ?? []), post],
+          }));
+        },
+        onError(err) {
+          console.error('Subscription error:', err);
+          // "Try again" starts a new stream, without the last event id
+          canResume.current = false;
+        },
+      },
+    ),
+  );
+
+  return { postsByChannel, subscription };
+}
+
+/**
+ * A channel's fetched posts, with the ones that arrived live added
+ */
+export function useChannelPosts(
   posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>,
+  livePosts: PostType[] | undefined,
 ) {
-  const channelId = posts.input.channelId;
   const trpc = useTRPC();
   const query = useSuspenseInfiniteQuery(
     fromHandle(trpc, posts, {
@@ -54,73 +105,22 @@ export function useLivePosts(
       refetchOnMount: false,
     }),
   );
-  const [messages, setMessages] = React.useState(() => {
-    const msgs = query.data?.pages.map((page) => page.items).flat();
-    return msgs ?? null;
-  });
-  type Post = NonNullable<typeof messages>[number];
 
-  /**
-   * fn to add and dedupe new messages onto state
-   */
-  const addMessages = React.useCallback((incoming?: Post[]) => {
-    setMessages((current) => {
-      const map: Record<Post['id'], Post> = {};
-      for (const msg of current ?? []) {
-        map[msg.id] = msg;
+  const messages = React.useMemo(() => {
+    // A live post can also be in a page fetched after it arrived, so dedupe by id
+    const byId = new Map<string, PostType>();
+    for (const page of query.data.pages) {
+      for (const post of page.items) {
+        byId.set(post.id, post);
       }
-      for (const msg of incoming ?? []) {
-        map[msg.id] = msg;
-      }
-      return Object.values(map).sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-    });
-  }, []);
+    }
+    for (const post of livePosts ?? []) {
+      byId.set(post.id, post);
+    }
+    return [...byId.values()].sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    );
+  }, [query.data.pages, livePosts]);
 
-  /**
-   * when new data from `useInfiniteQuery`, merge with current state
-   */
-  React.useEffect(() => {
-    const msgs = query.data?.pages.map((page) => page.items).flat();
-    addMessages(msgs);
-  }, [query.data?.pages, addMessages]);
-
-  const [lastEventId, setLastEventId] = React.useState<
-    // Query has not been run yet
-    | false
-    // Empty list
-    | null
-    // Event id
-    | string
-  >(false);
-  if (messages && lastEventId === false) {
-    // We should only set the lastEventId once, if the SSE-connection is lost, it will automatically reconnect and continue from the last event id
-    // Changing this value will trigger a new subscription
-    setLastEventId(messages.at(-1)?.id ?? null);
-  }
-  const subscription = useSubscription(
-    trpc.post.onAdd.subscriptionOptions(
-      lastEventId === false ? skipToken : { channelId, lastEventId },
-      {
-        onData(event) {
-          addMessages([event.data]);
-        },
-        onError(err) {
-          console.error('Subscription error:', err);
-
-          const lastMessageEventId = messages?.at(-1)?.id;
-          if (lastMessageEventId) {
-            // We've lost the connection, let's resubscribe from the last message
-            setLastEventId(lastMessageEventId);
-          }
-        },
-      },
-    ),
-  );
-  return {
-    query,
-    messages,
-    subscription,
-  };
+  return { query, messages };
 }
