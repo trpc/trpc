@@ -1,6 +1,6 @@
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../types';
-import type { HTTPLinkBaseOptions } from './internals/httpUtils';
+import type { HTTPLinkBaseOptions } from './HTTPLinkBaseOptions';
 import type { HTTPHeaders, Operation } from './types';
 
 /**

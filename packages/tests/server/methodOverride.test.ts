@@ -1,7 +1,7 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpBatchLink, httpLink } from '@trpc/client';
-import type { HTTPLinkBaseOptions } from '@trpc/client/links/internals/httpUtils';
+import type { HTTPLinkBaseOptions } from '@trpc/client/links/HTTPLinkBaseOptions';
 import { initTRPC } from '@trpc/server';
 import type { inferRouterRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
