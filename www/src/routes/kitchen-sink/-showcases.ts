@@ -22,7 +22,7 @@ export const showcases = [
   },
   {
     description:
-      'Posts, their authors and the authors’ teams in one pipelined request, with experimental_nested() and a plain client. Switch pipelining off to see the requests it saves.',
+      'Posts, their authors and the authors’ teams in one pipelined request, with experimental_load() and a plain client. Switch pipelining off to see the requests it saves.',
     path: '/kitchen-sink/nested',
     title: 'Nested queries',
   },

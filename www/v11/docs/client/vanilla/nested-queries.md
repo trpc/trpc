@@ -8,7 +8,7 @@ parent: "client/vanilla"
 order: 47
 ---
 
-`experimental_nested()` sends several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release; with TanStack Query, use [its nested queries](/docs/client/tanstack-react-query/nested-queries) instead.
+`experimental_query()` and the functions beside it say what to load, and `experimental_load()` loads it: several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release. The same description [loads with TanStack Query](#tanstack-query) too.
 
 [See it in the kitchen sink](/kitchen-sink/nested): posts, their authors and the authors' teams in one request, or without pipelining to compare.
 
@@ -69,21 +69,94 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+```twoslash include dq-post-queries
+// @filename: post.queries.ts
+import {
+  experimental_dataOf,
+  experimental_query,
+  type experimental_QueryProcedures,
+} from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+
+export function postQueries(
+  trpc: experimental_QueryProcedures<AppRouter>,
+  opts: { slug: string },
+) {
+  const post = experimental_query(trpc.post.bySlug, { slug: opts.slug });
+  const author = experimental_query(trpc.author.byId, {
+    id: experimental_dataOf(post).authorId,
+  });
+  return {
+    post,
+    author,
+    moreFromTeam: experimental_query(trpc.post.list, {
+      teamId: experimental_dataOf(author).teamId,
+    }),
+  };
+}
+```
+
 ## Load nested queries {#without-tanstack-query}
 
-`experimental_nested()` loads them with a plain [`@trpc/client`](/docs/client/vanilla). [Turn on one request](#turn-on), then say what to load in a callback:
+Two steps: say what to load, then load it.
+
+#### 1. Say what to load {#describe}
+
+Say what to load in a plain function. It sits next to the code that needs the data:
+
+```ts twoslash title='post.queries.ts'
+// @include: dq-router
+// @filename: post.queries.ts
+// ---cut---
+import {
+  experimental_dataOf,
+  experimental_query,
+  type experimental_QueryProcedures,
+} from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+
+export function postQueries(
+  trpc: experimental_QueryProcedures<AppRouter>,
+  opts: { slug: string },
+) {
+  const post = experimental_query(trpc.post.bySlug, { slug: opts.slug });
+  // The author's id is in the post, which hasn't loaded yet
+  const author = experimental_query(trpc.author.byId, {
+    id: experimental_dataOf(post).authorId,
+  });
+  return {
+    post,
+    author,
+    // A query can read one that reads another
+    moreFromTeam: experimental_query(trpc.post.list, {
+      teamId: experimental_dataOf(author).teamId,
+    }),
+  };
+}
+```
+
+- **`experimental_query(procedure, input)` names a query.** It starts nothing: it is a plain value.
+- **`experimental_dataOf(post)` is typed as the post's data, and holds none.** It records the part you read, such as `.authorId`, and the load fills it in. Pass it on as it is, as an input or anywhere inside one. Don't compute with it or branch on it.
+- **`trpc` is a client, or an options proxy of `@trpc/tanstack-react-query`.** `experimental_QueryProcedures<AppRouter>` takes either, so [the same function loads with TanStack Query](#tanstack-query).
+- **It has queries only.** A mutation is a type error, and data that is a promise or a stream can't be read.
+
+#### 2. Load it {#load}
+
+[Turn on one request](#turn-on), then load it with `experimental_load()` and a plain [`@trpc/client`](/docs/client/vanilla):
 
 ```ts twoslash title='post.ts'
 // @include: dq-router
+// @include: dq-post-queries
 // @filename: post.ts
 // ---cut---
 import {
   createTRPCClient,
-  experimental_nested,
+  experimental_load,
   experimental_pipelining,
   httpBatchStreamLink,
 } from '@trpc/client';
 import type { AppRouter } from '~/server/router';
+import { postQueries } from './post.queries';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -94,23 +167,18 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 
-const post = await experimental_nested(client, (q) =>
-  q.post.bySlug.query({ slug: 'hello' }).with((it) => ({
-    author: q.author.byId.query({ id: it.authorId }).with((author) => ({
-      moreFromTeam: q.post.list.query({ teamId: author.teamId }),
-    })),
-  })),
-);
+const res = experimental_load(client, postQueries(client, { slug: 'hello' }));
 
-console.log(post.node.title);
-const author = await post.edges.author;
+const post = await res.post;
+const author = await res.author;
 //    ^?
 ```
 
-- **The callback runs once, at once, before any data is there.** `it` is a stand-in for the post. Read values from it and put them in inputs. It can't branch on them or compute with them: `it.authorId.toUpperCase()` is a type error, as stand-ins have no methods.
-- **`.with()` gives a node its edges**: the queries that read its data. A node is `{ node, edges }`. A query without `.with()` resolves to its data.
-- **The result resolves once the post is there.** Each edge is a promise that settles when its own query is done. One that fails rejects by itself: the post and the other edges keep their data. An edge that you don't read raises no unhandled rejection.
-- **`q` has queries only**, and data that is a promise or a stream has no stand-in.
+- **It returns at once**, with a promise for every key of what you pass it.
+- **Each promise settles when its own query is done.** One that fails rejects by itself: the other keys keep their data. A promise that you don't read raises no unhandled rejection.
+- **A query that another reads is loaded too**, also when it isn't in what you pass.
+- **Descriptions go together.** An object of them is a group: `experimental_load(client, { page: postQueries(client, opts), nav: navQueries(client) })` is one request, and `res.page.post` is a promise.
+- **`experimental_dataOf(post, (it) => entry)`**, with a callback, builds an entry from the data too. It loads the same way here. It matters to [TanStack Query](/docs/client/tanstack-react-query/nested-queries#without-waiting), whose load then doesn't wait for the data.
 
 It sends the request of [What goes over the wire](#wire):
 
@@ -128,19 +196,17 @@ GET /post.bySlug,author.byId,post.list?batch=pipeline&input=…&pipe=…
 And streams in the result, one part at a time:
 
 ```ts
-// The post arrives: `await experimental_nested()` resolves
-{ node: { slug: 'hello', title: 'Hello', authorId: 'u1', tags: [] },
-  edges: { author: Promise } }
-// The author arrives: `post.edges.author` resolves
-{ node: { id: 'u1', name: 'Alex', teamId: 't1' },
-  edges: { moreFromTeam: Promise } }
-// The team's posts arrive: `author.edges.moreFromTeam` resolves
+// The post arrives: `res.post` resolves
+{ slug: 'hello', title: 'Hello', authorId: 'u1', tags: [] }
+// The author arrives: `res.author` resolves
+{ id: 'u1', name: 'Alex', teamId: 't1' }
+// The team's posts arrive: `res.moreFromTeam` resolves
 { items: [], nextCursor: null }
 ```
 
-### A query for every item {#map}
+### A query for every item {#per-item}
 
-`.map()` runs a query for every item of a list, with an [`each`](#wire) in the `pipe`:
+`experimental_perItem()` runs a query for every item of a list, with an [`each`](#wire) in the `pipe`:
 
 ```ts twoslash title='posts.ts'
 // @include: dq-router
@@ -149,26 +215,95 @@ import { createTRPCClient } from '@trpc/client';
 import type { AppRouter } from '~/server/router';
 declare const client: ReturnType<typeof createTRPCClient<AppRouter>>;
 // ---cut---
-import { experimental_nested, experimental_settle } from '@trpc/client';
+import {
+  experimental_dataOf,
+  experimental_load,
+  experimental_perItem,
+  experimental_query,
+  experimental_settle,
+} from '@trpc/client';
 
-const posts = await experimental_nested(client, (q) =>
-  q.post.list.query({}).items.map((it) => ({
-    author: q.author.byId.query({ id: it.authorId }),
-  })),
-);
-const first = posts[0];
+const posts = experimental_query(client.post.list, {});
+const res = experimental_load(client, {
+  posts,
+  authors: experimental_perItem(experimental_dataOf(posts).items, (post) =>
+    experimental_query(client.author.byId, { id: post.authorId }),
+  ),
+});
+
+// Once the list is there: a promise for every item, in its order
+const authors = await res.authors;
 //    ^?
 
-// Every edge, awaited
-const settled = await experimental_settle(posts);
+// Every promise, awaited
+const settled = await experimental_settle(res);
 //    ^?
 ```
 
-- **Each item's edge settles by itself**, also when another item's author is slow.
-- **A `.map()` in a `.map()` adds a level of lists**: `q.post.pages.query().pages.map((page) => page.items.map(...))` gives a list of lists. Return `{}` for the items as they are.
-- **`experimental_settle()` awaits every edge**, and rejects if one does.
-- **With `httpBatchLink`, the edges work too.** The edges in a request resolve together, with its whole response. One that asks by itself resolves with its own response, later. In development, the client warns once.
+- **The callback runs once, on a stand-in for every item**, and returns the item's query. Read values of the item and put them in its input.
+- **Each item's promise settles by itself**, also when another item's author is slow.
+- **A chain works for every item too.** In the callback, build a query from the item, and return one that reads it: `experimental_query(client.team.byId, { id: experimental_dataOf(author).teamId })`.
+- **For the items of every list in a list, use `.flatMap()`**: `experimental_dataOf(pages).pages.flatMap((page) => page.items)` is one flat list of every page's items.
+- **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself.
+- **`experimental_settle()` awaits every promise**, and rejects if one does.
+- **With `httpBatchLink`, it works too.** The promises in a request resolve together, with its whole response. One that asks by itself resolves with its own response, later. In development, the client warns once.
 - **What isn't one request asks by itself**, once the data it reads is there, as in [When it isn't one request](#fallback). The result has the same shape.
+
+### Infinite queries {#infinite}
+
+`experimental_infiniteQuery()` names a procedure whose input has a `cursor`. A load fetches its first page. Its data has `pages` and `pageParams`, as TanStack Query's infinite queries have:
+
+```ts twoslash title='team-posts.ts'
+// @include: dq-router
+// @filename: team-posts.ts
+import { createTRPCClient } from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+declare const client: ReturnType<typeof createTRPCClient<AppRouter>>;
+// ---cut---
+import {
+  experimental_dataOf,
+  experimental_infiniteQuery,
+  experimental_load,
+  experimental_perItem,
+  experimental_query,
+} from '@trpc/client';
+
+const posts = experimental_infiniteQuery(
+  client.post.list,
+  { teamId: 't1' },
+  { getNextPageParam: (page) => page.nextCursor },
+);
+const res = experimental_load(client, {
+  posts,
+  authors: experimental_perItem(
+    experimental_dataOf(posts).pages.flatMap((page) => page.items),
+    (post) => experimental_query(client.author.byId, { id: post.authorId }),
+  ),
+});
+
+const data = await res.posts;
+//    ^?
+```
+
+- **`pages` has the first page**, and `pageParams` its cursor: `initialCursor`, or the input's `cursor`, or `undefined`.
+- **`initialCursor` takes the place of the input's `cursor`.**
+- **`getNextPageParam` is for TanStack Query**, which fetches the next pages. `experimental_load()` doesn't.
+
+### Same description, TanStack Query {#tanstack-query}
+
+A description doesn't care what loads it. With TanStack Query, pass the options proxy, and load it with [`loadHandles()`](/docs/client/tanstack-react-query/nested-queries#shared):
+
+```ts
+// In a loader
+const [handles, data] = await loadHandles(
+  trpc,
+  postQueries(trpc, { slug }),
+  { wait: ['post'] },
+);
+```
+
+- **Each `experimental_query()` is a prefetch entry**, and each key in [`wait`](/docs/client/tanstack-react-query/nested-queries#wait) an ensure entry: the load waits for its data, and `data` has it.
+- **The request is the same.** A link that pipelines sends it as one, whichever loads it.
 
 ## One request {#one-request}
 
@@ -231,10 +366,10 @@ export const client = createTRPCClient<AppRouter>({
 
 - **You pass it in, so only an app that uses it has its code.** A link without the option is about 0.2 kB bigger than before, gzipped. The option adds about 1.3 kB.
 - **Use `httpBatchStreamLink`.** It sends each result when it is ready. `httpBatchLink` works too, but its response waits for the slowest call, so the post arrives with the author.
-- **The code that calls `experimental_nested()` doesn't change.**
+- **The code that calls `experimental_load()` doesn't change.**
 - **It saves round trips where there are any**: in a load that goes over HTTP. A link that [doesn't pipeline](#fallback) sends each query as before.
 - **Turn it on the server first.** A server without the option [runs nothing](#not-allowed) of such a request.
-- **`true` sets the default [limits](#limits).** They take ids, slugs and cursors, and a [`.map()`](#map) over a list. To write an object or a list into an input, such as `{ tags: it.tags }`, set [`allowWholeValues`](#limit-whole-values).
+- **`true` sets the default [limits](#limits).** They take ids, slugs and cursors, and [a query for every item](#per-item) of a list. To write an object or a list into an input, such as `{ tags: it.tags }`, set [`allowWholeValues`](#limit-whole-values).
 
 ### What goes over the wire {#wire}
 
@@ -277,7 +412,7 @@ Its response has a result for every call, by index, as any batch's:
 - **Each result is the data its query would get on its own**, with its filled-in input. The client works that input out from the first call's data, as the server did.
 - **Only a request with a call the server makes is sent this way**, as `batch=pipeline`: a call with a blank, or one that runs for every item of a list, as below, even with no blank. Every other request is sent as it always was, also with the options on.
 
-A call can also run once for every item of a list. The [post list](#map) loads the author of every post, and could load each author's team's posts too:
+A call can also run once for every item of a list. The [post list](#per-item) loads the author of every post, and could load each author's team's posts too:
 
 ```http
 GET /post.list,author.byId,post.list?batch=pipeline&input=…&pipe=…
@@ -330,7 +465,7 @@ Your links see the post's query, and nothing else. The author's query isn't an o
 
 ### When it isn't one request {#fallback}
 
-A query that reads another's data then waits for that data, fills in its input in the browser, and asks by itself. Its edge gets the same data.
+A query that reads another's data then waits for that data, fills in its input in the browser, and asks by itself. Its promise gets the same data.
 
 - **The query it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **It doesn't fit in the request** of the query it reads, within `maxURLLength` and `maxItems`.
@@ -441,8 +576,8 @@ The longest value a call reads, in characters of JSON: 1,024 by default. Every v
 Whether a value can be an object or a list: `false` by default. Without it, a value has to be a string, a number, a boolean or `null`. A value that isn't there is left out of the input, as JSON leaves it out.
 
 - **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
-- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A list of ids made with `.map()` needs it too, as [TanStack Query's `experimental_dataOf()`](/docs/client/tanstack-react-query/nested-queries#data-of) builds one. A value that a transformer makes, such as a `Date`, is an object too.
-- **Not needed for a list that [a query for every item](#map) reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
+- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A list of ids made with `.map()` needs it too, such as `experimental_dataOf(posts).items.map((post) => post.authorId)`. A value that a transformer makes, such as a `Date`, is an object too.
+- **Not needed for a list that [a query for every item](#per-item) reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
 
 #### `maxFillSize` {#limit-fill-size}
 
@@ -485,7 +620,7 @@ A GraphQL server often gives a query a cost, from its depth and from how many it
 #### How is this like GraphQL? How is it not? {#graphql}
 
 - **Like it**: you say what a page needs, nested, and it all loads in one request.
-- **Unlike it**: there is no schema, no resolver, no query language and no build step. The callback is TypeScript, and each query is a tRPC procedure.
+- **Unlike it**: there is no schema, no resolver, no query language and no build step. A description is plain TypeScript, and each query is a tRPC procedure.
 
 #### Is it safe to turn on? {#safe}
 

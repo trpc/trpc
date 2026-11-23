@@ -39,7 +39,7 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
     /**
      * Lets the server run more queries in a query's request, with parts of
      * their inputs read from its data, so a query that depends on another
-     * costs no extra round trip. `experimental_nested()` uses it for the
+     * costs no extra round trip. `experimental_load()` uses it for the
      * queries of a page. The server must set
      * `experimental_allowPipelining: true`, or such a request fails.
      *

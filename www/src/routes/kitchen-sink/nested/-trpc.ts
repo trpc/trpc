@@ -6,8 +6,11 @@
  */
 import {
   createTRPCClient,
-  experimental_nested,
+  experimental_dataOf,
+  experimental_load,
+  experimental_perItem,
   experimental_pipelining,
+  experimental_query,
   httpBatchStreamLink,
 } from '@trpc/client';
 
@@ -38,6 +41,15 @@ function createClient(opts: { readonly fetch: Fetch; readonly mode: Mode }) {
   });
 }
 
+/** The item at `index` of a list that has one there */
+function at<T>(list: ReadonlyArray<T>, index: number): T {
+  const item = list[index];
+  if (item === undefined) {
+    throw new Error(`The list has no item ${index}`);
+  }
+  return item;
+}
+
 /**
  * The posts, the author of each post and each author's team, in one request.
  * The posts resolve first; each author and team is a promise of its own.
@@ -48,18 +60,44 @@ export function loadPosts(opts: {
   /** Stops every query of the load, those still to be sent too */
   readonly signal: AbortSignal;
 }) {
-  return experimental_nested(
-    createClient(opts),
-    (q) =>
-      q.post.list.query().items.map((post) => ({
-        author: q.author.byId.query({ id: post.authorId }).with((author) => ({
-          team: q.team.byId.query({ id: author.teamId }),
-        })),
-      })),
+  const client = createClient(opts);
+  // What to load: plain values, so nothing is sent yet
+  const posts = experimental_query(client.post.list);
+  const items = experimental_dataOf(posts).items;
+  const authorOf = (post: (typeof items)[number]) =>
+    experimental_query(client.author.byId, { id: post.authorId });
+  // A callback of `experimental_perItem()` runs once, at once, on a stand-in
+  // for every post. The team's query reads this author query, so the author
+  // runs once for every post, not twice
+  let author: ReturnType<typeof authorOf> | null = null;
+  const authors = experimental_perItem(items, (post) => {
+    author = authorOf(post);
+    return author;
+  });
+  const teams = experimental_perItem(items, () => {
+    if (!author) {
+      throw new Error('The authors are described first');
+    }
+    return experimental_query(client.team.byId, {
+      id: experimental_dataOf(author).teamId,
+    });
+  });
+  const res = experimental_load(
+    client,
+    { posts, authors, teams },
     { signal: opts.signal },
+  );
+  // A row for each post, with its author and team as promises of their own
+  return Promise.all([res.posts, res.authors, res.teams]).then(
+    ([list, authorOfPost, teamOfPost]) =>
+      list.items.map((post, index) => ({
+        post,
+        author: at(authorOfPost, index),
+        team: at(teamOfPost, index),
+      })),
   );
 }
 
 export type Posts = Awaited<ReturnType<typeof loadPosts>>;
-export type Author = Awaited<Posts[number]['edges']['author']>;
-export type Team = Awaited<Author['edges']['team']>;
+export type Author = Awaited<Posts[number]['author']>;
+export type Team = Awaited<Posts[number]['team']>;

@@ -14,12 +14,12 @@ export function PostList(props: { readonly posts: Promise<Posts> }) {
       {posts.map((post) => (
         <li
           className="grid gap-2 rounded-xl bg-card p-4 shadow-sm ring-1 ring-foreground/10 motion-safe:animate-arrive"
-          key={post.node.slug}
+          key={post.post.slug}
         >
-          <span className="font-medium">{post.node.title}</span>
+          <span className="font-medium">{post.post.title}</span>
           <Failed fallback="The author didn't load.">
             <Suspense fallback={<Skeleton className="h-6 w-40" />}>
-              <AuthorLine author={post.edges.author} />
+              <AuthorLine author={post.author} team={post.team} />
             </Suspense>
           </Failed>
         </li>
@@ -28,17 +28,20 @@ export function PostList(props: { readonly posts: Promise<Posts> }) {
   );
 }
 
-function AuthorLine(props: { readonly author: Promise<Author> }) {
+function AuthorLine(props: {
+  readonly author: Promise<Author>;
+  readonly team: Promise<Team>;
+}) {
   const author = use(props.author);
   return (
     <span className="flex flex-wrap items-center gap-2 text-sm motion-safe:animate-arrive">
       <span className="inline-flex items-center gap-1.5">
         <span className="size-2 rounded-full bg-sky-500" />
-        {author.node.name}
+        {author.name}
       </span>
       <Failed fallback="The team didn't load.">
         <Suspense fallback={<Skeleton className="h-5 w-20" />}>
-          <TeamName team={author.edges.team} />
+          <TeamName team={props.team} />
         </Suspense>
       </Failed>
     </span>

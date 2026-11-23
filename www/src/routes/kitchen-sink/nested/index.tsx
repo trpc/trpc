@@ -56,8 +56,8 @@ function NestedPage() {
       </h1>
       <p className="text-muted-foreground">
         Posts, their authors and the authors' teams, in one request with{' '}
-        <code>experimental_nested()</code> and a plain <code>@trpc/client</code>
-        . Each author's query reads the post's <code>authorId</code>, and each
+        <code>experimental_load()</code> and a plain <code>@trpc/client</code>.
+        Each author's query reads the post's <code>authorId</code>, and each
         team's query reads the author's <code>teamId</code>: the server fills in
         those inputs itself, so nothing waits for a round trip.{' '}
         <a className="underline" href={showcaseFileUrl(showcase, '-trpc.ts')}>
@@ -106,7 +106,7 @@ function NestedPage() {
       </section>
       <section className="grid gap-2">
         <h2 className="text-lg font-semibold">Posts</h2>
-        <Note label="experimental_nested · each edge a promise">
+        <Note label="experimental_perItem · each item a promise">
           Each post shows when <code>post.list</code> is back. Its author and
           the author's team are promises of their own, read with{' '}
           <code>use()</code> in their own <code>&lt;Suspense&gt;</code>, so each
