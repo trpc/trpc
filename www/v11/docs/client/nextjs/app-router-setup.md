@@ -376,7 +376,6 @@ export type AppRouter = typeof appRouter;
 // @filename: server.tsx
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
-
 import { noop } from '@tanstack/react-query';
 import {
   createTRPCOptionsProxy,
