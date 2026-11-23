@@ -959,7 +959,7 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 
 - It sends the request's queries to the browser, pending ones too, which stream in as they settle.
 - It sends each query once per request, so a nested server component can load more handles and render its own. A query is sent again only when the server has newer data.
-- It works only in server components, and for `queryClient.prefetchQuery` too.
+- It works only in server components, and for queries you start with `queryClient.query` too.
 - Handle inputs cross through React's serialization, not your transformer. Keep them to JSON values and `Date`s.
 - For a 404, use an ensure entry and call `notFound()`: see [Errors](#errors).
 
@@ -993,7 +993,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata(props: Props) {
   const { id } = await props.params;
-  const post = await getQueryClient().fetchQuery(
+  const post = await getQueryClient().query(
     trpcStatic.post.byId.queryOptions({ id }),
   );
   return { title: post.title };
@@ -1056,7 +1056,7 @@ async function loader(id: string) {
 
 - `error.key` is the entry's key, `error.path` the procedure, `error.code` the tRPC code.
 - The load rejects on the first failure, without waiting for the others.
-- An error with a `digest`, such as the one Next.js's `headers()` throws in a static render, is rethrown as it is, also by `loadHandlesSettled`, so Next.js still sees it. A procedure's errors arrive as a `TRPCError`, as with `fetchQuery`.
+- An error with a `digest`, such as the one Next.js's `headers()` throws in a static render, is rethrown as it is, also by `loadHandlesSettled`, so Next.js still sees it. A procedure's errors arrive as a `TRPCError`, as with `queryClient.query`.
 
 #### Errors as values {#errors-as-values}
 

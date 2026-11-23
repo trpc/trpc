@@ -100,11 +100,11 @@ Make the query client and the proxy inside `getServerSideProps` or `getStaticPro
 
 Run the queries with the query client's methods:
 
-- `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))` puts the result in the cache. It never throws and returns nothing.
-- `queryClient.fetchQuery(trpc.post.byId.queryOptions(input))` also caches the result, but returns it, and throws if the query fails.
-- `prefetchInfiniteQuery` and `fetchInfiniteQuery` do the same with `trpc.post.list.infiniteQueryOptions(input)`.
+- `queryClient.query(trpc.post.byId.queryOptions(input))` puts the result in the cache and returns it. It throws if the query fails.
+- `queryClient.query(trpc.post.byId.queryOptions(input)).catch(noop)` also caches the result, but never throws. Import `noop` from `@tanstack/react-query`.
+- `queryClient.infiniteQuery` does the same with `trpc.post.list.infiniteQueryOptions(input)`.
 
-Use `prefetchQuery` for data the page shows, and `fetchQuery` when you need the result on the server, for instance to return `notFound`. Then send the cache to the page with `dehydrate`:
+Add `.catch(noop)` for data the page can fetch again in the browser. Leave it out when you need the result on the server, for instance to return `notFound`, or when a failed ISR revalidation should keep the last good page. Then send the cache to the page with `dehydrate`:
 
 ```ts twoslash
 // @filename: example.ts
@@ -124,7 +124,7 @@ These are TanStack React Query's own functions. See [their docs](https://tanstac
 `loadHandles` from `@trpc/tanstack-react-query/unstable-handles` can also start queries with this proxy and return **handles** to them: `const [handles] = await loadHandles(trpc, { post: ensureEntry(trpc.post.byId, input) })`. Spread the handles into `props` next to `trpcState`, and the page reads one with `useQuery(fromHandle(trpc, props.post))`, so it can't ask for a different input than the server used. A handle is plain JSON when its input is. If the input has a `Date` or another value your transformer handles, run the handles through the transformer too, as you do the dehydrated state. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
-Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.prefetchQuery(trpc.post.byId.queryOptions(input))`, `fetch` is `fetchQuery`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
+Coming from `createServerSideHelpers`, `helpers.post.byId.prefetch(input)` is now `queryClient.query(trpc.post.byId.queryOptions(input)).catch(noop)`, `fetch` is the same without `.catch(noop)`, and `helpers.dehydrate()` is `dehydrate(queryClient)`. If you passed a `transformer` to the helpers, run the dehydrated state through it yourself, as [Using a data transformer](./setup.md#using-a-data-transformer) shows.
 
 ## Next.js example
 
@@ -158,7 +158,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
-import { dehydrate, useQuery } from '@tanstack/react-query';
+import { dehydrate, noop, useQuery } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type {
   GetServerSidePropsContext,
@@ -179,7 +179,7 @@ export async function getServerSideProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  await queryClient.query(trpc.post.byId.queryOptions({ id })).catch(noop);
 
   return {
     props: {
