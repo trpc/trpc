@@ -152,7 +152,11 @@ export function sseStreamProducer<TValue = unknown>(
         ? { id: value[0], data: value[1] }
         : { data: value };
 
-      chunk.data = JSON.stringify(serialize(chunk.data));
+      // `JSON.stringify` returns `undefined` for `undefined`, which would be
+      // written as the literal text `data: undefined` and fail to parse on
+      // the client. Write an empty `data:` line instead; the consumer reads
+      // that back as `undefined`.
+      chunk.data = JSON.stringify(serialize(chunk.data)) ?? '';
 
       if (chunk.id !== undefined) {
         lastEventId = chunk.id;
@@ -389,7 +393,10 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           }
         });
         addMessageListener('message', (msg) => {
-          const chunk = deserialize(JSON.parse(msg.data));
+          // An empty `data:` line is how the server encodes `undefined`
+          // (see `sseStreamProducer`); `JSON.parse('')` would throw.
+          const chunk =
+            msg.data === '' ? undefined : deserialize(JSON.parse(msg.data));
 
           const def: SSEvent = {
             data: chunk,
