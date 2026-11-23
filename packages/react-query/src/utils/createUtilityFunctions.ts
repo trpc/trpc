@@ -18,7 +18,7 @@ import {
 import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
 
-/** @public */
+/** @internal */
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
    * The `TRPCClient`
@@ -101,7 +101,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
           context: queryFnContext,
           fallback: { client: queryClient, queryKey },
           request: () =>
-            untypedClient.query(...getClientArgs(queryKey, actualOpts)),
+            untypedClient.query(...getClientArgs(queryKey, actualOpts, null)),
         });
       };
 
@@ -129,7 +129,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
             context: queryFnContext,
             fallback: { client: queryClient, queryKey },
             request: () =>
-              untypedClient.query(...getClientArgs(queryKey, opts)),
+              untypedClient.query(...getClientArgs(queryKey, opts, null)),
           }),
       });
     },
@@ -159,7 +159,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
             context: queryFnContext,
             fallback: { client: queryClient, queryKey },
             request: () =>
-              untypedClient.query(...getClientArgs(queryKey, opts)),
+              untypedClient.query(...getClientArgs(queryKey, opts, null)),
           }),
       });
     },
@@ -189,7 +189,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
             context: queryFnContext,
             fallback: { client: queryClient, queryKey },
             request: () =>
-              untypedClient.query(...getClientArgs(queryKey, opts)),
+              untypedClient.query(...getClientArgs(queryKey, opts, null)),
           }),
       });
     },
@@ -264,7 +264,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       const path = mutationKey[0];
       const canonicalMutationFn = (input: unknown) => {
         return untypedClient.mutation(
-          ...getClientArgs([path, { input }], opts),
+          ...getClientArgs([path, { input }], opts, null),
         );
       };
       return queryClient.setMutationDefaults(

@@ -1,7 +1,7 @@
 import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
 import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
 
-/** @public */
+/** @internal */
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
@@ -18,44 +18,44 @@ export type ParserValibotEsque<TInput, TParsedInput> = {
   };
 };
 
-/** @public */
+/** @internal */
 export type ParserArkTypeEsque<TInput, TParsedInput> = {
   inferIn: TInput;
   infer: TParsedInput;
 };
 
-/** @public */
+/** @internal */
 export type ParserStandardSchemaEsque<TInput, TParsedInput> = StandardSchemaV1<
   TInput,
   TParsedInput
 >;
 
-/** @public */
+/** @internal */
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
 
-/** @public */
+/** @internal */
 export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-/** @public */
+/** @internal */
 export type ParserCustomValidatorEsque<TInput> = (
   input: unknown,
 ) => Promise<TInput> | TInput;
 
-/** @public */
+/** @internal */
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
 
-/** @public */
+/** @internal */
 export type ParserScaleEsque<TInput> = {
   assert(value: unknown): asserts value is TInput;
 };
 
-/** @public */
+/** @internal */
 export type ParserWithoutInput<TInput> =
   | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
@@ -63,17 +63,17 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
-/** @public */
+/** @internal */
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
   | ParserArkTypeEsque<TInput, TParsedInput>
   | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
-/** @public */
+/** @internal */
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-/** @public */
+/** @internal */
 export type inferParser<TParser extends Parser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
     ? {

@@ -32,7 +32,7 @@ type RootConfigLike = {
 /**
  * Anything a client's root types can be read from: a router, a root
  * object, a root config or the types themselves.
- * @public
+ * @internal
  */
 export type InferrableClientTypes =
   | RouterLike

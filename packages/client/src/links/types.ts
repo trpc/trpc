@@ -14,13 +14,13 @@ export { isNonJsonSerializable, isFormData, isOctetType } from './contentTypes';
 /**
  * Context an operation carries through the links, set per call.
  * @see https://trpc.io/docs/client/links#managing-context
- * @public
+ * @internal
  */
 export interface OperationContext extends Record<string, unknown> {}
 
 /**
  * A procedure call as it goes through the links.
- * @public
+ * @internal
  */
 export type Operation<TInput = unknown> = {
   /** A number unique to the call within its client. */
@@ -38,7 +38,7 @@ interface HeadersInitEsque {
 
 /**
  * Request headers: a `Headers`-like iterable, or an object.
- * @public
+ * @internal
  */
 export type HTTPHeaders =
   | HeadersInitEsque
@@ -76,7 +76,7 @@ export interface OperationResultEnvelope<TOutput, TError> {
 
 /**
  * The observable of results a link returns for an operation.
- * @public
+ * @internal
  */
 export type OperationResultObservable<
   TInferrable extends InferrableClientTypes,
@@ -88,7 +88,7 @@ export type OperationResultObservable<
 
 /**
  * An observer of a link's results.
- * @public
+ * @internal
  */
 export type OperationResultObserver<
   TInferrable extends InferrableClientTypes,
@@ -102,7 +102,7 @@ export type OperationResultObserver<
  * Handles one operation: pass it on with `next(op)`, or send it and
  * return the results.
  * @see https://trpc.io/docs/client/links#creating-a-custom-link
- * @public
+ * @internal
  */
 export type OperationLink<
   TInferrable extends InferrableClientTypes,

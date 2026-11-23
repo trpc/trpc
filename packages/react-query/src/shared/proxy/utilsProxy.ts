@@ -379,6 +379,7 @@ type DecorateMutationProcedure<
 /**
  * this is the type that is used to add in procedures that can be used on
  * an entire router
+ * @public
  */
 type DecorateRouter = {
   /**
@@ -394,7 +395,7 @@ type DecorateRouter = {
 };
 
 /**
- * @public
+ * @internal
  */
 export type DecoratedProcedureUtilsRecord<
   TRoot extends AnyRootTypes,
@@ -540,7 +541,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
 }
 
 /**
- * @public
+ * @internal
  */
 export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
   context: TRPCContextState<AnyRouter, TSSRContext>,
@@ -567,7 +568,7 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 }
 
 /**
- * @public
+ * @internal
  */
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,

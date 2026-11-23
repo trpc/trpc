@@ -3,7 +3,7 @@ import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { inferAsyncIterableYield } from './types';
 
-/** @public */
+/** @internal */
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 /**
  * A procedure's kind: `'query'`, `'mutation'` or `'subscription'`.
@@ -20,7 +20,7 @@ interface BuiltProcedureDef {
 
 /**
  * A built procedure, as a router holds it.
- * @public
+ * @internal
  */
 export interface Procedure<
   TType extends ProcedureType,
@@ -83,7 +83,7 @@ export interface SubscriptionProcedure<
 /**
  * A subscription procedure that returns an observable.
  * @deprecated Return an async generator from `.subscription()` instead.
- * @public
+ * @internal
  */
 export interface LegacyObservableSubscriptionProcedure<
   TDef extends BuiltProcedureDef,
@@ -128,7 +128,7 @@ export type inferProcedureInput<TProcedure extends AnyProcedure> =
     ? void | inferProcedureParams<TProcedure>['$types']['input']
     : inferProcedureParams<TProcedure>['$types']['input'];
 
-/** @public */
+/** @internal */
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
@@ -162,7 +162,7 @@ export type inferSubscriptionOutput<
     : inferAsyncIterableYield<inferProcedureOutput<TProcedure>>;
 
 /**
- * @public
+ * @internal
  */
 export interface ErrorHandlerOptions<TContext> {
   error: TRPCError;

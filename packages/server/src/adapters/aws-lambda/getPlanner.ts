@@ -29,7 +29,7 @@ function determinePayloadFormat(event: LambdaEvent): string {
 }
 
 /** 1:1 mapping of v1 or v2 input events, deduces which is which.
- * @public
+ * @internal
  **/
 export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
   ? APIGatewayProxyResult

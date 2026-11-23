@@ -23,6 +23,10 @@ import type {
 } from '../../useQueries';
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
+/**
+ * What `t.path.to.query()` takes inside `useQueries`.
+ * @public
+ */
 type GetQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
@@ -40,7 +44,7 @@ type GetQueryOptions<
 >;
 
 /**
- * @public
+ * @internal
  */
 export type UseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
@@ -55,6 +59,10 @@ export type UseQueriesProcedureRecord<
     : never;
 };
 
+/**
+ * What `t.path.to.query()` takes inside `useSuspenseQueries`.
+ * @public
+ */
 type GetSuspenseQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
@@ -72,7 +80,7 @@ type GetSuspenseQueryOptions<
 >;
 
 /**
- * @public
+ * @internal
  */
 export type UseSuspenseQueriesProcedureRecord<
   TRoot extends AnyRootTypes,
@@ -89,7 +97,7 @@ export type UseSuspenseQueriesProcedureRecord<
 
 /**
  * Create proxy for `useQueries` options
- * @public
+ * @internal
  */
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,

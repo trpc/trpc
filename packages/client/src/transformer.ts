@@ -21,6 +21,10 @@ type TransformerOptionYes = {
    **/
   transformer: DataTransformerOptions;
 };
+/**
+ * Part of the public `TransformerOptions`.
+ * @public
+ */
 type TransformerOptionNo = {
   /**
    * Data transformer
@@ -32,7 +36,7 @@ type TransformerOptionNo = {
 };
 
 /**
- * @public
+ * @internal
  */
 export type TransformerOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,

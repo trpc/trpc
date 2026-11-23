@@ -70,7 +70,7 @@ type inferSubscriptionOutput<TOutput> =
       >
     : TypeError<'Subscription output could not be inferred'>;
 
-/** @public */
+/** @internal */
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
   invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
@@ -153,7 +153,7 @@ type ProcedureResolver<
 >;
 
 type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
-/** @public */
+/** @internal */
 export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,

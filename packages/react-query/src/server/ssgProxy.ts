@@ -74,7 +74,7 @@ export type SSGFns =
   | 'prefetchInfinite';
 
 /**
- * @public
+ * @internal
  */
 export type DecoratedProcedureSSGRecord<
   TRoot extends AnyRootTypes,

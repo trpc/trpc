@@ -72,13 +72,13 @@ export interface HTTPBaseHandlerOptions<
 
 /**
  * The `trpc-accept` header's value for a streamed response.
- * @public
+ * @internal
  */
 export type TRPCAcceptHeader = 'application/jsonl';
 
 /**
  * One procedure call in a request.
- * @public
+ * @internal
  */
 export interface TRPCRequestInfoProcedureCall {
   path: string;
@@ -143,7 +143,7 @@ export interface TRPCRequestInfo {
 /**
  * The `createContext` that `resolveResponse` takes: it gets the request's
  * `info`.
- * @public
+ * @internal
  */
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
   (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;
@@ -158,7 +158,7 @@ interface HTTPErrorHandlerOptions<
  * Called with each error a procedure throws. With streamed responses the
  * response may have started already, so don't rely on setting headers.
  * @see https://trpc.io/docs/server/error-handling#handling-errors
- * @public
+ * @internal
  */
 export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
   opts: HTTPErrorHandlerOptions<TRouter, TRequest>,

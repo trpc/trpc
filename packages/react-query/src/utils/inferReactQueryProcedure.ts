@@ -17,7 +17,7 @@ import type {
 } from '../shared';
 
 /**
- * @public
+ * @internal
  */
 export type InferQueryOptions<
   TRoot extends AnyRootTypes,
@@ -34,7 +34,7 @@ export type InferQueryOptions<
 >;
 
 /**
- * @public
+ * @internal
  */
 export type InferMutationOptions<
   TRoot extends AnyRootTypes,
@@ -48,7 +48,7 @@ export type InferMutationOptions<
 >;
 
 /**
- * @public
+ * @internal
  */
 export type InferQueryResult<
   TRoot extends AnyRootTypes,
@@ -59,7 +59,7 @@ export type InferQueryResult<
 >;
 
 /**
- * @public
+ * @internal
  */
 export type InferMutationResult<
   TRoot extends AnyRootTypes,

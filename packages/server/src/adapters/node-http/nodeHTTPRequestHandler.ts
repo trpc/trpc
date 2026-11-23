@@ -44,7 +44,7 @@ const fallbackErrorShape: TRPCErrorShape = {
 
 /**
  * Answers with an error response when handling a request throws.
- * @public
+ * @internal
  */
 export function internal_exceptionHandler<
   TRouter extends AnyRouter,

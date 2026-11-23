@@ -15,7 +15,7 @@ export type CreateTRPCReactQueryClientConfig =
     };
 
 /**
- * @public
+ * @internal
  */
 export const getQueryClient = (config: CreateTRPCReactQueryClientConfig) =>
   config.queryClient ?? new QueryClient(config.queryClientConfig);

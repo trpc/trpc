@@ -6,7 +6,7 @@ import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
  * The initial generics that are used in the init function
- * @public
+ * @internal
  */
 export interface RootTypes {
   ctx: object;
@@ -20,7 +20,7 @@ export interface RootTypes {
  *
  * `application/json` remains the default for backwards compatibility, while
  * other string values are allowed for tooling or infrastructure compatibility.
- * @public
+ * @internal
  */
 export type JSONLContentType =
   | 'application/json'
@@ -142,7 +142,7 @@ export interface RootConfig<TTypes extends RootTypes> {
 /**
  * The root types: context, metadata, error shape and whether there's a
  * transformer.
- * @public
+ * @internal
  */
 export type CreateRootTypes<TGenerics extends RootTypes> = TGenerics;
 

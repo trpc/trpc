@@ -12,7 +12,7 @@ import type { TRPCError } from './TRPCError';
 /**
  * What an error formatter gets.
  * @see https://trpc.io/docs/server/error-formatting#all-properties-sent-to-errorformatter
- * @public
+ * @internal
  */
 export interface ErrorFormatterOptions<TContext> {
   error: TRPCError;
@@ -29,7 +29,7 @@ export interface ErrorFormatterOptions<TContext> {
 /**
  * Shapes the errors a router sends to the client.
  * @see https://trpc.io/docs/server/error-formatting
- * @public
+ * @internal
  */
 export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
   opts: ErrorFormatterOptions<TContext | undefined>,
@@ -39,7 +39,7 @@ export type ErrorFormatter<TContext, TShape extends TRPCErrorShape> = (
  * An error formatter for one procedure, as `.errors()` takes it. Return
  * `undefined` to leave the error to the next formatter.
  * @see https://trpc.io/docs/server/error-formatting#per-procedure-error-formatting
- * @public
+ * @internal
  */
 export type ProcedureErrorFormatter<
   TContext,
@@ -74,7 +74,7 @@ export type DefaultErrorData = {
 /**
  * The error shape tRPC sends when there's no error formatter.
  * @see https://trpc.io/docs/server/error-formatting
- * @public
+ * @internal
  */
 export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {
   message: string;

@@ -12,7 +12,7 @@ import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
 import { isAsyncIterable, isObject } from './utils';
 
-/** @public */
+/** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
 };
@@ -42,7 +42,7 @@ interface MiddlewareErrorResult<
 /**
  * What a middleware's `next()` returns, and what the middleware must
  * return in turn.
- * @public
+ * @internal
  */
 export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
@@ -51,7 +51,7 @@ export type MiddlewareResult<_TContextOverride> =
 /**
  * A reusable middleware, as `t.middleware()` returns it.
  * @see https://trpc.io/docs/server/middlewares
- * @public
+ * @internal
  */
 export interface MiddlewareBuilder<
   TContext,

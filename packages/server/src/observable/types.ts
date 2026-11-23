@@ -88,13 +88,13 @@ export type TeardownLogic =
 
 /**
  * A function of one argument.
- * @public
+ * @internal
  */
 export type UnaryFunction<TSource, TReturn> = (source: TSource) => TReturn;
 
 /**
  * Turns one observable into another, for `pipe()`.
- * @public
+ * @internal
  */
 export type OperatorFunction<
   TValueBefore,
@@ -108,7 +108,7 @@ export type OperatorFunction<
 
 /**
  * An operator that keeps the value and error types.
- * @public
+ * @internal
  */
 export type MonoTypeOperatorFunction<TValue, TError> = OperatorFunction<
   TValue,

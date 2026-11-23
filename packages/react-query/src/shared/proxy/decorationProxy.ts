@@ -4,7 +4,7 @@ import type { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 
 /**
  * Create proxy for decorating procedures
- * @public
+ * @internal
  */
 export function createReactDecoration<
   TRouter extends AnyRouter,

@@ -43,7 +43,7 @@ function callObserver(callback: () => void) {
 /**
  * Creates an observable that holds a current value. New subscribers get
  * it right away, unless it's `undefined`.
- * @public
+ * @internal
  */
 export function behaviorSubject<TValue>(
   initialValue: TValue,

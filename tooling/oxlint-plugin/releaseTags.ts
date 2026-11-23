@@ -17,6 +17,18 @@ export const releaseTags = (doc: string): ReleaseTag[] =>
   );
 
 /**
+ * The `internal(s)` folder or file `file` is in, or `null`: `internals/`,
+ * `internal.ts` and `unstable-internals.ts` are for tRPC itself.
+ */
+export const internalDirectory = (file: string): string | null => {
+  const parts = file.split(/[\\/]/);
+  const index = parts.findIndex((part) =>
+    /(^|[-_])internals?($|[-_.])/.test(part),
+  );
+  return index === -1 ? null : parts.slice(0, index + 1).join('/');
+};
+
+/**
  * Entry points only tRPC's own packages import: `unstable-core-do-not-import`
  * and `unstable-internals`. Other unstable ones, such as `unstable-handles`,
  * are for users, so their exports are public.
@@ -125,8 +137,8 @@ interface Binding {
 
 /** What a file declares, imports and exports, read without type info. */
 interface ParsedFile {
-  /** Top-level declarations, with their JSDoc's tags. */
-  declared: Map<string, ReleaseTag[]>;
+  /** Top-level declarations. */
+  declared: Set<string>;
   /** `export const x` and friends. */
   exported: Set<string>;
   /** `export { local as exported }`, without a `from`. */
@@ -212,20 +224,9 @@ const parse = (file: string): ParsedFile | null => {
     return null;
   }
   const text = readFileSync(file, 'utf8');
-  const { program, comments } = parseSync(file, text);
-  const docs = comments.filter(
-    (c) => c.type === 'Block' && c.value.startsWith('*'),
-  );
-  /** The tags of the JSDoc right above `start`, past any line comments. */
-  const tagsAt = (start: number): ReleaseTag[] => {
-    let doc: (typeof docs)[number] | undefined;
-    for (const c of docs) if (c.end <= start) doc = c;
-    if (!doc) return [];
-    const gap = text.slice(doc.end, start).replace(/\/\/[^\n]*/g, '');
-    return gap.trim() === '' ? releaseTags(doc.value) : [];
-  };
+  const { program } = parseSync(file, text);
   const result: ParsedFile = {
-    declared: new Map(),
+    declared: new Set(),
     exported: new Set(),
     localExports: new Map(),
     reExports: new Map(),
@@ -235,10 +236,7 @@ const parse = (file: string): ParsedFile | null => {
   };
   const declare = (statement: Statement, inner: Statement) => {
     for (const name of declaredNames(inner)) {
-      // Overloads share the first signature's JSDoc.
-      if (!result.declared.has(name)) {
-        result.declared.set(name, tagsAt(statement.start));
-      }
+      result.declared.add(name);
       if (inner !== statement) result.exported.add(name);
     }
   };
@@ -289,9 +287,7 @@ const parse = (file: string): ParsedFile | null => {
         inner.id
       ) {
         result.localExports.set('default', inner.id.name);
-        if (!result.declared.has(inner.id.name)) {
-          result.declared.set(inner.id.name, tagsAt(statement.start));
-        }
+        result.declared.add(inner.id.name);
       }
     } else {
       declare(statement, statement);
@@ -299,39 +295,6 @@ const parse = (file: string): ParsedFile | null => {
   }
   parsed.set(file, result);
   return result;
-};
-
-/**
- * Where `name`, as exported or imported in `file`, is declared, following
- * re-exports and imports.
- */
-export const findDeclaration = (
-  file: string,
-  name: string,
-  seen = new Set<string>(),
-): { file: string; name: string; tags: ReleaseTag[] } | undefined => {
-  const key = `${file}\0${name}`;
-  if (seen.has(key)) return undefined;
-  seen.add(key);
-  const info = parse(file);
-  if (!info) return undefined;
-  const local = info.localExports.get(name) ?? name;
-  const tags = info.declared.get(local);
-  if (tags) return { file, name: local, tags };
-  const via = info.reExports.get(name) ?? info.imports.get(local);
-  if (via) {
-    const target = resolveImport(file, via.from);
-    return target === undefined
-      ? undefined
-      : findDeclaration(target, via.name, seen);
-  }
-  for (const star of info.stars) {
-    const target = resolveImport(file, star);
-    const found =
-      target === undefined ? undefined : findDeclaration(target, name, seen);
-    if (found) return found;
-  }
-  return undefined;
 };
 
 /** Collects, by file, the names each declares that entry points reach. */

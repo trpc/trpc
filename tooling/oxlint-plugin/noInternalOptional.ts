@@ -2,7 +2,6 @@ import { defineRule } from '@oxlint/plugins';
 import type { ESTree } from '@oxlint/plugins';
 import { exposedLocals, topLevelDeclarations } from './declarations.ts';
 import type { TopLevel } from './declarations.ts';
-import { publicNames } from './releaseTags.ts';
 
 /**
  * `@oxlint/plugins` types a binding identifier's `optional` as `false`, but
@@ -45,7 +44,6 @@ export const noInternalOptional = defineRule({
   },
   create(context) {
     const text = (node: ESTree.Node) => context.sourceCode.getText(node);
-    const reachable = publicNames(context.filename);
 
     const checkMembers = (members: ESTree.Node[]) => {
       for (const member of members) {
@@ -170,9 +168,7 @@ export const noInternalOptional = defineRule({
       Program(program) {
         const declarations = topLevelDeclarations(program, context.sourceCode);
         const isInternalExport = (d: TopLevel) =>
-          !reachable.has(d.name) &&
-          d.tags.length > 0 &&
-          d.tags.every((tag) => tag === 'internal');
+          d.tags.length > 0 && d.tags.every((tag) => tag === 'internal');
         const exposed = exposedLocals(
           declarations,
           [...declarations.values()].filter((d) =>

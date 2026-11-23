@@ -42,7 +42,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 /**
  * A router's record with every procedure turned into a function, as a
  * caller has it.
- * @public
+ * @internal
  */
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
@@ -56,7 +56,7 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
 
 /**
  * Called when a procedure called through a caller throws.
- * @public
+ * @internal
  */
 export type RouterCallerErrorHandler<TContext> = (
   opts: ErrorHandlerOptions<TContext>,
@@ -92,7 +92,7 @@ const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
 };
 /**
  * A router that `lazy()` loads on its first call.
- * @public
+ * @internal
  */
 export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 
@@ -185,7 +185,7 @@ export interface RouterDef<
 /**
  * A router: procedures and sub-routers under one root config.
  * @see https://trpc.io/docs/server/routers
- * @public
+ * @internal
  */
 export interface Router<
   TRoot extends AnyRootTypes,
@@ -229,7 +229,7 @@ export type AnyRouter = Router<any, any>;
 
 /**
  * A router's root types: its context, metadata, error shape and transformer.
- * @public
+ * @internal
  */
 export type inferRouterRootTypes<TRouter extends AnyRouter> =
   TRouter['_def']['_config']['$types'];
@@ -291,7 +291,7 @@ const reservedWords = [
 /**
  * What `t.router()` takes: procedures, routers, lazy routers and nested
  * objects of them, by name.
- * @public
+ * @internal
  */
 export type CreateRouterOptions = {
   [key: string]:
@@ -303,7 +303,7 @@ export type CreateRouterOptions = {
 
 /**
  * The record of the router `t.router()` builds from its options.
- * @public
+ * @internal
  */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
@@ -608,7 +608,7 @@ export function createCallerFactory<
 
 /**
  * The router `t.mergeRouters()` returns.
- * @public
+ * @internal
  */
 export type MergeRouters<
   TRouters extends AnyRouter[],

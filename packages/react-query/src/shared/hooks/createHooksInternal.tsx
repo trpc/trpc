@@ -77,12 +77,12 @@ const trackResult = <T extends object>(
 };
 
 /**
- * @public
+ * @internal
  */
 export function createRootHooks<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(config?: CreateTRPCReactOptions<TRouter>) {
+>(config: CreateTRPCReactOptions<TRouter> | undefined) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
     config?.overrides?.useMutation?.onSuccess ??
     ((options) => options.originalFn());
@@ -219,7 +219,7 @@ export function createRootHooks<
                 context: queryFunctionContext,
                 fallback: { client: queryClient, queryKey },
                 request: () =>
-                  client.query(...getClientArgs(queryKey, actualOpts)),
+                  client.query(...getClientArgs(queryKey, actualOpts, null)),
               });
             },
       },
@@ -268,7 +268,9 @@ export function createRootHooks<
               context: queryFunctionContext,
               fallback: { client: context.queryClient, queryKey },
               request: () =>
-                context.client.query(...getClientArgs(queryKey, actualOpts)),
+                context.client.query(
+                  ...getClientArgs(queryKey, actualOpts, null),
+                ),
             });
           },
     });
@@ -306,7 +308,9 @@ export function createRootHooks<
             context: queryFunctionContext,
             fallback: { client: context.queryClient, queryKey },
             request: () =>
-              context.client.query(...getClientArgs(queryKey, actualOpts)),
+              context.client.query(
+                ...getClientArgs(queryKey, actualOpts, null),
+              ),
           });
         },
       },
@@ -337,7 +341,9 @@ export function createRootHooks<
         ...opts,
         mutationKey: mutationKey,
         mutationFn: (input) => {
-          return client.mutation(...getClientArgs([path, { input }], opts));
+          return client.mutation(
+            ...getClientArgs([path, { input }], opts, null),
+          );
         },
         onSuccess(...args) {
           const originalFn = () =>
@@ -804,7 +810,7 @@ export function createRootHooks<
 
 /**
  * Infer the type of a `createReactQueryHooks` function
- * @public
+ * @internal
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,

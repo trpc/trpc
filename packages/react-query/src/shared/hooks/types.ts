@@ -114,7 +114,7 @@ export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-/** @public **/
+/** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TOutput,
   TData,
@@ -373,13 +373,13 @@ export type CreateClient<TRouter extends AnyRouter> = (
 ) => TRPCUntypedClient<TRouter>;
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCQueryResult<TData, TError> = TRPCHookResult &
   UseQueryResult<coerceAsyncIterableToArray<TData>, TError>;
 
 /**
- * @public
+ * @internal
  */
 export type DefinedUseTRPCQueryResult<TData, TError> = DefinedUseQueryResult<
   TData,
@@ -388,13 +388,13 @@ export type DefinedUseTRPCQueryResult<TData, TError> = DefinedUseQueryResult<
   TRPCHookResult;
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCQuerySuccessResult<TData, TError> =
   QueryObserverSuccessResult<TData, TError> & TRPCHookResult;
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCSuspenseQueryResult<TData, TError> = [
   TData,
@@ -402,7 +402,7 @@ export type UseTRPCSuspenseQueryResult<TData, TError> = [
 ];
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCInfiniteQueryResult<TData, TError, TInput> = TRPCHookResult &
   UseInfiniteQueryResult<
@@ -411,7 +411,7 @@ export type UseTRPCInfiniteQueryResult<TData, TError, TInput> = TRPCHookResult &
   >;
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCInfiniteQuerySuccessResult<TData, TError, TInput> =
   InfiniteQueryObserverSuccessResult<
@@ -421,7 +421,7 @@ export type UseTRPCInfiniteQuerySuccessResult<TData, TError, TInput> =
     TRPCHookResult;
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
   InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
@@ -433,7 +433,7 @@ export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
 ];
 
 /**
- * @public
+ * @internal
  */
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
   TRPCHookResult & UseMutationResult<TData, TError, TVariables, TContext>;

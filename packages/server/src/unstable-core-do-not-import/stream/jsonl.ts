@@ -113,7 +113,7 @@ type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
 type PathArray = readonly (string | number)[];
-/** @public */
+/** @internal */
 export type ProducerOnError = (opts: {
   error: unknown;
   path: PathArray;

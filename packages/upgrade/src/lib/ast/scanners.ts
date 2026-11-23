@@ -78,7 +78,7 @@ export function scanProject(cwd: string) {
  * The router type `createTRPCReact<AppRouter>()` or `createTRPCNext` was
  * given, and the file that exports it, so files that only import the hooks
  * can still type `createTRPCClient<AppRouter>()`.
- * @public
+ * @internal
  */
 export type RouterTypeSource =
   | {

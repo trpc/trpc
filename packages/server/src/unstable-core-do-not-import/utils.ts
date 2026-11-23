@@ -1,6 +1,6 @@
 /**
  * Marks a type a procedure builder hasn't set yet, such as its input.
- * @public
+ * @internal
  */
 export type UnsetMarker = 'unsetMarker' & {
   __brand: 'unsetMarker';

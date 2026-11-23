@@ -97,7 +97,7 @@ export function experimental_createTRPCNextAppDirServer<
 }
 
 /**
- * @public
+ * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
   input: FormData | TDef['input'],

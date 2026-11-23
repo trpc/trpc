@@ -16,7 +16,7 @@ export const resultOf = <T, TArgs extends any[]>(
 
 /**
  * A value that can be wrapped in callback
- * @public
+ * @internal
  */
 export type CallbackOrValue<T> = T | (() => T | Promise<T>);
 

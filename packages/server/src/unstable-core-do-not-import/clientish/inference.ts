@@ -15,7 +15,7 @@ import type { Serialize } from './serialize';
 /**
  * A procedure's output as the client gets it: as is with a transformer,
  * or as it comes out of JSON without one.
- * @public
+ * @internal
  */
 export type inferTransformedProcedureOutput<
   TInferrable extends InferrableClientTypes,
@@ -27,7 +27,7 @@ export type inferTransformedProcedureOutput<
 /**
  * The error shapes a procedure's errors can have: the router's shape, plus
  * one for each `.errors()` call.
- * @public
+ * @internal
  */
 export type inferProcedureErrorShape<
   TInferrable extends InferrableClientTypes,
@@ -40,7 +40,7 @@ export type inferProcedureErrorShape<
 
 /**
  * A subscription's events as the client gets them.
- * @public
+ * @internal
  */
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,
@@ -49,7 +49,7 @@ export type inferTransformedSubscriptionOutput<
   ? Serialize<inferObservableValue<inferProcedureOutput<TProcedure>>>
   : inferObservableValue<inferProcedureOutput<TProcedure>>;
 
-/** @public */
+/** @internal */
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
   TRoot extends AnyClientTypes,

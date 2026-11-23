@@ -311,7 +311,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
 }
 
 /**
- * @public
+ * @internal
  */
 export interface UseMutationOverride {
   onSuccess: (opts: {

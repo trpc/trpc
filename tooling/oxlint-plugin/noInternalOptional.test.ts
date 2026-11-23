@@ -43,11 +43,6 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     '/** @internal */\nexport interface Opts { a: string | undefined }',
     '/** @internal */\nexport function f(a: string | undefined) {}',
     'interface Worker { run(retries: number | undefined): void }',
-    // Reachable from the package's `.` entry point, so public.
-    {
-      code: '/** @internal */\nexport function reached(a?: string) {}',
-      filename: join(import.meta.dirname, 'fixtures/pkg/src/reached.ts'),
-    },
     'function f(opts: { a: string } | undefined) {}',
     'function f(opts: { a: string } & { b: number }) {}',
     // Named types aren't followed, even in a union.
@@ -133,6 +128,12 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     {
       code: 'type Callback = (retry?: number) => void;',
       errors: [{ message: optional('retry') }],
+    },
+    // `@internal` is internal even when an entry point exports it.
+    {
+      code: '/** @internal */\nexport function reached(a?: string) {}',
+      filename: join(import.meta.dirname, 'fixtures/pkg/src/reached.ts'),
+      errors: [{ message: optional('a') }],
     },
     // A type only an internal declaration uses is internal.
     {

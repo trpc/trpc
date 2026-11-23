@@ -108,7 +108,7 @@ function createHandler<
  * Creates a Node.js request listener for a router, to use with your own
  * `http.createServer()`.
  * @see https://trpc.io/docs/server/adapters/standalone#adding-a-handler-to-a-custom-http-server
- * @public
+ * @internal
  */
 export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,

@@ -56,14 +56,14 @@ const METHOD = {
   subscription: 'PATCH',
 } as const;
 
-/**
- * Users read `meta` as `TRPCClientError#meta`.
- * @public
- */
+/** @internal */
 export interface HTTPResult {
   json: TRPCResponse;
   meta: {
     response: ResponseEsque;
+    // Users read `meta` as `TRPCClientError#meta`, where streamed responses
+    // have no `responseJSON` key; adding one would change what they see.
+    // oxlint-disable-next-line trpc/no-internal-optional
     responseJSON?: unknown;
   };
 }

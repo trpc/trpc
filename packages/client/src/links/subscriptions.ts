@@ -1,3 +1,7 @@
+/**
+ * Part of the public `TRPCConnectionState`.
+ * @public
+ */
 interface ConnectionStateBase<TError> {
   type: 'state';
   data?: never;

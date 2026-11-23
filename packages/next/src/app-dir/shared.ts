@@ -93,7 +93,7 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
   >;
 
 /**
- * @public
+ * @internal
  */
 export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
   config: () => CreateTRPCClientOptions<TRouter>;
@@ -150,7 +150,7 @@ export interface ActionHandlerDef {
 
 // ts-prune-ignore-next
 /**
- * @public
+ * @internal
  */
 export type inferActionDef<
   TRoot extends AnyClientTypes,

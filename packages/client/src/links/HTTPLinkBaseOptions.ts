@@ -7,7 +7,7 @@ import type { TransformerOptions } from '../unstable-internals';
 
 /**
  * The options every HTTP link takes.
- * @internal
+ * @public
  */
 export type HTTPLinkBaseOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,

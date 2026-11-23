@@ -145,7 +145,7 @@ export function createTRPCHeyApiClientConfig(opts?: TRPCHeyApiClientOptions) {
 }
 
 /**
- * @public - Prefer `configureTRPCHeyApiClient`
+ * @internal - Prefer `configureTRPCHeyApiClient`
  */
 export function createTRPCErrorInterceptor(
   transformerOpts: DataTransformerOptions,
