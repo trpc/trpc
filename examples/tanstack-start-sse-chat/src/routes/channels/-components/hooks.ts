@@ -68,12 +68,19 @@ export function useLivePosts() {
                 page.items.some((item) => item.id === post.id),
               );
               if (isLoaded) return data;
-              // `pages[0]` is the newest page, so add the post to its end
+              // `pages[0]` is the newest page. The post usually goes at its end,
+              // but a replayed or late one can be older than posts already there.
               return {
                 ...data,
                 pages: data.pages.map((page, index) =>
                   index === 0
-                    ? { ...page, items: [...page.items, post] }
+                    ? {
+                        ...page,
+                        items: [...page.items, post].toSorted(
+                          (a, b) =>
+                            a.createdAt.getTime() - b.createdAt.getTime(),
+                        ),
+                      }
                     : page,
                 ),
               };
