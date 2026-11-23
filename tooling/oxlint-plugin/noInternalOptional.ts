@@ -62,12 +62,16 @@ export const noInternalOptional = defineRule({
     const exportedNames = new Set<string>();
     const text = (node: ESTree.Node) => context.sourceCode.getText(node);
 
-    const checkInlineType = (param: {
-      typeAnnotation?: ESTree.TSTypeAnnotation | null;
-    }) => {
-      const annotation = param.typeAnnotation?.typeAnnotation;
-      if (annotation?.type !== 'TSTypeLiteral') return;
-      for (const member of annotation.members) {
+    // Named types aren't followed: they may be public through another export.
+    const checkType = (type: ESTree.TSType) => {
+      if (type.type === 'TSUnionType' || type.type === 'TSIntersectionType') {
+        for (const constituent of type.types) {
+          checkType(constituent);
+        }
+        return;
+      }
+      if (type.type !== 'TSTypeLiteral') return;
+      for (const member of type.members) {
         if (
           (member.type === 'TSPropertySignature' ||
             member.type === 'TSMethodSignature') &&
@@ -79,6 +83,13 @@ export const noInternalOptional = defineRule({
             data: { name: text(member.key) },
           });
         }
+      }
+    };
+    const checkInlineType = (param: {
+      typeAnnotation?: ESTree.TSTypeAnnotation | null;
+    }) => {
+      if (param.typeAnnotation) {
+        checkType(param.typeAnnotation.typeAnnotation);
       }
     };
 

@@ -33,6 +33,10 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     // Types can be public through an exported type.
     'interface Opts { a?: string }',
     'type Opts = { a?: string };',
+    'function f(opts: { a: string } | undefined) {}',
+    'function f(opts: { a: string } & { b: number }) {}',
+    // Named types aren't followed, even in a union.
+    'function f(opts: Opts | undefined) {}',
   ],
   invalid: [
     {
@@ -54,6 +58,14 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     {
       code: 'function f(opts: { a?: string; b(): void; c?(): void }) {}',
       errors: [{ message: option('a') }, { message: option('c') }],
+    },
+    {
+      code: 'function f(opts: { retry?: number } | undefined) {}',
+      errors: [{ message: option('retry') }],
+    },
+    {
+      code: 'function f(opts: { a: string } & ({ b?: number } | null)) {}',
+      errors: [{ message: option('b') }],
     },
     {
       code: 'function f(opts: { a?: string } = {}) {}',
