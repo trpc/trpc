@@ -116,6 +116,7 @@ export class WsClient {
   >;
   private readonly lazyMode: boolean;
   private readonly encoder: Encoder;
+  private readonly closeOnPongTimeout = new WeakMap<WebSocket, () => void>();
 
   constructor(opts: WebSocketClientOptions) {
     this.encoder = opts.experimental_encoder ?? jsonEncoder;
@@ -151,6 +152,7 @@ export class WsClient {
         ...opts.keepAlive,
       },
       encoder: this.encoder,
+      onPongTimeout: (ws) => this.closeOnPongTimeout.get(ws)?.(),
     };
     this.activeConnection = this.createConnection();
     this.reconnectRetryDelay = opts.retryDelayMs ?? exponentialBackoff;
@@ -401,7 +403,8 @@ export class WsClient {
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
    * instead of starting over at attempt 0. Cleared again when the socket
-   * receives a result, which proves the connection was accepted.
+   * receives a result, which proves the connection was accepted. Also set
+   * on a keepAlive pong timeout when the socket never received anything.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -725,7 +728,44 @@ export class WsClient {
       });
     });
 
+    // Set on the socket's `close` event, or earlier when the client gives up
+    // on the socket (a keepAlive pong timeout or an undecodable frame) without
+    // waiting for the closing handshake. The socket's later frames and events
+    // must not reach the requests resent by then.
+    let closed = false;
+    let answered = false;
+
+    /**
+     * Runs the socket's close handling once: `cause` fails its queries and
+     * mutations, and `event` goes to `onClose`.
+     */
+    const handleClose = (
+      cause: unknown,
+      event: CloseEvent | { code: number },
+    ) => {
+      if (closed) return;
+      closed = true;
+      handleCloseOrError(cause);
+      callUserCallback(() => this.callbacks.onClose?.(event));
+
+      if (
+        ws === this.activeConnection.ws &&
+        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
+      ) {
+        this.reconnect(
+          new TRPCWebSocketClosedError({
+            message: 'WebSocket closed',
+            cause,
+          }),
+        );
+      }
+    };
+    // What `close` reports when the closing handshake doesn't complete.
+    const abandonedEvent = { code: 1006 };
+
     const onMessage = ({ data }: MessageEvent) => {
+      if (closed) return;
+      answered = true;
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
@@ -738,11 +778,12 @@ export class WsClient {
         // The frame may have carried a response, and its request would wait
         // forever, so this socket is treated as lost.
         ws.close();
-        handleCloseOrError(
+        handleClose(
           new TRPCWebSocketClosedError({
             message: 'Received a message that could not be decoded',
             cause,
           }),
+          abandonedEvent,
         );
         // Rethrown asynchronously by `callUserCallback()` below.
         throw cause;
@@ -779,24 +820,16 @@ export class WsClient {
       callUserCallback(() => onMessage(event));
     });
 
-    ws.addEventListener('close', (event) => {
-      handleCloseOrError(event);
-      callUserCallback(() => this.callbacks.onClose?.(event));
-
-      if (
-        ws === this.activeConnection.ws &&
-        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
-      ) {
-        this.reconnect(
-          new TRPCWebSocketClosedError({
-            message: 'WebSocket closed',
-            cause: event,
-          }),
-        );
-      }
+    ws.addEventListener('close', (event) => handleClose(event, event));
+    this.closeOnPongTimeout.set(ws, () => {
+      // A server that never answered, not even a ping, gets the same backoff
+      // as one that rejected the connection.
+      if (!answered) this.connectionRejected = true;
+      handleClose(abandonedEvent, abandonedEvent);
     });
 
     ws.addEventListener('error', (event) => {
+      if (closed) return;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
 
