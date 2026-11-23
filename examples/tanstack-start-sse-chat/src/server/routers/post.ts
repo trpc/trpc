@@ -87,7 +87,9 @@ export const postRouter = router({
         lastEventId: z.string().nullish(),
       }),
     )
-    .subscription(async function* (opts) {
+    // Not a generator: tRPC sends the client its `connected` event once this
+    // resolves, so the client can count on the server listening by then
+    .subscription(async (opts) => {
       // Listen before querying the database, so no post is missed in between
       const newPosts = ee.toIterable('add', { signal: opts.signal });
       await ensureListening();
@@ -112,16 +114,19 @@ export const postRouter = router({
           orderBy: (fields, ops) => ops.asc(fields.createdAt),
         });
       })();
-      for (const post of missedPosts) {
-        yield tracked(post.id, post);
-      }
 
-      // A post added while we queried is in both, so skip the ones we've sent
-      const sentIds = new Set(missedPosts.map((post) => post.id));
-      for await (const [post] of newPosts) {
-        if (!sentIds.has(post.id)) {
+      return (async function* () {
+        for (const post of missedPosts) {
           yield tracked(post.id, post);
         }
-      }
+
+        // A post added while we queried is in both, so skip the ones we've sent
+        const sentIds = new Set(missedPosts.map((post) => post.id));
+        for await (const [post] of newPosts) {
+          if (!sentIds.has(post.id)) {
+            yield tracked(post.id, post);
+          }
+        }
+      })();
     }),
 });

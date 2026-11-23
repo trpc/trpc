@@ -64,16 +64,21 @@ export function useLivePosts() {
           if (canResume.current) {
             return;
           }
-          // The stream only has posts from now on, so refetch the channels loaded before it.
-          // A load that's still running may have read the database before the stream
-          // started, and invalidating would reuse it, so wait for it first.
+          // The server is listening now, but the stream only has posts from here on, so
+          // refetch the channels loaded before it. A load that's still running may have
+          // read the database too early, and invalidating would reuse it, so wait for it.
           const queryKey = trpc.post.infinite.pathKey();
           const running = queryClient
             .getQueryCache()
             .findAll({ queryKey, fetchStatus: 'fetching' })
             .flatMap((query) => query.promise ?? []);
           await Promise.allSettled(running);
-          await queryClient.invalidateQueries({ queryKey });
+          await queryClient.invalidateQueries({
+            queryKey,
+            // Including channels not on screen, or whose `Chat` is still suspended:
+            // they don't refetch when they mount (`refetchOnMount: false` below)
+            refetchType: 'all',
+          });
         },
         onData(event) {
           canResume.current = true;
