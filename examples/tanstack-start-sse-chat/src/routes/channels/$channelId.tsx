@@ -58,7 +58,7 @@ function ChannelPage() {
   const trpc = useTRPC();
 
   // This component stays mounted when you switch channels, so these
-  // subscriptions cover every channel and `Chat` picks out its own
+  // subscriptions cover every channel. `Chat` only gets its own channel's part.
   const livePosts = useLivePosts();
   const whoIsTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions(),
@@ -131,7 +131,8 @@ function ChannelPage() {
         <Chat
           key={channelId}
           posts={loaderData.posts}
-          livePosts={livePosts}
+          livePosts={livePosts.postsByChannel[channelId]}
+          subscription={livePosts.subscription}
           whoIsTyping={whoIsTyping.data?.[channelId] ?? []}
           title={
             <Suspense>

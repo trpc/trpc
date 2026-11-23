@@ -31,6 +31,7 @@ import {
 import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { useTRPC, type TRPC } from '~/lib/trpc';
+import type { PostType } from '~/server/db/schema';
 import {
   useChannelPosts,
   useThrottledIsTypingMutation,
@@ -38,9 +39,9 @@ import {
 } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
-function SubscriptionStatus(props: {
-  subscription: ReturnType<typeof useLivePosts>['subscription'];
-}) {
+type LivePostsSubscription = ReturnType<typeof useLivePosts>['subscription'];
+
+function SubscriptionStatus(props: { subscription: LivePostsSubscription }) {
   const { subscription } = props;
   switch (subscription.status) {
     case 'idle':
@@ -85,15 +86,14 @@ export function Chat(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
     title: React.ReactNode;
-    livePosts: ReturnType<typeof useLivePosts>;
+    // Live posts for this channel only; the page picks them out
+    livePosts: PostType[] | undefined;
+    subscription: LivePostsSubscription;
     whoIsTyping: string[];
   }>,
 ) {
   const channelId = props.posts.input.channelId;
-  const channelPosts = useChannelPosts(
-    props.posts,
-    props.livePosts.postsByChannel[channelId],
-  );
+  const channelPosts = useChannelPosts(props.posts, props.livePosts);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const session = useSession();
@@ -106,7 +106,7 @@ export function Chat(
           <HashIcon className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{props.title}</span>
         </h2>
-        <SubscriptionStatus subscription={props.livePosts.subscription} />
+        <SubscriptionStatus subscription={props.subscription} />
       </header>
       <div
         className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto"
