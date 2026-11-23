@@ -4,7 +4,6 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 
@@ -14,68 +13,64 @@ type Post = {
 };
 
 const defaultPost = { id: 0, text: 'new post' };
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
+function setup() {
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
 
-    const posts: Post[] = [defaultPost];
+  const posts: Post[] = [defaultPost];
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.number(),
-            }),
-          )
-          .query(({ input }) => posts.find((post) => post.id === input.id)),
-        all: t.procedure.query(() => posts),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().optional(),
-            }),
-          )
-          .query((opts) => ({
-            items: posts.slice(opts.input.cursor ?? 0),
-            time: Date.now(), // make sure each request returns a different value
-          })),
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(({ input }) => {
-            const newPost: Post = { id: posts.length, text: input.text };
-            posts.push(newPost);
-            return newPost;
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
           }),
-      }),
+        )
+        .query(({ input }) => posts.find((post) => post.id === input.id)),
+      all: t.procedure.query(() => posts),
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().optional(),
+          }),
+        )
+        .query((opts) => ({
+          items: posts.slice(opts.input.cursor ?? 0),
+          time: Date.now(), // make sure each request returns a different value
+        })),
+      create: t.procedure
+        .input(
+          z.object({
+            text: z.string(),
+          }),
+        )
+        .mutation(({ input }) => {
+          const newPost: Post = { id: posts.length, text: input.text };
+          posts.push(newPost);
+          return newPost;
+        }),
+    }),
 
-      greeting: t.router({
-        get: t.procedure.query(() => 'hello'),
-      }),
-    });
+    greeting: t.router({
+      get: t.procedure.query(() => 'hello'),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('client query', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -104,6 +99,7 @@ test('client query', async () => {
 });
 
 test('client query sad path', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -135,6 +131,7 @@ test('client query sad path', async () => {
 });
 
 test('client mutation', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -172,6 +169,7 @@ test('client mutation', async () => {
 });
 
 test('fetch', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   const context = {
@@ -209,6 +207,7 @@ test('fetch', async () => {
 });
 
 test('prefetch', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const renderclient = vi.fn();
 
@@ -260,6 +259,7 @@ test('prefetch', async () => {
 });
 
 test('invalidate', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const stableclientSpy = vi.fn();
 
@@ -328,6 +328,7 @@ test('invalidate', async () => {
 });
 
 test('invalidate procedure for both query and infinite', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const invalidateQuerySpy = vi.fn();
   const invalidateInfiniteSpy = vi.fn();
@@ -400,6 +401,7 @@ test('invalidate procedure for both query and infinite', async () => {
 });
 
 test('reset', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const stableclientSpy = vi.fn();
 
@@ -454,6 +456,7 @@ test('reset', async () => {
 });
 
 test('refetch', async () => {
+  await using ctx = setup();
   const { client, App, spyLink } = ctx;
   spyLink.mockClear();
 
@@ -481,6 +484,7 @@ test('refetch', async () => {
 });
 
 test('setData', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const allPosts = client.post.all.useQuery(undefined, { enabled: false });
@@ -534,6 +538,7 @@ test('setData', async () => {
 });
 
 test('setInfiniteData', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const listPosts = client.post.list.useInfiniteQuery(
@@ -634,6 +639,7 @@ test('setInfiniteData', async () => {
 });
 
 test('getData', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const allPosts = client.post.all.useQuery();
@@ -674,6 +680,7 @@ test('getData', async () => {
 
 describe('cancel', () => {
   test('aborts with utils', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     function MyComponent() {
       const allPosts = client.post.all.useQuery();
@@ -712,6 +719,7 @@ describe('cancel', () => {
   });
 
   test('abort query and infinite with utils', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     function MyComponent() {
       const allList = client.post.list.useQuery({ cursor: 0 });
@@ -767,6 +775,7 @@ describe('cancel', () => {
   });
 
   test('typeerrors and continues with signal', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -805,6 +814,7 @@ describe('cancel', () => {
 
 describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     const unset = '__unset';
     const data = {
@@ -849,6 +859,7 @@ describe('query keys are stored separately', () => {
 });
 
 test('isMutating', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {

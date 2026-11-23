@@ -64,17 +64,19 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.tsx
-import { createTRPCReact } from '@trpc/react-query';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server';
-export const trpc = createTRPCReact<AppRouter>();
+export const { useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: components/MyComponent.tsx
 // ---cut---
+import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { trpc } from '../utils/trpc';
+import { useTRPC } from '../utils/trpc';
 
 export function MyComponent() {
-  const mutation = trpc.addPost.useMutation();
+  const trpc = useTRPC();
+  const mutation = useMutation(trpc.addPost.mutationOptions());
 
   useEffect(() => {
     mutation.mutate({ title: 'example' });

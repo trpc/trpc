@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { describe, expect, it, vi } from 'vitest';
 
 import { savedTab, saveTab } from './tabs.ts';
 
-beforeEach(() => {
+/** Empty localStorage and no tab cookie, with mocks restored when disposed. */
+function cleanStorage() {
   localStorage.clear();
   document.cookie = 'trpc-docs-tab-framework=; Max-Age=0; Path=/';
-  vi.restoreAllMocks();
-});
+  return makeResource({}, () => vi.restoreAllMocks());
+}
 
 describe('saveTab', () => {
   it('keeps the pick in localStorage and a cookie', () => {
+    using _storage = cleanStorage();
     saveTab('framework', 'TanStack Start');
     expect(localStorage.getItem('trpc-docs:tab:framework')).toBe(
       'TanStack Start',
@@ -22,6 +25,7 @@ describe('saveTab', () => {
   });
 
   it('reads the cookie when localStorage is blocked', () => {
+    using _storage = cleanStorage();
     saveTab('framework', 'Next.js');
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
@@ -30,6 +34,7 @@ describe('saveTab', () => {
   });
 
   it('has nothing saved before a pick', () => {
+    using _storage = cleanStorage();
     expect(savedTab('framework')).toBeNull();
   });
 });

@@ -297,8 +297,8 @@ describe('unindexedPathProblems', () => {
     }
   });
 
-  it('is none on main, which has no v12', () => {
-    expect(unindexedPaths).toEqual([]);
+  it('is the kitchen sink on main, which has no v12', () => {
+    expect(unindexedPaths).toEqual(['/kitchen-sink']);
   });
 
   it('fails on trpc.io, unhidden, without the route', () => {

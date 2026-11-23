@@ -2,6 +2,7 @@ import type http from 'http';
 import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -40,14 +41,14 @@ async function startServer() {
     links: [httpLink({ url: `http://localhost:${address.port}` })],
   });
 
-  return {
-    client,
-    close: () =>
+  return makeAsyncResource(
+    { client },
+    () =>
       new Promise<void>((resolve, reject) => {
         server.closeAllConnections();
         server.close((err) => (err ? reject(err) : resolve()));
       }),
-  };
+  );
 }
 
 function settleWithin<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -59,21 +60,15 @@ function settleWithin<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-let $: Awaited<ReturnType<typeof startServer>>;
-beforeAll(async () => {
-  $ = await startServer();
-});
-afterAll(async () => {
-  await $.close();
-});
-
 test('mutation without input still resolves when the body was already read', async () => {
+  await using $ = await startServer();
   await expect(settleWithin($.client.ping.mutate(), 2_000)).resolves.toBe(
     'pong',
   );
 });
 
 test('mutation with input rejects instead of hanging when the body was already read', async () => {
+  await using $ = await startServer();
   const err = await settleWithin($.client.echo.mutate('hello'), 2_000).catch(
     (cause: unknown) => cause,
   );

@@ -184,7 +184,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   // reconnecting at once, but can wait on requests that end only once the
   // server, closed next, closes their socket.
   // `typeof ctx` already has `[Symbol.asyncDispose]` from the server
-  // resource, and unlike `& AsyncDisposable` it still fits `konn()` contexts.
+  // resource.
   const resource: typeof ctx = makeAsyncResource(ctx, async () => {
     void wsClient.close().catch(() => null);
   });

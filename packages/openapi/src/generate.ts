@@ -13,6 +13,7 @@ import {
 } from 'typescript/ast';
 import {
   API,
+  ElementFlags,
   SymbolFlags,
   TypeFlags,
   TypeFormatFlags,
@@ -22,6 +23,7 @@ import {
   type RawCompilerOptions,
   type StringLiteralType,
   type Symbol as TsSymbol,
+  type TupleTypeReference,
   type Type,
   type TypeReference,
   type UnionType,
@@ -95,6 +97,7 @@ const PRIMITIVE_FLAGS =
   TypeFlags.String |
   TypeFlags.Number |
   TypeFlags.Boolean |
+  TypeFlags.TemplateLiteral |
   TypeFlags.StringLiteral |
   TypeFlags.NumberLiteral |
   TypeFlags.BooleanLiteral;
@@ -377,6 +380,10 @@ function convertPrimitiveOrLiteral(
   if (flags & TypeFlags.String) {
     return { type: 'string' };
   }
+  if (flags & TypeFlags.TemplateLiteral) {
+    // `user_${string}` and friends serialise as plain strings
+    return { type: 'string' };
+  }
   if (flags & TypeFlags.Number) {
     return { type: 'number' };
   }
@@ -484,7 +491,9 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  const distinctSchemas = dedupeSchemas(schemas, ctx.schemas);
+  const distinctSchemas = dropSubsumedSchemas(
+    dedupeSchemas(schemas, ctx.schemas),
+  );
   if (distinctSchemas.length === 0) {
     return {};
   }
@@ -511,6 +520,18 @@ function convertUnionType(
   }
 
   return { oneOf: distinctSchemas };
+}
+
+/**
+ * A bare `{ type }` member already accepts every value of a sibling with the
+ * same `type` and extra keywords (`Date | string`, `'a' | (string & {})`).
+ * `oneOf` fails when more than one member matches, so drop those siblings.
+ */
+function dropSubsumedSchemas(schemas: SchemaObject[]): SchemaObject[] {
+  const bareTypes = new Set(
+    schemas.filter(isSimpleTypeSchema).map((s) => s.type),
+  );
+  return schemas.filter((s) => isSimpleTypeSchema(s) || !bareTypes.has(s.type));
 }
 
 function dedupeSchemas(
@@ -643,10 +664,10 @@ function tryCollapseLiteralUnion(
     isString ? (m as StringLiteralType).value : (m as NumberLiteralType).value,
   );
   const baseType = isString ? 'string' : 'number';
-  return {
-    type: hasNull ? [baseType, 'null'] : baseType,
-    enum: values,
-  };
+  // `enum` restricts the value on its own, so `null` must be listed there too
+  return hasNull
+    ? { type: [baseType, 'null'], enum: [...values, null] }
+    : { type: baseType, enum: values };
 }
 
 // ---------------------------------------------------------------------------
@@ -786,12 +807,48 @@ function convertTupleType(
 ): SchemaObject {
   const args = ctx.checker.getTypeArguments(type as TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
+  // Optional elements (`[string, number?]`) are marked in the tuple target's
+  // element flags, not by their type (a required `T | undefined` member must
+  // not lower the bound), and only an element flagged Required must be
+  // present, so the required count bounds the array from below.
+  const elementFlags = (type as TupleTypeReference).getTarget().elementFlags;
+  const minItems = elementFlags.filter(
+    (flag) => flag === ElementFlags.Required,
+  ).length;
+  const restIndex = elementFlags.findIndex(
+    (flag) => flag === ElementFlags.Rest || flag === ElementFlags.Variadic,
+  );
+  if (restIndex === -1) {
+    return {
+      type: 'array',
+      prefixItems: schemas,
+      items: false,
+      minItems,
+      maxItems: args.length,
+    };
+  }
+
+  // A rest element repeats, so there is no maxItems and the elements before
+  // it stay fixed positions.
+  const prefixItems = schemas.slice(0, restIndex);
+  const restAndTail = schemas.slice(restIndex);
+  if (restIndex === args.length - 1) {
+    return {
+      type: 'array',
+      ...(prefixItems.length > 0 ? { prefixItems } : {}),
+      items: restAndTail[0] ?? {},
+      minItems,
+    };
+  }
+
+  // JSON Schema 2020-12 cannot express a rest element followed by required
+  // positions; accept any of the repeated and trailing element types instead
+  // of claiming an exact length.
   return {
     type: 'array',
-    prefixItems: schemas,
-    items: false,
-    minItems: args.length,
-    maxItems: args.length,
+    ...(prefixItems.length > 0 ? { prefixItems } : {}),
+    items: { anyOf: restAndTail },
+    minItems,
   };
 }
 

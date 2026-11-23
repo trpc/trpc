@@ -1,4 +1,10 @@
-import type { Query, QueryClient, QueryState } from '@tanstack/react-query';
+import type {
+  Query,
+  QueryClient,
+  QueryKey,
+  QueryState,
+} from '@tanstack/react-query';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { TRPCQueryOptionsResult } from '../shared';
 import type { TRPCHookResult } from '../shared/hooks/types';
@@ -29,10 +35,7 @@ export function useHookResult(value: {
  * built from tRPC's options is, unless it has its own `queryHash` or
  * `queryKeyHashFn`.
  */
-function getQueryAtKeyHash(opts: {
-  client: QueryClient;
-  queryKey: TRPCQueryKey;
-}) {
+function getQueryAtKeyHash(opts: { client: QueryClient; queryKey: QueryKey }) {
   try {
     const { queryHash } = opts.client.defaultQueryOptions({
       queryKey: opts.queryKey,
@@ -53,7 +56,7 @@ function getQueryAtKeyHash(opts: {
  */
 export function trackQueryFetch(opts: {
   /** The query function's context. One built by hand can lack `client`. */
-  context: { client: QueryClient | undefined; queryKey: TRPCQueryKey };
+  context: { client: QueryClient | undefined; queryKey: QueryKey };
   /** Where chunks went before tracking; still used when there's no `client`. */
   fallback: { client: QueryClient; queryKey: TRPCQueryKey };
 }) {
@@ -151,4 +154,29 @@ export async function buildQueryFromAsyncIterable(
     });
   }
   return aggregate;
+}
+
+/**
+ * Sends a query function's request and returns the query's data. A procedure
+ * that streams gives the array of its chunks, written to the query as they
+ * arrive, so every hook and helper agrees with `useQuery` on what `data` is.
+ * The fetch is tracked before the request starts, see `trackQueryFetch`.
+ * @internal
+ */
+export async function fetchQueryData(opts: {
+  /** The query function's context. */
+  context: Parameters<typeof trackQueryFetch>[0]['context'];
+  /** Where chunks go when the context has no `client`. */
+  fallback: Parameters<typeof trackQueryFetch>[0]['fallback'];
+  /** Sends the request. */
+  request: () => Promise<unknown>;
+}) {
+  const queryFetch = trackQueryFetch(opts);
+
+  const result = await opts.request();
+
+  if (isAsyncIterable(result)) {
+    return buildQueryFromAsyncIterable(result, queryFetch);
+  }
+  return result;
 }

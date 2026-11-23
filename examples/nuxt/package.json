@@ -8,9 +8,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "postinstall": "nuxt prepare",
-    "test-dev": "playwright test --project=dev",
-    "test-start": "playwright test --project=prod"
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -20,7 +18,5 @@
     "vue": "^3.5.45",
     "vue-router": "^5.4.0"
   },
-  "devDependencies": {
-    "@playwright/test": "^1.65.0"
-  }
+  "devDependencies": {}
 }

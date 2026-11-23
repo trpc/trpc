@@ -38,6 +38,8 @@ We are excited to announce the new TanStack React Query integration for tRPC is 
 <a href="/blog/introducing-tanstack-react-query-client">Read the blog post</a> for
 more information.
 
+The classic `@trpc/react-query` integration is deprecated. It only gets bug fixes and will be removed in the next major version of tRPC. Once you're on v11, follow the [migration guide](/docs/client/tanstack-react-query/migrating) to move to `@trpc/tanstack-react-query`.
+
 ### Stopping subscriptions from the server (rarely breaking)
 
 We now support stopping subscriptions from the server, this means that you can now do things like this:
@@ -311,7 +313,7 @@ See test [here](https://github.com/trpc/trpc/blob/743fa6aed8ac889d9c60f321c4b4ad
 
 You now set up data transformers in the `links`-array instead of when you initialize the tRPC-client;
 
-Wherever you have a HTTP Link you have to add `transformer: superjson` if you use transformers:
+Wherever you have an HTTP Link you have to add `transformer: superjson` if you use transformers:
 
 ```ts twoslash
 import { httpBatchLink } from '@trpc/client';

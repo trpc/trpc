@@ -4,77 +4,72 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    let iterableDeferred = createDeferred();
-    const nextIterable = () => {
-      iterableDeferred.resolve();
-      iterableDeferred = createDeferred();
-    };
-    const t = initTRPC.create({});
+function setup() {
+  let iterableDeferred = createDeferred();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        byIdWithSerializable: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => ({
-            id: 1,
-            date: new Date(),
-          })),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().default(0),
-            }),
-          )
-          .query((opts) => {
-            const { input } = opts;
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
           }),
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 3; i++) {
-            await iterableDeferred.promise;
-            yield i + 1;
-          }
+        )
+        .query(() => '__result' as const),
+      byIdWithSerializable: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => ({
+          id: 1,
+          date: new Date(),
+        })),
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().default(0),
+          }),
+        )
+        .query((opts) => {
+          const { input } = opts;
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
         }),
+      iterable: t.procedure.query(async function* () {
+        for (let i = 0; i < 3; i++) {
+          await iterableDeferred.promise;
+          yield i + 1;
+        }
       }),
-    });
+    }),
+  });
 
-    return {
-      nextIterable,
-      ...getServerAndReactClient(appRouter),
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return {
+    nextIterable,
+    ...getServerAndReactClient(appRouter),
+  };
+}
 
 describe('useQuery()', () => {
   test('loading data', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     function MyComponent() {
       const query1 = client.post.byId.useQuery({
@@ -114,6 +109,7 @@ describe('useQuery()', () => {
   });
 
   test('disabling query with skipToken', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     function MyComponent() {
       const query1 = client.post.byId.useQuery(skipToken);
@@ -135,6 +131,7 @@ describe('useQuery()', () => {
   });
 
   test('conditionally enabling query with skipToken', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     let onEnable: () => void;
     function MyComponent() {
@@ -177,7 +174,8 @@ describe('useQuery()', () => {
     });
   });
 
-  test('data type without initialData', () => {
+  test('data type without initialData', async () => {
+    await using ctx = setup();
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery({ id: '1' }),
     ).returns;
@@ -186,7 +184,8 @@ describe('useQuery()', () => {
     expectation.not.toMatchTypeOf<{ data: '__result' }>();
   });
 
-  test('data type with initialData', () => {
+  test('data type with initialData', async () => {
+    await using ctx = setup();
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery(
         { id: '1' },
@@ -200,7 +199,8 @@ describe('useQuery()', () => {
     expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 
-  test('data type with conditional skipToken', () => {
+  test('data type with conditional skipToken', async () => {
+    await using ctx = setup();
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery(
         Math.random() > 0.5 ? skipToken : { id: '1' },
@@ -212,6 +212,7 @@ describe('useQuery()', () => {
   });
 
   test('iterable', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
     const states: {
       status: string;
@@ -303,6 +304,7 @@ describe('useQuery()', () => {
 });
 
 test('useInfiniteQuery()', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
   function MyComponent() {
     const trpcContext = client.useContext();

@@ -43,7 +43,9 @@ export class WsClient {
   >;
 
   private allowReconnect = false;
-  private requestManager = new RequestManager();
+  private requestManager = new RequestManager({
+    onIdle: () => this.startInactivityTimeout(),
+  });
   /**
    * The last id sent on the wire. Each request gets its own instead of its
    * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
@@ -60,6 +62,11 @@ export class WsClient {
   private activeConnection: WsConnection;
   private readonly reconnectRetryDelay: (attemptIndex: number) => number;
   private inactivityTimeout: ResettableTimeout;
+  /**
+   * Whether lazy mode may close the connection once it's idle: from the
+   * first `open` until `close()`.
+   */
+  private inactivityTimeoutEnabled = false;
   private readonly callbacks: Pick<
     WebSocketClientOptions,
     'onOpen' | 'onClose' | 'onError'
@@ -81,13 +88,11 @@ export class WsClient {
       ...opts.lazy,
     };
 
-    // Set up inactivity timeout for lazy connections.
+    // Set up inactivity timeout for lazy connections. It only runs while no
+    // request or subscription is in flight; see `startInactivityTimeout()`.
     this.inactivityTimeout = new ResettableTimeout(() => {
-      if (
-        this.requestManager.hasOutgoingRequests() ||
-        this.requestManager.hasPendingRequests()
-      ) {
-        this.inactivityTimeout.reset();
+      if (this.requestManager.hasRequestsInFlight()) {
+        this.inactivityTimeout.stop();
         return;
       }
 
@@ -121,6 +126,21 @@ export class WsClient {
     if (!this.lazyMode) {
       this.open().catch(() => null);
     }
+  }
+
+  /**
+   * Starts counting down to closing a lazy connection, if nothing is in
+   * flight. Called on `open` and whenever the last request or subscription
+   * ends, so the timer never has to poll.
+   */
+  private startInactivityTimeout() {
+    if (
+      !this.inactivityTimeoutEnabled ||
+      this.requestManager.hasRequestsInFlight()
+    ) {
+      return;
+    }
+    this.inactivityTimeout.start();
   }
 
   private createConnection() {
@@ -175,6 +195,7 @@ export class WsClient {
     this.allowReconnect = false;
     this.replacementError = null;
     this.retiredConnection = null;
+    this.inactivityTimeoutEnabled = false;
     this.inactivityTimeout.stop();
 
     const requestsToAwait: Promise<void>[] = [];
@@ -628,7 +649,8 @@ export class WsClient {
     ws.addEventListener('open', () => {
       run(async () => {
         if (this.lazyMode) {
-          this.inactivityTimeout.start();
+          this.inactivityTimeoutEnabled = true;
+          this.startInactivityTimeout();
         }
 
         this.callbacks.onOpen?.();
@@ -817,7 +839,8 @@ export class WsClient {
    * @returns A function to abort the batched request.
    */
   private batchSend(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
-    this.inactivityTimeout.reset();
+    // Started again once the last request or subscription ends.
+    this.inactivityTimeout.stop();
     this.flushOutgoing(message, callbacks);
     return this.requestManager.register(message, callbacks);
   }

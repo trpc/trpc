@@ -1,4 +1,4 @@
-import type { QueryOptions } from '@tanstack/react-query';
+import type { QueryClient, QueryOptions } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import {
   getUntypedClient,
@@ -16,6 +16,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import { fetchQueryData } from '../../internals/trpcResult';
 import type {
   TrpcQueryOptionsForUseQueries,
   TrpcQueryOptionsForUseSuspenseQueries,
@@ -93,6 +94,7 @@ export type UseSuspenseQueriesProcedureRecord<
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
   abortOnUnmount: boolean | undefined,
+  queryClient: QueryClient,
 ) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
@@ -113,14 +115,21 @@ export function createUseQueries<TRouter extends AnyRouter>(
     // request option should take priority over global
     const shouldAbortOnUnmount = _opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
+    const queryKey = getQueryKeyInternal(arrayPath, input, 'query');
+
     const options: QueryOptions = {
-      queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
+      queryKey,
       queryFn: (queryFunctionContext) => {
-        return untypedClient.query(dotPath, input, {
-          ..._opts?.trpc,
-          ...(shouldAbortOnUnmount
-            ? { signal: queryFunctionContext.signal }
-            : {}),
+        return fetchQueryData({
+          context: queryFunctionContext,
+          fallback: { client: queryClient, queryKey },
+          request: () =>
+            untypedClient.query(dotPath, input, {
+              ..._opts?.trpc,
+              ...(shouldAbortOnUnmount
+                ? { signal: queryFunctionContext.signal }
+                : {}),
+            }),
         });
       },
       ..._opts,

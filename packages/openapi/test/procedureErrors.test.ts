@@ -1,7 +1,8 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document, SchemaObject } from '../src/types';
+import { memoize } from './memoize';
 import type {
   LimitedError as DefaultFormatterLimitedError,
   PlainError as DefaultFormatterPlainError,
@@ -38,13 +39,11 @@ const defaultFormatterRouterPath = path.resolve(
 /** Keys every error `data` carries, whatever the shape */
 const BASE_DATA_KEYS = ['code', 'httpStatus', 'path', 'stack'];
 
-let doc: Document;
-
-beforeAll(async () => {
-  doc = await generateOpenAPIDocument(routerPath, {
+const getDoc = memoize(() =>
+  generateOpenAPIDocument(routerPath, {
     exportName: 'ProcedureErrorsRouter',
-  });
-});
+  }),
+);
 
 function getDefaultResponse(
   from: Document,
@@ -128,11 +127,13 @@ function expectDistinctVariants(variants: SchemaObject[], label: string) {
 
 describe('per-procedure error shapes', () => {
   it('generates a valid document', async () => {
+    const doc = await getDoc();
     const problems = await validateOpenApi(JSON.stringify(doc, null, 2));
     expect(problems).toEqual([]);
   });
 
-  it('keeps the shared Error response for procedures without `.errors()`', () => {
+  it('keeps the shared Error response for procedures without `.errors()`', async () => {
+    const doc = await getDoc();
     const response = getDefaultResponse(doc, 'plain', 'get');
     expect(response).toEqual({ $ref: '#/components/responses/Error' });
 
@@ -156,7 +157,8 @@ describe('per-procedure error shapes', () => {
     expect(Object.keys(data.properties ?? {})).not.toContain('kind');
   });
 
-  it('unions the router-wide shape in for procedures with their own `.errors()`', () => {
+  it('unions the router-wide shape in for procedures with their own `.errors()`', async () => {
+    const doc = await getDoc();
     const variants = getErrorVariants(doc, 'limited', 'post');
     expect(variants).toHaveLength(2);
 
@@ -167,7 +169,8 @@ describe('per-procedure error shapes', () => {
     expect(keys).toContainEqual(['requestId']);
   });
 
-  it('unions every shape in a chain of `.errors()` handlers', () => {
+  it('unions every shape in a chain of `.errors()` handlers', async () => {
+    const doc = await getDoc();
     const variants = getErrorVariants(doc, 'chained', 'post');
 
     // rate-limit + conflict + the router-wide shape both handlers can decline to
@@ -178,7 +181,8 @@ describe('per-procedure error shapes', () => {
     ]);
   });
 
-  it('collapses chained handlers that declare the same shape', () => {
+  it('collapses chained handlers that declare the same shape', async () => {
+    const doc = await getDoc();
     const variants = getErrorVariants(doc, 'chainedDuplicate', 'post');
 
     // the two handlers are identical, so the union is the same as a single one
@@ -189,13 +193,15 @@ describe('per-procedure error shapes', () => {
     expect(variants).toEqual(getErrorVariants(doc, 'limited', 'post'));
   });
 
-  it('treats one handler returning several shapes like a chain of handlers', () => {
+  it('treats one handler returning several shapes like a chain of handlers', async () => {
+    const doc = await getDoc();
     expect(getErrorVariants(doc, 'multiShape', 'post')).toEqual(
       getErrorVariants(doc, 'chained', 'post'),
     );
   });
 
-  it('gives each distinct error shape one response component', () => {
+  it('gives each distinct error shape one response component', async () => {
+    const doc = await getDoc();
     // procedures raising the same shapes point at the same component instead
     // of each carrying their own copy of the union
     expect(getErrorResponseName(doc, 'chainedDuplicate', 'post')).toBe(
@@ -209,7 +215,8 @@ describe('per-procedure error shapes', () => {
     );
   });
 
-  it('names the shape a component so a client can import it once', () => {
+  it('names the shape a component so a client can import it once', async () => {
+    const doc = await getDoc();
     const envelope = requireSchemaObject(
       requireResponseComponentSchema(doc, 'LimitedError'),
       doc,
@@ -220,7 +227,8 @@ describe('per-procedure error shapes', () => {
     });
   });
 
-  it('describes each error shape in one place', () => {
+  it('describes each error shape in one place', async () => {
+    const doc = await getDoc();
     // no operation carries its own copy of a union...
     const operations: [string, 'get' | 'post'][] = [
       ['plain', 'get'],
@@ -245,13 +253,15 @@ describe('per-procedure error shapes', () => {
     ]);
   });
 
-  it('keeps the shared Error response when a handler never claims an error', () => {
+  it('keeps the shared Error response when a handler never claims an error', async () => {
+    const doc = await getDoc();
     // the handler only ever returns `undefined`, so the shape never widens
     const response = getDefaultResponse(doc, 'neverClaims', 'post');
     expect(response).toEqual({ $ref: '#/components/responses/Error' });
   });
 
-  it('emits mutually exclusive `oneOf` variants', () => {
+  it('emits mutually exclusive `oneOf` variants', async () => {
+    const doc = await getDoc();
     for (const opPath of [
       'limited',
       'chained',
@@ -321,22 +331,22 @@ describe('with the default error formatter', () => {
   // the router-wide shape is `DefaultErrorShape`, which a `.errors()` shape
   // built from `opts.shape` is structurally assignable to - so a shape
   // comparison by assignability alone would drop the per-procedure schema
-  let defaultDoc: Document;
-
-  beforeAll(async () => {
-    defaultDoc = await generateOpenAPIDocument(defaultFormatterRouterPath, {
+  const getDefaultDoc = memoize(() =>
+    generateOpenAPIDocument(defaultFormatterRouterPath, {
       exportName: 'DefaultErrorFormatterRouter',
-    });
-  });
+    }),
+  );
 
-  it('keeps the shared Error response for procedures without `.errors()`', () => {
+  it('keeps the shared Error response for procedures without `.errors()`', async () => {
+    const defaultDoc = await getDefaultDoc();
     const operation = requireOperation(defaultDoc, 'plain', 'get');
     expect(operation.responses?.['default']).toEqual({
       $ref: '#/components/responses/Error',
     });
   });
 
-  it('still gives procedures with their own `.errors()` their own response', () => {
+  it('still gives procedures with their own `.errors()` their own response', async () => {
+    const defaultDoc = await getDefaultDoc();
     const response = getDefaultResponse(defaultDoc, 'limited', 'post');
     expect(response).not.toEqual({ $ref: '#/components/responses/Error' });
 
@@ -350,7 +360,8 @@ describe('with the default error formatter', () => {
     expect(extraKeys).toContainEqual(['kind', 'retryAfterMs']);
   });
 
-  it('emits mutually exclusive `oneOf` variants', () => {
+  it('emits mutually exclusive `oneOf` variants', async () => {
+    const defaultDoc = await getDefaultDoc();
     // the router-wide shape is a named component here, so a handler shape that
     // renders to the same schema reaches the union as a `$ref` alongside the
     // inline copy - one payload would then match both branches and satisfy
@@ -363,7 +374,8 @@ describe('with the default error formatter', () => {
     }
   });
 
-  it('collapses a handler shape that renders like the router-wide one', () => {
+  it('collapses a handler shape that renders like the router-wide one', async () => {
+    const defaultDoc = await getDefaultDoc();
     // the handler only rewrites `message`, so its shape carries the same keys
     // and the procedure adds nothing to the shared response
     expect(getDefaultResponse(defaultDoc, 'sanitized', 'post')).toEqual({
@@ -371,7 +383,8 @@ describe('with the default error formatter', () => {
     });
   });
 
-  it('keeps a handler shape that only adds an optional field', () => {
+  it('keeps a handler shape that only adds an optional field', async () => {
+    const defaultDoc = await getDefaultDoc();
     // the shapes are assignable both ways, but the field must reach the spec
     const variants = getErrorVariants(defaultDoc, 'optionalExtra', 'post');
     expect(
@@ -379,7 +392,8 @@ describe('with the default error formatter', () => {
     ).toContainEqual(['retryAfterMs']);
   });
 
-  it('keeps added fields named like JSON Schema keywords', () => {
+  it('keeps added fields named like JSON Schema keywords', async () => {
+    const defaultDoc = await getDefaultDoc();
     const variants = getErrorVariants(defaultDoc, 'keywordNamedExtra', 'post');
     expect(
       variants.map((variant) =>
@@ -389,6 +403,7 @@ describe('with the default error formatter', () => {
   });
 
   it('generates a valid document', async () => {
+    const defaultDoc = await getDefaultDoc();
     const problems = await validateOpenApi(JSON.stringify(defaultDoc, null, 2));
     expect(problems).toEqual([]);
   });

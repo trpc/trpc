@@ -17,6 +17,7 @@ description: tRPC's test setup and TypeScript conventions, which win where the g
 - Watch it fail, then pass: `pnpm vitest run <file>` from the repo root.
 - The PR's `Regression check:` line names the test and what it catches without the fix.
 - In new tests, wait on a condition with `vi.waitFor` rather than a fixed sleep.
+- No `beforeEach`, `beforeAll`, `afterEach` or `afterAll` (`vitest/no-hooks`). Each test sets up what it needs with `using`/`await using`: a helper returns a disposable that undoes its setup, such as `using _timers = fakeTimersResource()`. Share expensive read-only setup with a memoised getter instead of `beforeAll`.
 - Add tests; don't rewrite or weaken existing ones unless the expected behaviour changed and the PR says why.
 
 ## TypeScript

@@ -37,8 +37,8 @@ Create a tRPC client that you can use **the same way**, no matter if you are in 
 
 Examples:
 
-- [./src/app/ClientGreeting.tsx](./src/app/ClientGreeting.tsx)
-- [./src/app/ServerGreeting.tsx](./src/app/ServerGreeting.tsx)
+- [./src/app/client/ClientGreeting.tsx](./src/app/client/ClientGreeting.tsx)
+- [./src/app/rsc-links/ServerInvokedGreeting.tsx](./src/app/rsc-links/ServerInvokedGreeting.tsx)
 
 ### Setup
 
