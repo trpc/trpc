@@ -636,7 +636,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             // a throwing `onError` would fail the body, and the adapter would
             // report that again without the call
             try {
-              const returned: unknown = opts.onError?.({
+              opts.onError?.({
                 error: getTRPCErrorFromUnknown(cause),
                 path: call?.path,
                 input: call?.result(),
@@ -644,11 +644,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 req: opts.req,
                 type: call?.procedure?._def.type ?? 'unknown',
               });
-              if (isPromise(returned)) {
-                returned.catch(() => {
-                  // ignored, as for a throwing `onError`
-                });
-              }
             } catch {
               // ignored, the body still ends
             }
