@@ -230,11 +230,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       });
     }
 
-    if (opts.keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = opts.keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
-    }
-
     /** Drops replies once closing starts, before the close event cancels work. */
     function respond(untransformedJSON: TRPCResponseMessage) {
       if (client.readyState !== WEBSOCKET_OPEN) return;
@@ -409,8 +404,40 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * - the context promise will be created immediately on connection if no connectionParams are expected
      * - if connection params are expected, they will be created once received
      */
+    /**
+     * Anyone can send an upgrade with a `Host` or path `URL` can't parse,
+     * such as `Host: []`. Throwing here would escape the `connection` event
+     * and crash the process, so close that connection instead.
+     */
+    let url: URL;
+    try {
+      url = createURL(req);
+    } catch (cause) {
+      const info: ErrorInfo = {
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        req,
+        input: undefined,
+      };
+      callOnError(info);
+      // the socket can still error while it closes, and an `error` event
+      // with no listener would crash the process too
+      client.on('error', (error) => {
+        callOnError({ ...info, error: getTRPCErrorFromUnknown(error) });
+      });
+      client.close(1008, 'Invalid URL');
+      return;
+    }
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
+
     let ctxPromise =
-      createURL(req).searchParams.get('connectionParams') === '1'
+      url.searchParams.get('connectionParams') === '1'
         ? null
         : createCtxPromise(() => null);
 

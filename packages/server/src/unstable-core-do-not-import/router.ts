@@ -99,12 +99,15 @@ type LazyLoader<TAny> = {
   key: string;
 };
 
-function once<T>(fn: () => T): () => T {
+function once<T>(fn: () => Promise<T>): () => Promise<T> {
   const uncalled = Symbol();
-  let result: T | typeof uncalled = uncalled;
-  return (): T => {
+  let result: Promise<T> | typeof uncalled = uncalled;
+  return (): Promise<T> => {
     if (result === uncalled) {
-      result = fn();
+      result = fn().catch((cause) => {
+        result = uncalled;
+        throw cause;
+      });
     }
     return result;
   };
