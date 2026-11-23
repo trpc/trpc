@@ -46,7 +46,7 @@ const posts: ReadonlyArray<Post> = [
   },
   {
     authorId: 2,
-    body: 'Type a prop with unstable_inferQueryHandle, and the component can only read the query it was given.',
+    body: 'Type a prop with inferQueryHandle, and the component can only read the query it was given.',
     id: 5,
     minutes: 2,
     title: 'Typing props with handles',
@@ -196,6 +196,18 @@ function numbersInput<TKey extends string>(...keys: ReadonlyArray<TKey>) {
 }
 
 /**
+ * An input with a `cursor`, so lists can be read as infinite queries. Every
+ * list in the demo fits on one page, so the cursor is never used.
+ */
+function cursorInput<TKey extends string>(key: TKey) {
+  const parse = numbersInput(key);
+  return (input: unknown): Record<TKey, number> & { cursor?: number | null } =>
+    parse(input);
+}
+
+const lastPage = { nextCursor: null as number | null };
+
+/**
  * A blog's tRPC router, run in the page. Each post response says when it
  * was served, in seconds since the demo started, so a demo can show which
  * copy of the data it renders.
@@ -210,9 +222,10 @@ function createAppRouter(network: Network) {
         ...(blogData.post(input.id) ?? notFound(input.id)),
         servedAt: servedAt(),
       })),
-      comments: t.procedure
-        .input(numbersInput('postId'))
-        .query(({ input }) => blogData.comments(input.postId)),
+      comments: t.procedure.input(cursorInput('postId')).query(({ input }) => ({
+        items: blogData.comments(input.postId),
+        ...lastPage,
+      })),
       list: t.procedure
         .input(numbersInput('page'))
         .query(({ input }) => blogData.list(input.page)),
@@ -221,11 +234,11 @@ function createAppRouter(network: Network) {
        * in the URL, so a loader can start it with the post.
        */
       moreByAuthor: t.procedure
-        .input(numbersInput('postId'))
-        .query(
-          ({ input }) =>
-            blogData.moreByAuthor(input.postId) ?? notFound(input.postId),
-        ),
+        .input(cursorInput('postId'))
+        .query(({ input }) => ({
+          ...(blogData.moreByAuthor(input.postId) ?? notFound(input.postId)),
+          ...lastPage,
+        })),
     }),
   });
 }

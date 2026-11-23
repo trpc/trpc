@@ -99,12 +99,15 @@ type LazyLoader<TAny> = {
   key: string;
 };
 
-function once<T>(fn: () => T): () => T {
+function once<T>(fn: () => Promise<T>): () => Promise<T> {
   const uncalled = Symbol();
-  let result: T | typeof uncalled = uncalled;
-  return (): T => {
+  let result: Promise<T> | typeof uncalled = uncalled;
+  return (): Promise<T> => {
     if (result === uncalled) {
-      result = fn();
+      result = fn().catch((cause) => {
+        result = uncalled;
+        throw cause;
+      });
     }
     return result;
   };
@@ -641,6 +644,9 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
   }, '.');
 
   const router = createRouterFactory({
+    // Options without a merge rule below come from the first router, so a
+    // new root option is carried over without being listed here.
+    ...routerList[0]?._def._config,
     errorFormatter,
     transformer,
     pathSeparator,
@@ -649,8 +655,6 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
       (r) => r._def._config.allowOutsideOfServer,
     ),
     isServer: routerList.every((r) => r._def._config.isServer),
-    $types: routerList[0]?._def._config.$types,
-    sse: routerList[0]?._def._config.sse,
   })(record);
 
   return router as MergeRouters<TRouters>;

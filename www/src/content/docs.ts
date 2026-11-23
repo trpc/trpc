@@ -4,10 +4,12 @@ import { sections as v10Sections } from 'virtual:v10-docs-manifest';
 import { sections as v11Sections } from 'virtual:v11-docs-manifest';
 
 import type { ExperimentId } from '~/experiments.ts';
+import type { LoadPopups } from '~/twoslash-hovers.ts';
 import { useFlagsOn } from '~/flags.ts';
 import { type CopiedVersion, v9, v10, v11 } from '~/site.ts';
 
 import { listedSections } from './listed.ts';
+import { loadPage, registerPages, type WithoutHtml } from './page-html.ts';
 import type { Doc, DocMeta, DocSection } from './types.ts';
 
 /** One version's pages, and where the site serves them. */
@@ -22,30 +24,44 @@ export interface DocsVersion {
   readonly route: '/docs/$' | '/docs/v10/$' | '/docs/v9/$';
   readonly sections: ReadonlyArray<DocSection>;
   readonly status: CopiedVersion['status'];
-  /** A page, compiled at build time. */
-  readonly load: (slug: string) => Promise<Doc>;
+  /** A page, compiled at build time, with its HTML in `pageHtml`. */
+  readonly load: (slug: string) => Promise<LoadedDoc>;
+  /** A page's hover popups, which its HTML leaves out. */
+  readonly loadPopups: (slug: string) => LoadPopups;
 }
 
+/** A page as its route's loader returns it, without its HTML. */
+export type LoadedDoc = WithoutHtml<Doc>;
+
+type PageModules = Readonly<Record<string, () => Promise<{ default: Doc }>>>;
+/** Each page's popups (`page.md?popups`), by its file. */
+type PopupModules = Readonly<
+  Record<string, () => Promise<ReadonlyArray<string>>>
+>;
+
 function docsVersion(
-  version: Omit<DocsVersion, 'allDocs' | 'firstDoc' | 'load'>,
-  pages: Readonly<Record<string, () => Promise<{ default: Doc }>>>,
+  version: Omit<DocsVersion, 'allDocs' | 'firstDoc' | 'load' | 'loadPopups'>,
+  pages: PageModules,
+  popups: PopupModules | null,
   fileOf: (slug: string) => string,
   fallback: string,
 ): DocsVersion {
   const allDocs = version.sections.flatMap((section) => section.docs);
+  registerPages(pages);
   return {
     ...version,
     allDocs,
     firstDoc:
       allDocs.find((doc) => doc.experiment === undefined)?.slug ?? fallback,
     load: async (slug) => {
-      const load = pages[fileOf(slug)];
+      const file = fileOf(slug);
+      const load = pages[file];
       if (!load) {
         throw notFound();
       }
-      const page = await load();
-      return page.default;
+      return loadPage(file, load);
     },
+    loadPopups: (slug) => async () => (await popups?.[fileOf(slug)]?.()) ?? [],
   };
 }
 
@@ -53,7 +69,8 @@ function copiedDocs(
   copied: CopiedVersion,
   route: DocsVersion['route'],
   sections: ReadonlyArray<DocSection>,
-  pages: Readonly<Record<string, () => Promise<{ default: Doc }>>>,
+  pages: PageModules,
+  popups: PopupModules | null,
 ) {
   return docsVersion(
     {
@@ -65,6 +82,7 @@ function copiedDocs(
       status: copied.status,
     },
     pages,
+    popups,
     (slug) => `../../${copied.id}/docs/${slug}.md`,
     copied.firstDoc,
   );
@@ -80,6 +98,11 @@ export const v11Docs = copiedDocs(
     '../../v11/docs/**/*.md',
     '!../../v11/docs/**/README.md',
   ]),
+  // Only v11's pages compile their code, so only they have popups.
+  import.meta.glob<ReadonlyArray<string>>(
+    ['../../v11/docs/**/*.md', '!../../v11/docs/**/README.md'],
+    { import: 'default', query: '?popups' },
+  ),
 );
 
 export const v10Docs = copiedDocs(
@@ -90,6 +113,7 @@ export const v10Docs = copiedDocs(
     '../../v10/docs/**/*.md',
     '!../../v10/docs/**/README.md',
   ]),
+  null,
 );
 
 export const v9Docs = copiedDocs(
@@ -100,6 +124,7 @@ export const v9Docs = copiedDocs(
     '../../v9/docs/**/*.md',
     '!../../v9/docs/**/README.md',
   ]),
+  null,
 );
 
 /** Newest first, as the version switcher lists them. */

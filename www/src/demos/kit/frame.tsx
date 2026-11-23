@@ -120,7 +120,7 @@ export function DemoFrame<TValue extends string>(props: {
   };
   return (
     <figure
-      className="not-prose my-8 grid gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5"
+      className="not-prose my-8 grid grid-cols-[minmax(0,1fr)] gap-4 rounded-xl border bg-card p-4 text-card-foreground sm:p-5"
       ref={onScreenRef}
     >
       <figcaption className="grid gap-1">
@@ -129,7 +129,7 @@ export function DemoFrame<TValue extends string>(props: {
       </figcaption>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
         {variants.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex max-w-full flex-wrap items-center gap-2">
             <span id={variantsLabel}>{props.variantsLabel}</span>
             <Segmented
               aria-labelledby={variantsLabel}
@@ -142,7 +142,7 @@ export function DemoFrame<TValue extends string>(props: {
             />
           </div>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           <span id={latencyLabel}>Latency</span>
           <Segmented
             aria-labelledby={latencyLabel}

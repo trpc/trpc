@@ -193,7 +193,7 @@ describe('syncSponsors', () => {
         );
         expect(written).not.toContain('the old list');
         expect(written).toContain(
-          '<a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/sponsor-cloud.png?v=',
+          '<a href="https://trpc.io/sponsor#sponsors"><img src="https://trpc.io/og/_/sponsor-cloud.png"',
         );
         const block = (text: string) =>
           text.slice(text.indexOf(startMarker), text.indexOf(endMarker));

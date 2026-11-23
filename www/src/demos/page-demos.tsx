@@ -13,6 +13,7 @@ import {
   type DemoProps,
   splitAtDemos,
 } from './names.ts';
+import { isChunkLoadError, reloadOnce, reloadPage } from '~/reload-once.ts';
 
 type Demo = ComponentType<DemoProps>;
 
@@ -29,18 +30,29 @@ const imports: Record<DemoName, () => Promise<Demo>> = {
 
 const loading = new Map<DemoName, Promise<Demo>>();
 
+/**
+ * Marks `promise` with how it settled: `use()` reads a settled promise's
+ * `status`, so a demo whose code a loader has already waited for renders
+ * without suspending. The handlers return nothing: returning `promise`
+ * would make the promise `then` returns reject too, with no one to handle
+ * it.
+ */
+export function withStatus<T>(promise: Promise<T>) {
+  promise.then(
+    (value) => {
+      void Object.assign(promise, { status: 'fulfilled', value });
+    },
+    (reason: unknown) => {
+      void Object.assign(promise, { reason, status: 'rejected' });
+    },
+  );
+  return promise;
+}
+
 function load(name: DemoName) {
   let promise = loading.get(name);
   if (!promise) {
-    const started = imports[name]();
-    // `use()` reads a settled promise's `status`, so a demo whose code a
-    // loader has already waited for renders without suspending.
-    started.then(
-      (value) => Object.assign(started, { status: 'fulfilled', value }),
-      (reason: unknown) =>
-        Object.assign(started, { reason, status: 'rejected' }),
-    );
-    promise = started;
+    promise = withStatus(imports[name]());
     loading.set(name, promise);
   }
   return promise;
@@ -67,8 +79,12 @@ function LoadedDemo(props: DemoFence) {
   return createElement(demo, { options: props.options });
 }
 
-/** A demo that throws renders nothing, and the rest of the page keeps working. */
-class DemoBoundary extends Component<
+/**
+ * A demo that throws renders nothing, and the rest of the page keeps working.
+ * One whose chunk a deploy replaced reloads the page once, as a route does
+ * (`components/error-page.tsx`), which brings it back.
+ */
+export class DemoBoundary extends Component<
   { readonly children: ReactNode },
   { readonly failed: boolean }
 > {
@@ -80,6 +96,9 @@ class DemoBoundary extends Component<
 
   override componentDidCatch(error: unknown) {
     console.error('A demo failed', error);
+    if (isChunkLoadError(error)) {
+      reloadOnce(`route:${window.location.pathname}`, reloadPage);
+    }
   }
 
   override render() {

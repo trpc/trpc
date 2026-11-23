@@ -1,20 +1,13 @@
 // @ts-check
 
 import { NextConfig } from 'next';
-import { env } from './src/server/env';
+// Validates the env vars when the app builds or starts
+import './src/server/env';
 
 /**
  * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
  */
 export default {
-  /**
-   * Dynamic configuration available for the browser and server.
-   * Note: requires `ssr: true` or a `getInitialProps` in `_app.tsx`
-   * @see https://nextjs.org/docs/api-reference/next.config.js/runtime-configuration
-   */
-  publicRuntimeConfig: {
-    NODE_ENV: env.NODE_ENV,
-  },
   /** Next.js only knows ESLint; we lint with oxlint as a separate task */
   eslint: {
     ignoreDuringBuilds: true,

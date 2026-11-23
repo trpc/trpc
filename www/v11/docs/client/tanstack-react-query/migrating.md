@@ -27,21 +27,20 @@ There are a few approaches to migrate over, and this library is a significant de
 
 ## Codemod migration
 
-:::info
-The codemod is a work in progress and we're looking for help to make it better. If you're interested in contributing to the codemod, please see [Julius' comment here](https://github.com/trpc/trpc/pull/6262#issuecomment-2651959435).
-:::
-
-We're working on a codemod to help you migrate your existing codebase over to the new client. This is already available to try but we need your feedback and contributions to improve it. Codemods are very tricky to get right so we're looking for your help to make it as effective as possible.
-
-Run our upgrade CLI:
+Run the upgrade CLI from the folder with your `tsconfig.json`, on a git working tree without uncommitted changes:
 
 ```sh
-npx @trpc/upgrade
+npx @trpc/upgrade --yes
 ```
 
-When prompted, select the transforms `Migrate Hooks to xxxOptions API` and `Migrate context provider setup`.
+It runs two transforms over the files git tracks:
 
-The CLI refuses to run on a git working tree with uncommitted changes, unless you pass `--force`. After the transforms it installs `@trpc/tanstack-react-query` and **uninstalls `@trpc/react-query`**, so pass `--skipTanstackQuery` if you want to keep both while you migrate gradually. It doesn't cover every pattern (`useQueries`, for example), so typecheck afterwards and migrate whatever is left by hand, using the mappings below.
+- **Setup:** `createTRPCReact` becomes `createTRPCContext`, `trpc.Provider` becomes `TRPCProvider`, and `trpc.createClient()` becomes `createTRPCClient()`. A `createTRPCNext` setup becomes the same file exporting `makeTRPCClient()`, `makeQueryClient()` and a `withTRPC()` for `_app`, which hydrates `trpcState` like before. See [Moving from `createTRPCNext`](/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext).
+- **Hooks:** each hook becomes the TanStack Query hook with an options factory, such as `useQuery(trpc.a.queryOptions(input))`, and `trpc.useUtils()` becomes `useQueryClient()` with the matching filters and keys. `trpc.useQueries()`, `useSuspenseQueries()`, `utils.client` and `getQueryKey()` are covered too, as in the [table below](#equivalents-for-the-other-hooks-and-useutils). Each component or hook that needs it gets `const trpc = useTRPC()`.
+
+Then it installs `@trpc/tanstack-react-query`, and uninstalls `@trpc/react-query` and `@trpc/next` unless a file still imports them, e.g. `createServerSideHelpers` from `@trpc/react-query/server`. Pass `--skipTanstackQuery` to leave your packages alone, or `--transforms provider` or `--transforms hooks` to run one transform. Without `--yes` or `--transforms`, it asks which to run.
+
+What it can't move safely, such as `ssr: true` or a `trpc` used outside a component, gets a `TODO(@trpc/upgrade)` comment. Afterwards, format the changed files, typecheck, and search for those comments:
 
 ```sh
 npx tsc --noEmit
@@ -184,7 +183,7 @@ function Users() {
 ```
 
 :::tip
-Once a component is on `queryOptions`, you can also start its query ahead of time. `await trpc.greeting.unstable_$ensure({ name: 'Jerry' })` in a route loader or server component returns a **handle**, and the component reads it with `useQuery(trpc.unstable_$fromHandle(props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+Once a component is on `queryOptions`, you can also start its query ahead of time. `const [{ greeting }] = await loadHandles(trpc, { greeting: ensureEntry(trpc.greeting, { name: 'Jerry' }) })` in a route loader or server component gives you a **handle** for it. Pass `greeting` to the component, which reads it with `useQuery(fromHandle(trpc, props.greeting))`. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
 ### Migrating Invalidations and other QueryClient usages

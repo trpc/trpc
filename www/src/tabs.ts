@@ -33,3 +33,43 @@ export function validateTabSearch(search: Record<string, unknown>) {
   }
   return validated;
 }
+
+const storageKey = (group: string) => `trpc-docs:tab:${group}`;
+const cookieName = (group: string) =>
+  `trpc-docs-tab-${encodeURIComponent(group)}`;
+
+/**
+ * Keeps the tab the reader picked for `group`, in localStorage and a cookie,
+ * so the choice outlasts either being cleared or blocked. Only a click picks.
+ */
+export function saveTab(group: string, tab: string) {
+  document.cookie = `${cookieName(group)}=${encodeURIComponent(tab)}; Path=/; Max-Age=31536000; SameSite=Lax`;
+  try {
+    localStorage.setItem(storageKey(group), tab);
+  } catch {
+    // Storage is blocked: the cookie keeps the choice.
+  }
+}
+
+/** The tab the reader last picked for `group`: localStorage's, or else the cookie's. */
+export function savedTab(group: string) {
+  try {
+    const stored = localStorage.getItem(storageKey(group));
+    if (stored !== null) {
+      return stored;
+    }
+  } catch {
+    // Storage is blocked: read the cookie.
+  }
+  const name = `${cookieName(group)}=`;
+  const cookie = document.cookie
+    .split('; ')
+    .find((part) => part.startsWith(name));
+  try {
+    return cookie === undefined
+      ? null
+      : decodeURIComponent(cookie.slice(name.length));
+  } catch {
+    return null;
+  }
+}

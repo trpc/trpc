@@ -2,8 +2,10 @@ import type { OperationResultEnvelope, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createTRPCUntypedClient,
+  getUntypedClient,
   TRPCClientError,
 } from '@trpc/client';
+import type { TRPCSubscriptionCallbacks } from '@trpc/client/internals/TRPCUntypedClient';
 import { initTRPC } from '@trpc/server';
 import type { Observer, Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
@@ -75,28 +77,6 @@ function throwingTeardown() {
   throw new Error('teardown failed');
 }
 
-test('a subscription with callbacks throws when iterated', async () => {
-  const ctx = createControlledClient();
-  const onData = vi.fn<(data: number) => void>();
-  const sub = ctx.client.onEvent.subscribe(undefined, { onData });
-
-  await expect(async () => {
-    /* oxlint-disable typescript/await-thenable */
-    // @ts-expect-error a subscription with callbacks isn't iterable
-    for await (const _ of sub) {
-      // noop
-    }
-    /* oxlint-enable typescript/await-thenable */
-  }).rejects.toThrowError("A subscription with callbacks can't be iterated");
-
-  // the callbacks still work
-  ctx.emit(1);
-  expect(onData).toHaveBeenCalledWith(1);
-
-  sub.unsubscribe();
-  expect(ctx.teardown).toHaveBeenCalledTimes(1);
-});
-
 test('each observer callback on its own makes a subscription with callbacks', () => {
   const callbacks = [
     { onStarted: vi.fn() },
@@ -111,9 +91,6 @@ test('each observer callback on its own makes a subscription with callbacks', ()
     const sub = ctx.client.onEvent.subscribe(undefined, callback);
     expectTypeOf(sub).toEqualTypeOf<Unsubscribable>();
 
-    expect(() => iteratorOf(sub as any)).toThrowError(
-      "A subscription with callbacks can't be iterated",
-    );
     sub.unsubscribe();
     expect(ctx.teardown).toHaveBeenCalledTimes(1);
   }
@@ -576,55 +553,127 @@ test('types', async () => {
   expectTypeOf(mixed).toEqualTypeOf<Unsubscribable>();
   mixed.unsubscribe();
 
-  // callbacks that may all be undefined are a type error
-  const only = () => {
-    const partial: {
-      onData?: (data: number) => void;
-      onError?: (err: TRPCClientError<any>) => void;
-    } = {};
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, partial);
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, { onData: undefined });
-    const allUndefined = {
-      signal: new AbortController().signal,
-      onData: undefined,
-      onError: undefined,
-    };
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, allUndefined);
+  // callbacks that may all be undefined are a type error; at runtime the
+  // subscription has no callbacks, so it's iterated
+  const partial: {
+    onData?: (data: number) => void;
+    onError?: (err: TRPCClientError<any>) => void;
+  } = {};
+  const allUndefined = {
+    signal: new AbortController().signal,
+    onData: undefined,
+    onError: undefined,
   };
-  void only;
+  const withoutDefinedCallbacks = [
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, partial),
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, { onData: undefined }),
+    // @ts-expect-error pass at least one defined callback
+    ctx.client.onEvent.subscribe(undefined, allUndefined),
+  ] as unknown[] as AsyncIterableIterator<number>[];
+  for (const iterable of withoutDefinedCallbacks) {
+    expect(iterable).not.toHaveProperty('unsubscribe');
+    await iterable.return?.();
+    expect(await iterable.next()).toEqual({ value: undefined, done: true });
+  }
 
-  const untyped = createTRPCUntypedClient<AppRouter>({ links: [] });
-  // only type-checked; the client has no links to run
-  const untypedTypes = () => {
-    expectTypeOf(untyped.subscription('onEvent', undefined)).toEqualTypeOf<
-      AsyncIterableIterator<unknown>
-    >();
-    expectTypeOf(
-      untyped.subscription('onEvent', undefined, {
-        onData: () => {
-          // noop
-        },
-      }),
-    ).toEqualTypeOf<Unsubscribable>();
+  // the untyped client has the same overloads
+  const untyped = getUntypedClient(ctx.client);
+  expectTypeOf(createTRPCUntypedClient<AppRouter>).returns.toEqualTypeOf<
+    typeof untyped
+  >();
+  const untypedSub = untyped.subscription('onEvent', undefined);
+  expectTypeOf(untypedSub).toEqualTypeOf<AsyncIterableIterator<unknown>>();
+  await untypedSub.return?.();
+  const untypedWithCallbacks = untyped.subscription('onEvent', undefined, {
+    onData: () => {
+      // noop
+    },
+  });
+  expectTypeOf(untypedWithCallbacks).toEqualTypeOf<Unsubscribable>();
+  untypedWithCallbacks.unsubscribe();
+  const untypedWithoutDefinedCallbacks = untyped.subscription(
+    'onEvent',
+    undefined,
     // @ts-expect-error pass at least one defined callback
-    untyped.subscription('onEvent', undefined, { onData: undefined });
-  };
-  void untypedTypes;
+    { onData: undefined },
+  ) as unknown as AsyncIterableIterator<unknown>;
+  expect(untypedWithoutDefinedCallbacks).not.toHaveProperty('unsubscribe');
+  await untypedWithoutDefinedCallbacks.return?.();
 });
 
-test('callbacks that are all undefined throw', () => {
-  const ctx = createControlledClient();
-  const opts = { onData: undefined, onError: undefined };
+test('a subscription has callbacks or is iterated, never both', async () => {
+  // callbacks that are all undefined aren't callbacks
+  expectTypeOf<{
+    onData: undefined;
+    onError: undefined;
+  }>().not.toMatchTypeOf<
+    TRPCSubscriptionCallbacks<number, TRPCClientError<AppRouter>>
+  >();
 
-  expect(() =>
-    // @ts-expect-error pass at least one defined callback
-    ctx.client.onEvent.subscribe(undefined, opts),
-  ).toThrowError(
-    'subscribe() was called with callbacks, but none of them is defined. Pass at least one callback, or omit them all to iterate with for await.',
-  );
-  // the subscription never started
-  expect(() => ctx.emit(1)).toThrowError('Not subscribed');
+  {
+    const ctx = createControlledClient();
+    const onData = vi.fn<(data: number) => void>();
+    const withCallbacks = ctx.client.onEvent.subscribe(undefined, { onData });
+    await expect(async () => {
+      /* oxlint-disable typescript/await-thenable */
+      // @ts-expect-error a subscription with callbacks isn't iterable
+      for await (const _ of withCallbacks) {
+        // noop
+      }
+      /* oxlint-enable typescript/await-thenable */
+    }).rejects.toThrowError(TypeError);
+    ctx.emit(1);
+    expect(onData).toHaveBeenCalledWith(1);
+    withCallbacks.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+
+  // options that may or may not have callbacks are neither
+  {
+    const ctx = createControlledClient();
+    const maybeCallbacks = { onData: vi.fn() } as
+      | { onData: (data: number) => void }
+      | Record<never, never>;
+    // @ts-expect-error either pass callbacks or don't
+    const sub = ctx.client.onEvent.subscribe(undefined, maybeCallbacks);
+    expect(Symbol.asyncIterator in sub).toBe(false);
+    sub.unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+  {
+    const ctx = createControlledClient();
+    const maybeUndefinedCallbacks = { onData: undefined } as
+      | { onData: undefined }
+      | Record<never, never>;
+    const sub = ctx.client.onEvent.subscribe(
+      undefined,
+      // @ts-expect-error either pass callbacks or don't
+      maybeUndefinedCallbacks,
+    );
+    expect(sub).not.toHaveProperty('unsubscribe');
+    await (sub as unknown as AsyncIterableIterator<number>).return?.();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
+
+  // TypeScript has no exact types, so a type without the callback keys
+  // can still hold them
+  {
+    const ctx = createControlledClient();
+    const onData = vi.fn<(data: number) => void>();
+    const callbacks = { signal: new AbortController().signal, onData };
+    const widened: { signal?: AbortSignal } = callbacks;
+    const sub = ctx.client.onEvent.subscribe(undefined, widened);
+    expectTypeOf(sub).toEqualTypeOf<AsyncIterableIterator<number>>();
+    await expect(async () => {
+      for await (const _ of sub) {
+        // noop
+      }
+    }).rejects.toThrowError(TypeError);
+    ctx.emit(1);
+    expect(onData).toHaveBeenCalledWith(1);
+    (sub as unknown as Unsubscribable).unsubscribe();
+    expect(ctx.teardown).toHaveBeenCalledTimes(1);
+  }
 });

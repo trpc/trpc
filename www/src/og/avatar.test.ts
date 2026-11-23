@@ -1,7 +1,8 @@
 import { Effect, Result } from 'effect';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
+  AvatarEmptyError,
   AvatarRequestError,
   Avatars,
   AvatarSizeError,
@@ -12,7 +13,14 @@ import {
   fetchAvatars,
   sizableSvg,
 } from './avatar.ts';
-import { png, serveAvatars, svg, testAvatars } from './fake-avatars.ts';
+import {
+  cachedInstance,
+  mapCache,
+  png,
+  serveAvatars,
+  svg,
+  testAvatars,
+} from './fake-avatars.ts';
 
 const fetchOne = (url: string) =>
   Effect.runPromise(
@@ -149,6 +157,20 @@ describe('Avatars', () => {
     expect(server.hits.filter((hit) => hit === '/stuck.png')).toHaveLength(3);
   });
 
+  it('tries an empty body again, as the host may be having trouble', async () => {
+    await using server = await serveAvatars({
+      '/empty.png': { body: '', type: 'image/png' },
+      '/recovers.png': [{ body: '', type: 'image/png' }, png()],
+    });
+    expect(Result.isSuccess(await fetchOne(server.url('/recovers.png')))).toBe(
+      true,
+    );
+    expect(await failureOf(server.url('/empty.png'))).toEqual(
+      new AvatarEmptyError({ url: server.url('/empty.png') }),
+    );
+    expect(server.hits.filter((hit) => hit === '/empty.png')).toHaveLength(3);
+  });
+
   it('fails without a response when nothing listens', async () => {
     const server = await serveAvatars({});
     const url = server.url('/a.png');
@@ -178,5 +200,68 @@ describe('fetchAvatars', () => {
     expect(server.hits.filter((hit) => hit === '/0.png')).toHaveLength(1);
     expect(server.mostInFlight).toBeLessThanOrEqual(8);
     expect(server.mostInFlight).toBeGreaterThan(1);
+  });
+});
+
+describe('Avatars.layerCached', () => {
+  it('fetches an avatar that loaded once across requests, and shares one under way', async () => {
+    await using server = await serveAvatars({
+      '/a.png': { ...png(), delay: 20 },
+    });
+    await using runtime = cachedInstance(mapCache().store);
+    const images = [server.url('/a.png')];
+    const [first, second] = await Promise.all([
+      runtime.runPromise(fetchAvatars(images)),
+      runtime.runPromise(fetchAvatars(images)),
+    ]);
+    const third = await runtime.runPromise(fetchAvatars(images));
+    expect(first.size).toBe(1);
+    expect(second).toEqual(first);
+    expect(third).toEqual(first);
+    expect(server.hits).toEqual(['/a.png']);
+  });
+
+  it('keeps no failure, in memory or the store, so the next request tries again', async () => {
+    await using server = await serveAvatars({
+      '/a.png': [{ status: 503 }, png()],
+    });
+    const { kept, store } = mapCache();
+    await using runtime = cachedInstance(store);
+    const images = [server.url('/a.png')];
+    expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(0);
+    expect(kept.size).toBe(0);
+    expect((await runtime.runPromise(fetchAvatars(images))).size).toBe(1);
+    expect(server.hits).toEqual(['/a.png', '/a.png']);
+  });
+
+  it('draws an avatar another instance fetched from the store, without fetching it', async () => {
+    await using server = await serveAvatars({ '/a.png': png() });
+    const { store } = mapCache();
+    const images = [server.url('/a.png')];
+    await using first = cachedInstance(store);
+    await using second = cachedInstance(store);
+    const fetched = await first.runPromise(fetchAvatars(images));
+    expect(fetched.size).toBe(1);
+    expect(await second.runPromise(fetchAvatars(images))).toEqual(fetched);
+    expect(server.hits).toEqual(['/a.png']);
+  });
+
+  it('draws nothing kept, or being fetched, in an earlier period, from memory or the store', async () => {
+    await using server = await serveAvatars({
+      '/a.png': [{ ...png([1]), delay: 50 }, png([2])],
+    });
+    const { kept, store } = mapCache();
+    let day = 'monday';
+    await using runtime = cachedInstance(store, { period: () => day });
+    const images = [server.url('/a.png')];
+    // Monday's fetch is under way when Tuesday starts.
+    const monday = runtime.runPromise(fetchAvatars(images));
+    await vi.waitFor(() => expect(server.hits).toHaveLength(1));
+    day = 'tuesday';
+    const tuesday = await runtime.runPromise(fetchAvatars(images));
+    expect(await monday).not.toEqual(tuesday);
+    expect(await runtime.runPromise(fetchAvatars(images))).toEqual(tuesday);
+    expect(server.hits).toEqual(['/a.png', '/a.png']);
+    expect(kept.size).toBe(2);
   });
 });
