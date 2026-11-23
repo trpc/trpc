@@ -65,9 +65,8 @@ function postPageEntries(trpc: TRPC, id: number) {
 function feedEntries(trpc: TRPC, page: number) {
   const feed = prefetchEntry(trpc.post.feed, { page });
   return {
-    authors: experimental_perItem(
-      experimental_dataOf(feed).posts,
-      (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+    authors: experimental_perItem(experimental_dataOf(feed).posts, (post) =>
+      prefetchEntry(trpc.author.byId, { id: post.authorId }),
     ),
     feed,
   } satisfies TRPCLoadEntries;
