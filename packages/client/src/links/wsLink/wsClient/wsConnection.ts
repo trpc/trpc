@@ -223,9 +223,11 @@ export class WsConnection {
       if (this.keepAliveOpts.enabled) {
         setupPingInterval(ws, this.keepAliveOpts, () => {
           // A pong timeout gives up on an attempt still waiting on its
-          // `connectionParams`, so the reconnect doesn't wait on them.
+          // `connectionParams`, so the reconnect doesn't wait on them. The
+          // attempt stays in `openPromise` until it rejects, so an `open()`
+          // meanwhile, e.g. from `onClose`, gets that rejection instead of
+          // starting another attempt on this connection.
           if (this.openPromise === openPromise) {
-            this.openPromise = null;
             abandoned.reject(
               new TRPCWebSocketClosedError({
                 message: 'Pong timeout before connectionParams were sent',

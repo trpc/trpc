@@ -87,6 +87,45 @@ test('a keepAlive pong timeout reconnects while connectionParams are still pendi
   expect(await query).toBe('hello');
 });
 
+test('a request started from onClose after a pong timeout with pending connectionParams waits for the replacement', async () => {
+  const stalledParams = createDeferred<Record<string, string>>();
+  const connectionParams = vi
+    .fn<() => Promise<Record<string, string>>>()
+    .mockReturnValueOnce(stalledParams.promise)
+    .mockResolvedValue({});
+  const fromOnClose: Promise<string>[] = [];
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: {
+      ...wsClient,
+      retryDelayMs: () => 0,
+      connectionParams,
+      onClose: () => {
+        if (!fromOnClose.length) fromOnClose.push(ctx.client.greeting.query());
+      },
+    },
+  });
+  const serverSockets = trackServerSockets(ctx, (index) => index === 0);
+  await using _cleanup = makeAsyncResource({}, async () => {
+    stalledParams.resolve({});
+    for (const ws of serverSockets) ws.terminate();
+    await ctx.wsClient.close();
+  });
+
+  const query = ctx.client.greeting.query();
+
+  await vi.waitFor(() => expect(fromOnClose).toHaveLength(1), {
+    timeout: 1_000,
+  });
+  expect(await Promise.all([query, ...fromOnClose])).toEqual([
+    'hello',
+    'hello',
+  ]);
+  // It doesn't start another attempt on the abandoned connection, whose
+  // cleanup would then wait on it.
+  expect(connectionParams).toHaveBeenCalledTimes(2);
+});
+
 test('after a keepAlive pong timeout, the old socket is closed once and then ignored', async () => {
   const onClose = vi.fn();
   const onError = vi.fn();
