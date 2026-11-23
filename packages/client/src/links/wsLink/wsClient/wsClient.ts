@@ -9,6 +9,7 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  isObject,
   run,
   sleep,
   transformResult,
@@ -29,6 +30,48 @@ import {
 } from './utils';
 import type { WebSocketConnectionOptions } from './wsConnection';
 import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
+
+function isRequestId(value: unknown) {
+  return (
+    value === null || typeof value === 'string' || typeof value === 'number'
+  );
+}
+
+/** A result's `type`; a missing one means `'data'`. */
+function isResultType(value: unknown) {
+  return (
+    value === undefined ||
+    value === 'data' ||
+    value === 'started' ||
+    value === 'stopped'
+  );
+}
+
+/**
+ * A `reconnect` request from the server, or a response: a string, number or
+ * `null` `id` and either a `result` object of a known `type` or an `error`.
+ * The output transformer may serialize an error to any value, so
+ * `transformResult` validates it.
+ */
+function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
+  if (!isObject(value)) return false;
+  if ('method' in value) return value['method'] === 'reconnect';
+  if (!isRequestId(value['id'])) return false;
+  const result = value['result'];
+  if (isObject(result)) return isResultType(result['type']);
+  return result === undefined && 'error' in value;
+}
+
+function decodeIncomingMessage(
+  encoder: Encoder,
+  data: string | ArrayBuffer | Uint8Array,
+) {
+  const message = encoder.decode(data);
+  if (!isIncomingMessage(message)) {
+    throw new TypeError('Expected a tRPC message');
+  }
+  return message;
+}
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
@@ -265,7 +308,13 @@ export class WsClient {
       const abort = this.batchSend(message, {
         ...observer,
         next(event) {
-          const transformed = transformResult(event, transformer.output);
+          let transformed: ReturnType<typeof transformResult>;
+          try {
+            transformed = transformResult(event, transformer.output);
+          } catch (cause) {
+            observer.error(TRPCClientError.from(cause as Error));
+            return;
+          }
 
           if (!transformed.ok) {
             observer.error(TRPCClientError.from(transformed.error));
@@ -682,9 +731,22 @@ export class WsClient {
       // Handle PING/PONG as text regardless of encoder
       if (['PING', 'PONG'].includes(data)) return;
 
-      const incomingMessage = this.encoder.decode(
-        data,
-      ) as TRPCClientIncomingMessage;
+      let incomingMessage: TRPCClientIncomingMessage;
+      try {
+        incomingMessage = decodeIncomingMessage(this.encoder, data);
+      } catch (cause) {
+        // The frame may have carried a response, and its request would wait
+        // forever, so this socket is treated as lost.
+        ws.close();
+        handleCloseOrError(
+          new TRPCWebSocketClosedError({
+            message: 'Received a message that could not be decoded',
+            cause,
+          }),
+        );
+        // Rethrown asynchronously by `callUserCallback()` below.
+        throw cause;
+      }
       if ('method' in incomingMessage) {
         if (ws === this.activeConnection.ws) {
           this.handleIncomingRequest(incomingMessage);
