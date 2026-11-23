@@ -45,7 +45,7 @@ Key features:
 |                     | App Router                                   | Pages Router                                                    |
 | ------------------- | -------------------------------------------- | --------------------------------------------------------------- |
 | **Recommended for** | New projects                                 | Existing Pages Router projects                                  |
-| **Data fetching**   | Server Components, `prefetchQuery`           | `prefetchQuery` in `getServerSideProps` or `getStaticProps`     |
+| **Data fetching**   | Server Components, `queryClient.query`       | `queryClient.query` in `getServerSideProps` or `getStaticProps` |
 | **Server adapter**  | [Fetch adapter](/docs/server/adapters/fetch) | [Next.js adapter](/docs/server/adapters/nextjs)                 |
 | **Client package**  | `@trpc/tanstack-react-query`                 | `@trpc/tanstack-react-query`                                    |
 | **Provider setup**  | `TRPCProvider` in the root layout            | `TRPCProvider` and `HydrationBoundary` in `_app`                |

@@ -116,7 +116,7 @@ export type AppRouter = typeof appRouter;
 // @filename: helpers.ts
 // ---cut---
 // 3. Prefetching on the server, see /docs/client/tanstack-react-query/server-components
-import { dehydrate, QueryClient } from '@tanstack/react-query';
+import { dehydrate, noop, QueryClient } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createContext } from './context';
 import { appRouter } from './router';
@@ -129,7 +129,7 @@ export async function prefetchGreeting() {
     ctx: await createContext(),
     queryClient,
   });
-  await queryClient.prefetchQuery(trpc.greeting.queryOptions());
+  await queryClient.query(trpc.greeting.queryOptions()).catch(noop);
   return dehydrate(queryClient);
 }
 ```
