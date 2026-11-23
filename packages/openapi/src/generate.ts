@@ -650,10 +650,10 @@ function tryCollapseLiteralUnion(
     isString ? (m as StringLiteralType).value : (m as NumberLiteralType).value,
   );
   const baseType = isString ? 'string' : 'number';
-  return {
-    type: hasNull ? [baseType, 'null'] : baseType,
-    enum: values,
-  };
+  // `enum` restricts the value on its own, so `null` must be listed there too
+  return hasNull
+    ? { type: [baseType, 'null'], enum: [...values, null] }
+    : { type: baseType, enum: values };
 }
 
 // ---------------------------------------------------------------------------
