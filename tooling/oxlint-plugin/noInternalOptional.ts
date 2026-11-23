@@ -1,28 +1,8 @@
 import { defineRule } from '@oxlint/plugins';
 import type { ESTree } from '@oxlint/plugins';
-
-type FunctionNode = ESTree.Function | ESTree.ArrowFunctionExpression;
-
-/**
- * The name a top-level function is declared under, or `null` if `node` isn't
- * a top-level `function name()` or `const name = () => {}`.
- */
-function topLevelFunctionName(node: FunctionNode): string | null {
-  if (node.type === 'FunctionDeclaration') {
-    return node.parent.type === 'Program' && node.id ? node.id.name : null;
-  }
-  const declarator = node.parent;
-  if (
-    declarator.type !== 'VariableDeclarator' ||
-    declarator.init !== node ||
-    declarator.id.type !== 'Identifier'
-  ) {
-    return null;
-  }
-  return declarator.parent.parent?.type === 'Program'
-    ? declarator.id.name
-    : null;
-}
+import { exposedLocals, topLevelDeclarations } from './declarations.ts';
+import type { TopLevel } from './declarations.ts';
+import { publicNames } from './releaseTags.ts';
 
 /**
  * `@oxlint/plugins` types a binding identifier's `optional` as `false`, but
@@ -32,21 +12,26 @@ function isOptional(node: { optional?: boolean }): boolean {
   return node.optional === true;
 }
 
+type Param = ESTree.ParamPattern | ESTree.TSParameterProperty;
+
 /**
- * Internal parameters are required: absence is passed as `null`, `undefined`,
- * a literal or a symbol. Optionals are only for public APIs, normalised once
- * at the boundary.
+ * Internal parameters, properties and options are required: absence is
+ * passed as `null`, `undefined`, a literal or a symbol. Optionals are only
+ * for public APIs, normalised once at the boundary.
  *
- * Checks the parameters of top-level functions the file doesn't export, and
- * object types written inline in them. A non-exported type can still be
- * public through an exported one, so declarations of types aren't checked.
+ * Internal means a top-level declaration tagged `@internal`, or one the file
+ * doesn't export that no public declaration's type refers to and that isn't
+ * tagged `@public`. Untagged exports count as public (`trpc/release-tag`
+ * asks for a tag). Checks
+ * function and method parameters, the members of interfaces, object types
+ * and classes, and object types written inline in them.
  */
 export const noInternalOptional = defineRule({
   meta: {
     type: 'suggestion',
     docs: {
       description:
-        "Disallow optional and defaulted parameters on functions a file doesn't export",
+        'Disallow optional and defaulted parameters and properties on internal declarations',
     },
     schema: [],
     messages: {
@@ -59,30 +44,36 @@ export const noInternalOptional = defineRule({
     },
   },
   create(context) {
-    const exportedNames = new Set<string>();
     const text = (node: ESTree.Node) => context.sourceCode.getText(node);
+    const reachable = publicNames(context.filename);
 
-    // Named types aren't followed: they may be public through another export.
-    const checkType = (type: ESTree.TSType) => {
-      if (type.type === 'TSUnionType' || type.type === 'TSIntersectionType') {
-        for (const constituent of type.types) {
-          checkType(constituent);
-        }
-        return;
-      }
-      if (type.type !== 'TSTypeLiteral') return;
-      for (const member of type.members) {
+    const checkMembers = (members: ESTree.Node[]) => {
+      for (const member of members) {
         if (
-          (member.type === 'TSPropertySignature' ||
-            member.type === 'TSMethodSignature') &&
-          member.optional
+          member.type !== 'TSPropertySignature' &&
+          member.type !== 'TSMethodSignature' &&
+          member.type !== 'PropertyDefinition'
         ) {
+          continue;
+        }
+        if (member.optional) {
           context.report({
             node: member,
             messageId: 'optionalProperty',
             data: { name: text(member.key) },
           });
         }
+        if (member.type !== 'TSMethodSignature' && member.typeAnnotation) {
+          checkType(member.typeAnnotation.typeAnnotation);
+        }
+      }
+    };
+    // Named types are checked where they're declared.
+    const checkType = (type: ESTree.TSType): void => {
+      if (type.type === 'TSUnionType' || type.type === 'TSIntersectionType') {
+        for (const constituent of type.types) checkType(constituent);
+      } else if (type.type === 'TSTypeLiteral') {
+        checkMembers(type.members);
       }
     };
     const checkInlineType = (param: {
@@ -93,12 +84,9 @@ export const noInternalOptional = defineRule({
       }
     };
 
-    const checkFunction = (node: FunctionNode) => {
-      const name = topLevelFunctionName(node);
-      if (name === null || exportedNames.has(name)) return;
-      for (const param of node.params) {
-        // Only class constructors have these, and they aren't top-level.
-        if (param.type === 'TSParameterProperty') continue;
+    const checkParams = (params: Param[]) => {
+      for (const p of params) {
+        const param = p.type === 'TSParameterProperty' ? p.parameter : p;
         if (param.type === 'AssignmentPattern') {
           context.report({
             node: param,
@@ -124,32 +112,69 @@ export const noInternalOptional = defineRule({
       }
     };
 
+    const check = (declaration: TopLevel['declarations'][number]) => {
+      switch (declaration.type) {
+        case 'FunctionDeclaration':
+        case 'TSDeclareFunction':
+          checkParams(declaration.params);
+          break;
+        case 'VariableDeclarator': {
+          const init = declaration.init;
+          if (
+            init?.type === 'ArrowFunctionExpression' ||
+            init?.type === 'FunctionExpression'
+          ) {
+            checkParams(init.params);
+          }
+          break;
+        }
+        case 'TSInterfaceDeclaration':
+          checkMembers(declaration.body.body);
+          break;
+        case 'TSTypeAliasDeclaration':
+          checkType(declaration.typeAnnotation);
+          break;
+        // Enums have no optionals, and expressions aren't top-level
+        // declarations.
+        case 'TSEnumDeclaration':
+        case 'ClassExpression':
+        case 'FunctionExpression':
+        case 'TSEmptyBodyFunctionExpression':
+          break;
+        case 'ClassDeclaration':
+          for (const member of declaration.body.body) {
+            if (member.type === 'MethodDefinition') {
+              checkParams(member.value.params);
+            }
+          }
+          checkMembers(declaration.body.body);
+          break;
+      }
+    };
+
     return {
       Program(program) {
-        // `export function f()` and `export const f = ...` have an
-        // `ExportNamedDeclaration` parent, so `topLevelFunctionName` already
-        // skips them. This collects `export { f }` and `export default f`.
-        for (const statement of program.body) {
-          if (
-            statement.type === 'ExportNamedDeclaration' &&
-            !statement.source
-          ) {
-            for (const specifier of statement.specifiers) {
-              if (specifier.local.type === 'Identifier') {
-                exportedNames.add(specifier.local.name);
-              }
-            }
-          } else if (
-            statement.type === 'ExportDefaultDeclaration' &&
-            statement.declaration.type === 'Identifier'
-          ) {
-            exportedNames.add(statement.declaration.name);
-          }
+        const declarations = topLevelDeclarations(program, context.sourceCode);
+        const isInternalExport = (d: TopLevel) =>
+          !reachable.has(d.name) &&
+          d.tags.length > 0 &&
+          d.tags.every((tag) => tag === 'internal');
+        const exposed = exposedLocals(
+          declarations,
+          [...declarations.values()].filter((d) =>
+            d.exported ? !isInternalExport(d) : d.tags.includes('public'),
+          ),
+        );
+        for (const d of declarations.values()) {
+          // A non-exported declaration can say it's `@public` when it
+          // reaches users without a public type naming it.
+          const internal = d.exported
+            ? isInternalExport(d)
+            : !exposed.has(d.name) && !d.tags.includes('public');
+          if (!internal) continue;
+          for (const declaration of d.declarations) check(declaration);
         }
       },
-      FunctionDeclaration: checkFunction,
-      FunctionExpression: checkFunction,
-      ArrowFunctionExpression: checkFunction,
     };
   },
 });

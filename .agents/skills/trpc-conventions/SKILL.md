@@ -22,7 +22,8 @@ description: tRPC's test setup and TypeScript conventions, which win where the g
 
 ## TypeScript
 
-- Internal (non-exported) parameters, properties and options are required. Pass absence explicitly as `null`, `undefined`, a literal or a symbol, whichever fits: `x: T | undefined` that every caller passes is fine, but not `x?: T` or an optional or defaulted parameter. Optionals are only conveniences on public APIs; normalise a public options object once at the boundary into a fully required internal shape. The `trpc/no-internal-optional` lint rule enforces this for the parameters of top-level functions a file doesn't export; it doesn't check types, since a non-exported type can still be public through an exported one.
+- Every export in `packages/*/src` has a release tag in its JSDoc (`trpc/release-tag`): `@public` if changing it needs a major release, `@internal` if a minor may change it. What a versioned entry point exports is `@public`, and so is everything a `@public` declaration's type uses. Only `unstable-core-do-not-import` and `unstable-internals` are left out, since only tRPC's packages import them.
+- Internal parameters, properties and options are required. Pass absence explicitly as `null`, `undefined`, a literal or a symbol, whichever fits: `x: T | undefined` that every caller passes is fine, but not `x?: T` or an optional or defaulted parameter. Optionals are only conveniences on public APIs; normalise a public options object once at the boundary into a fully required internal shape. `trpc/no-internal-optional` enforces this on `@internal` declarations, and on non-exported ones that no public declaration's type uses. A shape that reaches users without a public type naming it, such as data a stream hands them, takes `@public` even when it isn't exported.
 
   ```ts
   function connect(url: string, retry?: RetryOptions); // before

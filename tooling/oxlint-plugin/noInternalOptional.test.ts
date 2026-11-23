@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, it } from 'vitest';
 import plugin from './index.ts';
@@ -30,9 +31,22 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     // Nested functions may be returned as public API.
     'function f() { return (a?: string) => {}; }',
     'export function f() { function g(a = 1) {} }',
-    // Types can be public through an exported type.
-    'interface Opts { a?: string }',
-    'type Opts = { a?: string };',
+    // Types a public declaration's type uses are public too.
+    'interface Opts { a?: string }\nexport function f(opts: Opts) {}',
+    'type Opts = { a?: string };\n/** @public */\nexport type Options = Opts;',
+    // Untagged exports count as public; `trpc/release-tag` asks for a tag.
+    'export interface Opts { a?: string }',
+    '/** @public */\nexport interface Opts { a?: string }',
+    '/** @public */\nexport function f(a?: string) {}',
+    // A non-exported declaration can say it's public.
+    '/** @public */\ninterface Shape { a?: string }',
+    '/** @internal */\nexport interface Opts { a: string | undefined }',
+    '/** @internal */\nexport function f(a: string | undefined) {}',
+    // Reachable from the package's `.` entry point, so public.
+    {
+      code: '/** @internal */\nexport function reached(a?: string) {}',
+      filename: join(import.meta.dirname, 'fixtures/pkg/src/reached.ts'),
+    },
     'function f(opts: { a: string } | undefined) {}',
     'function f(opts: { a: string } & { b: number }) {}',
     // Named types aren't followed, even in a union.
@@ -70,6 +84,47 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     {
       code: 'function f(opts: { a?: string } = {}) {}',
       errors: [{ message: defaulted('opts') }, { message: option('a') }],
+    },
+    {
+      code: 'interface Opts { a?: string }',
+      errors: [{ message: option('a') }],
+    },
+    {
+      code: 'type Opts = { a?: string };',
+      errors: [{ message: option('a') }],
+    },
+    {
+      code: '/** @internal */\nexport function f(a?: string) {}',
+      errors: [{ message: optional('a') }],
+    },
+    {
+      code: '/** @internal */\nexport const f = (opts: { a?: string }) => {};',
+      errors: [{ message: option('a') }],
+    },
+    {
+      code: '/** @internal */\nexport function f(a: string): void;\nexport function f(a?: number): void;\nexport function f(a?: unknown) {}',
+      errors: [{ message: optional('a') }, { message: optional('a') }],
+    },
+    {
+      code: '/** @internal */\nexport interface Opts { a?: string; nested: { b?: number } }',
+      errors: [{ message: option('a') }, { message: option('b') }],
+    },
+    {
+      code: '/** @internal */\nexport type Opts = { a?: string } & { b?: number };',
+      errors: [{ message: option('a') }, { message: option('b') }],
+    },
+    {
+      code: '/** @internal */\nexport class C {\n  p?: number;\n  constructor(a = 1) {}\n  m(b?: string) {}\n}',
+      errors: [
+        { message: option('p') },
+        { message: defaulted('a') },
+        { message: optional('b') },
+      ],
+    },
+    // A type only an internal declaration uses is internal.
+    {
+      code: 'interface Opts { a?: string }\n/** @internal */\nexport function f(opts: Opts) {}',
+      errors: [{ message: option('a') }],
     },
   ],
 });
