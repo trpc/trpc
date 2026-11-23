@@ -112,7 +112,7 @@ export interface WSClient {
   on(event: 'close' | 'error', listener: (cause?: unknown) => void): unknown;
   once(event: 'close', listener: () => void): unknown;
   send(data: string | Uint8Array): void;
-  close(): void;
+  close(code?: number, reason?: string): void;
   terminate(): void;
 }
 
@@ -1005,6 +1005,11 @@ export function handleKeepAlive(
   schedulePing();
 }
 
+export interface WSSHandler {
+  /** Tells every connected client to reconnect. */
+  broadcastReconnectNotification: () => void;
+}
+
 /**
  * Serves a router on a `ws` WebSocket server. Returns
  * `broadcastReconnectNotification()`, which tells every client to
@@ -1020,10 +1025,6 @@ export function handleKeepAlive(
  * ```
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
-export interface WSSHandler {
-  broadcastReconnectNotification: () => void;
-}
-
 export function applyWSSHandler<
   TRouter extends AnyRouter,
   TServer extends WSServer<WSClient> = WebSocketServer,
