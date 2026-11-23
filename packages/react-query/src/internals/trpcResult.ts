@@ -6,9 +6,9 @@ import type {
 } from '@tanstack/react-query';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import type { TRPCQueryKey } from '../getQueryKey';
 import type { TRPCQueryOptionsResult } from '../shared';
 import type { TRPCHookResult } from '../shared/hooks/types';
-import type { TRPCQueryKey } from './getQueryKey';
 
 export function createTRPCOptionsResult(value: {
   path: readonly string[];

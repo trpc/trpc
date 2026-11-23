@@ -1,6 +1,6 @@
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import type { CreateTRPCClientOptions } from './internals/TRPCUntypedClient';
-import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { CreateTRPCClientOptions } from './TRPCUntypedClient';
+import { TRPCUntypedClient } from './TRPCUntypedClient';
 
 /**
  * Creates a client that calls procedures by path string, without types.
@@ -15,5 +15,5 @@ export function createTRPCUntypedClient<TRouter extends AnyRouter>(
 export type {
   CreateTRPCClientOptions,
   TRPCRequestOptions,
-} from './internals/TRPCUntypedClient';
-export { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+} from './TRPCUntypedClient';
+export { TRPCUntypedClient } from './TRPCUntypedClient';

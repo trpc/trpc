@@ -15,7 +15,7 @@ import type {
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCQueryKey } from '../internals/getQueryKey';
+import type { TRPCQueryKey } from '../getQueryKey';
 import type { ExtractCursorType, TRPCReactRequestOptions } from './hooks/types';
 
 /**

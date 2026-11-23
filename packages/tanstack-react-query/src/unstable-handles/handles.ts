@@ -10,15 +10,16 @@ import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
   DecorateRouterKeyable,
-} from '../internals/createOptionsProxy';
+} from '../createOptionsProxy';
 import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
-} from '../internals/infiniteQueryOptions';
+} from '../infiniteQueryOptions';
+import { readQueryKey } from '../internals/utils';
 import type {
   UnusedSkipTokenTRPCQueryOptionsIn,
   UnusedSkipTokenTRPCQueryOptionsOut,
-} from '../internals/queryOptions';
+} from '../queryOptions';
 import type {
   ExtractCursorType,
   FeatureFlags,
@@ -26,8 +27,7 @@ import type {
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
-} from '../internals/types';
-import { readQueryKey } from '../internals/utils';
+} from '../types';
 import type { ErrorOf } from './entryError';
 import { entryCause, TRPCEntryError } from './entryError';
 

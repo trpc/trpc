@@ -5,8 +5,8 @@ import type {
 import type {
   CallbackOrValue,
   UrlOptionsWithConnectionParams,
-} from '../../internals/urlWithConnectionParams';
-import { resultOf } from '../../internals/urlWithConnectionParams';
+} from '../../urlWithConnectionParams';
+import { resultOf } from '../../urlWithConnectionParams';
 import type { Encoder } from './encoder';
 
 export class TRPCWebSocketClosedError extends Error {

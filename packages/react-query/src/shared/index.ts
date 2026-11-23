@@ -5,10 +5,7 @@ export type {
   DecorateRouterRecord,
   DecorateProcedure,
 } from '../createTRPCReact';
-export type {
-  TRPCUseQueries,
-  TRPCUseSuspenseQueries,
-} from '../internals/useQueries';
+export type { TRPCUseQueries, TRPCUseSuspenseQueries } from '../useQueries';
 export * from './hooks/createRootHooks';
 export * from './queryClient';
 export * from './types';
@@ -27,6 +24,6 @@ export {
    * @deprecated
    */
   TRPCContext,
-} from './../internals/context';
+} from '../context';
 
-export * from '../internals/context';
+export * from '../context';

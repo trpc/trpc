@@ -5,7 +5,7 @@ import {
   getUntypedClient,
   TRPCClientError,
 } from '@trpc/client';
-import type { TRPCSubscriptionCallbacks } from '@trpc/client/internals/TRPCUntypedClient';
+import type { TRPCSubscriptionCallbacks } from '@trpc/client/TRPCUntypedClient';
 import { initTRPC } from '@trpc/server';
 import type { Observer, Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';

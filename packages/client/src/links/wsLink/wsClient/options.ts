@@ -1,4 +1,4 @@
-import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
+import type { UrlOptionsWithConnectionParams } from '../../urlWithConnectionParams';
 import type { Encoder } from './encoder';
 
 /**

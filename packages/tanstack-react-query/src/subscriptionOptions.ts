@@ -5,6 +5,7 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import { createTRPCOptionsResult } from './internals/utils';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -12,7 +13,6 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;

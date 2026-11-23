@@ -17,7 +17,7 @@ export {
   type inferRouterClient as inferRouterProxyClient,
 } from './createTRPCClient';
 
-export { type TRPCProcedureOptions } from './internals/types';
+export { type TRPCProcedureOptions } from './types';
 
 export {
   safe,

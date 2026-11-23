@@ -17,12 +17,13 @@ import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl, type HTTPLinkBaseOptions } from './internals/httpUtils';
+import type { HTTPLinkBaseOptions } from './HTTPLinkBaseOptions';
+import { getUrl } from './internals/httpUtils';
+import type { Operation, TRPCLink } from './types';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
-} from './internals/urlWithConnectionParams';
-import type { Operation, TRPCLink } from './types';
+} from './urlWithConnectionParams';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,

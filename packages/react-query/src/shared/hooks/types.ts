@@ -30,8 +30,8 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { JSX, ReactNode } from 'react';
-import type { TRPCContextProps } from '../../internals/context';
-import type { TRPCQueryKey } from '../../internals/getQueryKey';
+import type { TRPCContextProps } from '../../context';
+import type { TRPCQueryKey } from '../../getQueryKey';
 
 /**
  * A page of data and the cursor that fetched it.

@@ -3,8 +3,8 @@ import {
   isObject,
   type DeepPartial,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { DecoratedMutation, DecoratedQuery } from '../createTRPCReact';
-import type { DecorateRouterRecord } from '../shared';
+import type { DecoratedMutation, DecoratedQuery } from './createTRPCReact';
+import type { DecorateRouterRecord } from './shared';
 
 export type QueryType = 'any' | 'infinite' | 'query';
 

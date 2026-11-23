@@ -8,6 +8,12 @@ import type {
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createTRPCOptionsResult,
+  getClientArgs,
+  getMutationKeyInternal,
+  unwrapLazyArg,
+} from './internals/utils';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -17,12 +23,6 @@ import type {
   TRPCQueryBaseOptions,
   TRPCQueryOptionsResult,
 } from './types';
-import {
-  createTRPCOptionsResult,
-  getClientArgs,
-  getMutationKeyInternal,
-  unwrapLazyArg,
-} from './utils';
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
 

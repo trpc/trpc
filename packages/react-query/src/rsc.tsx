@@ -23,7 +23,7 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { getQueryKeyInternal } from './internals/getQueryKey';
+import { getQueryKeyInternal } from './getQueryKey';
 import type {
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,

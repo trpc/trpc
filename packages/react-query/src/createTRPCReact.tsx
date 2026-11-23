@@ -27,10 +27,6 @@ import type {
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type {
-  TRPCUseQueries,
-  TRPCUseSuspenseQueries,
-} from './internals/useQueries';
-import type {
   CreateReactUtils,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -53,6 +49,7 @@ import type {
   UseTRPCSuspenseQueryOptions,
 } from './shared/hooks/types';
 import type { CreateTRPCReactOptions } from './shared/types';
+import type { TRPCUseQueries, TRPCUseSuspenseQueries } from './useQueries';
 
 type ResolverDef = {
   input: any;

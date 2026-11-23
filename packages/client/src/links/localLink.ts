@@ -24,10 +24,10 @@ import {
   raceAbortSignals,
   throwIfAborted,
 } from '../internals/signals';
-import { getTransformer } from '../internals/transformer';
-import type { TransformerOptions } from '../internals/transformer';
+import { getTransformer } from '../transformer';
+import type { TransformerOptions } from '../transformer';
 import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
-import type { TRPCConnectionState } from './internals/subscriptions';
+import type { TRPCConnectionState } from './subscriptions';
 import type { TRPCLink } from './types';
 
 /**

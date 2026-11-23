@@ -28,9 +28,9 @@ import {
   createRecursiveProxy,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCQueryKey } from '../getQueryKey';
+import { getQueryKeyInternal } from '../getQueryKey';
 import { getClientArgs } from '../internals/getClientArgs';
-import type { TRPCQueryKey } from '../internals/getQueryKey';
-import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
   DecorateQueryProcedure,

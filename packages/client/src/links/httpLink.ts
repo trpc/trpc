@@ -6,11 +6,8 @@ import type {
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
-import type {
-  HTTPLinkBaseOptions,
-  HTTPResult,
-  Requester,
-} from './internals/httpUtils';
+import type { HTTPLinkBaseOptions } from './HTTPLinkBaseOptions';
+import type { HTTPResult, Requester } from './internals/httpUtils';
 import {
   getUrl,
   httpRequest,

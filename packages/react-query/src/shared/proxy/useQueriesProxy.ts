@@ -15,12 +15,12 @@ import type {
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import { getQueryKeyInternal } from '../../getQueryKey';
 import { fetchQueryData } from '../../internals/trpcResult';
 import type {
   TrpcQueryOptionsForUseQueries,
   TrpcQueryOptionsForUseSuspenseQueries,
-} from '../../internals/useQueries';
+} from '../../useQueries';
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<
