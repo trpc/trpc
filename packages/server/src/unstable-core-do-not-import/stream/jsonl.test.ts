@@ -985,3 +985,171 @@ test('regression: stream closing before head rejects headDeferred with descripti
     'Stream closed before head was received',
   );
 });
+
+test('regression: a value that cannot be serialized fails only its own promise or iterable', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  let iterableEnded = false;
+  const data = {
+    0: Promise.resolve(1n),
+    1: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        try {
+          yield 'a';
+          yield 2n;
+        } finally {
+          iterableEnded = true;
+        }
+      },
+    }),
+    2: Promise.resolve('ok'),
+  };
+  const stream = jsonlStreamProducer({
+    data,
+    onError,
+    formatError: ({ error }) => (error as Error).message,
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: stream,
+    abortController: new AbortController(),
+  });
+
+  await expect(head[0]).rejects.toMatchObject({
+    data: expect.stringContaining('BigInt'),
+  });
+  const values: unknown[] = [];
+  await expect(
+    run(async () => {
+      for await (const value of await head[1]) {
+        values.push(value);
+      }
+    }),
+  ).rejects.toMatchObject({ data: expect.stringContaining('BigInt') });
+  expect(values).toEqual(['a']);
+  expect(iterableEnded).toBe(true);
+  await expect(head[2]).resolves.toBe('ok');
+  expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([['0'], ['1']]);
+});
+
+test('regression: a value that cannot be serialized does not leave the promises and iterables inside it running', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  const dropped = createDeferred<never>();
+  let childStarted = false;
+  const data = {
+    0: Promise.resolve({
+      child: {
+        [Symbol.asyncIterator]: async function* () {
+          childStarted = true;
+          // never ends, so it would hold the response open
+          await new Promise(() => {
+            // noop
+          });
+          yield 'unreachable';
+        },
+      },
+      dropped: dropped.promise,
+      bad: 1n,
+    }),
+    1: Promise.resolve('ok'),
+  };
+  const [toConsumer, toEnd] = jsonlStreamProducer({
+    data,
+    onError,
+    formatError: ({ error }) => (error as Error).message,
+  }).tee();
+  let streamEnded = false;
+  void run(async () => {
+    const reader = toEnd.getReader();
+    while (!(await reader.read()).done) {
+      // drain
+    }
+    streamEnded = true;
+  });
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: toConsumer,
+    abortController: new AbortController(),
+  });
+
+  await expect(head[0]).rejects.toMatchObject({
+    data: expect.stringContaining('BigInt'),
+  });
+  await expect(head[1]).resolves.toBe('ok');
+  await vi.waitFor(() => expect(streamEnded).toBe(true));
+  expect(childStarted).toBe(false);
+
+  // the dropped promise's rejection is reported, not left unhandled
+  dropped.reject(new Error('dropped'));
+  await vi.waitFor(() =>
+    expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([
+      ['0'],
+      ['0', 'dropped'],
+    ]),
+  );
+});
+
+test('regression: an error from cleaning up an iterable fails only that iterable', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  const sibling = createDeferred<string>();
+  const cleanupError = new Error('cleanup failed');
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: () => ({
+        next: async () => ({ value: 1n, done: false }),
+        return: async (): Promise<IteratorResult<never>> => {
+          throw cleanupError;
+        },
+      }),
+    }),
+    1: sibling.promise,
+  };
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: jsonlStreamProducer({
+      data,
+      onError,
+      formatError: ({ error }) => (error as Error).message,
+    }),
+    abortController: new AbortController(),
+  });
+
+  await expect(
+    run(async () => {
+      for await (const _ of await head[0]) {
+        // noop
+      }
+    }),
+  ).rejects.toMatchObject({ data: expect.stringContaining('BigInt') });
+  sibling.resolve('ok');
+  await expect(head[1]).resolves.toBe('ok');
+  await vi.waitFor(() =>
+    expect(onError.mock.calls.map(([opts]) => opts.error)).toContain(
+      cleanupError,
+    ),
+  );
+});
+
+test('regression: a promise inside a value that resolves after the stream is cancelled is still reported', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  const first = createDeferred<string>();
+  const second = createDeferred<{ child: Promise<never> }>();
+  const child = createDeferred<never>();
+  const reader = jsonlStreamProducer({
+    data: { 0: first.promise, 1: second.promise },
+    onError,
+  }).getReader();
+  await reader.read();
+
+  const cancelled = reader.cancel();
+  // the cancel lands once `0` yields, and the merge stops
+  first.resolve('ok');
+  await new Promise((resolve) => setTimeout(resolve));
+  // `1` was still awaiting, so it finishes its line after the merge stopped
+  second.resolve({ child: child.promise });
+  await cancelled;
+
+  child.reject(new Error('child'));
+  await vi.waitFor(() =>
+    expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([
+      ['1', 'child'],
+    ]),
+  );
+});
