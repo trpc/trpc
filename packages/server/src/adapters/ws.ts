@@ -14,7 +14,7 @@ import {
 } from '../@trpc/server';
 import type { TRPCRequestInfo } from '../@trpc/server/http';
 import { type BaseHandlerOptions } from '../@trpc/server/http';
-import { parseTRPCMessage } from '../@trpc/server/rpc';
+import { parseTRPCMessage, TRPC_ERROR_CODES_BY_KEY } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
@@ -28,7 +28,6 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
 // oxlint-disable-next-line no-restricted-imports
 import {
-  getFallbackErrorShape,
   isAbortError,
   isAsyncIterable,
   isObject,
@@ -74,6 +73,16 @@ function isSuppressedError(
     'suppressed' in cause
   );
 }
+
+/**
+ * What the client gets when its error can't be formatted or encoded. It says
+ * nothing about the error, which is what `errorFormatter` would have hidden.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
 
 /**
  * A procedure that gives up because its subscription was cancelled rejects
@@ -351,7 +360,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           ctx,
           req,
         });
-        return getFallbackErrorShape(call.error);
+        return fallbackErrorShape;
       }
     }
 
@@ -369,13 +378,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     /**
      * Sends a response that isn't tied to a request, reporting it if it
      * can't be built or sent. One that can't be sent is replaced by the
-     * fallback shape of `error`, so that a client still learns it was
-     * rejected.
+     * fallback error, so that a client still learns it was rejected.
      */
-    function respondOrReport(
-      error: TRPCError,
-      response: () => TRPCResponseMessage,
-    ) {
+    function respondOrReport(response: () => TRPCResponseMessage) {
       let message: TRPCResponseMessage | null = null;
       try {
         message = response();
@@ -389,7 +394,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           respond({
             id: message.id,
             jsonrpc: message.jsonrpc,
-            error: getFallbackErrorShape(error),
+            error: fallbackErrorShape,
           });
         } catch {
           // the same failure, and it was reported above
@@ -431,7 +436,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           req,
           input: undefined,
         });
-        respondOrReport(error, () => ({
+        respondOrReport(() => ({
           id: null,
           error: errorShape({
             error,
@@ -784,11 +789,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               req,
               input,
             });
-            respondOrReport(error, () => ({
-              id,
-              jsonrpc,
-              error: getFallbackErrorShape(error),
-            }));
+            respondOrReport(() => ({ id, jsonrpc, error: fallbackErrorShape }));
           }
           return;
         }
@@ -820,7 +821,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'UNPROCESSABLE_CONTENT',
           message: 'Unexpected WebSocket message format',
         });
-        respondOrReport(error, () => ({
+        respondOrReport(() => ({
           id: null,
           error: errorShape({
             error,
@@ -901,12 +902,12 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               ) {
                 const id = raw['id'];
                 const jsonrpc = raw['jsonrpc'] === '2.0' ? '2.0' : undefined;
-                respondOrReport(error, () => ({ id, jsonrpc, error: shape }));
+                respondOrReport(() => ({ id, jsonrpc, error: shape }));
                 responded = true;
               }
             }
             if (!responded) {
-              respondOrReport(error, () => ({ id: null, error: shape }));
+              respondOrReport(() => ({ id: null, error: shape }));
             }
             return [];
           }
@@ -918,7 +919,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             cause,
           });
 
-          respondOrReport(error, () => ({
+          respondOrReport(() => ({
             id: null,
             error: errorShape({
               error,

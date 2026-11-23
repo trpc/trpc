@@ -42,15 +42,14 @@ const router = t.router({
   }),
 });
 
-function expectReported(
+/** The fixed shape the Node and ws adapters also fall back to */
+const fallbackData = { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 };
+
+function expectFormatterFailureReported(
   reports: readonly (readonly [unknown])[],
   path: string,
 ) {
-  expect(reports.map(([opts]) => opts)).toEqual([
-    expect.objectContaining({
-      path,
-      error: expect.objectContaining({ code: 'CONFLICT' }),
-    }),
+  expect(reports.map(([opts]) => opts)).toContainEqual(
     expect.objectContaining({
       path,
       error: expect.objectContaining({
@@ -58,25 +57,10 @@ function expectReported(
         message: 'Formatter failed',
       }),
     }),
-  ]);
+  );
 }
 
-test('a throwing errorFormatter still answers over httpLink', async () => {
-  await using ctx = testServerAndClientResource(router, {
-    clientLink: 'httpLink',
-  });
-
-  const error = await waitError(
-    ctx.client.fails.query(undefined, { signal: AbortSignal.timeout(1000) }),
-    TRPCClientError,
-  );
-
-  expect(error.message).toBe('CONFLICT');
-  expect(error.data).toEqual({ code: 'CONFLICT', httpStatus: 409 });
-  expectReported(ctx.onErrorSpy.mock.calls, 'fails');
-});
-
-test('a throwing errorFormatter fails only its own call over httpBatchStreamLink', async () => {
+test('a throwing errorFormatter fails only its own streamed value over httpBatchStreamLink', async () => {
   await using ctx = testServerAndClientResource(router, {
     clientLink: 'httpBatchStreamLink',
   });
@@ -87,17 +71,48 @@ test('a throwing errorFormatter fails only its own call over httpBatchStreamLink
   ]);
 
   const error = await waitError(collect(stream), TRPCClientError);
-  expect(error.data).toEqual({ code: 'CONFLICT', httpStatus: 409 });
+  expect(error.message).toBe('Internal server error');
+  expect(error.data).toEqual(fallbackData);
   expect(await collect(slow)).toEqual(['a', 'b']);
-  expect(ctx.onErrorSpy.mock.calls.map(([opts]) => opts)).toEqual([
-    expect.objectContaining({
-      error: expect.objectContaining({ code: 'CONFLICT' }),
-    }),
-    expect.objectContaining({
-      path: 'streamFails',
-      error: expect.objectContaining({ message: 'Formatter failed' }),
-    }),
+  expectFormatterFailureReported(ctx.onErrorSpy.mock.calls, 'streamFails');
+});
+
+test('a throwing errorFormatter fails only its own call over httpBatchStreamLink', async () => {
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'httpBatchStreamLink',
+  });
+
+  const [error, slow] = await Promise.all([
+    waitError(ctx.client.fails.query(), TRPCClientError),
+    ctx.client.slow.query(),
   ]);
+
+  expect(error.message).toBe('Internal server error');
+  expect(error.data).toEqual(fallbackData);
+  expect(await collect(slow)).toEqual(['a', 'b']);
+  expectFormatterFailureReported(ctx.onErrorSpy.mock.calls, 'fails');
+});
+
+test('a throwing onError does not stop the fallback over httpBatchStreamLink', async () => {
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'httpBatchStreamLink',
+    server: {
+      onError: ({ error }) => {
+        if (error.message === 'Formatter failed') {
+          throw new Error('onError failed');
+        }
+      },
+    },
+  });
+
+  const [stream, slow] = await Promise.all([
+    ctx.client.streamFails.query(),
+    ctx.client.slow.query(),
+  ]);
+
+  const error = await waitError(collect(stream), TRPCClientError);
+  expect(error.data).toEqual(fallbackData);
+  expect(await collect(slow)).toEqual(['a', 'b']);
 });
 
 test('a throwing errorFormatter still sends the error over httpSubscriptionLink', async () => {
@@ -105,16 +120,25 @@ test('a throwing errorFormatter still sends the error over httpSubscriptionLink'
     clientLink: 'httpSubscriptionLink',
   });
 
-  const onError = vi.fn();
-  const subscription = ctx.client.onEvent.subscribe(undefined, { onError });
+  const onConnectionStateChange = vi.fn();
+  const subscription = ctx.client.onEvent.subscribe(undefined, {
+    onConnectionStateChange,
+  });
   using _subscription = makeResource(subscription, () =>
     subscription.unsubscribe(),
   );
 
-  await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
-  expect(onError.mock.calls[0]![0].data).toEqual({
-    code: 'CONFLICT',
-    httpStatus: 409,
-  });
-  expectReported(ctx.onErrorSpy.mock.calls, 'onEvent');
+  // INTERNAL_SERVER_ERROR is retryable, so the client reconnects with it
+  await vi.waitFor(() =>
+    expect(onConnectionStateChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        state: 'connecting',
+        error: expect.objectContaining({
+          message: 'Internal server error',
+          data: fallbackData,
+        }),
+      }),
+    ),
+  );
+  expectFormatterFailureReported(ctx.onErrorSpy.mock.calls, 'onEvent');
 });
