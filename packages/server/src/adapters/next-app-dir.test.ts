@@ -182,3 +182,22 @@ test('onError is called and a TRPCError is thrown when form data cannot be norma
     error: { code: 'INTERNAL_SERVER_ERROR' },
   });
 });
+
+test('form data cannot add properties to String.prototype', async () => {
+  const t = initTRPC.create();
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({}))
+    .mutation(() => 'ok');
+
+  // `a` holds a string, and `'x'.__proto__` is `String.prototype`
+  const formData = new FormData();
+  formData.append('a', 'x');
+  formData.append('a[__proto__][nextAppDirPolluted]', 'yes');
+
+  await expect((proc as any)(formData)).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+  const polluted = ('' as any).nextAppDirPolluted;
+  delete (String.prototype as any).nextAppDirPolluted;
+  expect(polluted).toBeUndefined();
+});

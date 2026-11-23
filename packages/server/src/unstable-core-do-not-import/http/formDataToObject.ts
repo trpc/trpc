@@ -4,6 +4,19 @@ import { emptyObject } from '../utils';
 
 const isNumberString = (str: string) => /^\d+$/.test(str);
 
+/**
+ * Whether `value` is an array or object this function built. FormData values
+ * are strings and Files, so they never are.
+ */
+function isContainer(value: unknown): value is Record<string, any> {
+  return (
+    Array.isArray(value) ||
+    (typeof value === 'object' &&
+      value !== null &&
+      Object.getPrototypeOf(value) === null)
+  );
+}
+
 function set(
   obj: Record<string, any>,
   path: readonly string[],
@@ -16,8 +29,14 @@ function set(
 
     if (!Object.hasOwn(obj, key)) {
       obj[key] = isNumberString(nextKey) ? [] : emptyObject();
+    } else if (!isContainer(obj[key])) {
+      // An earlier field set a value here. Descending into it would reach
+      // its prototype: `'x'.__proto__` is `String.prototype`.
+      throw new TypeError(
+        `FormData field "${key}" has a value, so it can't have nested fields`,
+      );
     } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
-      obj[key] = Object.fromEntries(Object.entries(obj[key]));
+      obj[key] = Object.assign(emptyObject(), obj[key]);
     }
 
     set(obj[key], newPath, value);
