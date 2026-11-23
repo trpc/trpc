@@ -60,13 +60,20 @@ export function useLivePosts() {
     trpc.post.onAdd.subscriptionOptions(
       {},
       {
-        onStarted() {
-          if (!canResume.current) {
-            // The stream only has posts from now on, so refetch the channels loaded before it
-            void queryClient.invalidateQueries({
-              queryKey: trpc.post.infinite.pathKey(),
-            });
+        async onStarted() {
+          if (canResume.current) {
+            return;
           }
+          // The stream only has posts from now on, so refetch the channels loaded before it.
+          // A load that's still running may have read the database before the stream
+          // started, and invalidating would reuse it, so wait for it first.
+          const queryKey = trpc.post.infinite.pathKey();
+          const running = queryClient
+            .getQueryCache()
+            .findAll({ queryKey, fetchStatus: 'fetching' })
+            .flatMap((query) => query.promise ?? []);
+          await Promise.allSettled(running);
+          await queryClient.invalidateQueries({ queryKey });
         },
         onData(event) {
           canResume.current = true;

@@ -102,8 +102,13 @@ export const postRouter = router({
         });
         if (!lastPost) return [];
 
+        // Posts in other channels can share the last post's timestamp, so include it
         return db.query.Post.findMany({
-          where: (fields, ops) => ops.gt(fields.createdAt, lastPost.createdAt),
+          where: (fields, ops) =>
+            ops.and(
+              ops.gte(fields.createdAt, lastPost.createdAt),
+              ops.ne(fields.id, lastPost.id),
+            ),
           orderBy: (fields, ops) => ops.asc(fields.createdAt),
         });
       })();
