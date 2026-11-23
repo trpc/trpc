@@ -35,3 +35,5 @@ Run them from the repo root.
 All but `trpc-conventions` and `pr-agent-callout` are Lauren Tan's pstack skills, installed unchanged by the [`skills`](https://skills.sh) CLI and pinned in `skills-lock.json`; their MIT license is in [`NOTICE-pstack.md`](.agents/skills/NOTICE-pstack.md). Don't edit them. To update, rerun with a new commit and update the notice:
 
 `npx skills add https://github.com/cursor/plugins/tree/<sha>/pstack/skills --skill tdd typescript-best-practices principle-type-system-discipline principle-boundary-discipline principle-encode-lessons-in-structure -a claude-code codex cursor -y`
+
+Maintainer-only skills, such as reviewing an external PR, are in the opt-in [`trpc-maintainer`](.agents/plugins/trpc-maintainer/README.md) Claude Code plugin, not in `.agents/skills/`.

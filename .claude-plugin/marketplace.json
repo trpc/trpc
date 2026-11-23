@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "trpc",
+  "description": "Claude Code plugins for working on tRPC.",
+  "owner": {
+    "name": "tRPC",
+    "url": "https://github.com/trpc"
+  },
+  "plugins": [
+    {
+      "name": "trpc-maintainer",
+      "source": "./.agents/plugins/trpc-maintainer",
+      "description": "Skills for tRPC maintainers: review, fix up, approve and queue PRs from outside the core team."
+    }
+  ]
+}

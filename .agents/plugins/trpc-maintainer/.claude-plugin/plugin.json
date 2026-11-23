@@ -1,0 +1,13 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "trpc-maintainer",
+  "version": "0.1.0",
+  "description": "Skills for tRPC maintainers: review, fix up, approve and queue PRs from outside the core team.",
+  "author": {
+    "name": "tRPC",
+    "url": "https://github.com/trpc"
+  },
+  "homepage": "https://github.com/trpc/trpc/tree/main/.agents/plugins/trpc-maintainer",
+  "repository": "https://github.com/trpc/trpc",
+  "license": "MIT"
+}
