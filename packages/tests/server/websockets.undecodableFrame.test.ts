@@ -80,6 +80,17 @@ test.each([
     frame: () => JSON.stringify({ id: {}, result: { type: 'data', data: 1 } }),
     thrown: TypeError,
   },
+  {
+    name: 'an unknown method',
+    frame: () => JSON.stringify({ id: null, method: 'other' }),
+    thrown: TypeError,
+  },
+  {
+    name: 'an unknown result type',
+    frame: (id: unknown) =>
+      JSON.stringify({ id, result: { type: 'other', data: 1 } }),
+    thrown: TypeError,
+  },
 ])(
   'an undecodable frame ($name) fails the requests in flight and reconnects',
   async ({ frame, thrown }) => {

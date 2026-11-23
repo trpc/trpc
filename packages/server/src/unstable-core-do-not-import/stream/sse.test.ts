@@ -1,10 +1,11 @@
-import { EventEmitter, on } from 'node:events';
+import { EventEmitter, getEventListeners, on } from 'node:events';
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
+import type { EventSourceLike } from './sse.types';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { makeResource } from './utils/disposable';
 
@@ -358,6 +359,97 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
+});
+
+test('SSE consumer releases the abort listener when its stream reconnects', async () => {
+  const instances: FakeEventSource[] = [];
+
+  class FakeEventSource {
+    CONNECTING = 0;
+    OPEN = 1;
+    CLOSED = 2;
+    readyState = 1;
+    private listeners = new Map<
+      string,
+      Set<(ev: EventSourceLike.MessageEvent) => void>
+    >();
+
+    constructor(_url: string, _eventSourceInitDict?: EventSourceLike.InitDict) {
+      instances.push(this);
+      // the consumer subscribes synchronously once url()/init() resolve, so a
+      // macrotask safely emits after that
+      setTimeout(() => {
+        this.#emit(
+          'connected',
+          JSON.stringify({ reconnectAfterInactivityMs: 20 }),
+        );
+      }, 0);
+    }
+
+    addEventListener(
+      type: string,
+      listener: (ev: EventSourceLike.MessageEvent) => void,
+    ) {
+      const set = this.listeners.get(type) ?? new Set();
+      set.add(listener);
+      this.listeners.set(type, set);
+    }
+
+    removeEventListener(
+      type: string,
+      listener: (ev: EventSourceLike.MessageEvent) => void,
+    ) {
+      this.listeners.get(type)?.delete(listener);
+    }
+
+    close() {
+      this.readyState = this.CLOSED;
+    }
+
+    #emit(type: string, data: string) {
+      for (const listener of this.listeners.get(type) ?? []) {
+        listener({ data, lastEventId: undefined });
+      }
+    }
+  }
+
+  const abortCtrl = new AbortController();
+
+  const iterable = sseStreamConsumer<{
+    data: unknown;
+    error: unknown;
+    EventSource: typeof FakeEventSource;
+  }>({
+    url: () => 'http://localhost:1234/sse',
+    signal: abortCtrl.signal,
+    init: () => ({}),
+    EventSource: FakeEventSource,
+  });
+
+  const RECONNECTS = 4; // 1 initial stream + 4 reconnects
+  let reconnects = 0;
+  for await (const value of iterable) {
+    if (value.type === 'timeout') {
+      reconnects++;
+      continue;
+    }
+    // once the last reconnect's EventSource reported `connected`, its abort
+    // listener is registered: it must be the only one left on the signal
+    if (reconnects === RECONNECTS && value.type === 'connected') {
+      expect(getEventListeners(abortCtrl.signal, 'abort')).toHaveLength(1);
+      break;
+    }
+  }
+
+  expect(instances).toHaveLength(RECONNECTS + 1);
+  // every EventSource was closed
+  for (const es of instances) {
+    expect(es.readyState).toBe(es.CLOSED);
+  }
+  // breaking out disposed the live stream: no abort listener may remain
+  expect(getEventListeners(abortCtrl.signal, 'abort')).toHaveLength(0);
+
+  abortCtrl.abort();
 });
 
 describe('untracked events after a tracked event', () => {

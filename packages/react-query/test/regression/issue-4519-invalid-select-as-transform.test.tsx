@@ -2,7 +2,6 @@ import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
 import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import * as React from 'react';
 import * as z from 'zod';
 
@@ -11,32 +10,28 @@ import * as z from 'zod';
  * @see https://github.com/trpc/trpc/issues/4519
  */
 
-const ctx = konn()
-  .beforeEach(() => {
-    const { router, procedure } = initTRPC.create();
+function setup() {
+  const { router, procedure } = initTRPC.create();
 
-    const appRouter = router({
-      greeting: procedure
-        .input(
-          z.object({
-            name: z.string().nullish(),
-          }),
-        )
-        .query(({ input }) => {
-          return {
-            text: `hello ${input?.name ?? 'world'}`,
-          };
+  const appRouter = router({
+    greeting: procedure
+      .input(
+        z.object({
+          name: z.string().nullish(),
         }),
-    });
+      )
+      .query(({ input }) => {
+        return {
+          text: `hello ${input?.name ?? 'world'}`,
+        };
+      }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('select as transform', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -72,6 +67,7 @@ test('select as transform', async () => {
 });
 
 test('select as transform in suspense', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -105,6 +101,7 @@ test('select as transform in suspense', async () => {
 });
 
 test('select as transform with initial data', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {

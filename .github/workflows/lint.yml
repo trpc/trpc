@@ -1,15 +1,13 @@
 name: autofix.ci # for "security reasons", this has to be named autofix.ai
 permissions:
   contents: read
+# Not on pushes to `main`: every commit there passed the merge queue (see main.yml).
 on:
   pull_request:
   merge_group:
-  push:
-    branches: [main]
 
 concurrency:
-  # a push to `main` gets a group of its own, so another push can't cancel its checks (see main.yml)
-  group: "${{ github.workflow }}-${{ github.ref }}${{ github.ref == 'refs/heads/main' && format('-{0}', github.sha) || '' }}"
+  group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
 env:
@@ -19,8 +17,6 @@ env:
 jobs:
   autofix:
     name: 'Lint and auto-fix'
-    # on `main`, only release commits, which skip the merge queue
-    if: "github.event_name != 'push' || startsWith(github.event.head_commit.message, 'chore: release v')"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -48,7 +44,7 @@ jobs:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false
 
-      # the merge queue and `main` can't receive autofix commits, so any fix means failure
+      # the merge queue can't receive autofix commits, so any fix means failure
       - name: Ensure no autofixes are needed
         if: ${{ github.event_name != 'pull_request' && (failure() || success()) }}
         run: git diff --exit-code

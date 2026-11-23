@@ -5,7 +5,6 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
@@ -14,37 +13,33 @@ type Post = {
   title: string;
 };
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const posts: Post[] = [];
+  const posts: Post[] = [];
 
-    const appRouter = t.router({
-      post: t.router({
-        create: t.procedure
-          .input(z.object({ title: z.string() }))
-          .mutation(({ input }) => {
-            const newPost: Post = { id: posts.length, title: input.title };
-            posts.push(newPost);
-            return newPost;
-          }),
-      }),
-    });
+  const appRouter = t.router({
+    post: t.router({
+      create: t.procedure
+        .input(z.object({ title: z.string() }))
+        .mutation(({ input }) => {
+          const newPost: Post = { id: posts.length, title: input.title };
+          posts.push(newPost);
+          return newPost;
+        }),
+    }),
+  });
 
-    const persister = createSyncStoragePersister({
-      storage: window.localStorage,
-    });
+  const persister = createSyncStoragePersister({
+    storage: window.localStorage,
+  });
 
-    return getServerAndReactClient(appRouter, { persister });
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter, { persister });
+}
 
 describe('offline', () => {
   test('mutation paused due to no network connection should be persisted and resume automatically', async () => {
+    await using ctx = setup();
     const { client, App, queryClient, opts } = ctx;
     const trpcQueryUtils = createTRPCQueryUtils({
       client: opts.client,

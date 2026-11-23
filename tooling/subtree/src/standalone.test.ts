@@ -47,7 +47,7 @@ describe('isIgnored', () => {
 });
 
 describe('standalonePackageJson', () => {
-  it('installs @trpc/* from canary and catalog versions from the catalog', () => {
+  it('installs @trpc/* from latest and catalog versions from the catalog', () => {
     const pkg = standalonePackageJson(
       {
         name: 'examples-minimal-react-client',
@@ -64,8 +64,8 @@ describe('standalonePackageJson', () => {
     expect(pkg).toEqual({
       name: 'examples-minimal-react-client',
       dependencies: {
-        '@trpc/client': 'canary',
-        '@trpc/server': 'canary',
+        '@trpc/client': 'latest',
+        '@trpc/server': 'latest',
         react: '19.3.0',
       },
       devDependencies: { typescript: '^5.9.2', vite: '^8.3.0' },
@@ -346,7 +346,7 @@ describe('writeStandalone', () => {
           name: 'app-client',
           dependencies: {
             '@base-ui/react': '1.9.0',
-            '@trpc/client': 'canary',
+            '@trpc/client': 'latest',
             'class-variance-authority': '0.7.1',
             cn: '0.4.0',
             react: '19.3.0',

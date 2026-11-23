@@ -7,10 +7,12 @@ import { Effect, FileSystem, Path } from 'effect';
 
 import {
   flagsValue,
+  homeFunction,
   onDemandFunction,
   onDemandRoutes,
   pageCacheControl,
   pathParam,
+  requestOnlyCacheControl,
   writeOnDemandFunction,
 } from './on-demand.ts';
 
@@ -63,11 +65,12 @@ describe('onDemandRoutes', () => {
   it('sends the social cards to the function, with their path', () => {
     const og = all.find((route) => route.src?.startsWith('^(/og/'));
     const src = new RegExp(og?.src ?? '');
-    expect(src.exec('/og/docs/client/links.png')?.[1]).toBe(
-      '/og/docs/client/links.png',
+    expect(src.exec('/og/docs/client/links/abcdef0123-20261105.png')?.[1]).toBe(
+      '/og/docs/client/links/abcdef0123-20261105.png',
     );
-    expect(src.test('/og/index.png')).toBe(true);
+    expect(src.test('/og/docs/client/links')).toBe(true);
     expect(src.test('/og/')).toBe(false);
+    expect(src.test('/ogx')).toBe(false);
     expect(src.test('/docs/og/a.png')).toBe(false);
     expect(og?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
     expect(og?.has).toBeUndefined();
@@ -92,8 +95,10 @@ describe('writeOnDemandFunction', () => {
         path.join(root, 'dist/server/server.js'),
         [
           'export default {',
-          '  fetch: (request) =>',
-          '    new URL(request.url).pathname === "/og/fresh.png"',
+          '  fetch: async (request) =>',
+          '    new URL(request.url).pathname.startsWith("/kitchen-sink/")',
+          '      ? new Response(`${request.method} ${await request.text()}`, { headers: { "cache-control": "public, s-maxage=600" } })',
+          '      : new URL(request.url).pathname === "/og/fresh.png"',
           '      ? new Response("png", { headers: { "cache-control": "public, s-maxage=600" } })',
           '      : new Response(`${request.method} ${request.url} ${request.headers.get("accept")}`, {',
           '          headers: [["content-type", "text/html"], ["set-cookie", "a=1"], ["set-cookie", "b=2"]],',
@@ -144,12 +149,27 @@ describe('writeOnDemandFunction', () => {
         `localhost:${port}/v12/docs/b?flags=publisher`,
       );
 
+      // The home page's function renders the home page.
+      const home = yield* fetchText(`/${homeFunction}`);
+      expect(home.body).toContain(`localhost:${port}/ `);
+
       // A response's own caching wins.
       const fresh = yield* fetchText(
         `/${onDemandFunction}?${pathParam}=/og/fresh.png`,
       );
       expect(fresh.response.headers.get('cache-control')).toBe(
         'public, s-maxage=600',
+      );
+
+      // A request's body reaches the server build, and the kitchen sink is
+      // never cached, whatever it says.
+      const posted = yield* fetchText(
+        `/${onDemandFunction}?${pathParam}=/kitchen-sink/handles/api/post.byId`,
+        { body: '{"0":{"id":"1"}}', method: 'POST' },
+      );
+      expect(posted.body).toBe('POST {"0":{"id":"1"}}');
+      expect(posted.response.headers.get('cache-control')).toBe(
+        requestOnlyCacheControl,
       );
 
       const head = yield* fetchText('/', { method: 'HEAD' });

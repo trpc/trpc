@@ -1,6 +1,6 @@
+import { spawn } from 'node:child_process';
 import { resolve } from 'path';
-import { cancel, log } from '@clack/prompts';
-import type { SourceFile } from 'typescript';
+import { cancel } from '@clack/prompts';
 import { execa } from './execa';
 
 export async function assertCleanGitTree() {
@@ -13,42 +13,66 @@ export async function assertCleanGitTree() {
   }
 }
 
-export async function filterIgnored(files: readonly SourceFile[]) {
-  let stdout = '';
-  let stderr = '';
-  try {
-    const result = await execa('git check-ignore **/*');
-    stdout = result.stdout;
-    stderr = result.stderr;
-  } catch (error) {
-    log.error('Error executing git check-ignore:', error);
-    stdout = '';
+/**
+ * The environment without variables that point git at another repository,
+ * e.g. `GIT_DIR` from a hook, so `cwd` decides which repository git reads.
+ */
+export function isolatedGitEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  for (const name of [
+    'GIT_DIR',
+    'GIT_WORK_TREE',
+    'GIT_INDEX_FILE',
+    'GIT_COMMON_DIR',
+    'GIT_OBJECT_DIRECTORY',
+    'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+    'GIT_NAMESPACE',
+    'GIT_PREFIX',
+  ]) {
+    delete env[name];
   }
+  return env;
+}
 
-  const ignores = stdout.split('\n');
-
-  if (process.env['VERBOSE']) {
-    log.info(`cwd: ${process.cwd()}`);
-    log.info(
-      `All files in program: ${files.map((file) => file.fileName).join(', ')}`,
-    );
-    log.info(`Ignored files: ${ignores.join(', ')}`);
-  }
-
-  // Ignore "common files"
-  const filteredSourcePaths = files
-    .filter(
-      (source) =>
-        source.fileName.startsWith(resolve()) && // only look ahead of current directory
-        !source.fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
-        !source.fileName.includes('/node_modules/') && // always ignore node_modules
-        !ignores.includes(source.fileName), // ignored files
-    )
-    .map((source) => source.fileName);
-
-  if (process.env['VERBOSE']) {
-    log.info(`Filtered files: ${filteredSourcePaths.join(', ')}`);
-  }
-
-  return filteredSourcePaths;
+/**
+ * Every file under `cwd` that git tracks, or would track because no ignore
+ * rule matches it, as absolute paths. Leaves out `node_modules`, build output
+ * and generated code. Reads git's output as a stream, so no buffer limit
+ * stops a big repository.
+ */
+export function projectFiles(cwd: string): Promise<string[]> {
+  return new Promise((done, fail) => {
+    const args = [
+      'ls-files',
+      '-z',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+    ];
+    const child = spawn('git', args, {
+      cwd,
+      env: isolatedGitEnv(),
+    });
+    const chunks: Buffer[] = [];
+    let stderr = '';
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', fail);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        fail(new Error(`git ls-files failed with code ${code}: ${stderr}`));
+        return;
+      }
+      done(
+        Buffer.concat(chunks)
+          .toString('utf8')
+          // `-z`: paths as they are, not quoted and escaped
+          .split('\0')
+          .filter(Boolean)
+          .map((file) => resolve(cwd, file)),
+      );
+    });
+  });
 }

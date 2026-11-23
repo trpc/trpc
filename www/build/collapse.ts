@@ -28,7 +28,7 @@ export function stripCollapseMarkers(code: string) {
     .join('\n');
 }
 
-function classNames(node: Element) {
+export function classNames(node: Element) {
   const value = node.properties['class'] ?? node.properties['className'];
   if (Array.isArray(value)) {
     return value.map(String);

@@ -16,13 +16,14 @@ import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag, generateCacheTags } from '../shared';
 
-type NextCacheLinkOptions<TRouter extends AnyRouter> = {
+export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   /**
    * The router to call.
    */
   router: TRouter;
   /**
-   * Creates the context for each call.
+   * Creates the context for each call. A cached result was made with the
+   * context of whichever request ran it first.
    */
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
@@ -32,6 +33,14 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
 /**
  * A terminating link that calls the router directly and caches query
  * results with Next.js `unstable_cache`.
+ *
+ * The cache is shared by every request. A query is cached by its path and
+ * input only, not its context, and a cached result is returned without
+ * running the procedure or its middleware. So don't send queries whose
+ * result depends on the context, such as the current user's data or an
+ * auth check, through this link: one user's result would be served to
+ * everyone. Route those to an uncached link such as `localLink` with
+ * `splitLink`.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  */

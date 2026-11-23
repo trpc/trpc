@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@effect/platform-node": "4.1.1",
+    "@effect/platform-node": "catalog:",
     "effect": "catalog:www",
-    "yaml": "2.9.1"
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

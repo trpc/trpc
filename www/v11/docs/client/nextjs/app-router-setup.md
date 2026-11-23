@@ -20,11 +20,14 @@ skill:
     fetchRequestHandler (GET + POST exports), a per-request QueryClient that
     dehydrates pending queries, TRPCProvider and useTRPC() in client
     components, createTRPCOptionsProxy with prefetch and
-    HydrateClient/HydrationBoundary in server components, useSuspenseQuery for
-    Suspense, createCaller or fetchQuery for data on the server, and
-    tRPC-powered Server Actions.
+    HydrateClient (unstable_createHydrateClient) in server components,
+    useSuspenseQuery for Suspense, createCaller or fetchQuery for data on the
+    server, data shared between generateMetadata and the page, static and ISR
+    pages with a context that reads no request data, and tRPC-powered Server
+    Actions.
   references:
     - client/nextjs/server-actions
+    - client/nextjs/static-pages
 ---
 
 :::note
@@ -195,6 +198,12 @@ export function makeQueryClient() {
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === 'pending',
+        shouldRedactErrors: (error) => {
+          // Next.js detects dynamic pages by catching the errors we throw, so
+          // we must not redact them here. Next.js redacts with a better digest
+          // of its own.
+          return false;
+        },
       },
       hydrate: {
         // deserializeData: superjson.deserialize,
@@ -210,6 +219,10 @@ We're setting a few default options here:
 - `shouldDehydrateQuery`: This is a function that determines whether a query should be dehydrated or not. Since the RSC transport protocol
   supports hydrating promises over the network, we extend the `defaultShouldDehydrateQuery` function to also include queries that are
   still pending. This will allow us to start prefetching in a server component high up the tree, then consuming that promise in a client component further down.
+- `shouldRedactErrors`: Next.js detects dynamic rendering by looking for the `digest` on an error thrown during the render. Because
+  `shouldDehydrateQuery` also dehydrates queries that are still pending, a query that is pending during the build can reject afterwards,
+  and its error gets dehydrated and redacted before Next.js sees the `digest`. The build then fails. Returning `false` here keeps the
+  `digest` intact so Next.js can still recognise the error.
 - `serializeData` and `deserializeData` (optional): If you set up a [data transformer](../../server/data-transformers.md) in the previous step, set this option
   to make sure the data is serialized correctly when hydrating the query client over the server-client boundary.
 
@@ -364,8 +377,10 @@ export type AppRouter = typeof appRouter;
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -391,14 +406,8 @@ export const trpc = createTRPCOptionsProxy({
 //   queryClient: getQueryClient,
 // });
 
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+// Sends the request's queries to client components, pending ones too
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
@@ -419,7 +428,7 @@ export const caller = appRouter.createCaller(createContext);
 You're all set! You can now prefetch queries in server components and consume them in client components.
 
 :::tip
-To avoid repeating the procedure and input in client components, start queries with `unstable_$prefetch` or `unstable_$ensure` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
+To avoid repeating the procedure and input in client components, load the queries with `loadHandles` and pass the returned handles down. See [Prefetching with handles](/docs/client/tanstack-react-query/handles#nextjs-app-router).
 :::
 
 ```twoslash include app-router
@@ -450,8 +459,11 @@ import type { AppRouter } from './routers/_app';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: trpc/server.tsx
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy, type TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+  type TRPCQueryOptions,
+} from '@trpc/tanstack-react-query';
 import { cache } from 'react';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
@@ -461,13 +473,7 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  return (
-    <HydrationBoundary state={dehydrate(getQueryClient())}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
   void getQueryClient().prefetchQuery(queryOptions);
 }
@@ -640,5 +646,6 @@ export default async function Home() {
 ## Next steps
 
 - Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
+- Share data with `generateMetadata`, and keep pages static or ISR, in [Static pages and metadata](/docs/client/nextjs/static-pages)
 - Learn about [queries, mutations and invalidation](/docs/client/tanstack-react-query/usage) in client components
 - Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns

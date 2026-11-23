@@ -4,7 +4,6 @@ import { useIsFetching } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
@@ -14,183 +13,178 @@ export type Post = {
   createdAt: number;
 };
 
-const ctx = konn()
-  .beforeEach(() => {
-    /**
-     * An object of Vitest functions we can use to track how many times things
-     * have been called during invalidation etc.
-     */
-    const resolvers = {
-      user: {
-        listAll: vi.fn(),
-        byId: {
+function setup() {
+  /**
+   * An object of Vitest functions we can use to track how many times things
+   * have been called during invalidation etc.
+   */
+  const resolvers = {
+    user: {
+      listAll: vi.fn(),
+      byId: {
+        '1': vi.fn(),
+        '2': vi.fn(),
+      },
+      details: {
+        getByUserId: {
           '1': vi.fn(),
           '2': vi.fn(),
         },
-        details: {
-          getByUserId: {
-            '1': vi.fn(),
-            '2': vi.fn(),
-          },
-        },
       },
-      'user.current.email.getMain': vi.fn(),
-      posts: {
-        getAll: vi.fn(),
-        getAllInfinite: vi.fn(),
-        byId: {
-          '1': vi.fn(),
-          '2': vi.fn(),
-        },
-        'comments.getById': {
-          1: vi.fn(),
-          2: vi.fn(),
-        },
+    },
+    'user.current.email.getMain': vi.fn(),
+    posts: {
+      getAll: vi.fn(),
+      getAllInfinite: vi.fn(),
+      byId: {
+        '1': vi.fn(),
+        '2': vi.fn(),
       },
-    };
+      'comments.getById': {
+        1: vi.fn(),
+        2: vi.fn(),
+      },
+    },
+  };
 
-    const db: {
-      posts: Post[];
-    } = {
-      posts: [
-        { id: '1', title: 'first post', createdAt: 0 },
-        { id: '2', title: 'second post', createdAt: 1 },
-      ],
-    };
+  const db: {
+    posts: Post[];
+  } = {
+    posts: [
+      { id: '1', title: 'first post', createdAt: 0 },
+      { id: '2', title: 'second post', createdAt: 1 },
+    ],
+  };
 
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-          },
-        };
-      },
-    });
-    const appRouter = t.router({
-      user: t.router({
-        listAll: t.procedure.query(() => {
-          resolvers.user.listAll();
-          return 'user.listAll' as const;
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+        },
+      };
+    },
+  });
+  const appRouter = t.router({
+    user: t.router({
+      listAll: t.procedure.query(() => {
+        resolvers.user.listAll();
+        return 'user.listAll' as const;
+      }),
+
+      // A procedure and a sub router defined procedure that also both share
+      // an input variable.
+      byId: t.procedure
+        .input(
+          z.object({
+            userId: z.union([z.literal('1'), z.literal('2')]),
+          }),
+        )
+        .query(({ input: { userId } }) => {
+          resolvers.user.byId[userId]();
+          return `user.byId[${userId}]` as const;
         }),
-
-        // A procedure and a sub router defined procedure that also both share
-        // an input variable.
-        byId: t.procedure
+      details: t.router({
+        getByUserId: t.procedure
           .input(
             z.object({
               userId: z.union([z.literal('1'), z.literal('2')]),
             }),
           )
           .query(({ input: { userId } }) => {
-            resolvers.user.byId[userId]();
-            return `user.byId[${userId}]` as const;
+            resolvers.user.details.getByUserId[userId]();
+            return `user.details.getByUserId[${userId}]` as const;
           }),
-        details: t.router({
-          getByUserId: t.procedure
-            .input(
-              z.object({
-                userId: z.union([z.literal('1'), z.literal('2')]),
-              }),
-            )
-            .query(({ input: { userId } }) => {
-              resolvers.user.details.getByUserId[userId]();
-              return `user.details.getByUserId[${userId}]` as const;
-            }),
-        }),
       }),
-      // Add an example top level query defined using `.` to faux being a user sub router.
-      'user.current.email.getMain': t.procedure
+    }),
+    // Add an example top level query defined using `.` to faux being a user sub router.
+    'user.current.email.getMain': t.procedure
+      .input(
+        z.object({
+          getExtraDetails: z.boolean(),
+        }),
+      )
+      .query(() => {
+        resolvers['user.current.email.getMain']();
+        return '[user.current.email.getMain]' as const;
+      }),
+
+    // Another sub router that should not be affected when operating on the
+    // user router.
+    posts: t.router({
+      getAll: t.procedure.query(() => {
+        resolvers.posts.getAll();
+        return `posts.getAll`;
+      }),
+
+      getAllInfinite: t.procedure
         .input(
           z.object({
-            getExtraDetails: z.boolean(),
+            limit: z.number().min(1).max(100).nullish(),
+            cursor: z.number().nullish(),
           }),
         )
-        .query(() => {
-          resolvers['user.current.email.getMain']();
-          return '[user.current.email.getMain]' as const;
+        .query(({ input }) => {
+          resolvers.posts.getAllInfinite();
+          const items: typeof db.posts = [];
+          const limit = input.limit ?? 50;
+          const { cursor } = input;
+          let nextCursor: typeof cursor = null;
+          for (const element of db.posts) {
+            if (cursor != null && element.createdAt < cursor) {
+              continue;
+            }
+            items.push(element);
+            if (items.length >= limit) {
+              break;
+            }
+          }
+          const last = items[items.length - 1];
+          const nextIndex = db.posts.findIndex((item) => item === last) + 1;
+          if (db.posts[nextIndex]) {
+            nextCursor = db.posts[nextIndex].createdAt;
+          }
+          return {
+            items,
+            nextCursor,
+          };
         }),
 
-      // Another sub router that should not be affected when operating on the
-      // user router.
-      posts: t.router({
-        getAll: t.procedure.query(() => {
-          resolvers.posts.getAll();
-          return `posts.getAll`;
+      // Define two procedures that have the same property but different
+      // types.
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.union([z.literal('1'), z.literal('2')]),
+          }),
+        )
+        .query(({ input: { id } }) => {
+          resolvers.posts.byId[id]();
+          return `posts.byId[${id}]` as const;
         }),
 
-        getAllInfinite: t.procedure
-          .input(
-            z.object({
-              limit: z.number().min(1).max(100).nullish(),
-              cursor: z.number().nullish(),
-            }),
-          )
-          .query(({ input }) => {
-            resolvers.posts.getAllInfinite();
-            const items: typeof db.posts = [];
-            const limit = input.limit ?? 50;
-            const { cursor } = input;
-            let nextCursor: typeof cursor = null;
-            for (const element of db.posts) {
-              if (cursor != null && element.createdAt < cursor) {
-                continue;
-              }
-              items.push(element);
-              if (items.length >= limit) {
-                break;
-              }
-            }
-            const last = items[items.length - 1];
-            const nextIndex = db.posts.findIndex((item) => item === last) + 1;
-            if (db.posts[nextIndex]) {
-              nextCursor = db.posts[nextIndex].createdAt;
-            }
-            return {
-              items,
-              nextCursor,
-            };
+      'comments.getById': t.procedure
+        .input(
+          z.object({
+            id: z.union([z.literal(1), z.literal(2)]),
           }),
+        )
+        .query(({ input: { id } }) => {
+          resolvers.posts['comments.getById'][id]();
+          return `posts.[comments.getById][${id}]` as const;
+        }),
+    }),
+  });
 
-        // Define two procedures that have the same property but different
-        // types.
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.union([z.literal('1'), z.literal('2')]),
-            }),
-          )
-          .query(({ input: { id } }) => {
-            resolvers.posts.byId[id]();
-            return `posts.byId[${id}]` as const;
-          }),
-
-        'comments.getById': t.procedure
-          .input(
-            z.object({
-              id: z.union([z.literal(1), z.literal(2)]),
-            }),
-          )
-          .query(({ input: { id } }) => {
-            resolvers.posts['comments.getById'][id]();
-            return `posts.[comments.getById][${id}]` as const;
-          }),
-      }),
-    });
-
-    return { ...getServerAndReactClient(appRouter), resolvers };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return { ...getServerAndReactClient(appRouter), resolvers };
+}
 
 /**
  * A hook that will subscribe the component to all the hooks for the
  * invalidation test.
  */
-const useSetupAllTestHooks = (client: (typeof ctx)['client']) => {
+const useSetupAllTestHooks = (client: ReturnType<typeof setup>['client']) => {
   const hooks = {
     user: {
       listAll: client.user.listAll.useQuery(),
@@ -239,6 +233,7 @@ const useSetupAllTestHooks = (client: (typeof ctx)['client']) => {
 //---------------------------------------------------------------------------------------------------
 
 test('Check invalidation of Whole router', async () => {
+  await using ctx = setup();
   const { client, App, resolvers } = ctx;
   function MyComponent() {
     useSetupAllTestHooks(ctx.client);
@@ -304,6 +299,7 @@ test('Check invalidation of Whole router', async () => {
 //---------------------------------------------------------------------------------------------------
 
 test('Check invalidating at router root invalidates all', async () => {
+  await using ctx = setup();
   const { client, App, resolvers } = ctx;
   function MyComponent() {
     useSetupAllTestHooks(ctx.client);
@@ -363,6 +359,7 @@ test('Check invalidating at router root invalidates all', async () => {
 //---------------------------------------------------------------------------------------------------
 
 test('test TS types of the input variable', async () => {
+  await using ctx = setup();
   const { client, App, resolvers } = ctx;
   function MyComponent() {
     useSetupAllTestHooks(ctx.client);

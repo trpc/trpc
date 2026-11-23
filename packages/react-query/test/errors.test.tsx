@@ -7,48 +7,43 @@ import type {
   DefaultErrorData,
   Maybe,
 } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import React from 'react';
 import { z, ZodError } from 'zod';
 
 describe('custom error formatter', () => {
-  const ctx = konn()
-    .beforeEach(() => {
-      const t = initTRPC.create({
-        errorFormatter({ shape, error }) {
-          return {
-            ...shape,
-            data: {
-              ...shape.data,
-              foo: 'bar' as const,
-              zodError: error.cause instanceof ZodError ? error.cause : null,
-            },
-          };
-        },
-      });
-      const appRouter = t.router({
-        post: t.router({
-          byId: t.procedure
-            .input(
-              z.object({
-                // Minimum post id 1
-                id: z.number().min(1),
-              }),
-            )
-            .query(() => {
-              return '__result' as const;
+  function setup() {
+    const t = initTRPC.create({
+      errorFormatter({ shape, error }) {
+        return {
+          ...shape,
+          data: {
+            ...shape.data,
+            foo: 'bar' as const,
+            zodError: error.cause instanceof ZodError ? error.cause : null,
+          },
+        };
+      },
+    });
+    const appRouter = t.router({
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              // Minimum post id 1
+              id: z.number().min(1),
             }),
-        }),
-      });
+          )
+          .query(() => {
+            return '__result' as const;
+          }),
+      }),
+    });
 
-      return getServerAndReactClient(appRouter);
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    return getServerAndReactClient(appRouter);
+  }
 
   test('query that fails', async () => {
+    await using ctx = setup();
     const { client, App, appRouter } = ctx;
     const queryErrorCallback = vi.fn();
     function MyComponent() {
@@ -107,32 +102,28 @@ describe('custom error formatter', () => {
 });
 
 describe('no custom formatter', () => {
-  const ctx = konn()
-    .beforeEach(() => {
-      const t = initTRPC.create();
-      const appRouter = t.router({
-        post: t.router({
-          byId: t.procedure
-            .input(
-              z.object({
-                // Minimum post id 1
-                id: z.number().min(1),
-              }),
-            )
-            .query(() => {
-              return '__result' as const;
+  function setup() {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              // Minimum post id 1
+              id: z.number().min(1),
             }),
-        }),
-      });
+          )
+          .query(() => {
+            return '__result' as const;
+          }),
+      }),
+    });
 
-      return getServerAndReactClient(appRouter);
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    return getServerAndReactClient(appRouter);
+  }
 
   test('query that fails', async () => {
+    await using ctx = setup();
     const { client, App, appRouter } = ctx;
     const queryErrorCallback = vi.fn();
     function MyComponent() {

@@ -39,8 +39,12 @@ pnpm dx
       <td>Prisma schema</td>
     </tr>
     <tr>
-      <td><a href="./src/api/trpc/[trpc].tsx"><code>./src/api/trpc/[trpc].tsx</code></a></td>
+      <td><a href="./src/app/api/trpc/[trpc]/route.ts"><code>./src/app/api/trpc/[trpc]/route.ts</code></a></td>
       <td>tRPC response handler</td>
+    </tr>
+    <tr>
+      <td><a href="./src/app/page.tsx"><code>./src/app/page.tsx</code></a></td>
+      <td>Server component that starts the page's queries with handles</td>
     </tr>
     <tr>
       <td><a href="./src/server/routers"><code>./src/server/routers</code></a></td>

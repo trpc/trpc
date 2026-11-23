@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import * as http from 'http';
+import net from 'net';
 import { expect, vi } from 'vitest';
+import { TRPCError } from '../../@trpc/server';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
 function createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {
@@ -366,6 +368,53 @@ test('does not abort request after a response that finished normally', async () 
 
     expect(abortedOnClose).toEqual([false]);
     expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('rejects the body when the client disconnects mid-body', async () => {
+  let text: Promise<string> | null = null;
+  const server = http.createServer((req, res) => {
+    const request = incomingMessageToRequest(req, res, {
+      maxBodySize: null,
+    });
+    text = request.text();
+    // hold the response open while the body is being read, like the
+    // adapters do
+    text.catch(() => null).finally(() => res.end());
+  });
+  server.listen(0);
+  try {
+    const address = server.address();
+    assert(address && typeof address === 'object');
+
+    const socket = net.connect(address.port, '127.0.0.1');
+    await new Promise<void>((resolve) => socket.once('connect', resolve));
+
+    const body = 'x'.repeat(128);
+    socket.write(
+      [
+        'POST /test HTTP/1.1',
+        `Host: localhost:${address.port}`,
+        // claim more bytes than are sent, so the body can never end cleanly
+        `content-length: ${body.length + 1024}`,
+        '',
+        '',
+        body,
+      ].join('\r\n'),
+    );
+
+    // wait for the server to start reading the body
+    await vi.waitFor(() => expect(text).not.toBeNull());
+
+    socket.destroy();
+
+    await expect(text).rejects.toBeInstanceOf(TRPCError);
+    await expect(text).rejects.toMatchObject({
+      code: 'CLIENT_CLOSED_REQUEST',
+      message: 'The client disconnected while sending the request body',
+    });
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

@@ -12,83 +12,78 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    let iterableDeferred = createDeferred();
-    const nextIterable = () => {
-      iterableDeferred.resolve();
-      iterableDeferred = createDeferred();
-    };
-    const t = initTRPC.create({});
+function setup() {
+  let iterableDeferred = createDeferred();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        byIdWithSerializable: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => ({
-            id: 1,
-            date: new Date(),
-          })),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().default(0),
-            }),
-          )
-          .query(({ input }) => {
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
           }),
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 3; i++) {
-            await iterableDeferred.promise;
-            yield i + 1;
-          }
+        )
+        .query(() => '__result' as const),
+      byIdWithSerializable: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => ({
+          id: 1,
+          date: new Date(),
+        })),
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().default(0),
+          }),
+        )
+        .query(({ input }) => {
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
         }),
+      iterable: t.procedure.query(async function* () {
+        for (let i = 0; i < 3; i++) {
+          await iterableDeferred.promise;
+          yield i + 1;
+        }
       }),
-    });
+    }),
+  });
 
-    const testHelpers = getServerAndReactClient(appRouter);
+  const testHelpers = getServerAndReactClient(appRouter);
 
-    function useTRPC() {
-      return testHelpers.client.useUtils();
-    }
+  function useTRPC() {
+    return testHelpers.client.useUtils();
+  }
 
-    return {
-      ...testHelpers,
-      nextIterable,
-      useTRPC,
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return {
+    ...testHelpers,
+    nextIterable,
+    useTRPC,
+  };
+}
 
 describe('queryOptions', () => {
   test('basic', async () => {
+    await using ctx = setup();
     const { useTRPC, App } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -119,6 +114,7 @@ describe('queryOptions', () => {
   });
 
   test('select', async () => {
+    await using ctx = setup();
     const { useTRPC, App } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -151,6 +147,7 @@ describe('queryOptions', () => {
   });
 
   test('initialData', async () => {
+    await using ctx = setup();
     const { useTRPC, App } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -177,6 +174,7 @@ describe('queryOptions', () => {
   });
 
   test('disabling query with skipToken', async () => {
+    await using ctx = setup();
     const { useTRPC, App, client } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -203,6 +201,7 @@ describe('queryOptions', () => {
   });
 
   test('with extra `trpc` context', async () => {
+    await using ctx = setup();
     const { useTRPC, App } = ctx;
 
     const context = {
@@ -240,6 +239,7 @@ describe('queryOptions', () => {
   });
 
   test('iterable', async () => {
+    await using ctx = setup();
     const { useTRPC, App } = ctx;
     const states: {
       status: string;
@@ -350,6 +350,7 @@ describe('queryOptions', () => {
   });
 
   test('useSuspenseQuery', async () => {
+    await using ctx = setup();
     const { App, useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -379,6 +380,7 @@ describe('queryOptions', () => {
 
 describe('infiniteQueryOptions', () => {
   test('basic', async () => {
+    await using ctx = setup();
     const { App, useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -474,6 +476,7 @@ describe('infiniteQueryOptions', () => {
   // });
 
   test('select', async () => {
+    await using ctx = setup();
     const { App, useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();

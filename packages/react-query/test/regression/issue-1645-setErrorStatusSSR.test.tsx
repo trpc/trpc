@@ -6,18 +6,11 @@ import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 /**
  * @see https://github.com/trpc/trpc/pull/1645
  */
 test('regression: SSR with error sets `status`=`error`', async () => {
+  await using factory = createAppRouter();
   // @ts-ignore
   const { window } = global;
 

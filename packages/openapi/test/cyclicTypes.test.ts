@@ -1,7 +1,8 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document } from '../src/types';
+import { memoize } from './memoize';
 import {
   getOutputData,
   getParameter,
@@ -20,17 +21,16 @@ const routerPath = path.resolve(
 );
 
 describe('cyclic types', () => {
-  let doc: Document;
-
-  beforeAll(async () => {
-    doc = await generateOpenAPIDocument(routerPath, {
+  const getDoc = memoize(() =>
+    generateOpenAPIDocument(routerPath, {
       exportName: 'CyclicTypesRouter',
       title: 'Cyclic Types API',
       version: '1.0.0',
-    });
-  });
+    }),
+  );
 
   it('produces a spec with no validation errors when validated', async () => {
+    const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
     const problems = await validateOpenApi(spec);
 
@@ -42,7 +42,8 @@ describe('cyclic types', () => {
   // ----------------------------------------------------------------
 
   describe('plain TS recursive types', () => {
-    it('handles TreeNode (children: TreeNode[])', () => {
+    it('handles TreeNode (children: TreeNode[])', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('TreeNode');
       const treeNode = requireSchema(doc, 'TreeNode');
@@ -72,7 +73,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles LinkedListNode (next: LinkedListNode | null)', () => {
+    it('handles LinkedListNode (next: LinkedListNode | null)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('LinkedListNode');
       const node = requireSchema(doc, 'LinkedListNode');
@@ -87,7 +89,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles GraphNode (neighbors: GraphNode[])', () => {
+    it('handles GraphNode (neighbors: GraphNode[])', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('GraphNode');
       const graphNode = requireSchema(doc, 'GraphNode');
@@ -101,7 +104,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles mutual recursion (Person <-> Pet)', () => {
+    it('handles mutual recursion (Person <-> Pet)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('Person');
       expect(schemas).toHaveProperty('Pet');
@@ -122,7 +126,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles JsonValue recursive union type', () => {
+    it('handles JsonValue recursive union type', async () => {
+      const doc = await getDoc();
       const jsonValue = requireSchema(doc, 'JsonValue');
       expect(jsonValue.oneOf).toHaveLength(6);
       expect(jsonValue.oneOf).toEqual(
@@ -151,7 +156,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles Comment with optional self-reference', () => {
+    it('handles Comment with optional self-reference', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('Comment');
       const comment = requireSchema(doc, 'Comment');
@@ -169,7 +175,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles recursive type nested inside a non-recursive wrapper (Organization -> Department)', () => {
+    it('handles recursive type nested inside a non-recursive wrapper (Organization -> Department)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('Department');
       const dept = requireSchema(doc, 'Department');
@@ -190,7 +197,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles FileSystemEntry with both array and nullable self-reference', () => {
+    it('handles FileSystemEntry with both array and nullable self-reference', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('FileSystemEntry');
       const entry = requireSchema(doc, 'FileSystemEntry');
@@ -209,7 +217,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles recursive type through Record (CategoryMap)', () => {
+    it('handles recursive type through Record (CategoryMap)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('CategoryMap');
       const catMap = requireSchema(doc, 'CategoryMap');
@@ -225,7 +234,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles triple mutual recursion (NodeA -> NodeB -> NodeC -> NodeA)', () => {
+    it('handles triple mutual recursion (NodeA -> NodeB -> NodeC -> NodeA)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('NodeA');
       expect(schemas).toHaveProperty('NodeB');
@@ -259,7 +269,8 @@ describe('cyclic types', () => {
   // ----------------------------------------------------------------
 
   describe('Zod z.lazy() recursive types', () => {
-    it('handles Zod recursive category (output resolves via inferred return)', () => {
+    it('handles Zod recursive category (output resolves via inferred return)', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('ZodCategory');
       const cat = requireSchema(doc, 'ZodCategory');
@@ -285,7 +296,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles Zod recursive tree node', () => {
+    it('handles Zod recursive tree node', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('ZodTreeNode');
       const tree = requireSchema(doc, 'ZodTreeNode');
@@ -302,7 +314,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles Zod recursive linked list with nullable', () => {
+    it('handles Zod recursive linked list with nullable', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('ZodLinkedList');
       const list = requireSchema(doc, 'ZodLinkedList');
@@ -321,7 +334,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('handles Zod recursive comment with optional', () => {
+    it('handles Zod recursive comment with optional', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       expect(schemas).toHaveProperty('ZodComment');
       const comment = requireSchema(doc, 'ZodComment');
@@ -341,7 +355,8 @@ describe('cyclic types', () => {
       });
     });
 
-    it('emits component refs for recursive z.lazy() inputs', () => {
+    it('emits component refs for recursive z.lazy() inputs', async () => {
+      const doc = await getDoc();
       const expectedRefs = {
         'zodTypes.category': '#/components/schemas/ZodCategory',
         'zodTypes.treeNode': '#/components/schemas/ZodTreeNode',
@@ -374,7 +389,8 @@ describe('cyclic types', () => {
   // ----------------------------------------------------------------
 
   describe('structural guarantees', () => {
-    it('does not produce any empty {} schemas for recursive types', () => {
+    it('does not produce any empty {} schemas for recursive types', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       // An empty {} would indicate the depth limit was hit
       for (const schema of Object.values(schemas)) {
@@ -383,7 +399,8 @@ describe('cyclic types', () => {
       }
     });
 
-    it('all $ref targets exist in components/schemas', () => {
+    it('all $ref targets exist in components/schemas', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
       const specStr = JSON.stringify(doc);
       const refPattern = /"\$ref":"#\/components\/schemas\/([^"]+)"/g;
@@ -396,7 +413,8 @@ describe('cyclic types', () => {
       }
     });
 
-    it('generates valid paths for all procedures', () => {
+    it('generates valid paths for all procedures', async () => {
+      const doc = await getDoc();
       const expectedPaths = [
         '/tsTypes.tree',
         '/tsTypes.linkedList',
