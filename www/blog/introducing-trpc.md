@@ -74,7 +74,7 @@ You can add tRPC today with your existing brownfield project (got adapters for E
 
 ## What about mutating data?
 
-Mutations are as simple to do as queries, they're actually the same underneath, but are just exposed differently as syntactic sugar and produce a HTTP POST rather than a GET request.
+Mutations are as simple to do as queries, they're actually the same underneath, but are just exposed differently as syntactic sugar and produce an HTTP POST rather than a GET request.
 
 Here's a little more complicated example using a database, taken from our TodoMVC example at todomvc.trpc.io / https://github.com/trpc/trpc/tree/main/examples/next-prisma-todomvc
 

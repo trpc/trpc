@@ -81,6 +81,7 @@ A collection of resources on tRPC.
 | trpc-redis - tRPC adapter using Redis as a transport layer                                          | https://github.com/cobeo2004/trpc-redis                               |
 | NestJS-tRPC - An opinionated approach to building end-to-end typesafe APIs with tRPC within NestJS. | https://www.nestjs-trpc.io/                                           |
 | vscode-trpc - tRPC adapter for VS Code extension development                                        | https://github.com/wszgrcy/vscode-toolkit                             |
+| HyperFetch - Call tRPC procedures as typed requests with caching, React hooks and subscriptions     | https://hyperfetch.bettertyped.com/docs/integrations/adapter-trpc/overview/ |
 
 ## 🍀 Starting points, example projects, etc
 

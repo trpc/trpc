@@ -170,25 +170,6 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
-  # https://pkg.pr.new
-  release-tmp:
-    name: Release using pkg.pr.new
-    if: github.event_name == 'pull_request'
-    needs: [build]
-    runs-on: ubuntu-latest
-    env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: ./.github/setup
-
-      - run: pnpm build
-      - run: pnpx pkg-pr-new publish './packages/*'
-
   monotest-build:
     name: Test a monorepo using built declaration files
     needs: [build]
