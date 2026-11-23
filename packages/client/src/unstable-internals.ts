@@ -11,24 +11,23 @@ export type {
   PipelinedCall,
   PipelineSource,
 } from './links/internals/pipeline';
-export * from './queries/dataRef';
-export * from './queries/path';
+export {
+  blankInput,
+  createEntryDataRef,
+  entryDataRefOf,
+  replaceEntryDataRefs,
+} from './queries/dataRef';
+export type { EntryDataRef, EntryInputRef } from './queries/dataRef';
+export { itemPathOf } from './queries/path';
+export type { DataPath, ItemPath, RequestPath } from './queries/path';
 export {
   fromDataState,
   fromDataStateOf,
-  innerEntryOf,
   isReplaced,
-  ownContext,
   perItemState,
   perItemStateOf,
-  procedurePathOf,
   queryEntryState,
   queryEntryStateOf,
   readInputRefs,
 } from './queries/entry';
-export type {
-  FromDataState,
-  PerItemState,
-  QueryEntryState,
-  QueryEntryType,
-} from './queries/entry';
+export type { QueryEntryState } from './queries/entry';

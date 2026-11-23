@@ -576,9 +576,6 @@ export type experimental_inferHandles<
 
 export type HandleType = 'query' | 'infinite';
 
-/** What `experimental_dataOf()` takes: an entry, also one built from another's data */
-export type DataEntry = AnyTRPCEntry | experimental_TRPCEntryFromData<any, any>;
-
 /** The `ResolverDef` of a procedure that a description's entry was built with */
 type DefOfProcedure<TProcedure> = TProcedure extends {
   '~types': {
