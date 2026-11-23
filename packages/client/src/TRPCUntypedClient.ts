@@ -16,7 +16,7 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './links/internals/createChain';
-import type { TRPCConnectionState } from './links/internals/subscriptions';
+import type { TRPCConnectionState } from './links/subscriptions';
 import type {
   OperationContext,
   OperationLink,

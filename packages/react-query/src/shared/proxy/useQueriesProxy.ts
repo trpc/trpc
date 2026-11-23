@@ -20,7 +20,7 @@ import { fetchQueryData } from '../../internals/trpcResult';
 import type {
   TrpcQueryOptionsForUseQueries,
   TrpcQueryOptionsForUseSuspenseQueries,
-} from '../../internals/useQueries';
+} from '../../useQueries';
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
 type GetQueryOptions<

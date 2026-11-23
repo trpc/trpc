@@ -14,7 +14,7 @@ import {
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../../../TRPCClientError';
-import type { TRPCConnectionState } from '../../internals/subscriptions';
+import type { TRPCConnectionState } from '../../subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
 import type { Encoder } from './encoder';
 import { jsonEncoder } from './encoder';

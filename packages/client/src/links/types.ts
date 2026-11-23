@@ -7,7 +7,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { ResponseEsque } from '../types';
-import type { TRPCConnectionState } from './internals/subscriptions';
+import type { TRPCConnectionState } from './subscriptions';
 
 export { isNonJsonSerializable, isFormData, isOctetType } from './contentTypes';
 

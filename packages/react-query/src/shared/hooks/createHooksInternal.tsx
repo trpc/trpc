@@ -33,7 +33,7 @@ import type {
   TRPCUseSuspenseQueries,
   UseQueryOptionsForUseQueries,
   UseQueryOptionsForUseSuspenseQueries,
-} from '../../internals/useQueries';
+} from '../../useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import type {
   UseQueriesProcedureRecord,

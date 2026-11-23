@@ -14,7 +14,7 @@ import type {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSuspenseQueryOptions,
-} from '../shared';
+} from './shared';
 
 /**
  * @internal
