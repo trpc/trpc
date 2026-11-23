@@ -222,7 +222,7 @@ const query = useQuery(
 }
 ```
 
-The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
+The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `query`, `invalidateQueries`, etc.
 
 #### Streaming responses {#streaming}
 
