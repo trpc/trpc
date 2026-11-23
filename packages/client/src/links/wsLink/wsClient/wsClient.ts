@@ -728,11 +728,40 @@ export class WsClient {
       });
     });
 
-    // Set on the socket's `close` event, or earlier on a keepAlive pong
-    // timeout, which doesn't wait for the closing handshake. The socket's
-    // later frames and events must not reach the requests resent by then.
+    // Set on the socket's `close` event, or earlier when the client gives up
+    // on the socket (a keepAlive pong timeout or an undecodable frame) without
+    // waiting for the closing handshake. The socket's later frames and events
+    // must not reach the requests resent by then.
     let closed = false;
     let answered = false;
+
+    /**
+     * Runs the socket's close handling once: `cause` fails its queries and
+     * mutations, and `event` goes to `onClose`.
+     */
+    const handleClose = (
+      cause: unknown,
+      event: CloseEvent | { code: number },
+    ) => {
+      if (closed) return;
+      closed = true;
+      handleCloseOrError(cause);
+      callUserCallback(() => this.callbacks.onClose?.(event));
+
+      if (
+        ws === this.activeConnection.ws &&
+        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
+      ) {
+        this.reconnect(
+          new TRPCWebSocketClosedError({
+            message: 'WebSocket closed',
+            cause,
+          }),
+        );
+      }
+    };
+    // What `close` reports when the closing handshake doesn't complete.
+    const abandonedEvent = { code: 1006 };
 
     const onMessage = ({ data }: MessageEvent) => {
       if (closed) return;
@@ -749,11 +778,12 @@ export class WsClient {
         // The frame may have carried a response, and its request would wait
         // forever, so this socket is treated as lost.
         ws.close();
-        handleCloseOrError(
+        handleClose(
           new TRPCWebSocketClosedError({
             message: 'Received a message that could not be decoded',
             cause,
           }),
+          abandonedEvent,
         );
         // Rethrown asynchronously by `callUserCallback()` below.
         throw cause;
@@ -790,31 +820,12 @@ export class WsClient {
       callUserCallback(() => onMessage(event));
     });
 
-    const onClose = (event: CloseEvent | { code: number }) => {
-      if (closed) return;
-      closed = true;
-      handleCloseOrError(event);
-      callUserCallback(() => this.callbacks.onClose?.(event));
-
-      if (
-        ws === this.activeConnection.ws &&
-        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
-      ) {
-        this.reconnect(
-          new TRPCWebSocketClosedError({
-            message: 'WebSocket closed',
-            cause: event,
-          }),
-        );
-      }
-    };
-    ws.addEventListener('close', onClose);
+    ws.addEventListener('close', (event) => handleClose(event, event));
     this.closeOnPongTimeout.set(ws, () => {
       // A server that never answered, not even a ping, gets the same backoff
       // as one that rejected the connection.
       if (!answered) this.connectionRejected = true;
-      // What `close` reports once the closing handshake times out.
-      onClose({ code: 1006 });
+      handleClose(abandonedEvent, abandonedEvent);
     });
 
     ws.addEventListener('error', (event) => {

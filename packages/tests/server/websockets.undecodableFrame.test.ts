@@ -155,3 +155,37 @@ test('an error the output transformer serializes to a string reaches its request
   });
   expect(await ctx.client.connection.query()).toBe(1);
 });
+
+test('an undecodable frame from a server that then stops responding reconnects without waiting for the closing handshake', async () => {
+  using g = captureUncaught();
+  const onClose = vi.fn();
+  const t = initTRPC.create();
+  const router = t.router({ greeting: t.procedure.query(() => 'hello') });
+  await using ctx = testServerAndClientResource(router, {
+    clientLink: 'wsLink',
+    wsClient: { lazy: { enabled: false, closeMs: 0 }, onClose },
+  });
+  await using _cleanup = makeAsyncResource({}, async () => {
+    for (const ws of ctx.wss.clients) ws.terminate();
+    await ctx.wsClient.close();
+  });
+
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  const [oldServerSocket] = ctx.wss.clients;
+  const reconnected = vi.fn();
+  ctx.wss.once('connection', reconnected);
+  oldServerSocket!.send('not json');
+  // A paused server socket doesn't answer the closing handshake, which `ws`
+  // would wait 30s for.
+  oldServerSocket!.pause();
+
+  await vi.waitFor(
+    () => {
+      expect(reconnected).toHaveBeenCalled();
+      expect(g.uncaught).toEqual([expect.any(SyntaxError)]);
+    },
+    { timeout: 1_000 },
+  );
+  expect(onClose.mock.calls).toEqual([[{ code: 1006 }]]);
+  expect(await ctx.client.greeting.query()).toBe('hello');
+});
