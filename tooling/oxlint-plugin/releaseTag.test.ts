@@ -58,6 +58,11 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: '/** @internal */\nexport class C {}\n/** @public */\nexport function f() { return new C() as unknown as undefined; }',
       filename: otherFile,
     },
+    // `infer` binds in the true branch.
+    {
+      code: '/** @internal */\nexport interface Hidden {}\n/** @public */\nexport type Api<T> = T extends { value: infer Hidden } ? Hidden : never;',
+      filename: otherFile,
+    },
     // `new C().value` has `value`'s type, not `C`.
     {
       code: '/** @internal */\nexport class C { value = 1; }\n/** @public */\nexport function f() { return new C().value; }',
@@ -157,6 +162,16 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
     // A type parameter only shadows inside the node declaring it.
     {
       code: '/** @internal */\nexport interface Hidden {}\n/** @public */\nexport interface Api { map<Hidden>(x: Hidden): Hidden; get(): Hidden; }',
+      filename: otherFile,
+      errors: [{ message: leak('Api', 'Hidden') }],
+    },
+    {
+      code: '/** @internal */\nexport interface Hidden {}\n/** @public */\nexport type Api<T> = T extends { value: infer Hidden } ? Hidden : Hidden;',
+      filename: otherFile,
+      errors: [{ message: leak('Api', 'Hidden') }],
+    },
+    {
+      code: '/** @internal */\nexport const Hidden = 1;\n/** @public */\nexport type Api<Hidden> = typeof Hidden;',
       filename: otherFile,
       errors: [{ message: leak('Api', 'Hidden') }],
     },

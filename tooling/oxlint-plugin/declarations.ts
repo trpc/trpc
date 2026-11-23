@@ -128,6 +128,9 @@ interface LooseNode {
   typeParameter?: LooseNode;
   params?: LooseNode[];
   extendsType?: LooseNode;
+  checkType?: LooseNode;
+  trueType?: LooseNode;
+  falseType?: LooseNode;
 }
 
 const leftmost = (
@@ -180,25 +183,28 @@ const typeParameterNames = (node: LooseNode): string[] => {
     const name = leftmost(node.key ?? node.typeParameter?.name);
     if (name) names.push(name);
   }
-  // `T extends infer U ? U : never`: `U` is bound in the whole conditional.
-  if (node.type === 'TSConditionalType') {
-    const visit = (value: unknown) => {
-      if (Array.isArray(value)) {
-        for (const item of value) visit(item);
-        return;
-      }
-      if (!value || typeof value !== 'object' || !('type' in value)) return;
-      const n = value as LooseNode;
-      if (n.type === 'TSInferType') {
-        const name = leftmost(n.typeParameter?.name);
-        if (name) names.push(name);
-      }
-      for (const [key, child] of Object.entries(value)) {
-        if (key !== 'parent') visit(child);
-      }
-    };
-    visit(node.extendsType);
-  }
+  return names;
+};
+
+/** The names `infer U` binds in a conditional's `extends` clause. */
+const inferNames = (extendsType: LooseNode | undefined): string[] => {
+  const names: string[] = [];
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+    if (!value || typeof value !== 'object' || !('type' in value)) return;
+    const n = value as LooseNode;
+    if (n.type === 'TSInferType') {
+      const name = leftmost(n.typeParameter?.name);
+      if (name) names.push(name);
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (key !== 'parent') visit(child);
+    }
+  };
+  visit(extendsType);
   return names;
 };
 
@@ -249,18 +255,28 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
     const declared = typeParameterNames(n);
     const scope =
       declared.length === 0 ? bound : new Set([...bound, ...declared]);
-    const add = (target: LooseNode | null | undefined) => {
+    // Type parameters shadow types, not values (`typeof x`, `new X()`).
+    const add = (target: LooseNode | null | undefined, isValue = false) => {
       const name = leftmost(target);
-      if (name && !scope.has(name)) {
+      if (name && (isValue || !scope.has(name))) {
         out.push({ node: value as ESTree.Node, name });
       }
     };
     switch (n.type) {
+      // `infer U` binds `U` in the true branch only.
+      case 'TSConditionalType': {
+        const inTrue = new Set([...scope, ...inferNames(n.extendsType)]);
+        visit(n.checkType, returned, scope);
+        visit(n.extendsType, returned, scope);
+        visit(n.trueType, returned, inTrue);
+        visit(n.falseType, returned, scope);
+        return;
+      }
       case 'TSTypeReference':
         add(n.typeName);
         break;
       case 'TSTypeQuery':
-        add(n.exprName);
+        add(n.exprName, true);
         break;
       case 'TSInterfaceHeritage':
       case 'TSClassImplements':
@@ -268,10 +284,10 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
         break;
       case 'ClassDeclaration':
       case 'ClassExpression':
-        add(n.superClass);
+        add(n.superClass, true);
         break;
       case 'NewExpression':
-        if (returned) add(n.callee);
+        if (returned) add(n.callee, true);
         break;
       // `x as T` has type `T`, whatever `x` is.
       case 'TSAsExpression':
