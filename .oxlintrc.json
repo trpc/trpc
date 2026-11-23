@@ -183,6 +183,13 @@
       }
     },
     {
+      // Turned on one project at a time: the rest of the repo has about 530 hits
+      "files": ["examples/tanstack-start-sse-chat/**"],
+      "rules": {
+        "trpc/no-single-use-function": "error"
+      }
+    },
+    {
       "files": [
         "**/test/**",
         "packages/tests/**",

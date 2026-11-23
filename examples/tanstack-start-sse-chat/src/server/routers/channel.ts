@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
-import type { PubSubEvent } from '~/server/pubsub';
 import { listen, publish } from '~/server/pubsub';
 import { authedProcedure, publicProcedure } from '~/server/trpc';
 
@@ -25,7 +24,7 @@ export interface MyEvents {
   isTypingUpdate: [];
 }
 
-// Local to this server instance, fed by `onPubSubEvent()` below
+// Local to this server instance, fed by `ensureListening()` below
 export const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing for each channel, key is `name`
@@ -43,45 +42,29 @@ function setTyping(channelId: string, name: string, typing: boolean) {
   ee.emit('isTypingUpdate');
 }
 
-/**
- * Who is typing in each channel, leaving out channels where nobody is
- */
-function getWhoIsTyping() {
-  const result: Record<string, string[]> = {};
-  for (const [channelId, who] of Object.entries(currentlyTyping)) {
-    const names = Object.keys(who).toSorted();
-    if (names.length > 0) {
-      result[channelId] = names;
-    }
-  }
-  return result;
-}
-
-async function onPubSubEvent(event: PubSubEvent) {
-  switch (event.type) {
-    case 'isTyping': {
-      setTyping(event.channelId, event.name, event.typing);
-      return;
-    }
-    case 'add': {
-      setTyping(event.channelId, event.name, false);
-      const post = await db.query.Post.findFirst({
-        where: (fields, ops) => ops.eq(fields.id, event.postId),
-      });
-      if (post) {
-        ee.emit('add', post);
-      }
-      return;
-    }
-  }
-}
-
 // Handle events one at a time so posts are emitted in the order they were published
 let pubSubQueue = Promise.resolve();
 export function ensureListening() {
   return listen((event) => {
     pubSubQueue = pubSubQueue
-      .then(() => onPubSubEvent(event))
+      .then(async () => {
+        switch (event.type) {
+          case 'isTyping': {
+            setTyping(event.channelId, event.name, event.typing);
+            return;
+          }
+          case 'add': {
+            setTyping(event.channelId, event.name, false);
+            const post = await db.query.Post.findFirst({
+              where: (fields, ops) => ops.eq(fields.id, event.postId),
+            });
+            if (post) {
+              ee.emit('add', post);
+            }
+            return;
+          }
+        }
+      })
       .catch((cause) => {
         console.error('Failed to handle pubsub event', event, cause);
       });
@@ -150,7 +133,14 @@ export const channelRouter = {
      * won't yield if it's the same as last time
      */
     function* maybeYield() {
-      const whoIsTyping = getWhoIsTyping();
+      // Who is typing in each channel, leaving out channels where nobody is
+      const whoIsTyping: Record<string, string[]> = {};
+      for (const [channelId, who] of Object.entries(currentlyTyping)) {
+        const names = Object.keys(who).toSorted();
+        if (names.length > 0) {
+          whoIsTyping[channelId] = names;
+        }
+      }
       const key = JSON.stringify(whoIsTyping);
       if (key === lastSent) {
         return;
