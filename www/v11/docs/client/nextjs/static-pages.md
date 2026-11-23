@@ -73,11 +73,12 @@ export function ClientGreeting() {
 
 // @filename: app/page.tsx
 // ---cut---
+import { noop } from '@tanstack/react-query';
 import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export async function generateMetadata() {
-  const greeting = await getQueryClient().fetchQuery(
+  const greeting = await getQueryClient().query(
     trpc.hello.queryOptions({ text: 'world' }),
   );
   return { title: greeting.greeting };
@@ -85,7 +86,7 @@ export async function generateMetadata() {
 
 export default async function Home() {
   // Fresh within `staleTime`, so this reuses what `generateMetadata` fetched
-  await getQueryClient().prefetchQuery(trpc.hello.queryOptions({ text: 'world' }));
+  await getQueryClient().query(trpc.hello.queryOptions({ text: 'world' })).catch(noop);
 
   return (
     <HydrateClient>
@@ -154,9 +155,9 @@ export function generateStaticParams() {
 
 export default async function Page(props: { params: Promise<{ text: string }> }) {
   const { text } = await props.params;
-  // `fetchQuery` throws if the procedure fails, unlike `prefetchQuery`: the build
-  // fails, and a failed revalidation keeps serving the last good page
-  await getQueryClient().fetchQuery(trpcStatic.hello.queryOptions({ text }));
+  // No `.catch(noop)`, so this throws if the procedure fails: the build fails,
+  // and a failed revalidation keeps serving the last good page
+  await getQueryClient().query(trpcStatic.hello.queryOptions({ text }));
 
   return (
     <HydrateClient>

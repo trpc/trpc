@@ -319,8 +319,8 @@ Every hook takes the `trpc` from `useTRPC()`, and `utils` becomes `const queryCl
 | `utils.a.invalidate(input)`                   | `queryClient.invalidateQueries(trpc.a.queryFilter(input))`                                          |
 | `utils.r.invalidate()` / `utils.invalidate()` | `queryClient.invalidateQueries(trpc.r.pathFilter())` / `(trpc.pathFilter())`                        |
 | `utils.a.refetch()`, `reset()`, `cancel()`    | `refetchQueries`, `resetQueries`, `cancelQueries` with the same filters                             |
-| `utils.a.fetch(input)`, `prefetch`, `ensureData` | `queryClient.fetchQuery(trpc.a.queryOptions(input))`, `prefetchQuery`, `ensureQueryData`         |
-| `utils.a.fetchInfinite(input)`, `prefetchInfinite` | `fetchInfiniteQuery(trpc.a.infiniteQueryOptions(input))`, `prefetchInfiniteQuery`             |
+| `utils.a.fetch(input)`, `prefetch`, `ensureData` | `queryClient.query(trpc.a.queryOptions(input))`; add `.catch(noop)` for `prefetch`, or `staleTime: 'static'` in the options for `ensureData` |
+| `utils.a.fetchInfinite(input)`, `prefetchInfinite` | `queryClient.infiniteQuery(trpc.a.infiniteQueryOptions(input))`; add `.catch(noop)` for `prefetchInfinite` |
 | `utils.a.getData(input)`, `setData(input, updater)` | `queryClient.getQueryData(trpc.a.queryKey(input))`, `setQueryData(trpc.a.queryKey(input), updater)` |
 | `utils.a.getInfiniteData`, `setInfiniteData`  | The same, with `trpc.a.infiniteQueryKey(input)`                                                     |
 | `utils.client`                                | `useTRPCClient()`                                                                                   |

@@ -58,7 +58,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
-import { dehydrate, useQuery } from '@tanstack/react-query';
+import { dehydrate, noop, useQuery } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type {
   GetServerSidePropsContext,
@@ -80,7 +80,7 @@ export async function getServerSideProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  await queryClient.query(trpc.post.byId.queryOptions({ id })).catch(noop);
 
   return {
     props: {
@@ -115,10 +115,10 @@ export default function PostPage(
 The page reads the query as it would without prefetching, so `status` is `'success'` on the first render. Use the same input in both places: it's part of the query key.
 
 :::tip
-To stop the two inputs from drifting apart, return a **handle** instead of the `id`. With `loadHandles` from `@trpc/tanstack-react-query/unstable-handles`, `const [handles] = await loadHandles(trpc, { post: ensureEntry(trpc.post.byId, { id }) })` waits for the data like `prefetchQuery`. The server's cache starts empty on each request, so it also rejects like `fetchQuery` if the query fails. Return `props: { trpcState: dehydrate(queryClient), ...handles }`, and the page reads it with `useQuery(fromHandle(trpc, props.post))`. A handle is plain JSON when its input is. If the input has a `Date` or another value your transformer handles, run the handles through the transformer too, as [Using a data transformer](./setup.md#using-a-data-transformer) does for the dehydrated state. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+To stop the two inputs from drifting apart, return a **handle** instead of the `id`. With `loadHandles` from `@trpc/tanstack-react-query/unstable-handles`, `const [handles] = await loadHandles(trpc, { post: ensureEntry(trpc.post.byId, { id }) })` waits for the data like `await queryClient.query(…)`. The server's cache starts empty on each request, so it also rejects like `query` if the query fails. Return `props: { trpcState: dehydrate(queryClient), ...handles }`, and the page reads it with `useQuery(fromHandle(trpc, props.post))`. A handle is plain JSON when its input is. If the input has a `Date` or another value your transformer handles, run the handles through the transformer too, as [Using a data transformer](./setup.md#using-a-data-transformer) does for the dehydrated state. See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
 :::
 
-`prefetchQuery` never throws, and the cache only sends queries that succeeded, so a failed query fetches again in the browser. To act on an error on the server, use `fetchQuery`, which returns the data or throws. See [Set the status and cache headers](#set-the-status-and-cache-headers).
+With `.catch(noop)`, a failed query doesn't throw, and the cache only sends queries that succeeded, so it fetches again in the browser. To act on an error on the server, leave out `.catch(noop)`: `query` returns the data or throws. See [Set the status and cache headers](#set-the-status-and-cache-headers).
 
 ### Build the context from the request
 
@@ -215,7 +215,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 ## Set the status and cache headers
 
-`getServerSideProps` gets the response as `context.res`, so you set headers on it directly. To send a 404 when a post doesn't exist, use `fetchQuery`, catch the `TRPCError`, and return `notFound`:
+`getServerSideProps` gets the response as `context.res`, so you set headers on it directly. To send a 404 when a post doesn't exist, await `queryClient.query`, catch the `TRPCError`, and return `notFound`:
 
 ```tsx twoslash title='pages/posts/[id].tsx'
 // @filename: server/routers/_app.ts
@@ -255,7 +255,7 @@ export async function getServerSideProps(
   });
 
   try {
-    await queryClient.fetchQuery(trpc.post.byId.queryOptions({ id }));
+    await queryClient.query(trpc.post.byId.queryOptions({ id }));
   } catch (cause) {
     if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') {
       return { notFound: true };

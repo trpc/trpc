@@ -21,7 +21,7 @@ skill:
     dehydrates pending queries, TRPCProvider and useTRPC() in client
     components, createTRPCOptionsProxy with prefetch and
     HydrateClient (unstable_createHydrateClient) in server components,
-    useSuspenseQuery for Suspense, createCaller or fetchQuery for data on the
+    useSuspenseQuery for Suspense, createCaller or queryClient.query for data on the
     server, data shared between generateMetadata and the page, static and ISR
     pages with a context that reads no request data, and tRPC-powered Server
     Actions.
@@ -377,6 +377,7 @@ export type AppRouter = typeof appRouter;
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
+import { noop } from '@tanstack/react-query';
 import {
   createTRPCOptionsProxy,
   unstable_createHydrateClient,
@@ -414,9 +415,9 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 ) {
   const queryClient = getQueryClient();
   if (queryOptions.queryKey[1]?.type === 'infinite') {
-    void queryClient.prefetchInfiniteQuery(queryOptions as any);
+    void queryClient.infiniteQuery(queryOptions as any).catch(noop);
   } else {
-    void queryClient.prefetchQuery(queryOptions);
+    void queryClient.query(queryOptions).catch(noop);
   }
 }
 
@@ -464,6 +465,7 @@ import {
   unstable_createHydrateClient,
   type TRPCQueryOptions,
 } from '@trpc/tanstack-react-query';
+import { noop } from '@tanstack/react-query';
 import { cache } from 'react';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
@@ -475,14 +477,14 @@ export const trpc = createTRPCOptionsProxy({
 });
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
-  void getQueryClient().prefetchQuery(queryOptions);
+  void getQueryClient().query(queryOptions).catch(noop);
 }
 export const caller = appRouter.createCaller({});
 ```
 
 #### Prefetching in a Server Component
 
-`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, like the one below, wait for the data instead: `await getQueryClient().prefetchQuery(…)`.
+`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, like the one below, wait for the data instead: `await getQueryClient().query(…).catch(noop)`.
 
 ```tsx twoslash title='app/page.tsx'
 // @include: app-router
@@ -493,11 +495,12 @@ export function ClientGreeting() {
 
 // @filename: app/page.tsx
 // ---cut---
+import { noop } from '@tanstack/react-query';
 import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  await getQueryClient().prefetchQuery(trpc.hello.queryOptions({ text: 'world' }));
+  await getQueryClient().query(trpc.hello.queryOptions({ text: 'world' })).catch(noop);
 
   return (
     <HydrateClient>
@@ -606,7 +609,7 @@ export default async function Home() {
 
 If you **really** need to use the data both on the server as well as inside client components and understand the tradeoffs explained in the
 [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
-guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
+guide, you can await `queryClient.query` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
 ```tsx twoslash title='app/page.tsx'
 // @include: app-router
@@ -622,7 +625,7 @@ import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();
-  const greeting = await queryClient.fetchQuery(trpc.hello.queryOptions({ text: 'world' }));
+  const greeting = await queryClient.query(trpc.hello.queryOptions({ text: 'world' }));
 
   // Do something with greeting on the server
 
