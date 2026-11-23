@@ -17,9 +17,7 @@ export {
 } from './create-action-hook';
 
 type QueryResult = {
-  data?: unknown;
-  error?: unknown;
-  promise?: Promise<unknown>;
+  promise: Promise<unknown>;
 };
 
 /**
