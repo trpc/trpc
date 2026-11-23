@@ -633,14 +633,25 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const abort = result?.abort;
           let responseBody = endOnError(stream, (cause) => {
-            opts.onError?.({
-              error: getTRPCErrorFromUnknown(cause),
-              path: call?.path,
-              input: call?.result(),
-              ctx: ctxManager.valueOrUndefined(),
-              req: opts.req,
-              type: call?.procedure?._def.type ?? 'unknown',
-            });
+            // a throwing `onError` would fail the body, and the adapter would
+            // report that again without the call
+            try {
+              const returned: unknown = opts.onError?.({
+                error: getTRPCErrorFromUnknown(cause),
+                path: call?.path,
+                input: call?.result(),
+                ctx: ctxManager.valueOrUndefined(),
+                req: opts.req,
+                type: call?.procedure?._def.type ?? 'unknown',
+              });
+              if (isPromise(returned)) {
+                returned.catch(() => {
+                  // ignored, as for a throwing `onError`
+                });
+              }
+            } catch {
+              // ignored, the body still ends
+            }
           });
 
           // Fixes: https://github.com/trpc/trpc/issues/7094
