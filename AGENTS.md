@@ -21,6 +21,7 @@ At the root, `pnpm build`, `typecheck`, `lint` and `test` run every package's th
 Skills live in `.agents/skills/`. One we write also needs a `.claude/skills/<name>` symlink and a `!` entry in `.oxfmtrc.json`; installed ones get their link from `npx skills add` and stay unformatted. Don't add a `.cursor/` folder. Read the matching one before starting:
 
 - [`decision-round`](.agents/skills/decision-round/SKILL.md): going through v12's open decisions with a human.
+- [`merge-main`](.agents/skills/merge-main/SKILL.md): merging `main` into `v12`.
 - [`trpc-conventions`](.agents/skills/trpc-conventions/SKILL.md): fixing a bug, writing tests or writing TypeScript in `v11/packages/`. It wins where the skills below disagree.
 - [`pr-agent-callout`](.agents/skills/pr-agent-callout/SKILL.md): working on a pull request.
 - [`tdd`](.agents/skills/tdd/SKILL.md): fixing a bug.

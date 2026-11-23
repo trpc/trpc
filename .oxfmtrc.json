@@ -39,6 +39,7 @@
     ".agents/skills/*/",
     "!.agents/skills/trpc-conventions/",
     "!.agents/skills/pr-agent-callout/",
-    "!.agents/skills/decision-round/"
+    "!.agents/skills/decision-round/",
+    "!.agents/skills/merge-main/"
   ]
 }
