@@ -795,16 +795,46 @@ function convertTupleType(
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
   // Optional elements (`[string, number?]`) are marked in the tuple target's
   // element flags, not by their type (a required `T | undefined` member must
-  // not lower the bound); every element from the first optional one on may
-  // be absent, so only the elements before it are required.
+  // not lower the bound), and only an element flagged Required must be
+  // present, so the required count bounds the array from below.
   const elementFlags = (type as TupleTypeReference).getTarget().elementFlags;
-  const firstOptional = elementFlags.indexOf(ElementFlags.Optional);
+  const minItems = elementFlags.filter(
+    (flag) => flag === ElementFlags.Required,
+  ).length;
+  const restIndex = elementFlags.findIndex(
+    (flag) => flag === ElementFlags.Rest || flag === ElementFlags.Variadic,
+  );
+  if (restIndex === -1) {
+    return {
+      type: 'array',
+      prefixItems: schemas,
+      items: false,
+      minItems,
+      maxItems: args.length,
+    };
+  }
+
+  // A rest element repeats, so there is no maxItems and the elements before
+  // it stay fixed positions.
+  const prefixItems = schemas.slice(0, restIndex);
+  const restAndTail = schemas.slice(restIndex);
+  if (restIndex === args.length - 1) {
+    return {
+      type: 'array',
+      ...(prefixItems.length > 0 ? { prefixItems } : {}),
+      items: restAndTail[0] ?? {},
+      minItems,
+    };
+  }
+
+  // JSON Schema 2020-12 cannot express a rest element followed by required
+  // positions; accept any of the repeated and trailing element types instead
+  // of claiming an exact length.
   return {
     type: 'array',
-    prefixItems: schemas,
-    items: false,
-    minItems: firstOptional === -1 ? args.length : firstOptional,
-    maxItems: args.length,
+    ...(prefixItems.length > 0 ? { prefixItems } : {}),
+    items: { anyOf: restAndTail },
+    minItems,
   };
 }
 
