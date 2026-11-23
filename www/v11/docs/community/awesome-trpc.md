@@ -51,6 +51,7 @@ A collection of resources on tRPC.
 | Description                                                                                         | Link                                                        |
 | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | create-t3-app - Scaffold a starter project using the T3 Stack (Next.js, tRPC, Tailwind CSS, Prisma) | https://create.t3.gg                                        |
+| create-faster - Scaffold apps or monorepos from blueprints (Next.js, tRPC, Drizzle, TanStack Query)  | https://create.plvo.dev/docs/modules/api/trpc               |
 | sidebase - Scaffold a starter project using sidebase (Nuxt 3, tRPC, Tailwind CSS, Prisma)           | https://sidebase.io                                         |
 | Create JD App - Scaffold a starter project using the JD Stack (SolidStart, tRPC, Tailwind, Prisma)  | https://github.com/OrJDev/create-jd-app                     |
 | Create tRPC App - Create tRPC-powered apps with one command                                         | https://github.com/omar-dulaimi/create-trpc-app             |
