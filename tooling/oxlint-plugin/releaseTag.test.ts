@@ -58,6 +58,11 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: '/** @internal */\nexport class C {}\n/** @public */\nexport function f() { return new C() as unknown as undefined; }',
       filename: otherFile,
     },
+    // `new C().value` has `value`'s type, not `C`.
+    {
+      code: '/** @internal */\nexport class C { value = 1; }\n/** @public */\nexport function f() { return new C().value; }',
+      filename: otherFile,
+    },
     // A type parameter isn't the declaration it shadows.
     {
       code: '/** @internal */\nexport interface Options {}\n/** @public */\nexport function identity<Options>(value: Options): Options { return value; }',
@@ -148,6 +153,27 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: '/** @internal */\nexport class C {}\n/** @public */\nexport const make = () => new C();',
       filename: otherFile,
       errors: [{ message: leak('make', 'C') }],
+    },
+    // A type parameter only shadows inside the node declaring it.
+    {
+      code: '/** @internal */\nexport interface Hidden {}\n/** @public */\nexport interface Api { map<Hidden>(x: Hidden): Hidden; get(): Hidden; }',
+      filename: otherFile,
+      errors: [{ message: leak('Api', 'Hidden') }],
+    },
+    // Reached through `import api from './api'; export { api }`.
+    {
+      code: '/** @internal */\nconst api = 1;\nexport { api as default };',
+      filename: join(src, 'api.ts'),
+      output: '/** @public */\nconst api = 1;\nexport { api as default };',
+      errors: [{ message: reachable('api') }],
+    },
+    // Reached through `export { default as API } from './defaultApi'`.
+    {
+      code: '/** @internal */\nexport default function API(): number { return 1; }',
+      filename: join(src, 'defaultApi.ts'),
+      output:
+        '/** @public */\nexport default function API(): number { return 1; }',
+      errors: [{ message: reachable('API') }],
     },
     {
       code: '/** @internal */\ninterface Hidden {}\n/** @public */\nexport type Options = Hidden;',

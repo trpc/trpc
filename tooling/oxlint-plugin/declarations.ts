@@ -124,9 +124,16 @@ interface LooseNode {
   superClass?: LooseNode | null;
   accessibility?: string | null;
   key?: LooseNode;
+  typeParameters?: LooseNode | null;
+  typeParameter?: LooseNode;
+  params?: LooseNode[];
+  extendsType?: LooseNode;
 }
 
-const leftmost = (node: LooseNode | null | undefined): string | undefined => {
+const leftmost = (
+  node: LooseNode | string | null | undefined,
+): string | undefined => {
+  if (typeof node === 'string') return node;
   if (!node) return undefined;
   if (node.type === 'Identifier') {
     return typeof node.name === 'string' ? node.name : undefined;
@@ -142,6 +149,58 @@ const FUNCTIONS = new Set([
   'ArrowFunctionExpression',
   'TSDeclareFunction',
 ]);
+
+/** Expressions whose type includes their parts' types. */
+const RETURNED_THROUGH = new Set([
+  'ObjectExpression',
+  'Property',
+  'ArrayExpression',
+  'SpreadElement',
+  'ConditionalExpression',
+  'LogicalExpression',
+  'SequenceExpression',
+  'ParenthesizedExpression',
+  'AwaitExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+]);
+
+/** The type parameter names `node` declares for its own subtree. */
+const typeParameterNames = (node: LooseNode): string[] => {
+  const names: string[] = [];
+  const declaration = node.typeParameters;
+  if (declaration?.type === 'TSTypeParameterDeclaration') {
+    for (const param of declaration.params ?? []) {
+      const name = leftmost(param.name);
+      if (name) names.push(name);
+    }
+  }
+  // `{ [K in Keys]: ... }`
+  if (node.type === 'TSMappedType') {
+    const name = leftmost(node.key ?? node.typeParameter?.name);
+    if (name) names.push(name);
+  }
+  // `T extends infer U ? U : never`: `U` is bound in the whole conditional.
+  if (node.type === 'TSConditionalType') {
+    const visit = (value: unknown) => {
+      if (Array.isArray(value)) {
+        for (const item of value) visit(item);
+        return;
+      }
+      if (!value || typeof value !== 'object' || !('type' in value)) return;
+      const n = value as LooseNode;
+      if (n.type === 'TSInferType') {
+        const name = leftmost(n.typeParameter?.name);
+        if (name) names.push(name);
+      }
+      for (const [key, child] of Object.entries(value)) {
+        if (key !== 'parent') visit(child);
+      }
+    };
+    visit(node.extendsType);
+  }
+  return names;
+};
 
 /** The `return` arguments in a function body, outside nested functions. */
 const returnedValues = (body: unknown): unknown[] => {
@@ -175,25 +234,28 @@ const returnedValues = (body: unknown): unknown[] => {
  */
 export const typeReferences = (node: ESTree.Node): TypeReference[] => {
   const out: TypeReference[] = [];
-  const typeParameters = new Set<string>();
-  const visit = (value: unknown, returned: boolean) => {
+  const visit = (
+    value: unknown,
+    returned: boolean,
+    bound: ReadonlySet<string>,
+  ) => {
     if (Array.isArray(value)) {
-      for (const item of value) visit(item, returned);
+      for (const item of value) visit(item, returned, bound);
       return;
     }
     if (!value || typeof value !== 'object' || !('type' in value)) return;
     const n = value as LooseNode;
+    // Type parameters are names only inside the node declaring them.
+    const declared = typeParameterNames(n);
+    const scope =
+      declared.length === 0 ? bound : new Set([...bound, ...declared]);
     const add = (target: LooseNode | null | undefined) => {
       const name = leftmost(target);
-      if (name) out.push({ node: value as ESTree.Node, name });
+      if (name && !scope.has(name)) {
+        out.push({ node: value as ESTree.Node, name });
+      }
     };
     switch (n.type) {
-      case 'TSTypeParameter':
-        if (typeof n.name === 'object') {
-          const name = leftmost(n.name);
-          if (name) typeParameters.add(name);
-        }
-        break;
       case 'TSTypeReference':
         add(n.typeName);
         break;
@@ -215,7 +277,7 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
       case 'TSAsExpression':
       case 'TSTypeAssertion':
         if (returned) {
-          visit(n.typeAnnotation, returned);
+          visit(n.typeAnnotation, returned, scope);
           return;
         }
         break;
@@ -230,6 +292,9 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
         break;
     }
     const isFunction = FUNCTIONS.has(n.type);
+    // A returned value's type comes from its parts only through these:
+    // `new C().value` returns `value`'s type, not `C`.
+    const passesReturned = returned && RETURNED_THROUGH.has(n.type);
     for (const [key, child] of Object.entries(value)) {
       if (key === 'parent') continue;
       if (key === 'body' && isFunction) {
@@ -239,14 +304,14 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
           child && typeof child === 'object' && 'type' in child
             ? child.type !== 'BlockStatement'
             : false;
-        visit(expression ? child : returnedValues(child), true);
+        visit(expression ? child : returnedValues(child), true, scope);
         continue;
       }
-      visit(child, returned);
+      visit(child, passesReturned, scope);
     }
   };
-  visit(node, false);
-  return out.filter((ref) => !typeParameters.has(ref.name));
+  visit(node, false, new Set());
+  return out;
 };
 
 /**

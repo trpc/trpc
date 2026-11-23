@@ -245,10 +245,13 @@ const parse = (file: string): ParsedFile | null => {
   for (const statement of program.body) {
     if (statement.type === 'ImportDeclaration') {
       for (const specifier of statement.specifiers) {
-        if (specifier.type !== 'ImportSpecifier') continue;
+        if (specifier.type === 'ImportNamespaceSpecifier') continue;
         result.imports.set(specifier.local.name, {
           from: statement.source.value,
-          name: moduleExportName(specifier.imported),
+          name:
+            specifier.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : moduleExportName(specifier.imported),
         });
       }
     } else if (statement.type === 'ExportAllDeclaration') {
@@ -272,6 +275,22 @@ const parse = (file: string): ParsedFile | null => {
           });
         } else {
           result.localExports.set(exported, local);
+        }
+      }
+    } else if (statement.type === 'ExportDefaultDeclaration') {
+      // `export default function f()` declares `f` and exports it as
+      // `default`; `export default f` exports a local.
+      const inner = statement.declaration;
+      if (inner.type === 'Identifier') {
+        result.localExports.set('default', inner.name);
+      } else if (
+        (inner.type === 'FunctionDeclaration' ||
+          inner.type === 'ClassDeclaration') &&
+        inner.id
+      ) {
+        result.localExports.set('default', inner.id.name);
+        if (!result.declared.has(inner.id.name)) {
+          result.declared.set(inner.id.name, tagsAt(statement.start));
         }
       }
     } else {
