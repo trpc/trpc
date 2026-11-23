@@ -1126,3 +1126,30 @@ test('regression: an error from cleaning up an iterable fails only that iterable
     ),
   );
 });
+
+test('regression: a promise inside a value that resolves after the stream is cancelled is still reported', async () => {
+  const onError = vi.fn<ProducerOnError>();
+  const first = createDeferred<string>();
+  const second = createDeferred<{ child: Promise<never> }>();
+  const child = createDeferred<never>();
+  const reader = jsonlStreamProducer({
+    data: { 0: first.promise, 1: second.promise },
+    onError,
+  }).getReader();
+  await reader.read();
+
+  const cancelled = reader.cancel();
+  // the cancel lands once `0` yields, and the merge stops
+  first.resolve('ok');
+  await new Promise((resolve) => setTimeout(resolve));
+  // `1` was still awaiting, so it finishes its line after the merge stopped
+  second.resolve({ child: child.promise });
+  await cancelled;
+
+  child.reject(new Error('child'));
+  await vi.waitFor(() =>
+    expect(onError.mock.calls.map(([opts]) => opts.path)).toEqual([
+      ['1', 'child'],
+    ]),
+  );
+});

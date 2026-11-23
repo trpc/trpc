@@ -7,6 +7,7 @@ import {
   isObject,
   run,
 } from '../utils';
+import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
 import { makeAsyncResource, makeResource } from './utils/disposable';
@@ -157,8 +158,9 @@ async function* createBatchStreamProducer(
 
   /**
    * Serializes the chunk `build` returns, then starts the promises and
-   * iterables found in it. If that fails they're dropped, so nothing keeps the
-   * response open for a value the client never receives.
+   * iterables found in it. If that fails, or the stream has stopped, they're
+   * dropped, so nothing keeps the response open for a value the client never
+   * receives.
    */
   function line(build: (pending: PendingChunk[]) => Head | ChunkData) {
     const pending: PendingChunk[] = [];
@@ -168,7 +170,9 @@ async function* createBatchStreamProducer(
         opts.serialize ? opts.serialize(chunk) : chunk,
       );
       for (const it of pending) {
-        mergedIterables.add(it.iterable);
+        if (!mergedIterables.add(it.iterable)) {
+          it.drop();
+        }
       }
       return result;
     } catch (cause) {
@@ -246,12 +250,12 @@ async function* createBatchStreamProducer(
         if (error) {
           throw error;
         }
-        const iterator = iterable[Symbol.asyncIterator]();
+        const iterator = iteratorResource(iterable);
         // An error from cleaning up is reported, not thrown, so it can't fail
         // the other calls in the stream
         await using _cleanup = makeAsyncResource({}, async () => {
           try {
-            await iterator.return?.();
+            await using _iterator = iterator;
           } catch (cause) {
             opts.onError?.({ error: cause, path });
           }
