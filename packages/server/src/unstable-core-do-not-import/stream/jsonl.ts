@@ -7,10 +7,9 @@ import {
   isObject,
   run,
 } from '../utils';
-import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { makeResource } from './utils/disposable';
+import { makeAsyncResource, makeResource } from './utils/disposable';
 import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 import { PING_SYM, withPing } from './utils/withPing';
@@ -135,6 +134,15 @@ class MaxDepthError extends Error {
 }
 
 /**
+ * A promise or iterable found while encoding a line. It starts only once that
+ * line is serialized; if the line fails, it's dropped instead.
+ */
+interface PendingChunk {
+  iterable: AsyncIterable<string, void>;
+  drop: () => void;
+}
+
+/**
  * Yields the stream's lines, each serialized where it was made, so a value
  * that can't be serialized fails only the promise or iterable it belongs to
  */
@@ -145,84 +153,141 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  function line(chunk: Head | ChunkData): string {
-    return JSON.stringify(opts.serialize ? opts.serialize(chunk) : chunk);
+  const mergedIterables = mergeAsyncIterables<string>();
+
+  /**
+   * Serializes the chunk `build` returns, then starts the promises and
+   * iterables found in it. If that fails they're dropped, so nothing keeps the
+   * response open for a value the client never receives.
+   */
+  function line(build: (pending: PendingChunk[]) => Head | ChunkData) {
+    const pending: PendingChunk[] = [];
+    try {
+      const chunk = build(pending);
+      const result = JSON.stringify(
+        opts.serialize ? opts.serialize(chunk) : chunk,
+      );
+      for (const it of pending) {
+        mergedIterables.add(it.iterable);
+      }
+      return result;
+    } catch (cause) {
+      for (const it of pending) {
+        it.drop();
+      }
+      throw cause;
+    }
   }
 
-  const mergedIterables = mergeAsyncIterables<string>();
   function registerAsync(
+    pending: PendingChunk[],
     callback: (idx: ChunkIndex) => AsyncIterable<string, void>,
+    drop: () => void,
   ) {
     const idx = counter++ as ChunkIndex;
 
-    const iterable = callback(idx);
-    mergedIterables.add(iterable);
+    pending.push({ iterable: callback(idx), drop });
 
     return idx;
   }
 
-  function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
-    return registerAsync(async function* (idx) {
-      const error = checkMaxDepth(path);
-      if (error) {
-        // Catch any errors from the original promise to ensure they're reported
-        promise.catch((cause) => {
+  function reportError(path: (string | number)[]) {
+    return (cause: unknown) => {
+      opts.onError?.({ error: cause, path });
+    };
+  }
+
+  function encodePromise(
+    promise: Promise<unknown>,
+    path: (string | number)[],
+    pending: PendingChunk[],
+  ) {
+    return registerAsync(
+      pending,
+      async function* (idx) {
+        const error = checkMaxDepth(path);
+        if (error) {
+          // Catch any errors from the original promise to ensure they're reported
+          promise.catch(reportError(path));
+          // Replace the promise with a rejected one containing the max depth error
+          promise = Promise.reject(error);
+        }
+        try {
+          const next = await promise;
+          yield line((children) => [
+            idx,
+            PROMISE_STATUS_FULFILLED,
+            encode(next, path, children),
+          ]);
+        } catch (cause) {
           opts.onError?.({ error: cause, path });
-        });
-        // Replace the promise with a rejected one containing the max depth error
-        promise = Promise.reject(error);
-      }
-      try {
-        const next = await promise;
-        yield line([idx, PROMISE_STATUS_FULFILLED, encode(next, path)]);
-      } catch (cause) {
-        opts.onError?.({ error: cause, path });
-        yield line([
-          idx,
-          PROMISE_STATUS_REJECTED,
-          opts.formatError?.({ error: cause, path }),
-        ]);
-      }
-    });
+          yield line(() => [
+            idx,
+            PROMISE_STATUS_REJECTED,
+            opts.formatError?.({ error: cause, path }),
+          ]);
+        }
+      },
+      () => {
+        // nobody awaits it now, so report a rejection rather than leave it unhandled
+        promise.catch(reportError(path));
+      },
+    );
   }
   function encodeAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
+    pending: PendingChunk[],
   ) {
-    return registerAsync(async function* (idx) {
-      const error = checkMaxDepth(path);
-      if (error) {
-        throw error;
-      }
-      await using iterator = iteratorResource(iterable);
-
-      try {
-        while (true) {
-          const next = await iterator.next();
-          if (next.done) {
-            yield line([
-              idx,
-              ASYNC_ITERABLE_STATUS_RETURN,
-              encode(next.value, path),
-            ]);
-            break;
+    return registerAsync(
+      pending,
+      async function* (idx) {
+        const error = checkMaxDepth(path);
+        if (error) {
+          throw error;
+        }
+        const iterator = iterable[Symbol.asyncIterator]();
+        // An error from cleaning up is reported, not thrown, so it can't fail
+        // the other calls in the stream
+        await using _cleanup = makeAsyncResource({}, async () => {
+          try {
+            await iterator.return?.();
+          } catch (cause) {
+            opts.onError?.({ error: cause, path });
           }
-          yield line([
+        });
+
+        try {
+          while (true) {
+            const next = await iterator.next();
+            if (next.done) {
+              yield line((children) => [
+                idx,
+                ASYNC_ITERABLE_STATUS_RETURN,
+                encode(next.value, path, children),
+              ]);
+              break;
+            }
+            yield line((children) => [
+              idx,
+              ASYNC_ITERABLE_STATUS_YIELD,
+              encode(next.value, path, children),
+            ]);
+          }
+        } catch (cause) {
+          opts.onError?.({ error: cause, path });
+
+          yield line(() => [
             idx,
-            ASYNC_ITERABLE_STATUS_YIELD,
-            encode(next.value, path),
+            ASYNC_ITERABLE_STATUS_ERROR,
+            opts.formatError?.({ error: cause, path }),
           ]);
         }
-      } catch (cause) {
-        opts.onError?.({ error: cause, path });
-
-        yield line([
-          idx,
-          ASYNC_ITERABLE_STATUS_ERROR,
-          opts.formatError?.({ error: cause, path }),
-        ]);
-      }
-    });
+      },
+      () => {
+        // never started, so there's nothing to clean up
+      },
+    );
   }
   function checkMaxDepth(path: (string | number)[]) {
     if (opts.maxDepth && path.length > opts.maxDepth) {
@@ -233,9 +298,10 @@ async function* createBatchStreamProducer(
   function encodeAsync(
     value: unknown,
     path: (string | number)[],
+    pending: PendingChunk[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [CHUNK_VALUE_TYPE_PROMISE, encodePromise(value, path)];
+      return [CHUNK_VALUE_TYPE_PROMISE, encodePromise(value, path, pending)];
     }
     if (isAsyncIterable(value)) {
       if (opts.maxDepth && path.length >= opts.maxDepth) {
@@ -243,16 +309,20 @@ async function* createBatchStreamProducer(
       }
       return [
         CHUNK_VALUE_TYPE_ASYNC_ITERABLE,
-        encodeAsyncIterable(value, path),
+        encodeAsyncIterable(value, path, pending),
       ];
     }
     return null;
   }
-  function encode(value: unknown, path: (string | number)[]): EncodedValue {
+  function encode(
+    value: unknown,
+    path: (string | number)[],
+    pending: PendingChunk[],
+  ): EncodedValue {
     if (value === undefined) {
       return [[]];
     }
-    const reg = encodeAsync(value, path);
+    const reg = encodeAsync(value, path, pending);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
@@ -264,7 +334,7 @@ async function* createBatchStreamProducer(
     const newObj: Record<string, unknown> = emptyObject();
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = encodeAsync(item, [...path, key]);
+      const transformed = encodeAsync(item, [...path, key], pending);
       if (!transformed) {
         newObj[key] = item;
         continue;
@@ -275,12 +345,13 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  const newHead: Head = emptyObject();
-  for (const [key, item] of Object.entries(data)) {
-    newHead[key] = encode(item, [key]);
-  }
-
-  yield line(newHead);
+  yield line((children) => {
+    const newHead: Head = emptyObject();
+    for (const [key, item] of Object.entries(data)) {
+      newHead[key] = encode(item, [key], children);
+    }
+    return newHead;
+  });
 
   let iterable: AsyncIterable<string | typeof PING_SYM, void> = mergedIterables;
   if (opts.pingMs) {
