@@ -1,7 +1,7 @@
 import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '~/server/db/client';
-import { Post, type PostType } from '~/server/db/schema';
+import { Post } from '~/server/db/schema';
 import { publish } from '~/server/pubsub';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 import { ee, ensureListening } from './channel';
@@ -75,69 +75,58 @@ export const postRouter = router({
       };
     }),
 
+  /**
+   * New posts in every channel, so that switching channels doesn't need a new
+   * subscription. The client sorts them into channels.
+   */
   onAdd: publicProcedure
     .input(
       z.object({
-        channelId: z.string().uuid(),
-        // lastEventId is the last event id that the client has received
-        // On the first call, it will be whatever was passed in the initial setup
-        // If the client reconnects, it will be the last event id that the client received
+        // The id of the last post the client received.
+        // `httpSubscriptionLink` sets it when it reconnects.
         lastEventId: z.string().nullish(),
       }),
     )
-    .subscription(async function* (opts) {
-      // We start by subscribing to the event emitter so that we don't miss any new events while fetching
-      const iterable = ee.toIterable('add', {
-        signal: opts.signal,
-      });
+    // Not a generator: tRPC sends the client its `connected` event once this
+    // resolves, so the client can count on the server listening by then
+    .subscription(async (opts) => {
+      // Listen before querying the database, so no post is missed in between
+      const newPosts = ee.toIterable('add', { signal: opts.signal });
       await ensureListening();
 
-      // Fetch the last message createdAt based on the last event id
-      let lastMessageCreatedAt = await (async () => {
+      // After a reconnect, send the posts added while the client was away
+      const missedPosts = await (async () => {
         const lastEventId = opts.input.lastEventId;
-        if (!lastEventId) return null;
+        if (!lastEventId) return [];
 
-        const itemById = await db.query.Post.findFirst({
+        const lastPost = await db.query.Post.findFirst({
           where: (fields, ops) => ops.eq(fields.id, lastEventId),
         });
-        return itemById?.createdAt ?? null;
+        if (!lastPost) return [];
+
+        // Posts in other channels can share the last post's timestamp, so include it
+        return db.query.Post.findMany({
+          where: (fields, ops) =>
+            ops.and(
+              ops.gte(fields.createdAt, lastPost.createdAt),
+              ops.ne(fields.id, lastPost.id),
+            ),
+          orderBy: (fields, ops) => ops.asc(fields.createdAt),
+        });
       })();
 
-      const newPostsSinceLastMessage = await db.query.Post.findMany({
-        where: (fields, ops) =>
-          ops.and(
-            ops.eq(fields.channelId, opts.input.channelId),
-            lastMessageCreatedAt
-              ? ops.gt(fields.createdAt, lastMessageCreatedAt)
-              : undefined,
-          ),
-        orderBy: (fields, ops) => ops.asc(fields.createdAt),
-      });
-
-      function* maybeYield(post: PostType) {
-        if (post.channelId !== opts.input.channelId) {
-          // ignore posts from other channels - the event emitter can emit from other channels
-          return;
-        }
-        if (lastMessageCreatedAt && post.createdAt <= lastMessageCreatedAt) {
-          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
-          return;
+      return (async function* () {
+        for (const post of missedPosts) {
+          yield tracked(post.id, post);
         }
 
-        yield tracked(post.id, post);
-
-        // update the cursor so that we don't send this post again
-        lastMessageCreatedAt = post.createdAt;
-      }
-
-      // yield the posts we fetched from the db
-      for (const post of newPostsSinceLastMessage) {
-        yield* maybeYield(post);
-      }
-
-      // yield any new posts from the event emitter
-      for await (const [channelId, post] of iterable) {
-        yield* maybeYield(post);
-      }
+        // A post added while we queried is in both, so skip the ones we've sent
+        const sentIds = new Set(missedPosts.map((post) => post.id));
+        for await (const [post] of newPosts) {
+          if (!sentIds.has(post.id)) {
+            yield tracked(post.id, post);
+          }
+        }
+      })();
     }),
 });

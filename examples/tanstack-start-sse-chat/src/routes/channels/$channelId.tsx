@@ -7,6 +7,7 @@ import { buttonVariants } from '@shared/ui/components/button';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import { useSubscription } from '@trpc/tanstack-react-query';
 import {
   loadHandles,
   prefetchEntry,
@@ -26,6 +27,7 @@ import {
 import { CreateChannelDialog } from '~/components/create-channel';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import { Chat } from './-components/chat';
+import { useLivePosts } from './-components/hooks';
 
 export const Route = createFileRoute('/channels/$channelId')({
   beforeLoad: (opts) => {
@@ -53,6 +55,15 @@ function ChannelPage() {
   const { channelId } = Route.useParams();
   const loaderData = Route.useLoaderData();
   const signInHref = useSignInHref();
+  const trpc = useTRPC();
+
+  // This component stays mounted when you switch channels, so these
+  // subscriptions cover every channel. New posts go into the query cache, and
+  // `Chat` only gets its own channel's typing names.
+  const postsSubscription = useLivePosts();
+  const whoIsTyping = useSubscription(
+    trpc.channel.whoIsTyping.subscriptionOptions(),
+  );
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -121,6 +132,8 @@ function ChannelPage() {
         <Chat
           key={channelId}
           posts={loaderData.posts}
+          subscription={postsSubscription}
+          whoIsTyping={whoIsTyping.data?.[channelId] ?? []}
           title={
             <Suspense>
               <ChannelName

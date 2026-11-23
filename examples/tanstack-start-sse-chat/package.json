@@ -43,6 +43,7 @@
     "drizzle-kit": "^0.31.11",
     "nitro": "3.0.261103-rc",
     "npm-run-all2": "catalog:",
+    "oxc-transform-react": "~0.156.0",
     "tailwindcss": "catalog:www",
     "typescript": "^5.9.2",
     "vite": "^8.3.3"
