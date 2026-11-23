@@ -82,7 +82,7 @@ describe.each(['userid-123', undefined])(
           mutation.mutate({
             text: 'hello',
           });
-          // eslint-disable-next-line react-hooks/exhaustive-deps
+          // oxlint-disable-next-line react/exhaustive-deps
         }, []);
         if (!mutation.data) {
           return <>...</>;
@@ -136,7 +136,7 @@ describe.each(['userid-123', undefined])(
               },
             },
           );
-          // eslint-disable-next-line react-hooks/exhaustive-deps
+          // oxlint-disable-next-line react/exhaustive-deps
         }, []);
         if (!mutation.data) {
           return <>...</>;
@@ -201,7 +201,7 @@ describe.each(['userid-123', undefined])(
           mutation.mutate({
             text: 'optimistic',
           });
-          // eslint-disable-next-line react-hooks/exhaustive-deps
+          // oxlint-disable-next-line react/exhaustive-deps
         }, []);
 
         return <pre>{JSON.stringify(query.data)}</pre>;
@@ -247,7 +247,7 @@ describe.each(['userid-123', undefined])(
           mutation.mutate({
             text: 'hello',
           });
-          // eslint-disable-next-line react-hooks/exhaustive-deps
+          // oxlint-disable-next-line react/exhaustive-deps
         }, []);
 
         if (!mutation.data) {

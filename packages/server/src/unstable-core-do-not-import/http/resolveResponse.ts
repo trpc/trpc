@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 import {
   isObservable,
   observableToAsyncIterable,
@@ -11,7 +11,8 @@ import {
   type inferRouterContext,
   type inferRouterError,
 } from '../router';
-import type { TRPCResponse } from '../rpc';
+import type { TRPCErrorShape, TRPCResponse } from '../rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
@@ -21,13 +22,58 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getAcceptHeader, getRequestInfo } from './contentType';
+import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { urlPathToProcedurePath } from './pathSeparator';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
 } from './types';
+
+/**
+ * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
+ * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
+ * request itself is at fault
+ */
+function decodePath(path: string) {
+  try {
+    return decodeURIComponent(path);
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Invalid URL-encoding in path "${path}"`,
+      cause,
+    });
+  }
+}
+
+/**
+ * Ends a body that fails once its headers are out, reporting the failure,
+ * since an adapter can no longer send an error response by then
+ */
+function endOnError(
+  stream: ReadableStream<Uint8Array>,
+  onError: (cause: unknown) => void,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(controller) {
+      const chunk = await reader.read().catch((cause: unknown) => {
+        onError(cause);
+        return { done: true, value: undefined } as const;
+      });
+      if (chunk.done) {
+        controller.close();
+      } else {
+        controller.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   return run(async function* () {
@@ -35,7 +81,13 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
+  | 'GET'
+  | 'POST'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -44,6 +96,31 @@ function combinedAbortController(signal: AbortSignal) {
     signal: combinedSignal,
     controller,
   };
+}
+
+/**
+ * A client that leaves may only cancel the response body, without aborting
+ * the request's signal, and the procedures streaming into it wait on that.
+ */
+function abortOnCancel(
+  stream: ReadableStream<Uint8Array>,
+  controller: AbortController,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(enqueuer) {
+      const chunk = await reader.read();
+      if (chunk.done) {
+        enqueuer.close();
+      } else {
+        enqueuer.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      controller.abort();
+      return reader.cancel(reason);
+    },
+  });
 }
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
@@ -81,7 +158,11 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | null;
-  errors: TRPCError[];
+  /**
+   * errors aligned with `untransformedJSON` by index; entries are `undefined`
+   * for successful responses
+   */
+  errors: (TRPCError | undefined)[];
   headers: Headers;
 }) {
   const {
@@ -93,7 +174,13 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     headers,
   } = initOpts;
 
-  let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
+  const definedErrors = errors.filter((error): error is TRPCError =>
+    Boolean(error),
+  );
+
+  let status = untransformedJSON
+    ? getHTTPStatusCode(untransformedJSON, errors)
+    : 200;
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -108,7 +195,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
       info,
       paths: info?.calls.map((call) => call.path),
       data,
-      errors,
+      errors: definedErrors,
       eagerGeneration,
       type:
         info?.calls.find((call) => call.procedure?._def.type)?.procedure?._def
@@ -118,7 +205,12 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   if (meta.headers) {
     if (meta.headers instanceof Headers) {
       for (const [key, value] of meta.headers.entries()) {
-        headers.append(key, value);
+        if (key === 'content-type') {
+          // a response has one content type, so replace the default
+          headers.set(key, value);
+        } else {
+          headers.append(key, value);
+        }
       }
     } else {
       /**
@@ -126,6 +218,9 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
        */
       for (const [key, value] of Object.entries(meta.headers)) {
         if (Array.isArray(value)) {
+          if (key.toLowerCase() === 'content-type' && value.length > 0) {
+            headers.delete(key);
+          }
           for (const v of value) {
             headers.append(key, v);
           }
@@ -142,6 +237,49 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   return {
     status,
   };
+}
+
+/**
+ * What a streamed call gets when its error can't be formatted. It says
+ * nothing about the error, which is what `errorFormatter` would have hidden,
+ * and matches the Node and ws adapters' fallback.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
+
+/**
+ * `getErrorShape` for an error sent in a stream, after the headers. A
+ * throwing `errorFormatter` is reported and the call gets the fallback shape,
+ * so the stream goes on: the rest of a batch still answers, and an SSE
+ * subscription still gets its error.
+ */
+function streamedErrorShape<TRouter extends AnyRouter>(
+  opts: Pick<ResolveHTTPRequestOptions<TRouter>, 'onError' | 'req' | 'router'>,
+  call: {
+    error: TRPCError;
+    type: ProcedureType | 'unknown';
+    path: string | undefined;
+    input: unknown;
+    ctx: inferRouterContext<TRouter> | undefined;
+  },
+): inferRouterError<TRouter> {
+  try {
+    return getErrorShape({ config: opts.router._def._config, ...call });
+  } catch (cause) {
+    try {
+      opts.onError?.({
+        ...call,
+        error: getTRPCErrorFromUnknown(cause),
+        req: opts.req,
+      });
+    } catch {
+      // a throwing `onError` must not stop the fallback either
+    }
+    return fallbackErrorShape;
+  }
 }
 
 function caughtErrorToData<TRouter extends AnyRouter>(
@@ -210,6 +348,10 @@ function isDataStream(v: unknown) {
 
 type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 
+/**
+ * Handles a Fetch API `Request` for a router and returns its `Response`.
+ * Every adapter uses it; call it to write your own.
+ */
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -238,7 +380,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         undefined,
         await getRequestInfo({
           req,
-          path: decodeURIComponent(opts.path),
+          path: urlPathToProcedurePath(
+            decodePath(opts.path),
+            config.pathSeparator,
+          ),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
@@ -322,12 +467,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
-      signal?: AbortSignal;
+      /**
+       * Only set for subscriptions
+       */
+      abort?: ReturnType<typeof combinedAbortController>;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
+    const bodyCancelled = new AbortController();
+    const callSignal = abortSignalsAnyPonyfill([
+      opts.req.signal,
+      bodyCancelled.signal,
+    ]);
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
-      const combinedAbort = combinedAbortController(opts.req.signal);
+      const combinedAbort = combinedAbortController(callSignal);
       try {
         if (opts.error) {
           throw opts.error;
@@ -341,6 +494,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
 
         if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
+          const accepted = opts.allowMethodOverride
+            ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
+            : TYPE_ACCEPTED_METHOD_MAP;
+          // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
+          headers.set('allow', accepted[proc._def.type].join(', '));
           throw new TRPCError({
             code: 'METHOD_NOT_SUPPORTED',
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
@@ -355,17 +513,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: `Cannot batch subscription calls`,
             });
           }
-
-          if (config.sse?.maxDurationMs) {
-            function cleanup() {
-              clearTimeout(timer);
-              combinedAbort.signal.removeEventListener('abort', cleanup);
-
-              combinedAbort.controller.abort();
-            }
-            const timer = setTimeout(cleanup, config.sse.maxDurationMs);
-            combinedAbort.signal.addEventListener('abort', cleanup);
-          }
         }
         const data: unknown = await proc({
           path: call.path,
@@ -379,10 +526,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           undefined,
           {
             data,
-            signal:
-              proc._def.type === 'subscription'
-                ? combinedAbort.signal
-                : undefined,
+            abort:
+              proc._def.type === 'subscription' ? combinedAbort : undefined,
           },
         ];
       } catch (cause) {
@@ -477,13 +622,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data, opts.req.signal)
+              ? observableToAsyncIterable(result.data, callSignal)
               : result.data;
             return dataAsIterable;
           });
 
           const stream = sseStreamProducer({
             ...config.sse,
+            lastEventId: getLastEventId({
+              headers: req.headers,
+              searchParams: url.searchParams,
+            }),
             data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
@@ -501,8 +650,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 type,
               });
 
-              const shape = getErrorShape({
-                config,
+              const shape = streamedErrorShape(opts, {
                 ctx: ctxManager.valueOrUndefined(),
                 error,
                 input,
@@ -526,31 +674,63 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             untransformedJSON: null,
           });
 
-          const abortSignal = result?.signal;
-          let responseBody: ReadableStream<Uint8Array> = stream;
+          const abort = result?.abort;
+          let responseBody = endOnError(stream, (cause) => {
+            // a throwing `onError` would fail the body, and the adapter would
+            // report that again without the call
+            try {
+              opts.onError?.({
+                error: getTRPCErrorFromUnknown(cause),
+                path: call?.path,
+                input: call?.result(),
+                ctx: ctxManager.valueOrUndefined(),
+                req: opts.req,
+                type: call?.procedure?._def.type ?? 'unknown',
+              });
+            } catch {
+              // ignored, the body still ends
+            }
+          });
 
           // Fixes: https://github.com/trpc/trpc/issues/7094
-          if (abortSignal) {
-            const reader = stream.getReader();
-            const onAbort = () => void reader.cancel();
-            if (abortSignal.aborted) {
+          if (abort) {
+            const reader = responseBody.getReader();
+            const maxDurationTimer = config.sse?.maxDurationMs
+              ? setTimeout(
+                  () => abort.controller.abort(),
+                  config.sse.maxDurationMs,
+                )
+              : undefined;
+            const onStreamEnd = () => {
+              clearTimeout(maxDurationTimer);
+              abort.signal.removeEventListener('abort', onAbort);
+            };
+            const onAbort = () => {
+              onStreamEnd();
+              void reader.cancel();
+            };
+            if (abort.signal.aborted) {
               onAbort();
             } else {
-              abortSignal.addEventListener('abort', onAbort, { once: true });
+              abort.signal.addEventListener('abort', onAbort, { once: true });
             }
 
             responseBody = new ReadableStream({
               async pull(controller) {
-                const chunk = await reader.read();
+                const chunk = await reader.read().catch((cause: unknown) => {
+                  onStreamEnd();
+                  throw cause;
+                });
                 if (chunk.done) {
-                  abortSignal.removeEventListener('abort', onAbort);
+                  onStreamEnd();
                   controller.close();
                 } else {
                   controller.enqueue(chunk.value);
                 }
               },
               cancel() {
-                abortSignal.removeEventListener('abort', onAbort);
+                onStreamEnd();
+                bodyCancelled.abort();
                 return reader.cancel();
               },
             });
@@ -567,7 +747,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // batch response handlers
     if (info.accept === 'application/jsonl') {
       // httpBatchStreamLink
-      headers.set('content-type', 'application/json');
+      headers.set(
+        'content-type',
+        config.jsonl?.contentType ?? 'application/json',
+      );
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
@@ -600,8 +783,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           if (error) {
             return {
-              error: getErrorShape({
-                config,
+              error: streamedErrorShape(opts, {
                 ctx: ctxManager.valueOrUndefined(),
                 error,
                 input: call!.result(),
@@ -616,7 +798,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data, opts.req.signal)
+            ? observableToAsyncIterable(result.data, callSignal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
@@ -626,10 +808,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }),
         serialize: (data) => config.transformer.output.serialize(data),
         onError: (cause) => {
+          const call = info.calls[cause.path[0] as any];
           opts.onError?.({
             error: getTRPCErrorFromUnknown(cause.error),
-            path: undefined,
-            input: undefined,
+            path: call?.path,
+            input: call?.result(),
             ctx: ctxManager.valueOrUndefined(),
             req: opts.req,
             type: info?.type ?? 'unknown',
@@ -646,8 +829,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           // no need to call `onError` here as it will be propagated through the stream itself
 
-          const shape = getErrorShape({
-            config,
+          const shape = streamedErrorShape(opts, {
             ctx: ctxManager.valueOrUndefined(),
             error,
             input,
@@ -659,7 +841,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         },
       });
 
-      return new Response(stream, {
+      return new Response(abortOnCancel(stream, bodyCancelled), {
         headers,
         status: headResponse.status,
       });
@@ -717,9 +899,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
 
-    const errors = results
-      .map(([error]) => error)
-      .filter(Boolean) as TRPCError[];
+    const errors = results.map(([error]) => error);
 
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
@@ -753,6 +933,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type: info?.type ?? 'unknown',
     });
 
+    headers.set('content-type', 'application/json');
     const headResponse = initResponse({
       ctx,
       info,

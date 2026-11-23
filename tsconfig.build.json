@@ -8,7 +8,7 @@
     "outDir": "./dist",
     "strict": true,
     "strictNullChecks": true,
-    "noUnusedLocals": false, // we have eslint for this where it's disabled in tests
+    "noUnusedLocals": false, // we have oxlint for this where it's disabled in tests
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

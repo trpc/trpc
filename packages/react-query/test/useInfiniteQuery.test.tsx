@@ -6,15 +6,8 @@ import { createServerSideHelpers } from '@trpc/react-query/server';
 import type { inferProcedureInput } from '@trpc/server';
 import React, { Fragment } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 test('useInfiniteQuery()', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -109,6 +102,7 @@ test('useInfiniteQuery()', async () => {
 });
 
 test('useInfiniteQuery bi-directional', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -230,6 +224,7 @@ test('useInfiniteQuery bi-directional', async () => {
 });
 
 test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -360,6 +355,7 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
 });
 
 test('useInfiniteQuery and fetchInfiniteQuery', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -489,6 +485,7 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
 });
 
 test('prefetchInfiniteQuery()', async () => {
+  await using factory = createAppRouter();
   const { appRouter } = factory;
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
@@ -506,7 +503,8 @@ test('prefetchInfiniteQuery()', async () => {
   }
 });
 
-test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
+test('useInfiniteQuery() is exposed on procedure with optional inputs', async () => {
+  await using factory = createAppRouter();
   const { trpc, appRouter } = factory;
 
   type AppRouter = typeof appRouter;
@@ -527,6 +525,7 @@ test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
 });
 
 test('regression 5412: invalidating a query', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -610,6 +609,7 @@ test('regression 5412: invalidating a query', async () => {
 });
 
 test('regression 5809: select()', async () => {
+  await using factory = createAppRouter();
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -633,7 +633,7 @@ test('regression 5809: select()', async () => {
       },
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    // oxlint-disable-next-line typescript/no-non-null-asserted-optional-chain
     expectTypeOf(q.data?.pages[0]?.foo!).toEqualTypeOf<'bar'>();
 
     return <div>foo:{q.data?.pages[0]?.foo}</div>;

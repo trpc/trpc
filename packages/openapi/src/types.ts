@@ -4,7 +4,13 @@ export type Replace<TTarget, TReplaceWith> = Omit<TTarget, keyof TReplaceWith> &
   TReplaceWith;
 
 export type SchemaType =
-  'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string';
+  | 'array'
+  | 'boolean'
+  | 'integer'
+  | 'null'
+  | 'number'
+  | 'object'
+  | 'string';
 
 export type PrimitiveSchemaType = SchemaType;
 

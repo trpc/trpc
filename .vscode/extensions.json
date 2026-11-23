@@ -1,11 +1,15 @@
 {
   "recommendations": [
     "yzhang.markdown-all-in-one",
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
+    "oxc.oxc-vscode",
     "tamasfe.even-better-toml",
     "orta.vscode-twoslash-queries",
     "yoavbls.pretty-ts-errors"
   ],
-  "unwantedRecommendations": ["bungcip.better-toml", "biomejs.biome"]
+  "unwantedRecommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bungcip.better-toml",
+    "biomejs.biome"
+  ]
 }

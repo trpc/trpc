@@ -17,7 +17,6 @@ import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 import {
   broadcastReconnectNotificationToClients,
   getWSConnectionHandler,
-  handleKeepAlive,
   jsonEncoder,
 } from '../ws';
 import type { ReconnectNotificationTarget, WSSHandlerOptions } from '../ws';
@@ -35,17 +34,53 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * The options of `fastifyTRPCPlugin`.
+ * @see https://trpc.io/docs/server/adapters/fastify#fastify-plugin-options
+ */
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
+  /** The path the router is served at, such as `/trpc`. */
   prefix?: string;
+  /**
+   * Whether to serve WebSockets too. Needs `@fastify/websocket` to be
+   * registered first.
+   * @see https://trpc.io/docs/server/adapters/fastify#enable-websockets
+   */
   useWSS?: boolean;
-  trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply>;
+  /**
+   * The router and handler options. `keepAlive`, `dangerouslyDisablePong`
+   * and `experimental_encoder` only apply with `useWSS`.
+   */
+  trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply> &
+    Pick<
+      WSSHandlerOptions<TRouter>,
+      'keepAlive' | 'dangerouslyDisablePong' | 'experimental_encoder'
+    >;
 }
 
+/**
+ * What `createContext` gets in the Fastify adapter: `req`, `res` and the
+ * request's `info`. With `useWSS`, WebSocket connections get the raw
+ * `IncomingMessage` as `req` and the `WebSocket` as `res` instead.
+ * @see https://trpc.io/docs/server/adapters/fastify#create-the-context
+ */
 export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<
   FastifyRequest,
   FastifyReply
 >;
 
+/**
+ * A Fastify plugin that serves a router over HTTP, and over WebSockets
+ * with `useWSS`.
+ * @example
+ * ```ts
+ * server.register(fastifyTRPCPlugin, {
+ *   prefix: '/trpc',
+ *   trpcOptions: { router: appRouter, createContext },
+ * });
+ * ```
+ * @see https://trpc.io/docs/server/adapters/fastify#create-fastify-server
+ */
 export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   fastify: FastifyInstance,
   opts: FastifyTRPCPluginOptions<TRouter>,
@@ -97,11 +132,10 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
         connectedClients.delete(socket);
       });
 
+      // keepalive is registered by getWSConnectionHandler, which every
+      // adapter goes through — registering it here as well gave each socket
+      // two ping intervals and two pong-wait timers
       onConnection(socket, req.raw);
-      if (trpcOptions?.keepAlive?.enabled) {
-        const { pingMs, pongWaitMs } = trpcOptions.keepAlive;
-        handleKeepAlive(socket, pingMs, pongWaitMs);
-      }
     });
   }
 

@@ -46,7 +46,11 @@ function assertIsJSONRPC2OrUndefined(
   }
 }
 
-/** @public */
+/**
+ * Checks that a message a WebSocket client sent is a valid tRPC message,
+ * and deserializes its input. Throws if it isn't.
+ * @public
+ */
 export function parseTRPCMessage(
   obj: unknown,
   transformer: CombinedDataTransformer,

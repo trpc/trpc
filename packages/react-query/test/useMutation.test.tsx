@@ -2,57 +2,52 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
-    const appRouter = t.router({
-      post: t.router({
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(() => '__mutationResult' as const),
-        createWithSerializable: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation((opts) => {
-            const { input } = opts;
-            return {
-              id: 1,
-              text: input.text,
-              date: new Date(),
-            };
+function setup() {
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+  const appRouter = t.router({
+    post: t.router({
+      create: t.procedure
+        .input(
+          z.object({
+            text: z.string(),
           }),
-      }),
-    });
+        )
+        .mutation(() => '__mutationResult' as const),
+      createWithSerializable: t.procedure
+        .input(
+          z.object({
+            text: z.string(),
+          }),
+        )
+        .mutation((opts) => {
+          const { input } = opts;
+          return {
+            id: 1,
+            text: input.text,
+            date: new Date(),
+          };
+        }),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('useMutation', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
   function MyComponent() {
     const mutation = client.post.create.useMutation();
@@ -63,7 +58,7 @@ test('useMutation', async () => {
       mutation.mutate({
         text: 'hello',
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
     if (!mutation.data) {
       return <>...</>;
@@ -85,7 +80,8 @@ test('useMutation', async () => {
   });
 });
 
-test('useMutation options inference', () => {
+test('useMutation options inference', async () => {
+  await using ctx = setup();
   const { appRouter, client, App } = ctx;
 
   type ReactQueryProcedure = inferReactQueryProcedureOptions<typeof appRouter>;

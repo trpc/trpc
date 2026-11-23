@@ -140,3 +140,12 @@ test('getArrayQueryKey', () => {
     ]
   `);
 });
+
+test('falsy inputs are kept in an "any" key', () => {
+  for (const input of [0, false, '', null]) {
+    expect(getQueryKeyInternal(['post', 'byId'], input, 'any')).toEqual([
+      ['post', 'byId'],
+      { input },
+    ]);
+  }
+});

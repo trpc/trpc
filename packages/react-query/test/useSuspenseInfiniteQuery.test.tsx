@@ -3,43 +3,38 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React, { Suspense } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      post: t.router({
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().default(0),
-            }),
-          )
-          .query(({ input }) => {
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
+function setup() {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    post: t.router({
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().default(0),
           }),
-      }),
-    });
+        )
+        .query(({ input }) => {
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
+        }),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('useSuspenseInfiniteQuery()', async () => {
+  await using ctx = setup();
   const { App, client } = ctx;
   function MyComponent() {
     const [data, query1] = client.post.list.useSuspenseInfiniteQuery(
@@ -105,5 +100,42 @@ test('useSuspenseInfiniteQuery()', async () => {
   await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
+  });
+});
+
+test('regression 6195: select()', async () => {
+  await using ctx = setup();
+  const { App, client } = ctx;
+  function MyComponent() {
+    const [data, query] = client.post.list.useSuspenseInfiniteQuery(
+      {},
+      {
+        getNextPageParam(lastPage) {
+          return lastPage.next;
+        },
+        select: (data) => ({
+          ...data,
+          pages: data.pages.map((page) => ({ ...page, foo: 'bar' as const })),
+        }),
+      },
+    );
+
+    // oxlint-disable-next-line typescript/no-non-null-asserted-optional-chain
+    expectTypeOf(data.pages[0]?.foo!).toEqualTypeOf<'bar'>();
+    // oxlint-disable-next-line typescript/no-non-null-asserted-optional-chain
+    expectTypeOf(query.data.pages[0]?.foo!).toEqualTypeOf<'bar'>();
+
+    return <div>foo:{data.pages[0]?.foo}</div>;
+  }
+
+  const utils = render(
+    <App>
+      <Suspense fallback="loading">
+        <MyComponent />
+      </Suspense>
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo:bar');
   });
 });

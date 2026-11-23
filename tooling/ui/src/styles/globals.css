@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+/* Scan the shared components, wherever the app's Tailwind entry lives. */
+@source "../components";

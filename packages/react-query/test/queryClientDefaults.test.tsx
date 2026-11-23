@@ -5,68 +5,63 @@ import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React from 'react';
 import { z } from 'zod';
 
 describe('query client defaults', () => {
-  const ctx = konn()
-    .beforeEach(() => {
-      const t = initTRPC.create();
-      interface Post {
-        title: string;
-      }
-      const onSuccessSpy = vi.fn();
+  function setup() {
+    const t = initTRPC.create();
+    interface Post {
+      title: string;
+    }
+    const onSuccessSpy = vi.fn();
 
-      const posts: Post[] = [];
+    const posts: Post[] = [];
 
-      const appRouter = t.router({
-        list: t.procedure.query(() => posts),
-        add: t.procedure.input(z.string()).mutation(({ input }) => {
-          posts.push({
-            title: input,
-          });
-        }),
-      });
-      const opts = testServerAndClientResource(appRouter);
-      const trpc = createTRPCReact<typeof appRouter>();
+    const appRouter = t.router({
+      list: t.procedure.query(() => posts),
+      add: t.procedure.input(z.string()).mutation(({ input }) => {
+        posts.push({
+          title: input,
+        });
+      }),
+    });
+    const opts = testServerAndClientResource(appRouter);
+    const trpc = createTRPCReact<typeof appRouter>();
 
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          mutations: {
-            onSuccess: async (opts) => {
-              await queryClient.invalidateQueries();
-              onSuccessSpy(opts);
-            },
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        mutations: {
+          onSuccess: async (opts) => {
+            await queryClient.invalidateQueries();
+            onSuccessSpy(opts);
           },
         },
-      });
+      },
+    });
 
-      function App(props: { children: ReactNode }) {
-        return (
-          <trpc.Provider
-            {...{ queryClient, client: getUntypedClient(opts.client) }}
-          >
-            <QueryClientProvider client={queryClient}>
-              {props.children}
-            </QueryClientProvider>
-          </trpc.Provider>
-        );
-      }
-      return {
-        ...opts,
-        App,
-        trpc,
-        onSuccessSpy,
-      };
-    })
-    .afterEach(async (opts) => {
-      await opts?.close?.();
-    })
-    .done();
+    function App(props: { children: ReactNode }) {
+      return (
+        <trpc.Provider
+          {...{ queryClient, client: getUntypedClient(opts.client) }}
+        >
+          <QueryClientProvider client={queryClient}>
+            {props.children}
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+    return {
+      ...opts,
+      App,
+      trpc,
+      onSuccessSpy,
+    };
+  }
 
   test('clear cache on every mutation', async () => {
+    await using ctx = setup();
     const { trpc } = ctx;
     const nonce = `nonce-${Math.random()}`;
     function MyComp() {
@@ -102,6 +97,7 @@ describe('query client defaults', () => {
   });
 
   test('skip invalidate', async () => {
+    await using ctx = setup();
     const { trpc } = ctx;
     const nonce = `nonce-${Math.random()}`;
     const onSuccessLocalSpy = vi.fn().mockReturnValue('something');

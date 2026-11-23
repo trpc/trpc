@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type ws from 'ws';
+import type { RawData, WebSocket, WebSocketServer } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -14,28 +14,32 @@ import {
 } from '../@trpc/server';
 import type { TRPCRequestInfo } from '../@trpc/server/http';
 import { type BaseHandlerOptions } from '../@trpc/server/http';
-import { parseTRPCMessage } from '../@trpc/server/rpc';
+import { parseTRPCMessage, TRPC_ERROR_CODES_BY_KEY } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
   TRPCConnectionParamsMessage,
+  TRPCErrorShape,
   TRPCReconnectNotification,
   TRPCResponseMessage,
   TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import {
+  isAbortError,
   isAsyncIterable,
   isObject,
+  isPromise,
   isTrackedEnvelope,
+  makeResource,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import type { Result } from '../unstable-core-do-not-import';
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
@@ -54,7 +58,7 @@ export const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
  */
 export type ReconnectNotificationTarget = {
   readyState: number;
-  send(data: Parameters<ws.WebSocket['send']>[0]): void;
+  send(data: string | Uint8Array): void;
 };
 
 /**
@@ -79,90 +83,354 @@ export function broadcastReconnectNotificationToClients(
   }
 }
 
-/**
- * @public
- */
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  ws.WebSocket
->;
+function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
+  return promise.then(
+    (value): Result<TValue> => ({ ok: true, value }),
+    (error: unknown): Result<TValue> => ({ ok: false, error }),
+  );
+}
 
 /**
+ * What `await using` rejects with when disposal fails after the scope threw:
+ * `error` is the disposal failure and `suppressed` the original error.
+ */
+function isSuppressedError(
+  cause: unknown,
+): cause is { error: unknown; suppressed: unknown } {
+  return (
+    isObject(cause) &&
+    cause['name'] === 'SuppressedError' &&
+    'error' in cause &&
+    'suppressed' in cause
+  );
+}
+
+/**
+ * What the client gets when its error can't be formatted or encoded. It says
+ * nothing about the error, which is what `errorFormatter` would have hidden.
+ */
+const fallbackErrorShape: TRPCErrorShape = {
+  code: TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+  message: 'Internal server error',
+  data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+};
+
+/**
+ * A procedure that gives up because its subscription was cancelled rejects
+ * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
+ */
+function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
+  return (
+    signal.aborted &&
+    error.code === 'INTERNAL_SERVER_ERROR' &&
+    isAbortError(error.cause)
+  );
+}
+
+/**
+ * The members of a connected client that the WebSocket adapter reads, so a
+ * server that is not `ws` can be served without a cast. A `ws` `WebSocket`
+ * satisfies them.
  * @public
  */
-export type CreateWSSContextFn<TRouter extends AnyRouter> = (
-  opts: CreateWSSContextFnOptions,
+export interface WSClient {
+  /** The ready state, compared against `OPEN` (1). */
+  readyState: number;
+  on(
+    event: 'message',
+    listener: (data: RawData, isBinary: boolean) => void,
+  ): unknown;
+  on(event: 'close' | 'error', listener: (cause?: unknown) => void): unknown;
+  once(event: 'close', listener: () => void): unknown;
+  send(data: string | Uint8Array): void;
+  close(code?: number, reason?: string): void;
+  terminate(): void;
+}
+
+/**
+ * The members of a server that the WebSocket adapter reads: connection
+ * listeners and the connected clients. A `ws` `WebSocketServer` satisfies
+ * them.
+ * @public
+ */
+export interface WSServer<TClient extends WSClient = WSClient> {
+  clients: ReadonlySet<TClient>;
+  on(
+    event: 'connection',
+    listener: (client: TClient, request: IncomingMessage) => void,
+  ): unknown;
+}
+
+type InferWSServerClient<TServer extends WSServer<WSClient>> =
+  TServer['clients'] extends ReadonlySet<infer TClient extends WSClient>
+    ? TClient
+    : never;
+
+/**
+ * What `createContext` gets in the WebSocket adapter: the upgrade request
+ * as `req`, the socket as `res`, and `info`. It's called once per
+ * connection.
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
+ * @public
+ */
+export type CreateWSSContextFnOptions<TClient extends WSClient = WebSocket> =
+  NodeHTTPCreateContextFnOptions<IncomingMessage, TClient>;
+
+/**
+ * The `createContext` function the WebSocket adapter takes.
+ * @public
+ */
+export type CreateWSSContextFn<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = (
+  opts: CreateWSSContextFnOptions<TClient>,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
-export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
-  BaseHandlerOptions<TRouter, IncomingMessage> &
-    CreateContextCallback<
-      inferRouterContext<TRouter>,
-      CreateWSSContextFn<TRouter>
-    >;
+/** The options of `getWSConnectionHandler`. */
+export type WSConnectionHandlerOptions<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = BaseHandlerOptions<TRouter, IncomingMessage> &
+  CreateContextCallback<
+    inferRouterContext<TRouter>,
+    CreateWSSContextFn<TRouter, TClient>
+  >;
 
 /**
- * Web socket server handler
+ * The options of `applyWSSHandler`.
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> =
-  WSConnectionHandlerOptions<TRouter> & {
-    wss: ws.WebSocketServer;
-    prefix?: string;
-    keepAlive?: {
-      /**
-       * Enable heartbeat messages
-       * @default false
-       */
-      enabled: boolean;
-      /**
-       * Heartbeat interval in milliseconds
-       * @default 30_000
-       */
-      pingMs?: number;
-      /**
-       * Terminate the WebSocket if no pong is received after this many milliseconds
-       * @default 5_000
-       */
-      pongWaitMs?: number;
-    };
+type WSConnectionOptionsForServer<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient>,
+> = WSConnectionHandlerOptions<TRouter, InferWSServerClient<TServer>>;
+
+export type WSSHandlerOptions<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+> = WSConnectionOptionsForServer<TRouter, TServer> & {
+  /** The WebSocket server to serve the router on. */
+  wss: TServer;
+  /** Only connections whose URL starts with this are served. */
+  prefix?: string;
+  /**
+   * Sends pings to each client and closes connections that stop
+   * answering.
+   */
+  keepAlive?: {
     /**
-     * Disable responding to ping messages from the client
-     * **Not recommended** - this is mainly used for testing
+     * Whether to send pings.
      * @default false
      */
-    dangerouslyDisablePong?: boolean;
+    enabled: boolean;
     /**
-     * Custom encoder for wire encoding (e.g. custom binary formats)
-     * @default jsonEncoder
+     * How long a connection can be quiet before a ping, in milliseconds.
+     * @default 30_000
      */
-    experimental_encoder?: Encoder;
+    pingMs?: number;
+    /**
+     * How long to wait for a pong before closing the connection, in
+     * milliseconds.
+     * @default 5_000
+     */
+    pongWaitMs?: number;
   };
+  /**
+   * Stops answering clients' pings. Meant for tests.
+   * @default false
+   */
+  dangerouslyDisablePong?: boolean;
+  /**
+   * Encodes and decodes messages, for formats other than JSON.
+   * Experimental: it may change in any release.
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
+};
 
+/**
+ * `iterator.next()` for a subscription loop that races it against the
+ * subscription's `signal`, with a rejection turned into a `TRPCError`.
+ *
+ * Once the subscription is stopped, the loop doesn't wait for this call, so a
+ * rejection after the stop, such as a teardown that throws, goes to
+ * `onErrorAfterStop` and resolves `'abort'`. An `AbortError` is how a stopped
+ * subscription is expected to end, and isn't reported.
+ */
+function nextUnlessStopped<TValue, TReturn>(
+  iterator: AsyncIterator<TValue, TReturn>,
+  signal: AbortSignal,
+  onErrorAfterStop: (error: TRPCError) => void,
+): Promise<IteratorResult<TValue, TReturn> | TRPCError | 'abort'> {
+  return iterator.next().catch((cause: unknown) => {
+    const error = getTRPCErrorFromUnknown(cause);
+    if (!signal.aborted) {
+      return error;
+    }
+    if (!isAbortError(error.cause)) {
+      onErrorAfterStop(error);
+    }
+    return 'abort';
+  });
+}
+
+/**
+ * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
+ * uses it; call it to attach tRPC to your own WebSocket server.
+ */
+export function getWSConnectionHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+>(
+  opts: WSSHandlerOptions<TRouter, TServer>,
+): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-) {
+  opts: WSSHandlerOptions<TRouter, WSServer>,
+): (client: WSClient, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
+): (client: WebSocket, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WSServer<any>>,
+): (client: WSClient, req: IncomingMessage) => void {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: ws.WebSocket, req: IncomingMessage) => {
+  return (client: WSClient, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
-    if (opts.keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = opts.keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
+    /** Releases the id after cleanup, cancelling closed-socket work on every exit. */
+    function registerSubscription(
+      id: number | string,
+      subscription: AbortController,
+    ) {
+      clientSubscriptions.set(id, subscription);
+      return makeResource({}, () => {
+        if (
+          client.readyState !== WEBSOCKET_OPEN &&
+          !subscription.signal.aborted
+        ) {
+          subscription.abort();
+        }
+        clientSubscriptions.delete(id);
+      });
     }
 
+    /** Drops replies once closing starts, before the close event cancels work. */
     function respond(untransformedJSON: TRPCResponseMessage) {
+      if (client.readyState !== WEBSOCKET_OPEN) return;
       client.send(
         encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
         ),
       );
+    }
+
+    type ErrorInfo = Parameters<NonNullable<typeof opts.onError>>[0];
+
+    /**
+     * `onError` runs in listeners and in promises nothing awaits, where a
+     * throw or a rejection would crash the process, so either goes to
+     * `onFailure` instead.
+     */
+    function guardOnError(
+      info: ErrorInfo,
+      onFailure: (cause: unknown) => void,
+    ) {
+      try {
+        const result: unknown = opts.onError?.(info);
+        if (isPromise(result)) {
+          result.catch(onFailure);
+        }
+      } catch (cause) {
+        onFailure(cause);
+      }
+    }
+
+    /** Reports an error to `onError`, ignoring an `onError` that fails. */
+    function callOnError(info: ErrorInfo) {
+      guardOnError(info, () => {
+        // ignored, see guardOnError
+      });
+    }
+
+    /**
+     * Reports a failure of the adapter's own error handling, such as an
+     * `errorFormatter` that throws or a reply that can't be sent. It's logged
+     * when `onError` is missing or fails, so it's never dropped silently.
+     */
+    function reportInternalError(info: ErrorInfo) {
+      const log = () => {
+        // oxlint-disable-next-line no-console
+        console.error('[@trpc/server/adapters/ws]', info.error);
+      };
+      if (!opts.onError) {
+        log();
+        return;
+      }
+      guardOnError(info, log);
+    }
+
+    /**
+     * The error shape the client gets, or a minimal one when `errorFormatter`
+     * throws, so that the request is still answered.
+     */
+    function errorShape(call: Omit<ErrorInfo, 'ctx' | 'req'>): TRPCErrorShape {
+      try {
+        return getErrorShape({ config: router._def._config, ctx, ...call });
+      } catch (cause) {
+        reportInternalError({
+          ...call,
+          error: getTRPCErrorFromUnknown(cause),
+          ctx,
+          req,
+        });
+        return fallbackErrorShape;
+      }
+    }
+
+    function reportConnectionError(cause: unknown) {
+      reportInternalError({
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx,
+        req,
+        input: undefined,
+      });
+    }
+
+    /**
+     * Sends a response that isn't tied to a request, reporting it if it
+     * can't be built or sent. One that can't be sent is replaced by the
+     * fallback error, so that a client still learns it was rejected.
+     */
+    function respondOrReport(response: () => TRPCResponseMessage) {
+      let message: TRPCResponseMessage | null = null;
+      try {
+        message = response();
+        respond(message);
+      } catch (cause) {
+        reportConnectionError(cause);
+        if (message === null) {
+          return;
+        }
+        try {
+          respond({
+            id: message.id,
+            jsonrpc: message.jsonrpc,
+            error: fallbackErrorShape,
+          });
+        } catch {
+          // the same failure, and it was reported above
+        }
+      }
     }
 
     async function createCtxPromise(
@@ -191,7 +459,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -199,17 +467,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           req,
           input: undefined,
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
-        });
+        }));
 
         // close in next tick
         (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
@@ -230,12 +496,49 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * - the context promise will be created immediately on connection if no connectionParams are expected
      * - if connection params are expected, they will be created once received
      */
+    /**
+     * Anyone can send an upgrade with a `Host` or path `URL` can't parse,
+     * such as `Host: []`. Throwing here would escape the `connection` event
+     * and crash the process, so close that connection instead.
+     */
+    let url: URL;
+    try {
+      url = createURL(req);
+    } catch (cause) {
+      const info: ErrorInfo = {
+        error: getTRPCErrorFromUnknown(cause),
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        req,
+        input: undefined,
+      };
+      callOnError(info);
+      // the socket can still error while it closes, and an `error` event
+      // with no listener would crash the process too
+      client.on('error', (error) => {
+        callOnError({ ...info, error: getTRPCErrorFromUnknown(error) });
+      });
+      client.close(1008, 'Invalid URL');
+      return;
+    }
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
+
     let ctxPromise =
-      createURL(req).searchParams.get('connectionParams') === '1'
+      url.searchParams.get('connectionParams') === '1'
         ? null
         : createCtxPromise(() => null);
 
-    function handleRequest(msg: TRPCClientOutgoingMessage, batchIndex: number) {
+    /** Runs a decoded call; deferred subscription admission must respect disconnects. */
+    async function handleRequest(
+      msg: TRPCClientOutgoingMessage,
+      batchIndex: number,
+      ctxResult: Promise<ContextResult>,
+    ) {
       const { id, jsonrpc } = msg;
 
       if (id === null) {
@@ -245,7 +548,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             message: '`id` is required',
           }),
         );
-        opts.onError?.({
+        callOnError({
           error,
           path: undefined,
           type: 'unknown',
@@ -256,13 +559,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         respond({
           id,
           jsonrpc,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
         });
         return;
@@ -287,14 +588,62 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           };
         }
       }
-      run(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const res = await ctxPromise!; // asserts context has been set
+      const abortController = new AbortController();
+      // `abort()` builds an AbortError with a stack trace even when the
+      // signal is already aborted, which is the common case on a stop.
+      const abort = () => {
+        if (!abortController.signal.aborted) {
+          abortController.abort();
+        }
+      };
+      const reportError = (cause: unknown) => {
+        const error = getTRPCErrorFromUnknown(cause);
+        callOnError({ error, path, type, ctx, req, input });
+        return error;
+      };
+      const respondWithError = (cause: unknown) => {
+        const error = reportError(cause);
+        respond({
+          id,
+          jsonrpc,
+          error: errorShape({ error, type, path, input }),
+        });
+      };
+
+      if (type === 'subscription' && clientSubscriptions.has(id)) {
+        // duplicate request ids for client
+        respondWithError(
+          new TRPCError({
+            message: `Duplicate id ${id}`,
+            code: 'BAD_REQUEST',
+          }),
+        );
+        return;
+      }
+
+      /** Keeps a subscription owned until admission, iteration and disposal settle. */
+      const execute = async () => {
+        // Registered before any await so that a stop or a disconnect during
+        // context creation or the procedure call cancels the subscription.
+        // The id is freed once this has settled, after the iterator's
+        // disposal and right before the client is told it may reuse it.
+        using _subscription =
+          type === 'subscription'
+            ? registerSubscription(id, abortController)
+            : null;
+
+        const res = await ctxResult;
         if (!res.ok) {
           throw res.error;
         }
 
-        const abortController = new AbortController();
+        if (
+          abortController.signal.aborted ||
+          (type === 'subscription' && client.readyState !== WEBSOCKET_OPEN)
+        ) {
+          return;
+        }
+
         const result = await callTRPCProcedure({
           router,
           path,
@@ -334,30 +683,54 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
-        /* istanbul ignore next -- @preserve */
+        // Closing precedes the close event: cancel signal-owned work before
+        // releasing the id or waiting for cleanup. Conversion would subscribe
+        // immediately, so leave a late observable untouched.
         if (client.readyState !== WEBSOCKET_OPEN) {
-          // if the client got disconnected whilst initializing the subscription
-          // no need to send stopped message if the client is disconnected
-
-          return;
-        }
-
-        /* istanbul ignore next -- @preserve */
-        if (clientSubscriptions.has(id)) {
-          // duplicate request ids for client
-
-          throw new TRPCError({
-            message: `Duplicate id ${id}`,
-            code: 'BAD_REQUEST',
-          });
+          abort();
+          if (isObservable(result)) return;
         }
 
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
-        run(async () => {
+        // A failed iterator cleanup is reported to the server only: the
+        // client still gets `stopped`, so a subscription that completed or
+        // was stopped doesn't turn into a failed one.
+        if (
+          abortController.signal.aborted ||
+          client.readyState !== WEBSOCKET_OPEN
+        ) {
+          abort();
+          try {
+            // dispose the iterator without consuming it
+            await using _iterator = iteratorResource(iterable);
+          } catch (cause) {
+            reportError(cause);
+          }
+          return;
+        }
+
+        respond({
+          id,
+          jsonrpc,
+          result: {
+            type: 'started',
+          },
+        });
+
+        let ended = false;
+        try {
           await using iterator = iteratorResource(iterable);
+          let completed = false;
+          // Disposed before the iterator, so cleanup that waits for
+          // cancellation is woken when iteration ends other than by `done`.
+          using _abortUnlessCompleted = makeResource({}, () => {
+            if (!completed) {
+              abort();
+            }
+          });
 
           const abortPromise = new Promise<'abort'>((resolve) => {
             abortController.signal.onabort = () => resolve('abort');
@@ -374,32 +747,21 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
           while (true) {
             next = await Unpromise.race([
-              iterator.next().catch(getTRPCErrorFromUnknown),
+              nextUnlessStopped(iterator, abortController.signal, (error) =>
+                callOnError({ error, path, type, ctx, req, input }),
+              ),
               abortPromise,
             ]);
 
             if (next === 'abort') {
-              await iterator.return?.();
               break;
             }
             if (next instanceof Error) {
-              const error = getTRPCErrorFromUnknown(next);
-              opts.onError?.({ error, path, type, ctx, req, input });
-              respond({
-                id,
-                jsonrpc,
-                error: getErrorShape({
-                  config: router._def._config,
-                  error,
-                  type,
-                  path,
-                  input,
-                  ctx,
-                }),
-              });
-              break;
+              // Report the error only after the iterator's disposal settles.
+              throw next;
             }
             if (next.done) {
+              completed = true;
               break;
             }
 
@@ -427,64 +789,50 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             next = null;
             result = null;
           }
+          ended = true;
+        } catch (cause) {
+          abort();
+          if (ended) {
+            reportError(cause);
+          } else if (isSuppressedError(cause)) {
+            // the client gets the iteration error, the server both
+            respondWithError(cause.suppressed);
+            reportError(cause.error);
+          } else {
+            respondWithError(cause);
+          }
+        }
+      };
 
-          respond({
-            id,
-            jsonrpc,
-            result: {
-              type: 'stopped',
-            },
-          });
-          clientSubscriptions.delete(id);
-        }).catch((cause) => {
-          clientSubscriptions.delete(id);
-          const error = getTRPCErrorFromUnknown(cause);
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respond({
-            id,
-            jsonrpc,
-            error: getErrorShape({
-              config: router._def._config,
-              error,
-              type,
+      const outcome = await settle(execute());
+      if (!outcome.ok) {
+        const error = getTRPCErrorFromUnknown(outcome.error);
+        if (!isCancelledSetup(error, abortController.signal)) {
+          try {
+            respondWithError(error);
+          } catch (cause) {
+            // the error reply couldn't be encoded or sent
+            reportInternalError({
+              error: getTRPCErrorFromUnknown(cause),
               path,
-              input,
+              type,
               ctx,
-            }),
-          });
-          abortController.abort();
-        });
-        clientSubscriptions.set(id, abortController);
-
-        respond({
-          id,
-          jsonrpc,
-          result: {
-            type: 'started',
-          },
-        });
-      }).catch((cause) => {
-        // procedure threw an error
-        const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({ error, path, type, ctx, req, input });
-        respond({
-          id,
-          jsonrpc,
-          error: getErrorShape({
-            config: router._def._config,
-            error,
-            type,
-            path,
-            input,
-            ctx,
-          }),
-        });
-      });
+              req,
+              input,
+            });
+            respondOrReport(() => ({ id, jsonrpc, error: fallbackErrorShape }));
+          }
+          return;
+        }
+      }
+      if (type === 'subscription') {
+        respond({ id, jsonrpc, result: { type: 'stopped' } });
+      }
     }
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
       if (!isBinary) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // oxlint-disable-next-line typescript/no-base-to-string
         const msgStr = rawData.toString();
         if (msgStr === 'PONG') {
           return;
@@ -504,17 +852,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           code: 'UNPROCESSABLE_CONTENT',
           message: 'Unexpected WebSocket message format',
         });
-        respond({
+        respondOrReport(() => ({
           id: null,
-          error: getErrorShape({
-            config: router._def._config,
+          error: errorShape({
             error,
             type: 'unknown',
             path: undefined,
             input: undefined,
-            ctx,
           }),
-        });
+        }));
         return;
       }
       const data: string | Uint8Array = isBinary
@@ -551,6 +897,52 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           const msgJSON: unknown = encoder.decode(data);
           const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
 
+          if (
+            Array.isArray(msgJSON) &&
+            typeof opts.maxBatchSize === 'number' &&
+            msgs.length > opts.maxBatchSize
+          ) {
+            const error = new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Batch call exceeds maximum size`,
+            });
+            callOnError({
+              error,
+              path: undefined,
+              type: 'unknown',
+              ctx,
+              req,
+              input: undefined,
+            });
+            const shape = errorShape({
+              error,
+              type: 'unknown',
+              path: undefined,
+              input: undefined,
+            });
+
+            // Checked before parsing so that no input is deserialized.
+            // Every request in the batch gets the error, as a batched HTTP
+            // call does, so that clients do not wait for a response forever.
+            let responded = false;
+            for (const raw of msgs) {
+              if (
+                isObject(raw) &&
+                raw['method'] !== 'subscription.stop' &&
+                (typeof raw['id'] === 'number' || typeof raw['id'] === 'string')
+              ) {
+                const id = raw['id'];
+                const jsonrpc = raw['jsonrpc'] === '2.0' ? '2.0' : undefined;
+                respondOrReport(() => ({ id, jsonrpc, error: shape }));
+                responded = true;
+              }
+            }
+            if (!responded) {
+              respondOrReport(() => ({ id: null, error: shape }));
+            }
+            return [];
+          }
+
           return msgs.map((raw) => parseTRPCMessage(raw, transformer));
         } catch (cause) {
           const error = new TRPCError({
@@ -558,23 +950,23 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             cause,
           });
 
-          respond({
+          respondOrReport(() => ({
             id: null,
-            error: getErrorShape({
-              config: router._def._config,
+            error: errorShape({
               error,
               type: 'unknown',
               path: undefined,
               input: undefined,
-              ctx,
             }),
-          });
+          }));
 
           return [];
         }
       });
 
-      parsedMsgs.map((msg, index) => handleRequest(msg, index));
+      for (const [index, msg] of parsedMsgs.entries()) {
+        handleRequest(msg, index, ctxPromise).catch(reportConnectionError);
+      }
     });
 
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
@@ -582,7 +974,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     // "RangeError: Invalid WebSocket frame: RSV2 and RSV3 must be clear"
     // Here is the relevant discussion: https://github.com/websockets/ws/issues/1354#issuecomment-774616962
     client.on('error', (cause) => {
-      opts.onError?.({
+      callOnError({
         ctx,
         error: getTRPCErrorFromUnknown(cause),
         input: undefined,
@@ -603,10 +995,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 }
 
 /**
- * Handle WebSocket keep-alive messages
+ * Pings a client after `pingMs` of quiet, and closes the connection if no
+ * message comes within `pongWaitMs`.
  */
 export function handleKeepAlive(
-  client: ws.WebSocket,
+  client: WSClient,
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
@@ -643,12 +1036,43 @@ export function handleKeepAlive(
   schedulePing();
 }
 
+export interface WSSHandler {
+  /** Tells every connected client to reconnect. */
+  broadcastReconnectNotification: () => void;
+}
+
+/**
+ * Serves a router on a `ws` WebSocket server. Returns
+ * `broadcastReconnectNotification()`, which tells every client to
+ * reconnect, for example before a deploy.
+ * @example
+ * ```ts
+ * const wss = new WebSocketServer({ port: 3001 });
+ * const handler = applyWSSHandler({ wss, router: appRouter, createContext });
+ * process.on('SIGTERM', () => {
+ *   handler.broadcastReconnectNotification();
+ *   wss.close();
+ * });
+ * ```
+ * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
+ */
+export function applyWSSHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+>(opts: WSSHandlerOptions<TRouter, TServer>): WSSHandler;
 export function applyWSSHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-) {
+  opts: WSSHandlerOptions<TRouter, WSServer>,
+): WSSHandler;
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
+): WSSHandler;
+export function applyWSSHandler(
+  opts: WSSHandlerOptions<AnyRouter, WSServer<any>>,
+): WSSHandler {
   const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
-  opts.wss.on('connection', (client, req) => {
+  const wss: WSServer<WSClient> = opts.wss;
+  wss.on('connection', (client: WSClient, req: IncomingMessage) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }

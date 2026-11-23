@@ -1,11 +1,13 @@
 name: autofix.ci # for "security reasons", this has to be named autofix.ai
 permissions:
   contents: read
+# Not on pushes to `main`: every commit there passed the merge queue (see main.yml).
 on:
   pull_request:
+  merge_group:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
 env:
@@ -18,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -37,7 +39,12 @@ jobs:
 
       # commit autofixes
       - uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
-        if: ${{ failure() || success() }}
+        if: ${{ github.event_name == 'pull_request' && (failure() || success()) }}
         with:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false
+
+      # the merge queue can't receive autofix commits, so any fix means failure
+      - name: Ensure no autofixes are needed
+        if: ${{ github.event_name != 'pull_request' && (failure() || success()) }}
+        run: git diff --exit-code

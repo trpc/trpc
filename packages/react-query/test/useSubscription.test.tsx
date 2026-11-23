@@ -8,7 +8,6 @@ import { fireEvent, render } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
@@ -35,79 +34,71 @@ function diff(list: any[]) {
     return diff;
   });
 }
-const getCtx = (protocol: 'http' | 'ws') => {
-  return konn()
-    .beforeEach(() => {
-      const ee = new IterableEventEmitter<MyEvents>();
-      const t = initTRPC.create({
-        errorFormatter({ shape }) {
-          return {
-            ...shape,
-            data: {
-              ...shape.data,
-              foo: 'bar' as const,
-            },
-          };
-        },
-      });
-      const appRouter = t.router({
-        onEventIterable: t.procedure
-          .input(z.number())
-          .subscription(async function* (opts) {
-            for await (const [data] of ee.toIterable('data', {
-              signal: opts.signal,
-            })) {
-              if (data instanceof Error) {
-                throw data;
-              }
-              if (data === returnSymbol) {
-                return;
-              }
-
-              yield data + opts.input;
-            }
-          }),
-        /**
-         * @deprecated delete in v12
-         */
-        onEventObservable: t.procedure
-          .input(z.number())
-          .subscription(({ input }) => {
-            return observable<number>((emit) => {
-              const onData: (...args: MyEvents['data']) => void = (data) => {
-                if (typeof data !== 'number') {
-                  throw new Error('Invalid data');
-                }
-                emit.next(data + input);
-              };
-              ee.on('data', onData);
-              return () => {
-                ee.off('data', onData);
-              };
-            });
-          }),
-      });
-
+function setup(protocol: 'http' | 'ws') {
+  const ee = new IterableEventEmitter<MyEvents>();
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
       return {
-        ...getServerAndReactClient(appRouter, {
-          subscriptions: protocol,
-        }),
-        ee,
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
       };
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
-};
+    },
+  });
+  const appRouter = t.router({
+    onEventIterable: t.procedure
+      .input(z.number())
+      .subscription(async function* (opts) {
+        for await (const [data] of ee.toIterable('data', {
+          signal: opts.signal,
+        })) {
+          if (data instanceof Error) {
+            throw data;
+          }
+          if (data === returnSymbol) {
+            return;
+          }
+
+          yield data + opts.input;
+        }
+      }),
+    /**
+     * @deprecated delete in v12
+     */
+    onEventObservable: t.procedure
+      .input(z.number())
+      .subscription(({ input }) => {
+        return observable<number>((emit) => {
+          const onData: (...args: MyEvents['data']) => void = (data) => {
+            if (typeof data !== 'number') {
+              throw new Error('Invalid data');
+            }
+            emit.next(data + input);
+          };
+          ee.on('data', onData);
+          return () => {
+            ee.off('data', onData);
+          };
+        });
+      }),
+  });
+
+  return {
+    ...getServerAndReactClient(appRouter, {
+      subscriptions: protocol,
+    }),
+    ee,
+  };
+}
 describe.each([
   //
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  const ctx = getCtx(protocol);
-
   test('iterable', async () => {
+    await using ctx = setup(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -191,7 +182,31 @@ describe.each([
     });
   });
 
+  test('passes context to links', async () => {
+    await using ctx = setup(protocol);
+    const context = { foo: 'bar' };
+
+    function MyComponent() {
+      ctx.client.onEventIterable.useSubscription(10, {
+        trpc: { context },
+      });
+      return null;
+    }
+
+    render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(ctx.spyLink).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
+  });
+
   test('iterable - return from server', async () => {
+    await using ctx = setup(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
     const onCompletedMock = vi.fn();
@@ -261,6 +276,7 @@ describe.each([
   });
 
   test('observable()', async () => {
+    await using ctx = setup(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -329,9 +345,8 @@ describe.each([
 });
 
 describe('connection state - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = setup('http');
     const { App, client } = ctx;
 
     const queryResult: unknown[] = [];
@@ -443,9 +458,8 @@ describe('connection state - http', () => {
 });
 
 describe('reset - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = setup('http');
     const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];
 
     function MyComponent() {
@@ -519,5 +533,47 @@ describe('reset - http', () => {
     `);
 
     utils.unmount();
+  });
+});
+
+describe.each([
+  //
+  'http',
+  'ws',
+] as const)('useSubscription null input - %s', (protocol) => {
+  test('sends a null input to the procedure instead of dropping it', async () => {
+    const receivedInputs: unknown[] = [];
+    const t = initTRPC.create();
+    const router = t.router({
+      onEvent: t.procedure
+        .input(z.string().nullable())
+        .subscription(async function* (opts) {
+          receivedInputs.push(opts.input);
+          yield 'ok';
+        }),
+    });
+    await using ctx = getServerAndReactClient(router, {
+      subscriptions: protocol,
+    });
+    const onErrorMock = vi.fn();
+
+    function MyComponent() {
+      const sub = ctx.client.onEvent.useSubscription(null, {
+        onError: onErrorMock,
+      });
+      return <div>status:{sub.status}</div>;
+    }
+
+    const utils = render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:idle');
+    });
+    expect(onErrorMock).toHaveBeenCalledTimes(0);
+    expect(receivedInputs).toEqual([null]);
   });
 });

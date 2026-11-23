@@ -7,16 +7,9 @@ import { getUntypedClient } from '@trpc/client';
 import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
 import React, { useState } from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('invalidateQueries()', () => {
   test('queryClient.invalidateQueries()', async () => {
+    await using factory = createAppRouter();
     const { trpc, resolvers, client } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
@@ -87,6 +80,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('invalidateQueries()', async () => {
+    await using factory = createAppRouter();
     const { trpc, resolvers, App } = factory;
     function MyComponent() {
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
@@ -150,6 +144,7 @@ describe('invalidateQueries()', () => {
   });
 
   test('test invalidateQueries() with different args', async () => {
+    await using factory = createAppRouter();
     // ref  https://github.com/trpc/trpc/issues/1383
     const { trpc, client, App } = factory;
     function MyComponent() {
@@ -221,6 +216,7 @@ describe('invalidateQueries()', () => {
     }
   });
   test('test invalidateQueries() with a partial input', async () => {
+    await using factory = createAppRouter();
     const { trpc, client, App } = factory;
     function MyComponent() {
       const mockPostQuery1 = trpc.getMockPostByContent.useQuery(
@@ -299,9 +295,51 @@ describe('invalidateQueries()', () => {
       expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);
     });
   });
+
+  test('invalidate() with a falsy input only matches that input', async () => {
+    await using factory = createAppRouter();
+    const { trpc, App, queryClient } = factory;
+    function MyComponent() {
+      const emptyQuery = trpc.count.useQuery('', { staleTime: Infinity });
+      const testQuery = trpc.count.useQuery('test', { staleTime: Infinity });
+      const utils = trpc.useUtils();
+      return (
+        <>
+          <pre>emptyQuery:{emptyQuery.status}</pre>
+          <pre>testQuery:{testQuery.status}</pre>
+          <button
+            data-testid="invalidate-empty"
+            onClick={() => {
+              utils.count.invalidate('', { refetchType: 'none' });
+            }}
+          />
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('emptyQuery:success');
+      expect(utils.container).toHaveTextContent('testQuery:success');
+    });
+
+    await userEvent.click(utils.getByTestId('invalidate-empty'));
+
+    const isInvalidated = (input: string) =>
+      queryClient.getQueryState([['count'], { input, type: 'query' }])
+        ?.isInvalidated;
+    expect(isInvalidated('')).toBe(true);
+    expect(isInvalidated('test')).toBe(false);
+  });
 });
 
-test('predicate type should be narrowed', () => {
+test('predicate type should be narrowed', async () => {
+  await using factory = createAppRouter();
   const { trpc } = factory;
   () => {
     const utils = trpc.useUtils();

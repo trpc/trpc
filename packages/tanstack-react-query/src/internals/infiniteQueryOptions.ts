@@ -22,7 +22,11 @@ import type {
 import { createTRPCOptionsResult, getClientArgs } from './utils';
 
 type ReservedOptions =
-  'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash' | 'initialPageParam';
+  | 'queryKey'
+  | 'queryFn'
+  | 'queryHashFn'
+  | 'queryHash'
+  | 'initialPageParam';
 
 interface UndefinedTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -95,7 +99,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface DefinedTRPCInfiniteQueryOptionsOut<
+export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,
@@ -122,7 +126,7 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
   TData,
@@ -144,7 +148,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,
@@ -171,6 +175,10 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * The `infiniteQueryOptions` helper on a query procedure. Returns options for `useInfiniteQuery`, `prefetchInfiniteQuery` and so on.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
 export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,

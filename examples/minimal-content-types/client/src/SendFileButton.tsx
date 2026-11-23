@@ -1,7 +1,8 @@
+import { useMutation } from '@tanstack/react-query';
 import { trpc } from './utils/trpc';
 
 export function SendFileButton() {
-  const mutation = trpc.file.useMutation();
+  const mutation = useMutation(trpc.file.mutationOptions());
 
   return (
     <label>
@@ -10,7 +11,7 @@ export function SendFileButton() {
         type="file"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            // oxlint-disable-next-line typescript/no-non-null-assertion
             const file = e.target.files.item(0)!;
             console.log('uploading file', file);
 

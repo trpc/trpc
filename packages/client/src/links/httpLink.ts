@@ -4,7 +4,7 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
-import { raceAbortSignals } from '../internals/signals';
+import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
@@ -25,11 +25,16 @@ import {
   type TRPCLink,
 } from './types';
 
+/**
+ * The options of `httpLink`.
+ * @see https://trpc.io/docs/client/links/httpLink#httplink-options
+ */
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
-     * Headers to be set on outgoing requests or a callback that of said headers
-     * @see http://trpc.io/docs/client/headers
+     * Headers for each request: an object, or a function of the operation
+     * that returns them.
+     * @see https://trpc.io/docs/client/headers
      */
     headers?:
       | HTTPHeaders
@@ -71,6 +76,8 @@ const universalRequester: Requester = (opts) => {
 };
 
 /**
+ * A terminating link that sends each call in its own HTTP request. It can
+ * send `FormData` and binary inputs.
  * @see https://trpc.io/docs/client/links/httpLink
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(
@@ -90,24 +97,34 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
         }
 
         const ac = new AbortController();
-        const request = universalRequester({
-          ...resolvedOpts,
-          type,
-          path,
-          input,
-          signal: raceAbortSignals(op.signal, ac.signal),
-          headers() {
-            if (!opts.headers) {
-              return {};
-            }
-            if (typeof opts.headers === 'function') {
-              return opts.headers({
-                op,
-              });
-            }
-            return opts.headers;
-          },
-        });
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
+          op.signal,
+          ac.signal,
+        );
+        let request: Promise<HTTPResult>;
+        try {
+          request = universalRequester({
+            ...resolvedOpts,
+            type,
+            path,
+            input,
+            signal,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  op,
+                });
+              }
+              return opts.headers;
+            },
+          });
+        } catch (cause) {
+          cleanup();
+          throw cause;
+        }
         let isDone = false;
         let meta: HTTPResult['meta'] | undefined = undefined;
         request
@@ -142,6 +159,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           if (!isDone) {
             ac.abort();
           }
+          cleanup();
         };
       });
     };

@@ -21,6 +21,17 @@ const trimSlashes = (path: string): string => {
   return path;
 };
 
+/**
+ * Handles a Fetch API `Request` for a router and returns its `Response`.
+ * Works in edge runtimes, Deno, Bun, Cloudflare Workers and Next.js route
+ * handlers.
+ * @example
+ * ```ts
+ * const handler = (req: Request) =>
+ *   fetchRequestHandler({ endpoint: '/trpc', req, router: appRouter });
+ * ```
+ * @see https://trpc.io/docs/server/adapters/fetch
+ */
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {

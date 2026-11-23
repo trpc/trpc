@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import * as React from 'react';
 import { useTRPC } from './withInvalidate.trpc';
 
@@ -18,7 +18,7 @@ export function Component() {
         );
 
         // eslint-disable-next-line @typescript-eslint/dot-notation
-        queryClient.invalidateQueries(trpc['post'].pathFilter());
+        queryClient.invalidateQueries(trpc.post.pathFilter());
 
         queryClient.invalidateQueries(trpc.post.byId.queryFilter({ id: 1 }));
 

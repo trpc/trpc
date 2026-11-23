@@ -5,6 +5,8 @@
 - Try it live on [CodeSandbox](https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server)
 - Adapter [documentation](https://trpc.io/docs/fastify)
 
+Browsers don't apply CORS to WebSockets, so the server rejects pages from origins other than `http://localhost:2022`. List the origins you serve pages from in `WS_ALLOWED_ORIGINS`, separated by commas.
+
 If you want to test this example locally, follow the steps below.
 
 ### Clone, Install and build main project

@@ -1,6 +1,33 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as ts from 'typescript';
+import type { TRPCPathSeparator } from '@trpc/server';
+import {
+  getNameOfDeclaration,
+  isCallExpression,
+  isComputedPropertyName,
+  isPropertyAccessExpression,
+  isPropertyAssignment,
+  isVariableDeclaration,
+  type Declaration,
+  type Expression,
+} from 'typescript/ast';
+import {
+  API,
+  ElementFlags,
+  SymbolFlags,
+  TypeFlags,
+  TypeFormatFlags,
+  type Checker,
+  type IntersectionType,
+  type NumberLiteralType,
+  type RawCompilerOptions,
+  type StringLiteralType,
+  type Symbol as TsSymbol,
+  type TupleTypeReference,
+  type Type,
+  type TypeReference,
+  type UnionType,
+} from 'typescript/sync';
 import {
   applyDescriptions,
   collectRuntimeDescriptions,
@@ -12,6 +39,7 @@ import type {
   OperationObject,
   PathItemObject,
   PathsObject,
+  ResponseObject,
   SchemaObject,
   ServerObject,
 } from './types';
@@ -21,6 +49,7 @@ interface ProcedureInfo {
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
   outputSchema: SchemaObject | null;
+  errorSchema: SchemaObject | null;
   description?: string;
 }
 
@@ -30,6 +59,10 @@ interface RouterMeta {
   schemas?: Record<string, SchemaObject>;
 }
 
+/**
+ * Options for {@link generateOpenAPIDocument}.
+ * @see https://trpc.io/docs/openapi#programmatic
+ */
 export interface GenerateOptions {
   /**
    * The name of the exported router symbol.
@@ -47,6 +80,13 @@ export interface GenerateOptions {
    * `https://api.example.com/trpc`. When omitted, no `servers` entry is added.
    */
   servers?: ServerObject[];
+  /**
+   * The router's `pathSeparator`, for the generated paths: with `'~'`,
+   * `user.create` becomes `/user~create`. Read from the router when it can
+   * be imported at runtime.
+   * @default '.'
+   */
+  pathSeparator?: TRPCPathSeparator;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,23 +94,24 @@ export interface GenerateOptions {
 // ---------------------------------------------------------------------------
 
 const PRIMITIVE_FLAGS =
-  ts.TypeFlags.String |
-  ts.TypeFlags.Number |
-  ts.TypeFlags.Boolean |
-  ts.TypeFlags.StringLiteral |
-  ts.TypeFlags.NumberLiteral |
-  ts.TypeFlags.BooleanLiteral;
+  TypeFlags.String |
+  TypeFlags.Number |
+  TypeFlags.Boolean |
+  TypeFlags.TemplateLiteral |
+  TypeFlags.StringLiteral |
+  TypeFlags.NumberLiteral |
+  TypeFlags.BooleanLiteral;
 
-function hasFlag(type: ts.Type, flag: ts.TypeFlags): boolean {
-  return (type.getFlags() & flag) !== 0;
+function hasFlag(type: Type, flag: TypeFlags): boolean {
+  return (type.flags & flag) !== 0;
 }
 
-function isPrimitive(type: ts.Type): boolean {
+function isPrimitive(type: Type): boolean {
   return hasFlag(type, PRIMITIVE_FLAGS);
 }
 
-function isObjectType(type: ts.Type): boolean {
-  return hasFlag(type, ts.TypeFlags.Object);
+function isObjectType(type: Type): boolean {
+  return hasFlag(type, TypeFlags.Object);
 }
 
 const STANDARD_FUNCTION_INTERFACES = new Set([
@@ -79,20 +120,25 @@ const STANDARD_FUNCTION_INTERFACES = new Set([
   'NewableFunction',
 ]);
 
-function isStandardFunctionInterface(type: ts.Type): boolean {
+function isStandardFunctionInterface(type: Type): boolean {
   const symbol = type.getSymbol();
-  const name = symbol?.getName();
-  if (!name || !STANDARD_FUNCTION_INTERFACES.has(name)) {
+  const name = symbol?.name;
+  if (!symbol || !name || !STANDARD_FUNCTION_INTERFACES.has(name)) {
     return false;
   }
-  return (
-    symbol?.declarations?.some((d) =>
-      /(^|[\\/])lib\.[^\\/]*\.d\.ts$/.test(d.getSourceFile().fileName),
-    ) ?? false
+  return getDeclarations(symbol).some((d) =>
+    /(^|[\\/])lib\.[^\\/]*\.d\.ts$/.test(d.getSourceFile().fileName),
   );
 }
 
-function isFunctionType(type: ts.Type): boolean {
+/** A symbol's declarations, fetched from the compiler process. */
+function getDeclarations(symbol: TsSymbol): Declaration[] {
+  return symbol.declarations
+    .map((handle) => handle.resolve())
+    .filter((declaration) => declaration !== undefined);
+}
+
+function isFunctionType(type: Type): boolean {
   return (
     type.getCallSignatures().length > 0 ||
     type.getConstructSignatures().length > 0 ||
@@ -100,34 +146,33 @@ function isFunctionType(type: ts.Type): boolean {
   );
 }
 
-function hasFunctionMember(type: ts.Type): boolean {
+function hasFunctionMember(type: Type): boolean {
   if (isFunctionType(type)) {
     return true;
   }
-  return type.isUnion() && type.types.some(isFunctionType);
+  return type.isUnionType() && type.getTypes().some(isFunctionType);
 }
 
-function isUnserialisableType(type: ts.Type): boolean {
+function isUnserialisableType(type: Type): boolean {
   if (isFunctionType(type)) {
     return true;
   }
-  if (!type.isUnion() || !type.types.some(isFunctionType)) {
+  if (!type.isUnionType() || !type.getTypes().some(isFunctionType)) {
     return false;
   }
   // Once callables are dropped, a union of nothing but `null` / `undefined`
   // describes no value worth emitting.
-  return !type.types.some(
-    (m) =>
-      !isFunctionType(m) &&
-      !hasFlag(
-        m,
-        ts.TypeFlags.Undefined | ts.TypeFlags.Void | ts.TypeFlags.Null,
-      ),
-  );
+  return !type
+    .getTypes()
+    .some(
+      (m) =>
+        !isFunctionType(m) &&
+        !hasFlag(m, TypeFlags.Undefined | TypeFlags.Void | TypeFlags.Null),
+    );
 }
 
-function isOptionalSymbol(sym: ts.Symbol): boolean {
-  return (sym.flags & ts.SymbolFlags.Optional) !== 0;
+function isOptionalSymbol(sym: TsSymbol): boolean {
+  return (sym.flags & SymbolFlags.Optional) !== 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,12 +181,12 @@ function isOptionalSymbol(sym: ts.Symbol): boolean {
 
 /** Shared state threaded through the type-to-schema recursion. */
 interface SchemaCtx {
-  checker: ts.TypeChecker;
-  visited: Set<ts.Type>;
+  checker: Checker;
+  visited: Set<Type>;
   /** Collected named schemas for components/schemas. */
   schemas: Record<string, SchemaObject>;
   /** Map from TS type identity to its registered schema name. */
-  typeToRef: Map<ts.Type, string>;
+  typeToRef: Map<Type, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -152,12 +197,12 @@ interface SchemaCtx {
  * If `type` is a branded intersection (primitive & object), return just the
  * primitive part.  Otherwise return the type as-is.
  */
-function unwrapBrand(type: ts.Type): ts.Type {
-  if (!type.isIntersection()) {
+function unwrapBrand(type: Type): Type {
+  if (!type.isIntersectionType()) {
     return type;
   }
-  const primitives = type.types.filter(isPrimitive);
-  const hasObject = type.types.some(isObjectType);
+  const primitives = type.getTypes().filter(isPrimitive);
+  const hasObject = type.getTypes().some(isObjectType);
   const [first] = primitives;
   if (first && hasObject) {
     return first;
@@ -173,12 +218,12 @@ const ANONYMOUS_NAMES = new Set(['__type', '__object', 'Object', '']);
 const INTERNAL_COMPUTED_PROPERTY_SYMBOL = /^__@.*@\d+$/;
 
 /** Try to determine a meaningful name for a TS type (type alias or interface). */
-function getTypeName(type: ts.Type): string | null {
-  const aliasName = type.aliasSymbol?.getName();
+function getTypeName(type: Type): string | null {
+  const aliasName = type.getAliasSymbol()?.name;
   if (aliasName && !ANONYMOUS_NAMES.has(aliasName)) {
     return aliasName;
   }
-  const symName = type.getSymbol()?.getName();
+  const symName = type.getSymbol()?.name;
   if (symName && !ANONYMOUS_NAMES.has(symName) && !symName.startsWith('__')) {
     return symName;
   }
@@ -187,17 +232,14 @@ function getTypeName(type: ts.Type): string | null {
 
 // Skips asyncGenerator and branded symbols etc when creating types
 // Symbols can't be serialised
-function shouldSkipPropertySymbol(prop: ts.Symbol): boolean {
-  return (
-    prop.declarations?.some((declaration) => {
-      const declarationName = ts.getNameOfDeclaration(declaration);
-      if (!declarationName || !ts.isComputedPropertyName(declarationName)) {
-        return false;
-      }
-
-      return INTERNAL_COMPUTED_PROPERTY_SYMBOL.test(prop.getName());
-    }) ?? false
-  );
+function shouldSkipPropertySymbol(prop: TsSymbol): boolean {
+  if (!INTERNAL_COMPUTED_PROPERTY_SYMBOL.test(prop.name)) {
+    return false;
+  }
+  return getDeclarations(prop).some((declaration) => {
+    const declarationName = getNameOfDeclaration(declaration);
+    return !!declarationName && isComputedPropertyName(declarationName);
+  });
 }
 
 function getReferencedSchema(
@@ -253,11 +295,7 @@ function isNonEmptySchema(s: SchemaObject): boolean {
  * so that recursive references (including through unions and intersections)
  * resolve to a `$ref` instead of causing infinite recursion.
  */
-function typeToJsonSchema(
-  type: ts.Type,
-  ctx: SchemaCtx,
-  depth = 0,
-): SchemaObject {
+function typeToJsonSchema(type: Type, ctx: SchemaCtx, depth = 0): SchemaObject {
   // If this type is already registered as a named schema, return a $ref.
   const existingRef = ctx.typeToRef.get(type);
   if (existingRef) {
@@ -299,8 +337,10 @@ function typeToJsonSchema(
   }
 
   // Extract JSDoc from type alias symbol (e.g. `/** desc */ type Foo = string`)
-  if (!schema.description && !schema.$ref && type.aliasSymbol) {
-    const aliasJsDoc = getJsDocComment(type.aliasSymbol, ctx.checker);
+  const aliasSymbol =
+    schema.description || schema.$ref ? undefined : type.getAliasSymbol();
+  if (aliasSymbol) {
+    const aliasJsDoc = getJsDocComment(aliasSymbol, ctx.checker);
     if (aliasJsDoc) {
       schema.description = aliasJsDoc;
     }
@@ -317,7 +357,7 @@ function typeToJsonSchema(
  * When we encounter a type we're already visiting, it's recursive.
  * Register it as a named schema and return a $ref.
  */
-function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): SchemaObject {
+function handleCyclicRef(type: Type, ctx: SchemaCtx): SchemaObject {
   let refName = ctx.typeToRef.get(type);
   if (!refName) {
     const name = getTypeName(type) ?? 'RecursiveType';
@@ -333,45 +373,49 @@ function handleCyclicRef(type: ts.Type, ctx: SchemaCtx): SchemaObject {
 // ---------------------------------------------------------------------------
 
 function convertPrimitiveOrLiteral(
-  type: ts.Type,
-  flags: ts.TypeFlags,
-  checker: ts.TypeChecker,
+  type: Type,
+  flags: TypeFlags,
+  checker: Checker,
 ): SchemaObject | null {
-  if (flags & ts.TypeFlags.String) {
+  if (flags & TypeFlags.String) {
     return { type: 'string' };
   }
-  if (flags & ts.TypeFlags.Number) {
+  if (flags & TypeFlags.TemplateLiteral) {
+    // `user_${string}` and friends serialise as plain strings
+    return { type: 'string' };
+  }
+  if (flags & TypeFlags.Number) {
     return { type: 'number' };
   }
-  if (flags & ts.TypeFlags.Boolean) {
+  if (flags & TypeFlags.Boolean) {
     return { type: 'boolean' };
   }
-  if (flags & ts.TypeFlags.Null) {
+  if (flags & TypeFlags.Null) {
     return { type: 'null' };
   }
-  if (flags & ts.TypeFlags.Undefined) {
+  if (flags & TypeFlags.Undefined) {
     return {};
   }
-  if (flags & ts.TypeFlags.Void) {
+  if (flags & TypeFlags.Void) {
     return {};
   }
-  if (flags & ts.TypeFlags.Any || flags & ts.TypeFlags.Unknown) {
+  if (flags & TypeFlags.Any || flags & TypeFlags.Unknown) {
     return {};
   }
-  if (flags & ts.TypeFlags.Never) {
+  if (flags & TypeFlags.Never) {
     return { not: {} };
   }
-  if (flags & ts.TypeFlags.BigInt || flags & ts.TypeFlags.BigIntLiteral) {
+  if (flags & TypeFlags.BigInt || flags & TypeFlags.BigIntLiteral) {
     return { type: 'integer', format: 'bigint' };
   }
 
-  if (flags & ts.TypeFlags.StringLiteral) {
-    return { type: 'string', const: (type as ts.StringLiteralType).value };
+  if (flags & TypeFlags.StringLiteral) {
+    return { type: 'string', const: (type as StringLiteralType).value };
   }
-  if (flags & ts.TypeFlags.NumberLiteral) {
-    return { type: 'number', const: (type as ts.NumberLiteralType).value };
+  if (flags & TypeFlags.NumberLiteral) {
+    return { type: 'number', const: (type as NumberLiteralType).value };
   }
-  if (flags & ts.TypeFlags.BooleanLiteral) {
+  if (flags & TypeFlags.BooleanLiteral) {
     const isTrue = checker.typeToString(type) === 'true';
     return { type: 'boolean', const: isTrue };
   }
@@ -384,30 +428,29 @@ function convertPrimitiveOrLiteral(
 // ---------------------------------------------------------------------------
 
 function convertUnionType(
-  type: ts.UnionType,
+  type: UnionType,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
-  const members = type.types;
+  const members = type.getTypes();
 
   // Strip undefined / void members (they make the field optional, not typed)
   const defined = members.filter(
     (m) =>
-      !hasFlag(m, ts.TypeFlags.Undefined | ts.TypeFlags.Void) &&
-      !isFunctionType(m),
+      !hasFlag(m, TypeFlags.Undefined | TypeFlags.Void) && !isFunctionType(m),
   );
   if (defined.length === 0) {
     return {};
   }
 
-  const hasNull = defined.some((m) => hasFlag(m, ts.TypeFlags.Null));
-  const nonNull = defined.filter((m) => !hasFlag(m, ts.TypeFlags.Null));
+  const hasNull = defined.some((m) => hasFlag(m, TypeFlags.Null));
+  const nonNull = defined.filter((m) => !hasFlag(m, TypeFlags.Null));
 
   // TypeScript represents `boolean` as `true | false`.  Collapse boolean
   // literal pairs back into a single boolean, even when mixed with other types.
   // e.g. `string | true | false` → treat as `string | boolean`
   const boolLiterals = nonNull.filter((m) =>
-    hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral),
+    hasFlag(unwrapBrand(m), TypeFlags.BooleanLiteral),
   );
   const hasBoolPair =
     boolLiterals.length === 2 &&
@@ -420,9 +463,7 @@ function convertUnionType(
 
   // Build the effective non-null members, collapsing boolean literal pairs
   const effective = hasBoolPair
-    ? nonNull.filter(
-        (m) => !hasFlag(unwrapBrand(m), ts.TypeFlags.BooleanLiteral),
-      )
+    ? nonNull.filter((m) => !hasFlag(unwrapBrand(m), TypeFlags.BooleanLiteral))
     : nonNull;
 
   // Pure boolean (or boolean | null) — no other types
@@ -450,32 +491,101 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  if (schemas.length === 0) {
+  const distinctSchemas = dropSubsumedSchemas(
+    dedupeSchemas(schemas, ctx.schemas),
+  );
+  if (distinctSchemas.length === 0) {
     return {};
   }
 
-  const [firstSchema] = schemas;
-  if (schemas.length === 1 && firstSchema !== undefined) {
+  const [firstSchema] = distinctSchemas;
+  if (distinctSchemas.length === 1 && firstSchema !== undefined) {
     return firstSchema;
   }
 
   // When all schemas are simple type-only schemas (no other properties),
   // collapse into a single `type` array. e.g. string | null → type: ["string", "null"]
-  if (schemas.every(isSimpleTypeSchema)) {
-    return { type: schemas.map((s) => s.type as string) };
+  if (distinctSchemas.every(isSimpleTypeSchema)) {
+    return { type: distinctSchemas.map((s) => s.type as string) };
   }
 
   // Detect discriminated unions: all oneOf members are objects sharing a common
   // required property whose value is a `const`.  If found, add a `discriminator`.
-  const discriminatorProp = detectDiscriminatorProperty(schemas);
+  const discriminatorProp = detectDiscriminatorProperty(distinctSchemas);
   if (discriminatorProp) {
     return {
-      oneOf: schemas,
+      oneOf: distinctSchemas,
       discriminator: { propertyName: discriminatorProp },
     };
   }
 
-  return { oneOf: schemas };
+  return { oneOf: distinctSchemas };
+}
+
+/**
+ * A bare `{ type }` member already accepts every value of a sibling with the
+ * same `type` and extra keywords (`Date | string`, `'a' | (string & {})`).
+ * `oneOf` fails when more than one member matches, so drop those siblings.
+ */
+function dropSubsumedSchemas(schemas: SchemaObject[]): SchemaObject[] {
+  const bareTypes = new Set(
+    schemas.filter(isSimpleTypeSchema).map((s) => s.type),
+  );
+  return schemas.filter((s) => isSimpleTypeSchema(s) || !bareTypes.has(s.type));
+}
+
+function dedupeSchemas(
+  schemas: SchemaObject[],
+  components: Record<string, SchemaObject>,
+): SchemaObject[] {
+  const seen = new Set<string>();
+
+  return schemas.filter((schema) => {
+    const key = canonicalize(resolveBareRef(schema, components));
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * A `$ref` on its own describes exactly the component it points at, so compare
+ * through the component - otherwise the same shape reached both by reference
+ * and inline looks like two distinct schemas.
+ */
+function resolveBareRef(
+  schema: SchemaObject,
+  components: Record<string, SchemaObject>,
+): SchemaObject {
+  if (!isBareRef(schema)) {
+    return schema;
+  }
+  const target = getReferencedSchema(schema, components);
+  // A component mid-conversion is still an empty placeholder (cyclic types);
+  // compare those by their `$ref` so distinct ones stay distinct.
+  return target && isNonEmptySchema(target) ? target : schema;
+}
+
+/** A `$ref` with no sibling keys, i.e. one that stands for its component. */
+function isBareRef(schema: SchemaObject): boolean {
+  return schema.$ref !== undefined && Object.keys(schema).length === 1;
+}
+
+function canonicalize(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalize).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalize(v)}`);
+    return `{${entries.join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'undefined';
 }
 
 /**
@@ -522,7 +632,7 @@ function isSimpleTypeSchema(s: SchemaObject): boolean {
  * collapse them into a single `{ type, enum }` schema.
  */
 function tryCollapseLiteralUnion(
-  nonNull: ts.Type[],
+  nonNull: Type[],
   hasNull: boolean,
 ): SchemaObject | null {
   if (nonNull.length <= 1) {
@@ -530,7 +640,7 @@ function tryCollapseLiteralUnion(
   }
 
   const allLiterals = nonNull.every((m) =>
-    hasFlag(m, ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral),
+    hasFlag(m, TypeFlags.StringLiteral | TypeFlags.NumberLiteral),
   );
   if (!allLiterals) {
     return null;
@@ -541,25 +651,23 @@ function tryCollapseLiteralUnion(
     return null;
   }
 
-  const isString = hasFlag(first, ts.TypeFlags.StringLiteral);
+  const isString = hasFlag(first, TypeFlags.StringLiteral);
   const targetFlag = isString
-    ? ts.TypeFlags.StringLiteral
-    : ts.TypeFlags.NumberLiteral;
+    ? TypeFlags.StringLiteral
+    : TypeFlags.NumberLiteral;
   const allSameKind = nonNull.every((m) => hasFlag(m, targetFlag));
   if (!allSameKind) {
     return null;
   }
 
   const values = nonNull.map((m) =>
-    isString
-      ? (m as ts.StringLiteralType).value
-      : (m as ts.NumberLiteralType).value,
+    isString ? (m as StringLiteralType).value : (m as NumberLiteralType).value,
   );
   const baseType = isString ? 'string' : 'number';
-  return {
-    type: hasNull ? [baseType, 'null'] : baseType,
-    enum: values,
-  };
+  // `enum` restricts the value on its own, so `null` must be listed there too
+  return hasNull
+    ? { type: [baseType, 'null'], enum: [...values, null] }
+    : { type: baseType, enum: values };
 }
 
 // ---------------------------------------------------------------------------
@@ -567,17 +675,17 @@ function tryCollapseLiteralUnion(
 // ---------------------------------------------------------------------------
 
 function convertIntersectionType(
-  type: ts.IntersectionType,
+  type: IntersectionType,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
   // Branded types (e.g. z.string().brand<'X'>()) appear as an intersection of
   // a primitive with a phantom object.  Strip the object members — they are
   // always brand metadata.
-  const hasPrimitiveMember = type.types.some(isPrimitive);
+  const hasPrimitiveMember = type.getTypes().some(isPrimitive);
   const nonBrand = hasPrimitiveMember
-    ? type.types.filter((m) => !isObjectType(m))
-    : type.types;
+    ? type.getTypes().filter((m) => !isObjectType(m))
+    : type.getTypes();
 
   const schemas = nonBrand
     .map((m) => typeToJsonSchema(m, ctx, depth + 1))
@@ -658,11 +766,11 @@ function mergeObjectSchemas(schemas: SchemaObject[]): SchemaObject {
 // ---------------------------------------------------------------------------
 
 function convertWellKnownType(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject | null {
-  const symName = type.getSymbol()?.getName();
+  const symName = type.getSymbol()?.name;
   if (symName === 'Date') {
     return { type: 'string', format: 'date-time' };
   }
@@ -672,7 +780,7 @@ function convertWellKnownType(
 
   // Unwrap Promise<T>
   if (symName === 'Promise') {
-    const [inner] = ctx.checker.getTypeArguments(type as ts.TypeReference);
+    const [inner] = ctx.checker.getTypeArguments(type as TypeReference);
     return inner ? typeToJsonSchema(inner, ctx, depth + 1) : {};
   }
 
@@ -680,11 +788,11 @@ function convertWellKnownType(
 }
 
 function convertArrayType(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
-  const [elem] = ctx.checker.getTypeArguments(type as ts.TypeReference);
+  const [elem] = ctx.checker.getTypeArguments(type as TypeReference);
   const schema: SchemaObject = { type: 'array' };
   if (elem) {
     schema.items = typeToJsonSchema(elem, ctx, depth + 1);
@@ -693,23 +801,59 @@ function convertArrayType(
 }
 
 function convertTupleType(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
-  const args = ctx.checker.getTypeArguments(type as ts.TypeReference);
+  const args = ctx.checker.getTypeArguments(type as TypeReference);
   const schemas = args.map((a) => typeToJsonSchema(a, ctx, depth + 1));
+  // Optional elements (`[string, number?]`) are marked in the tuple target's
+  // element flags, not by their type (a required `T | undefined` member must
+  // not lower the bound), and only an element flagged Required must be
+  // present, so the required count bounds the array from below.
+  const elementFlags = (type as TupleTypeReference).getTarget().elementFlags;
+  const minItems = elementFlags.filter(
+    (flag) => flag === ElementFlags.Required,
+  ).length;
+  const restIndex = elementFlags.findIndex(
+    (flag) => flag === ElementFlags.Rest || flag === ElementFlags.Variadic,
+  );
+  if (restIndex === -1) {
+    return {
+      type: 'array',
+      prefixItems: schemas,
+      items: false,
+      minItems,
+      maxItems: args.length,
+    };
+  }
+
+  // A rest element repeats, so there is no maxItems and the elements before
+  // it stay fixed positions.
+  const prefixItems = schemas.slice(0, restIndex);
+  const restAndTail = schemas.slice(restIndex);
+  if (restIndex === args.length - 1) {
+    return {
+      type: 'array',
+      ...(prefixItems.length > 0 ? { prefixItems } : {}),
+      items: restAndTail[0] ?? {},
+      minItems,
+    };
+  }
+
+  // JSON Schema 2020-12 cannot express a rest element followed by required
+  // positions; accept any of the repeated and trailing element types instead
+  // of claiming an exact length.
   return {
     type: 'array',
-    prefixItems: schemas,
-    items: false,
-    minItems: args.length,
-    maxItems: args.length,
+    ...(prefixItems.length > 0 ? { prefixItems } : {}),
+    items: { anyOf: restAndTail },
+    minItems,
   };
 }
 
 function convertPlainObject(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
@@ -799,7 +943,7 @@ function convertPlainObject(
 }
 
 function convertObjectType(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
@@ -824,7 +968,7 @@ function convertObjectType(
 
 /** Core type-to-schema conversion (no ref handling). */
 function convertTypeToSchema(
-  type: ts.Type,
+  type: Type,
   ctx: SchemaCtx,
   depth: number,
 ): SchemaObject {
@@ -832,20 +976,20 @@ function convertTypeToSchema(
     return handleCyclicRef(type, ctx);
   }
 
-  const flags = type.getFlags();
+  const flags = type.flags;
 
   const primitive = convertPrimitiveOrLiteral(type, flags, ctx.checker);
   if (primitive) {
     return primitive;
   }
 
-  if (type.isUnion()) {
+  if (type.isUnionType()) {
     ctx.visited.add(type);
     const result = convertUnionType(type, ctx, depth);
     ctx.visited.delete(type);
     return result;
   }
-  if (type.isIntersection()) {
+  if (type.isIntersectionType()) {
     ctx.visited.add(type);
     const result = convertIntersectionType(type, ctx, depth);
     ctx.visited.delete(type);
@@ -868,10 +1012,12 @@ function convertTypeToSchema(
 /** State shared across the router-walk recursion. */
 interface WalkCtx {
   procedures: ProcedureInfo[];
-  seen: Set<ts.Type>;
+  seen: Set<Type>;
   schemaCtx: SchemaCtx;
   /** Runtime descriptions keyed by procedure path (when a router instance is available). */
   runtimeDescriptions: Map<string, RuntimeDescriptions>;
+  /** The router-wide error shape, used to spot procedures that differ from it. */
+  routerErrorType: Type | null;
 }
 
 /**
@@ -879,8 +1025,8 @@ interface WalkCtx {
  * not a procedure (e.g. a nested router).
  */
 function getProcedureTypeName(
-  defType: ts.Type,
-  checker: ts.TypeChecker,
+  defType: Type,
+  checker: Checker,
 ): ProcedureInfo['type'] | null {
   const typeSym = defType.getProperty('type');
   if (!typeSym) {
@@ -894,50 +1040,50 @@ function getProcedureTypeName(
   return null;
 }
 
-function isVoidLikeInput(inputType: ts.Type | null): boolean {
+function isVoidLikeInput(inputType: Type | null): boolean {
   if (!inputType) {
     return true;
   }
 
   const isVoidOrUndefinedOrNever = hasFlag(
     inputType,
-    ts.TypeFlags.Void | ts.TypeFlags.Undefined | ts.TypeFlags.Never,
+    TypeFlags.Void | TypeFlags.Undefined | TypeFlags.Never,
   );
   if (isVoidOrUndefinedOrNever) {
     return true;
   }
 
   const isUnionOfVoids =
-    inputType.isUnion() &&
-    inputType.types.every((t) =>
-      hasFlag(t, ts.TypeFlags.Void | ts.TypeFlags.Undefined),
-    );
+    inputType.isUnionType() &&
+    inputType
+      .getTypes()
+      .every((t) => hasFlag(t, TypeFlags.Void | TypeFlags.Undefined));
   return isUnionOfVoids;
 }
 
 interface ProcedureDef {
-  defType: ts.Type;
+  defType: Type;
   typeName: string;
   path: string;
   description?: string;
-  symbol: ts.Symbol;
+  symbol: TsSymbol;
 }
 
 function shouldIncludeProcedureInOpenAPI(type: ProcedureInfo['type']): boolean {
   return type !== 'subscription';
 }
 
-function getProcedureInputTypeName(type: ts.Type, path: string): string {
+function getProcedureInputTypeName(type: Type, path: string): string {
   const directName = getTypeName(type);
   if (directName) {
     return directName;
   }
 
-  for (const sym of [type.aliasSymbol, type.getSymbol()].filter(
-    (candidate): candidate is ts.Symbol => !!candidate,
+  for (const sym of [type.getAliasSymbol(), type.getSymbol()].filter(
+    (candidate): candidate is TsSymbol => !!candidate,
   )) {
-    for (const declaration of sym.declarations ?? []) {
-      const declarationName = ts.getNameOfDeclaration(declaration)?.getText();
+    for (const declaration of getDeclarations(sym)) {
+      const declarationName = getNameOfDeclaration(declaration)?.getText();
       if (
         declarationName &&
         !ANONYMOUS_NAMES.has(declarationName) &&
@@ -948,7 +1094,12 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
     }
   }
 
-  const fallbackName = path
+  return `${pascalCasePath(path) || 'Procedure'}Input`;
+}
+
+/** `user.getById` → `UserGetById`, for naming components after a procedure. */
+function pascalCasePath(path: string): string {
+  return path
     .split('.')
     .filter(Boolean)
     .map((segment) =>
@@ -959,15 +1110,13 @@ function getProcedureInputTypeName(type: ts.Type, path: string): string {
         .join(''),
     )
     .join('');
-
-  return `${fallbackName || 'Procedure'}Input`;
 }
 
-function isUnknownLikeType(type: ts.Type): boolean {
-  return hasFlag(type, ts.TypeFlags.Unknown | ts.TypeFlags.Any);
+function isUnknownLikeType(type: Type): boolean {
+  return hasFlag(type, TypeFlags.Unknown | TypeFlags.Any);
 }
 
-function isCollapsedProcedureInputType(type: ts.Type): boolean {
+function isCollapsedProcedureInputType(type: Type): boolean {
   return (
     isUnknownLikeType(type) ||
     (isObjectType(type) &&
@@ -978,15 +1127,15 @@ function isCollapsedProcedureInputType(type: ts.Type): boolean {
 
 function recoverProcedureInputType(
   def: ProcedureDef,
-  checker: ts.TypeChecker,
-): ts.Type | null {
-  let initializer: ts.Expression | null = null;
-  for (const declaration of def.symbol.declarations ?? []) {
-    if (ts.isPropertyAssignment(declaration)) {
+  checker: Checker,
+): Type | null {
+  let initializer: Expression | null = null;
+  for (const declaration of getDeclarations(def.symbol)) {
+    if (isPropertyAssignment(declaration)) {
       initializer = declaration.initializer;
       break;
     }
-    if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+    if (isVariableDeclaration(declaration) && declaration.initializer) {
       initializer = declaration.initializer;
       break;
     }
@@ -995,15 +1144,15 @@ function recoverProcedureInputType(
     return null;
   }
 
-  let recovered: ts.Type | null = null;
+  let recovered: Type | null = null;
   // Walk the builder chain and keep the last `.input(...)` parser output type.
-  const visit = (expr: ts.Expression): void => {
-    if (!ts.isCallExpression(expr)) {
+  const visit = (expr: Expression): void => {
+    if (!isCallExpression(expr)) {
       return;
     }
 
     const callee = expr.expression;
-    if (!ts.isPropertyAccessExpression(callee)) {
+    if (!isPropertyAccessExpression(callee)) {
       return;
     }
 
@@ -1076,7 +1225,7 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
   } else {
     // Pre-register recovered parser output types so recursive edges resolve to a
     // stable component ref instead of collapsing into `{}`.
-    const ensureRecoveredInputRegistration = (type: ts.Type): void => {
+    const ensureRecoveredInputRegistration = (type: Type): void => {
       if (schemaCtx.typeToRef.has(type)) {
         return;
       }
@@ -1142,18 +1291,133 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema,
     outputSchema,
+    errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
   });
 }
 
+function extractProcedureErrorSchema(
+  $typesType: Type,
+  ctx: WalkCtx,
+): SchemaObject | null {
+  const { schemaCtx } = ctx;
+  const errorSym = $typesType.getProperty('errorShape');
+  if (!errorSym) {
+    return null;
+  }
+
+  const { checker } = schemaCtx;
+  const errorType = checker.getTypeOfSymbol(errorSym);
+  if (
+    hasFlag(errorType, TypeFlags.Any) ||
+    isUnknownLikeType(errorType) ||
+    addsNothingToRouterErrorType(errorType, ctx.routerErrorType, checker)
+  ) {
+    return null;
+  }
+
+  const schema = typeToJsonSchema(errorType, schemaCtx);
+  return isNonEmptySchema(schema) ? schema : null;
+}
+
+function addsNothingToRouterErrorType(
+  errorType: Type,
+  routerErrorType: Type | null,
+  checker: Checker,
+): boolean {
+  if (!routerErrorType) {
+    return false;
+  }
+  if (errorType === routerErrorType) {
+    return true;
+  }
+
+  const describe = (type: Type) =>
+    checker.typeToString(
+      type,
+      undefined,
+      TypeFormatFlags.NoTruncation | TypeFormatFlags.UseFullyQualifiedType,
+    );
+  const unionMembers = (type: Type) =>
+    type.isUnionType() ? type.getTypes() : [type];
+
+  const routerMembers = unionMembers(routerErrorType);
+  const routerDescriptions = new Set(routerMembers.map(describe));
+  // `{ ...shape, message: '…' }` prints as an object literal rather than as
+  // the shape's name, so fall back to comparing the schemas they generate.
+  // Assignability isn't enough: an added optional field passes both ways.
+  const isSameType = (a: Type, b: Type) =>
+    getShapeKey(a, checker) === getShapeKey(b, checker);
+
+  return unionMembers(errorType).every(
+    (member) =>
+      routerDescriptions.has(describe(member)) ||
+      routerMembers.some((routerMember) => isSameType(member, routerMember)),
+  );
+}
+
+/**
+ * A key for the schema a type generates, with components inlined and
+ * descriptions left out, so two types that describe the same payload match.
+ */
+function getShapeKey(type: Type, checker: Checker): string {
+  const scratch: SchemaCtx = {
+    checker,
+    visited: new Set(),
+    schemas: {},
+    typeToRef: new Map(),
+  };
+  const inline = (
+    schema: SchemaObject | boolean,
+    seen: ReadonlySet<string>,
+  ): unknown => {
+    if (typeof schema === 'boolean') {
+      return schema;
+    }
+    const { $ref, description: _description, ...rest } = schema;
+    const name = $ref?.startsWith('#/components/schemas/')
+      ? $ref.slice('#/components/schemas/'.length)
+      : null;
+    const target = name && !seen.has(name) ? scratch.schemas[name] : undefined;
+    if (name && target) {
+      return inline({ ...target, ...rest }, new Set(seen).add(name));
+    }
+    // Only schema-valued keywords hold schemas; `properties` maps field names
+    // to schemas, so a field may be called `description` or `$ref`.
+    const inlineAll = (schemas: (SchemaObject | boolean)[] | undefined) =>
+      schemas?.map((item) => inline(item, seen));
+    const inlineOne = (item: SchemaObject | boolean | undefined) =>
+      item === undefined ? undefined : inline(item, seen);
+    return {
+      ...rest,
+      $ref,
+      properties: rest.properties
+        ? Object.fromEntries(
+            Object.entries(rest.properties).map(([key, item]) => [
+              key,
+              inline(item, seen),
+            ]),
+          )
+        : undefined,
+      items: inlineOne(rest.items),
+      additionalProperties: inlineOne(rest.additionalProperties),
+      not: inlineOne(rest.not),
+      prefixItems: inlineAll(rest.prefixItems),
+      oneOf: inlineAll(rest.oneOf),
+      anyOf: inlineAll(rest.anyOf),
+      allOf: inlineAll(rest.allOf),
+      // `required` is a set, so its order says nothing about the shape
+      required: rest.required ? [...rest.required].sort() : undefined,
+    };
+  };
+  return canonicalize(inline(typeToJsonSchema(type, scratch), new Set()));
+}
+
 /** Extract the JSDoc comment text from a symbol, if any. */
-function getJsDocComment(
-  sym: ts.Symbol,
-  checker: ts.TypeChecker,
-): string | undefined {
+function getJsDocComment(sym: TsSymbol, checker: Checker): string | undefined {
   const normalize = (filePath: string): string => filePath.replace(/\\/g, '/');
 
-  const declarations = sym.declarations ?? [];
+  const declarations = getDeclarations(sym);
   const isExternalNodeModulesDeclaration =
     declarations.length > 0 &&
     declarations.every((declaration) => {
@@ -1185,20 +1449,15 @@ function getJsDocComment(
     return undefined;
   }
 
-  const parts = sym.getDocumentationComment(checker);
-  if (parts.length === 0) {
-    return undefined;
-  }
-  const text = parts.map((p) => p.text).join('');
-  return text || undefined;
+  return sym.getDocumentationComment(checker) || undefined;
 }
 
 interface WalkTypeOpts {
-  type: ts.Type;
+  type: Type;
   ctx: WalkCtx;
   currentPath: string;
   description?: string;
-  symbol?: ts.Symbol;
+  symbol?: TsSymbol;
 }
 
 function walkType(opts: WalkTypeOpts): void {
@@ -1265,7 +1524,7 @@ function walkType(opts: WalkTypeOpts): void {
   ctx.seen.delete(type);
 }
 
-function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
+function walkRecord(recordType: Type, ctx: WalkCtx, prefix: string): void {
   for (const prop of recordType.getProperties()) {
     const propType = ctx.schemaCtx.checker.getTypeOfSymbol(prop);
     const fullPath = prefix ? `${prefix}.${prop.name}` : prop.name;
@@ -1284,48 +1543,30 @@ function walkRecord(recordType: ts.Type, ctx: WalkCtx, prefix: string): void {
 // TypeScript program helpers
 // ---------------------------------------------------------------------------
 
-function loadCompilerOptions(startDir: string): ts.CompilerOptions {
-  const configPath = ts.findConfigFile(
-    startDir,
-    (f) => ts.sys.fileExists(f),
-    'tsconfig.json',
-  );
-  if (!configPath) {
-    return {
-      target: ts.ScriptTarget.ES2020,
-      moduleResolution: ts.ModuleResolutionKind.Bundler,
-      skipLibCheck: true,
-      noEmit: true,
-    };
-  }
-
-  const configFile = ts.readConfigFile(configPath, (f) => ts.sys.readFile(f));
-  const parsed = ts.parseJsonConfigFileContent(
-    configFile.config,
-    ts.sys,
-    path.dirname(configPath),
-  );
-  const options: ts.CompilerOptions = { ...parsed.options, noEmit: true };
-
-  // `parseJsonConfigFileContent` only returns explicitly-set values.  TypeScript
-  // itself infers moduleResolution from `module` at compile time, but we have to
-  // do it manually here for the compiler host to resolve imports correctly.
-  if (options.moduleResolution === undefined) {
-    const mod = options.module;
-    if (mod === ts.ModuleKind.Node16 || mod === ts.ModuleKind.NodeNext) {
-      options.moduleResolution = ts.ModuleResolutionKind.NodeNext;
-    } else if (
-      mod === ts.ModuleKind.Preserve ||
-      mod === ts.ModuleKind.ES2022 ||
-      mod === ts.ModuleKind.ESNext
-    ) {
-      options.moduleResolution = ts.ModuleResolutionKind.Bundler;
-    } else {
-      options.moduleResolution = ts.ModuleResolutionKind.Node10;
+function findTsconfig(startDir: string): string | null {
+  let dir = startDir;
+  for (;;) {
+    const candidate = path.join(dir, 'tsconfig.json');
+    if (fs.existsSync(candidate)) {
+      return candidate;
     }
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+    dir = parent;
+  }
+}
+
+function loadCompilerOptions(api: API, startDir: string): RawCompilerOptions {
+  const configPath = findTsconfig(startDir);
+  if (!configPath) {
+    return { skipLibCheck: true, noEmit: true };
   }
 
-  return options;
+  // TypeScript 7 infers `moduleResolution` from `module` itself, so the parsed
+  // options can go to the program as they are.
+  return { ...api.parseConfigFile(configPath).options, noEmit: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -1337,12 +1578,8 @@ function loadCompilerOptions(startDir: string): ts.CompilerOptions {
  * it to a JSON Schema.  Returns `null` when the path cannot be resolved
  * (e.g. older tRPC versions or missing type info).
  */
-function extractErrorSchema(
-  routerType: ts.Type,
-  checker: ts.TypeChecker,
-  schemaCtx: SchemaCtx,
-): SchemaObject | null {
-  const walk = (type: ts.Type, keys: string[]): ts.Type | null => {
+function getRouterErrorType(routerType: Type, checker: Checker): Type | null {
+  const walk = (type: Type, keys: string[]): Type | null => {
     const [head, ...rest] = keys;
     if (!head) {
       return type;
@@ -1360,11 +1597,20 @@ function extractErrorSchema(
     '$types',
     'errorShape',
   ]);
-  if (!errorShapeType) {
+  if (!errorShapeType || hasFlag(errorShapeType, TypeFlags.Any)) {
     return null;
   }
 
-  if (hasFlag(errorShapeType, ts.TypeFlags.Any)) {
+  return errorShapeType;
+}
+
+function extractErrorSchema(
+  routerType: Type,
+  checker: Checker,
+  schemaCtx: SchemaCtx,
+): SchemaObject | null {
+  const errorShapeType = getRouterErrorType(routerType, checker);
+  if (!errorShapeType) {
     return null;
   }
 
@@ -1374,6 +1620,14 @@ function extractErrorSchema(
 // ---------------------------------------------------------------------------
 // OpenAPI document builder
 // ---------------------------------------------------------------------------
+
+function wrapInErrorEnvelope(errorSchema: SchemaObject): SchemaObject {
+  return {
+    type: 'object',
+    properties: { error: errorSchema },
+    required: ['error'],
+  };
+}
 
 /** Fallback error schema when the router type doesn't expose an error shape. */
 const DEFAULT_ERROR_SCHEMA: SchemaObject = {
@@ -1418,6 +1672,7 @@ function wrapInSuccessEnvelope(
 function buildProcedureOperation(
   proc: ProcedureInfo,
   method: 'get' | 'post',
+  errorResponseRef: string,
 ): OperationObject {
   const [tag = proc.path] = proc.path.split('.');
   const operation: OperationObject = {
@@ -1433,7 +1688,7 @@ function buildProcedureOperation(
           },
         },
       },
-      default: { $ref: '#/components/responses/Error' },
+      default: { $ref: errorResponseRef },
     },
   };
 
@@ -1463,19 +1718,86 @@ function buildProcedureOperation(
   return operation;
 }
 
-function buildOpenAPIDocument(
+function buildErrorResponse(schema: SchemaObject): ResponseObject {
+  return {
+    description: 'Error response',
+    content: {
+      'application/json': { schema: wrapInErrorEnvelope(schema) },
+    },
+  };
+}
+
+function buildErrorResponses(
   procedures: ProcedureInfo[],
-  options: GenerateOptions,
-  meta: RouterMeta = { errorSchema: null },
-): Document {
-  const paths: PathsObject = {};
+  routerErrorSchema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): {
+  responses: Record<string, ResponseObject>;
+  refByProcedurePath: Map<string, string>;
+} {
+  const responses: Record<string, ResponseObject> = {
+    Error: buildErrorResponse(routerErrorSchema),
+  };
+  const shapeKey = (schema: SchemaObject) =>
+    canonicalize(resolveBareRef(schema, schemas));
+  const refByShape = new Map<string, string>([
+    [shapeKey(routerErrorSchema), '#/components/responses/Error'],
+  ]);
+  const refByProcedurePath = new Map<string, string>();
 
   for (const proc of procedures) {
-    if (!shouldIncludeProcedureInOpenAPI(proc.type)) {
+    if (!proc.errorSchema) {
       continue;
     }
 
-    const opPath = `/${proc.path}`;
+    const key = shapeKey(proc.errorSchema);
+    let ref = refByShape.get(key);
+    if (!ref) {
+      // A shape that already is a component needs no second name for it.
+      const name = `${pascalCasePath(proc.path) || 'Procedure'}Error`;
+      const shape = isBareRef(proc.errorSchema)
+        ? proc.errorSchema
+        : registerSchema(`${name}Shape`, proc.errorSchema, schemas);
+      const responseName = ensureUniqueName(name, responses);
+      responses[responseName] = buildErrorResponse(shape);
+      ref = `#/components/responses/${responseName}`;
+      refByShape.set(key, ref);
+    }
+    refByProcedurePath.set(proc.path, ref);
+  }
+
+  return { responses, refByProcedurePath };
+}
+
+function registerSchema(
+  name: string,
+  schema: SchemaObject,
+  schemas: Record<string, SchemaObject>,
+): SchemaObject {
+  const refName = ensureUniqueName(name, schemas);
+  schemas[refName] = schema;
+  return { $ref: `#/components/schemas/${refName}` };
+}
+
+function buildOpenAPIDocument(
+  procedures: ProcedureInfo[],
+  options: GenerateOptions & { pathSeparator: TRPCPathSeparator },
+  meta: RouterMeta = { errorSchema: null },
+): Document {
+  const paths: PathsObject = {};
+  const included = procedures.filter((proc) =>
+    shouldIncludeProcedureInOpenAPI(proc.type),
+  );
+
+  const schemas = meta.schemas ?? {};
+  const { responses: errorResponses, refByProcedurePath } = buildErrorResponses(
+    included,
+    meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
+    schemas,
+  );
+
+  for (const proc of included) {
+    const opPath = `/${proc.path.split('.').join(options.pathSeparator)}`;
     const method = proc.type === 'query' ? 'get' : 'post';
 
     const pathItem: PathItemObject = paths[opPath] ?? {};
@@ -1483,11 +1805,11 @@ function buildOpenAPIDocument(
     pathItem[method] = buildProcedureOperation(
       proc,
       method,
+      refByProcedurePath.get(proc.path) ?? '#/components/responses/Error',
     ) as PathItemObject[typeof method];
   }
 
-  const hasNamedSchemas =
-    meta.schemas !== undefined && Object.keys(meta.schemas).length > 0;
+  const hasNamedSchemas = Object.keys(schemas).length > 0;
 
   return {
     openapi: '3.1.1',
@@ -1499,23 +1821,8 @@ function buildOpenAPIDocument(
     ...(options.servers?.length ? { servers: options.servers } : {}),
     paths,
     components: {
-      ...(hasNamedSchemas && meta.schemas ? { schemas: meta.schemas } : {}),
-      responses: {
-        Error: {
-          description: 'Error response',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  error: meta.errorSchema ?? DEFAULT_ERROR_SCHEMA,
-                },
-                required: ['error'],
-              },
-            },
-          },
-        },
-      },
+      ...(hasNamedSchemas ? { schemas } : {}),
+      responses: errorResponses,
     },
   };
 }
@@ -1525,12 +1832,20 @@ function buildOpenAPIDocument(
 // ---------------------------------------------------------------------------
 
 /**
- * Analyse the given TypeScript router file using the TypeScript compiler and
- * return an OpenAPI 3.1 document describing all query and mutation procedures.
+ * Reads your router file with the TypeScript compiler and returns an OpenAPI
+ * 3.1 document for its queries and mutations.
  *
- * @param routerFilePath - Absolute or relative path to the file that exports
- *   the AppRouter.
- * @param options - Optional generation settings (export name, title, version).
+ * @param routerFilePath - Path to the file that exports your router type.
+ * @param options - Export name, title, version and servers.
+ *
+ * @example
+ * ```ts
+ * const doc = await generateOpenAPIDocument('./src/server/router.ts', {
+ *   title: 'My API',
+ * });
+ * ```
+ *
+ * @see https://trpc.io/docs/openapi#programmatic
  */
 export async function generateOpenAPIDocument(
   routerFilePath: string,
@@ -1539,9 +1854,10 @@ export async function generateOpenAPIDocument(
   const resolvedPath = path.resolve(routerFilePath);
   const exportName = options.exportName ?? 'AppRouter';
 
-  const compilerOptions = loadCompilerOptions(path.dirname(resolvedPath));
-  const program = ts.createProgram([resolvedPath], compilerOptions);
-  const checker = program.getTypeChecker();
+  using api = new API({ cwd: path.dirname(resolvedPath) });
+  const compilerOptions = loadCompilerOptions(api, path.dirname(resolvedPath));
+  const program = api.createProgram([resolvedPath], compilerOptions);
+  const { checker } = program.getProject();
   const sourceFile = program.getSourceFile(resolvedPath);
 
   if (!sourceFile) {
@@ -1554,10 +1870,10 @@ export async function generateOpenAPIDocument(
   }
 
   const tsExports = checker.getExportsOfModule(moduleSymbol);
-  const routerSymbol = tsExports.find((sym) => sym.getName() === exportName);
+  const routerSymbol = tsExports.find((sym) => sym.name === exportName);
 
   if (!routerSymbol) {
-    const available = tsExports.map((e) => e.getName()).join(', ');
+    const available = tsExports.map((e) => e.name).join(', ');
     throw new Error(
       `No export named '${exportName}' found in: ${resolvedPath}\n` +
         `Available exports: ${available || '(none)'}`,
@@ -1566,11 +1882,12 @@ export async function generateOpenAPIDocument(
 
   // Prefer the value declaration for value exports; fall back to the declared
   // type for `export type AppRouter = …` aliases.
-  let routerType: ts.Type;
-  if (routerSymbol.valueDeclaration) {
+  let routerType: Type;
+  const valueDeclaration = routerSymbol.valueDeclaration?.resolve();
+  if (valueDeclaration) {
     routerType = checker.getTypeOfSymbolAtLocation(
       routerSymbol,
-      routerSymbol.valueDeclaration,
+      valueDeclaration,
     );
   } else {
     routerType = checker.getDeclaredTypeOfSymbol(routerSymbol);
@@ -1595,12 +1912,22 @@ export async function generateOpenAPIDocument(
     seen: new Set(),
     schemaCtx,
     runtimeDescriptions,
+    routerErrorType: getRouterErrorType(routerType, checker),
   };
   walkType({ type: routerType, ctx: walkCtx, currentPath: '' });
 
   const errorSchema = extractErrorSchema(routerType, checker, schemaCtx);
-  return buildOpenAPIDocument(walkCtx.procedures, options, {
-    errorSchema,
-    schemas: schemaCtx.schemas,
-  });
+  const pathSeparator =
+    options.pathSeparator ?? router?._def._config.pathSeparator ?? '.';
+  return buildOpenAPIDocument(
+    walkCtx.procedures,
+    {
+      ...options,
+      pathSeparator,
+    },
+    {
+      errorSchema,
+      schemas: schemaCtx.schemas,
+    },
+  );
 }

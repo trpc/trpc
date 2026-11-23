@@ -1,6 +1,8 @@
 import { EventEmitter } from 'events';
 import * as http from 'http';
-import { expect } from 'vitest';
+import net from 'net';
+import { expect, vi } from 'vitest';
+import { TRPCError } from '../../@trpc/server';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
 function createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {
@@ -277,13 +279,14 @@ test('adapter with pre-parsed body - object', async () => {
   expect(body).toBe('{"hello":"world"}');
 });
 
-test('adapter with pre-parsed body - undefined', async () => {
+test('adapter with pre-parsed body - undefined after consuming the stream', async () => {
   const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
     // @ts-expect-error - test
     body: undefined,
+    readableEnded: true,
   });
 
   const request = incomingMessageToRequest(mockReq, createMockRes(), {
@@ -292,6 +295,23 @@ test('adapter with pre-parsed body - undefined', async () => {
 
   const body = await request.text();
   expect(body).toBe('');
+});
+
+test('consumed stream without req.body rejects instead of hanging', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    readableEnded: true,
+  });
+
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
+    maxBodySize: null,
+  });
+
+  await expect(request.text()).rejects.toMatchInlineSnapshot(
+    `[TRPCError: The request body has already been read by another middleware. Assign the parsed body to \`req.body\` so tRPC can use it]`,
+  );
 });
 
 test('aborts request when response closes', async () => {
@@ -308,4 +328,94 @@ test('aborts request when response closes', async () => {
   mockRes.emit('close');
 
   expect(request.signal.aborted).toBe(true);
+});
+
+test('does not abort request when response closes after it was ended', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+  const mockRes = createMockRes();
+
+  const request = incomingMessageToRequest(mockReq, mockRes, {
+    maxBodySize: null,
+  });
+
+  Object.assign(mockRes, { writableEnded: true });
+  mockRes.emit('close');
+
+  expect(request.signal.aborted).toBe(false);
+});
+
+test('does not abort request after a response that finished normally', async () => {
+  const requests: Request[] = [];
+  const abortedOnClose: boolean[] = [];
+  const server = http.createServer((req, res) => {
+    const request = incomingMessageToRequest(req, res, { maxBodySize: null });
+    requests.push(request);
+    res.once('close', () => {
+      abortedOnClose.push(request.signal.aborted);
+    });
+    res.end('ok');
+  });
+  server.listen(0);
+  try {
+    const address = server.address();
+    assert(address && typeof address === 'object');
+
+    const response = await fetch(`http://localhost:${address.port}`);
+    expect(await response.text()).toBe('ok');
+    await vi.waitFor(() => expect(abortedOnClose).toHaveLength(1));
+
+    expect(abortedOnClose).toEqual([false]);
+    expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('rejects the body when the client disconnects mid-body', async () => {
+  let text: Promise<string> | null = null;
+  const server = http.createServer((req, res) => {
+    const request = incomingMessageToRequest(req, res, {
+      maxBodySize: null,
+    });
+    text = request.text();
+    // hold the response open while the body is being read, like the
+    // adapters do
+    text.catch(() => null).finally(() => res.end());
+  });
+  server.listen(0);
+  try {
+    const address = server.address();
+    assert(address && typeof address === 'object');
+
+    const socket = net.connect(address.port, '127.0.0.1');
+    await new Promise<void>((resolve) => socket.once('connect', resolve));
+
+    const body = 'x'.repeat(128);
+    socket.write(
+      [
+        'POST /test HTTP/1.1',
+        `Host: localhost:${address.port}`,
+        // claim more bytes than are sent, so the body can never end cleanly
+        `content-length: ${body.length + 1024}`,
+        '',
+        '',
+        body,
+      ].join('\r\n'),
+    );
+
+    // wait for the server to start reading the body
+    await vi.waitFor(() => expect(text).not.toBeNull());
+
+    socket.destroy();
+
+    await expect(text).rejects.toBeInstanceOf(TRPCError);
+    await expect(text).rejects.toMatchObject({
+      code: 'CLIENT_CLOSED_REQUEST',
+      message: 'The client disconnected while sending the request body',
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });

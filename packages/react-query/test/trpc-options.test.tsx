@@ -1,38 +1,33 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      greeting: t.procedure
-        .input(
-          z.object({
-            id: z.string(),
-          }),
-        )
-        .query(() => '__result' as const),
-      doSomething: t.procedure
-        .input(
-          z.object({
-            id: z.string(),
-          }),
-        )
-        .mutation(() => '__result' as const),
-    });
+function setup() {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    greeting: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        }),
+      )
+      .query(() => '__result' as const),
+    doSomething: t.procedure
+      .input(
+        z.object({
+          id: z.string(),
+        }),
+      )
+      .mutation(() => '__result' as const),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('useQuery()', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const greetingQuery = client.greeting.useQuery(
@@ -79,6 +74,7 @@ test('useQuery()', async () => {
 });
 
 test('useMutation()', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const doSomethingMutation = client.doSomething.useMutation({
@@ -93,7 +89,7 @@ test('useMutation()', async () => {
       doSomethingMutation.mutate({
         id: '1',
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      // oxlint-disable-next-line react/exhaustive-deps
     }, []);
 
     return (

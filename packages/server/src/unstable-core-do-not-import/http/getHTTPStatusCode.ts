@@ -68,13 +68,30 @@ export function getStatusKeyFromCode(
   return HTTP_CODE_TO_JSONRPC2[code] ?? 'INTERNAL_SERVER_ERROR';
 }
 
-export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
+/**
+ * The HTTP status for a response, or for a batch of them: `207` when the
+ * responses' statuses differ.
+ * @see https://trpc.io/docs/rpc#error-codes---http-status
+ */
+export function getHTTPStatusCode(
+  json: TRPCResponse | TRPCResponse[],
+  errors?: readonly (TRPCError | undefined)[],
+) {
   const arr = Array.isArray(json) ? json : [json];
   const httpStatuses = new Set<number>(
-    arr.map((res) => {
-      if ('error' in res && isObject(res.error.data)) {
-        if (typeof res.error.data?.['httpStatus'] === 'number') {
+    arr.map((res, index) => {
+      if ('error' in res) {
+        if (
+          isObject(res.error.data) &&
+          typeof res.error.data['httpStatus'] === 'number'
+        ) {
           return res.error.data['httpStatus'];
+        }
+        // several error codes share `-32603`, so the formatted code cannot
+        // recover the original status when a formatter strips `data`
+        const original = errors?.[index];
+        if (original) {
+          return getStatusCodeFromKey(original.code);
         }
         const code = TRPC_ERROR_CODES_BY_NUMBER[res.error.code];
         return getStatusCodeFromKey(code);
@@ -89,10 +106,14 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]) {
 
   const httpStatus = httpStatuses.values().next().value;
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  // oxlint-disable-next-line typescript/no-non-null-assertion
   return httpStatus!;
 }
 
+/**
+ * The HTTP status of a `TRPCError`'s code.
+ * @see https://trpc.io/docs/rpc#error-codes---http-status
+ */
 export function getHTTPStatusCodeFromError(error: TRPCError) {
   return getStatusCodeFromKey(error.code);
 }

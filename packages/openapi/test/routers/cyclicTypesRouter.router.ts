@@ -37,7 +37,12 @@ interface Pet {
 
 /** JSON-like recursive type (union of primitives, arrays, and objects) */
 type JsonValue =
-  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 /** Recursive type with optional self-reference */
 interface Comment {

@@ -1,8 +1,8 @@
 // https://github.com/trpc/trpc/issues/2540
+
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { httpBatchLink, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import superjson from 'superjson';
 
 describe('no transformer', () => {
@@ -24,145 +24,141 @@ describe('no transformer', () => {
   });
 
   describe('httpLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpLink({
-                  url: httpUrl,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpLink({
+                url: httpUrl,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
   describe('httpBatchLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpBatchLink({
-                  url: httpUrl,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpBatchLink({
+                url: httpUrl,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
   describe('httpLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpLink({
-                  url: httpUrl,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpLink({
+                url: httpUrl,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
   describe('httpBatchLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpBatchLink({
-                  url: httpUrl,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpBatchLink({
+                url: httpUrl,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
@@ -189,75 +185,73 @@ describe('with superjson', () => {
   });
 
   describe('httpLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpLink({
-                  url: httpUrl,
-                  transformer: superjson,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpLink({
+                url: httpUrl,
+                transformer: superjson,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });
 
   describe('httpBatchLink', () => {
-    const ctx = konn()
-      .beforeEach(() => {
-        const opts = routerToServerAndClientNew(appRouter, {
-          client({ httpUrl }) {
-            return {
-              links: [
-                httpBatchLink({
-                  url: httpUrl,
-                  transformer: superjson,
-                }),
-              ],
-            };
-          },
-        });
+    function setup() {
+      const opts = routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              httpBatchLink({
+                url: httpUrl,
+                transformer: superjson,
+              }),
+            ],
+          };
+        },
+      });
 
-        return opts;
-      })
-      .afterEach(async (ctx) => {
-        await ctx?.close?.();
-      })
-      .done();
+      return opts;
+    }
 
     test('query with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodQuery.query()).toBe('good');
     });
     test('query, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidQuery.query()).toBe(undefined);
     });
     test('mutate with response: good', async () => {
+      await using ctx = setup();
       expect(await ctx.client.goodMutation.mutate()).toBe('good');
     });
     test('mutate, void response', async () => {
+      await using ctx = setup();
       expect(await ctx.client.voidMutation.mutate()).toBe(undefined);
     });
   });

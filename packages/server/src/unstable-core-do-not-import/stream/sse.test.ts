@@ -1,15 +1,17 @@
-import { EventEmitter, on } from 'node:events';
+import { EventEmitter, getEventListeners, on } from 'node:events';
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
+import type { EventSourceLike } from './sse.types';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
+import { makeResource } from './utils/disposable';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 export const suppressLogs = () => {
   const error = console.error;
   const noop = () => {
@@ -21,6 +23,36 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+test.each(['connected', 'message', 'serialized-error'])(
+  'rejects malformed JSON in %s events and closes the EventSource',
+  async (event) => {
+    await using server = fetchServerResource(() => {
+      return new Response(`event: ${event}\ndata: invalid JSON\n\n`, {
+        headers: sseHeaders,
+      });
+    });
+    const ac = new AbortController();
+    using _abort = makeResource(ac, () => ac.abort());
+    const stream = sseStreamConsumer<{
+      data: unknown;
+      error: unknown;
+      EventSource: typeof EventSourcePolyfill;
+    }>({
+      url: () => server.url,
+      init: () => ({}),
+      signal: ac.signal,
+      EventSource: EventSourcePolyfill,
+    });
+    const iterator = stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    expect(first.value.type).toBe('connecting');
+    const eventSource = first.value.eventSource;
+
+    await expect(iterator.next()).rejects.toBeInstanceOf(SyntaxError);
+    expect(eventSource.readyState).toBe(eventSource.CLOSED);
+  },
+);
 
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
@@ -327,6 +359,193 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
+});
+
+test('SSE consumer releases the abort listener when its stream reconnects', async () => {
+  const instances: FakeEventSource[] = [];
+
+  class FakeEventSource {
+    CONNECTING = 0;
+    OPEN = 1;
+    CLOSED = 2;
+    readyState = 1;
+    private listeners = new Map<
+      string,
+      Set<(ev: EventSourceLike.MessageEvent) => void>
+    >();
+
+    constructor(_url: string, _eventSourceInitDict?: EventSourceLike.InitDict) {
+      instances.push(this);
+      // the consumer subscribes synchronously once url()/init() resolve, so a
+      // macrotask safely emits after that
+      setTimeout(() => {
+        this.#emit(
+          'connected',
+          JSON.stringify({ reconnectAfterInactivityMs: 20 }),
+        );
+      }, 0);
+    }
+
+    addEventListener(
+      type: string,
+      listener: (ev: EventSourceLike.MessageEvent) => void,
+    ) {
+      const set = this.listeners.get(type) ?? new Set();
+      set.add(listener);
+      this.listeners.set(type, set);
+    }
+
+    removeEventListener(
+      type: string,
+      listener: (ev: EventSourceLike.MessageEvent) => void,
+    ) {
+      this.listeners.get(type)?.delete(listener);
+    }
+
+    close() {
+      this.readyState = this.CLOSED;
+    }
+
+    #emit(type: string, data: string) {
+      for (const listener of this.listeners.get(type) ?? []) {
+        listener({ data, lastEventId: undefined });
+      }
+    }
+  }
+
+  const abortCtrl = new AbortController();
+
+  const iterable = sseStreamConsumer<{
+    data: unknown;
+    error: unknown;
+    EventSource: typeof FakeEventSource;
+  }>({
+    url: () => 'http://localhost:1234/sse',
+    signal: abortCtrl.signal,
+    init: () => ({}),
+    EventSource: FakeEventSource,
+  });
+
+  const RECONNECTS = 4; // 1 initial stream + 4 reconnects
+  let reconnects = 0;
+  for await (const value of iterable) {
+    if (value.type === 'timeout') {
+      reconnects++;
+      continue;
+    }
+    // once the last reconnect's EventSource reported `connected`, its abort
+    // listener is registered: it must be the only one left on the signal
+    if (reconnects === RECONNECTS && value.type === 'connected') {
+      expect(getEventListeners(abortCtrl.signal, 'abort')).toHaveLength(1);
+      break;
+    }
+  }
+
+  expect(instances).toHaveLength(RECONNECTS + 1);
+  // every EventSource was closed
+  for (const es of instances) {
+    expect(es.readyState).toBe(es.CLOSED);
+  }
+  // breaking out disposed the live stream: no abort listener may remain
+  expect(getEventListeners(abortCtrl.signal, 'abort')).toHaveLength(0);
+
+  abortCtrl.abort();
+});
+
+describe('untracked events after a tracked event', () => {
+  async function produce(
+    opts: Omit<Parameters<typeof sseStreamProducer>[0], 'data'>,
+    values: unknown[],
+  ) {
+    async function* data() {
+      yield* values;
+    }
+    const text = await new Response(
+      sseStreamProducer({ ...opts, data: data() }),
+    ).text();
+    return text.split('\n\n\n');
+  }
+
+  test('clear the id for the untracked event and restore it afterwards', async () => {
+    expect(
+      await produce({}, [tracked('1', 'a'), 'b', 'c', tracked('2', 'd'), 'e']),
+    ).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"\nid: 1',
+      'data: "b"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'data: "c"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'data: "d"\nid: 2',
+      'data: "e"\nid: ',
+      'event: restore-id\ndata: \nid: 2',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('restore the id the client resumed from', async () => {
+    expect(await produce({ lastEventId: '1' }, ['a'])).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('do not change events when nothing is tracked', async () => {
+    expect(await produce({}, ['a', 'b'])).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"',
+      'data: "b"',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('ignore a resumed id that would break the event stream', async () => {
+    expect(
+      await produce({ lastEventId: '1\ndata: "injected"' }, ['a']),
+    ).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+});
+
+describe('tracked ids', () => {
+  test.each(['1\n2', '1\r2', '1\r\n2', '1\0x'])(
+    'tracked() rejects %j',
+    (id) => {
+      expect(() => tracked(id, 'a')).toThrow(
+        new Error(
+          '`id` must not contain line breaks or null characters as they are not allowed in a Server-Sent Events id',
+        ),
+      );
+    },
+  );
+
+  test.each(['1', 'a b', '2026-10-25T10:00:00.000Z'])(
+    'tracked() accepts %j',
+    (id) => {
+      expect(isTrackedEnvelope(tracked(id, 'a'))).toBe(true);
+    },
+  );
+
+  test('an id with a line break ends the stream with an error instead of adding fields', async () => {
+    async function* data() {
+      yield tracked('1\ndata: "injected"', 'a');
+    }
+    const text = await new Response(sseStreamProducer({ data: data() })).text();
+    expect(text.split('\n\n\n')).toEqual([
+      'event: connected\ndata: {}',
+      'event: serialized-error\ndata: null',
+      '',
+    ]);
+  });
 });
 
 test('sse()', () => {

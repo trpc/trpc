@@ -4,7 +4,6 @@ import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { inferProcedureParams } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
 const ignoreErrors = async (fn: () => unknown) => {
@@ -368,7 +367,6 @@ test('zod default() mixed default object', async () => {
           foo: z.string(),
           bar: z.string().optional().default('barFoo'),
         })
-        .optional()
         .prefault({ foo: 'fooBar' }),
     )
     .query(({ input }) => {
@@ -415,7 +413,6 @@ test('zod default() defaults within object', async () => {
           foo: z.string().optional().default('defaultFoo'),
           bar: z.string().optional().default('defaultBar'),
         })
-        .optional()
         .prefault({}),
     )
     .query(({ input }) => {
