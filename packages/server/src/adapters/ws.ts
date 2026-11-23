@@ -1038,6 +1038,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 export function applyWSSHandler(
   opts: WSSHandlerOptions<AnyRouter, WSServer<any>>,
 ): WSSHandler {
+  const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
   const wss: WSServer<WSClient> = opts.wss;
   wss.on('connection', (client: WSClient, req: IncomingMessage) => {
@@ -1050,7 +1051,7 @@ export function applyWSSHandler(
 
   return {
     broadcastReconnectNotification: () => {
-      broadcastReconnectNotification(wss, opts);
+      broadcastReconnectNotification(wss, { experimental_encoder: encoder });
     },
   };
 }
