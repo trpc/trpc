@@ -14,35 +14,23 @@ test('subscription yielding undefined over httpSubscriptionLink', async () => {
   await using ctx = testServerAndClientResource(router, {
     clientLink: 'httpSubscriptionLink',
   });
-  const { client } = ctx;
 
   const onData = vi.fn();
   const onError = vi.fn();
   const onComplete = vi.fn();
-  const subscription = client.signal.subscribe(undefined, {
+  const subscription = ctx.client.signal.subscribe(undefined, {
     onData,
     onError,
     onComplete,
   });
 
-  await vi.waitFor(
-    () => {
-      expect(onData).toHaveBeenCalledTimes(3);
-    },
-    {
-      timeout: 5_000,
-    },
-  );
-  expect(onData.mock.calls).toEqual([[1], [undefined], [3]]);
-  expect(onError).not.toHaveBeenCalled();
-
-  await vi.waitFor(
-    () => {
-      expect(onComplete).toHaveBeenCalledTimes(1);
-    },
-    {
-      timeout: 5_000,
-    },
-  );
+  // Wait for the stream to end either way, so a parse error fails the test
+  // with that error instead of a timeout
+  await vi.waitFor(() => {
+    expect(onComplete.mock.calls.length + onError.mock.calls.length).toBe(1);
+  });
   subscription.unsubscribe();
+
+  expect(onError.mock.calls[0]?.[0]).toBeUndefined();
+  expect(onData.mock.calls).toEqual([[1], [undefined], [3]]);
 });
