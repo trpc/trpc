@@ -120,6 +120,24 @@ export function Chat(
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-6">
           <div className="flex justify-center">
             <Button
+              // Load older posts when this scrolls into view. It runs again when
+              // a load finishes, so it keeps going while the button stays visible.
+              ref={(button) => {
+                if (
+                  !button ||
+                  postsQuery.fetchStatus !== 'idle' ||
+                  !postsQuery.hasNextPage
+                )
+                  return;
+                const observer = new IntersectionObserver(
+                  ([entry]) => {
+                    if (entry?.isIntersecting) void postsQuery.fetchNextPage();
+                  },
+                  { rootMargin: '200px' },
+                );
+                observer.observe(button);
+                return () => observer.disconnect();
+              }}
               variant="outline"
               size="sm"
               disabled={
