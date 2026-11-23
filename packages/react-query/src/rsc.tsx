@@ -31,7 +31,7 @@ import type {
 
 const HELPERS = ['prefetch', 'prefetchInfinite'];
 
-type DecorateProcedure<
+export type DecorateProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
@@ -55,7 +55,7 @@ type DecorateProcedure<
   ) => Promise<void>;
 };
 
-type DecorateRouterRecord<
+export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
@@ -68,7 +68,7 @@ type DecorateRouterRecord<
     : never;
 };
 
-type Caller<TRouter extends AnyRouter> = ReturnType<
+export type Caller<TRouter extends AnyRouter> = ReturnType<
   RouterCaller<inferRouterRootTypes<TRouter>, TRouter['_def']['record']>
 >;
 

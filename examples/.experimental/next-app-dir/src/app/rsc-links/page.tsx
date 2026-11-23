@@ -66,7 +66,9 @@ export default async function Home() {
           <>
             <code>experimental_nextCacheLink</code> calls procedures from Server
             Components without an HTTP request, and caches each result for five
-            seconds, or until you revalidate it.
+            seconds, or until you revalidate it. The cache is shared by every
+            visitor, so <code>me</code> and <code>secret</code>, which depend on
+            the session, go through an uncached <code>localLink</code> instead.
           </>
         }
       />

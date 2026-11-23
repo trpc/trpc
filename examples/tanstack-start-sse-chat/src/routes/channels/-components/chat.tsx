@@ -20,10 +20,8 @@ import {
 import { Spinner } from '@shared/ui/components/spinner';
 import { Textarea } from '@shared/ui/components/textarea';
 import { useMutation } from '@tanstack/react-query';
-import {
-  useSubscription,
-  type unstable_inferInfiniteQueryHandle,
-} from '@trpc/tanstack-react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
+import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import {
   CircleAlertIcon,
@@ -82,7 +80,7 @@ function SubscriptionStatus(props: {
 
 export function Chat(
   props: Readonly<{
-    posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+    posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
     title: React.ReactNode;
   }>,
 ) {

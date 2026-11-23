@@ -6,113 +6,106 @@ import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      greeting: t.procedure.input(z.string()).query(async (opts) => {
-        await new Promise((r) => setTimeout(r, 2000));
-        return { text: 'Hello' + opts.input };
-      }),
-    });
+function setup() {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    greeting: t.procedure.input(z.string()).query(async (opts) => {
+      await new Promise((r) => setTimeout(r, 2000));
+      return { text: 'Hello' + opts.input };
+    }),
+  });
 
-    function MyComponent() {
-      const [query, setQuery] = useState(1);
-      const x = useIsFetching();
-      return (
-        <div>
-          <button
-            data-testid="setQ1"
-            onClick={() => {
-              setQuery(1);
-            }}
-          />
-          <button
-            data-testid="setQ2"
-            onClick={() => {
-              setQuery(2);
-            }}
-          />
-          {query === 1 && <Query1 />}
-          {query === 2 && <Query2 />}
-          <div>isFetching: {x}</div>
-        </div>
-      );
-    }
+  function MyComponent() {
+    const [query, setQuery] = useState(1);
+    const x = useIsFetching();
+    return (
+      <div>
+        <button
+          data-testid="setQ1"
+          onClick={() => {
+            setQuery(1);
+          }}
+        />
+        <button
+          data-testid="setQ2"
+          onClick={() => {
+            setQuery(2);
+          }}
+        />
+        {query === 1 && <Query1 />}
+        {query === 2 && <Query2 />}
+        <div>isFetching: {x}</div>
+      </div>
+    );
+  }
 
-    function AnotherComponent() {
-      const [query, setQuery] = useState(1);
-      const x = useIsFetching();
-      return (
-        <div>
-          <button
-            data-testid="setQ1"
-            onClick={() => {
-              setQuery(1);
-            }}
-          />
-          <button
-            data-testid="setQ2"
-            onClick={() => {
-              setQuery(2);
-            }}
-          />
-          {query === 1 && <Query3 />}
-          {query === 2 && <Query4 />}
-          <div>isFetching: {x}</div>
-        </div>
-      );
-    }
+  function AnotherComponent() {
+    const [query, setQuery] = useState(1);
+    const x = useIsFetching();
+    return (
+      <div>
+        <button
+          data-testid="setQ1"
+          onClick={() => {
+            setQuery(1);
+          }}
+        />
+        <button
+          data-testid="setQ2"
+          onClick={() => {
+            setQuery(2);
+          }}
+        />
+        {query === 1 && <Query3 />}
+        {query === 2 && <Query4 />}
+        <div>isFetching: {x}</div>
+      </div>
+    );
+  }
 
-    function Query1() {
-      const query =
-        proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 1');
-      return <div>{query.data?.text ?? 'Loading 1'}</div>;
-    }
+  function Query1() {
+    const query = proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 1');
+    return <div>{query.data?.text ?? 'Loading 1'}</div>;
+  }
 
-    function Query2() {
-      const query =
-        proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 2');
-      return <div>{query.data?.text ?? 'Loading 2'}</div>;
-    }
+  function Query2() {
+    const query = proxyWithAbortOnUnmount.greeting.useQuery('tRPC greeting 2');
+    return <div>{query.data?.text ?? 'Loading 2'}</div>;
+  }
 
-    function Query3() {
-      const query = proxy.greeting.useQuery('tRPC greeting 1');
-      return <div>{query.data?.text ?? 'Loading 1'}</div>;
-    }
+  function Query3() {
+    const query = proxy.greeting.useQuery('tRPC greeting 1');
+    return <div>{query.data?.text ?? 'Loading 1'}</div>;
+  }
 
-    function Query4() {
-      const query = proxy.greeting.useQuery('tRPC greeting 2');
-      return <div>{query.data?.text ?? 'Loading 2'}</div>;
-    }
+  function Query4() {
+    const query = proxy.greeting.useQuery('tRPC greeting 2');
+    return <div>{query.data?.text ?? 'Loading 2'}</div>;
+  }
 
-    const queryClient = createQueryClient();
-    const proxyWithAbortOnUnmount = createTRPCReact<typeof appRouter>({
-      abortOnUnmount: true,
-    });
-    const proxy = createTRPCReact<typeof appRouter>();
-    const opts = testServerAndClientResource(appRouter);
+  const queryClient = createQueryClient();
+  const proxyWithAbortOnUnmount = createTRPCReact<typeof appRouter>({
+    abortOnUnmount: true,
+  });
+  const proxy = createTRPCReact<typeof appRouter>();
+  const opts = testServerAndClientResource(appRouter);
 
-    return {
-      ...opts,
-      proxy,
-      proxyWithAbortOnUnmount,
-      queryClient,
-      AnotherComponent,
-      MyComponent,
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return {
+    ...opts,
+    proxy,
+    proxyWithAbortOnUnmount,
+    queryClient,
+    AnotherComponent,
+    MyComponent,
+  };
+}
 
 test('abortOnUnmount', async () => {
+  await using ctx = setup();
   const { proxyWithAbortOnUnmount, httpUrl, queryClient, MyComponent } = ctx;
 
   function App(props: { children: ReactNode }) {
@@ -152,6 +145,7 @@ test('abortOnUnmount', async () => {
 });
 
 test('abortOnUnmount false', async () => {
+  await using ctx = setup();
   const { proxy, httpUrl, queryClient, AnotherComponent } = ctx;
 
   function App(props: { children: ReactNode }) {

@@ -2,15 +2,8 @@ import { createAppRouter } from './__testHelpers';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 test('dehydrate', async () => {
+  await using factory = createAppRouter();
   const { db, appRouter } = factory;
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 

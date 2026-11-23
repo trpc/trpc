@@ -21,6 +21,8 @@ skill:
 
 :::caution
 This package is in alpha. APIs may change without notice.
+
+It requires TypeScript 7.1-beta or later to be installed. To use typescript <7.0, you will need to either install `@trpc/openapi@11.28.2-alpha`
 :::
 
 The `@trpc/openapi` package generates an OpenAPI 3.1 specification from your tRPC router. Use the spec to:
@@ -98,7 +100,7 @@ A generated client will produce typed SDK functions matching your tRPC procedure
 [Hey API Documentation](https://heyapi.dev/)
 
 ```bash
-pnpm add @trpc/openapi @hey-api/openapi-ts
+pnpm add @trpc/openapi @hey-api/openapi-ts@next
 ```
 
 Out of the box, an OpenAPI-generated client won't know about your transformer setup or how to encode query parameters. The `@trpc/openapi/heyapi` package provides a `configureTRPCHeyApiClient` helper that bridges this gap — it configures request serialisation, response parsing, and error deserialization so the generated SDK works correctly with tRPC endpoints.

@@ -44,6 +44,20 @@ export function observable<TValue, TError = unknown>(
       let isDone = false;
       let unsubscribed = false;
       let teardownImmediately = false;
+      let subscribing = true;
+      let thrownWhileSubscribing = null as { cause: unknown } | null;
+      function end(notify: () => void) {
+        try {
+          notify();
+        } catch (cause) {
+          // The source hasn't returned its teardown yet; rethrow once it has
+          // run.
+          if (!subscribing) throw cause;
+          thrownWhileSubscribing ??= { cause };
+        } finally {
+          unsubscribe();
+        }
+      }
       function unsubscribe() {
         if (teardownRef === null) {
           teardownImmediately = true;
@@ -72,20 +86,22 @@ export function observable<TValue, TError = unknown>(
             return;
           }
           isDone = true;
-          observer.error?.(err);
-          unsubscribe();
+          end(() => observer.error?.(err));
         },
         complete() {
           if (isDone) {
             return;
           }
           isDone = true;
-          observer.complete?.();
-          unsubscribe();
+          end(() => observer.complete?.());
         },
       });
+      subscribing = false;
       if (teardownImmediately) {
         unsubscribe();
+      }
+      if (thrownWhileSubscribing) {
+        throw thrownWhileSubscribing.cause;
       }
       return {
         unsubscribe,
@@ -158,7 +174,7 @@ export function observableToPromise<TValue>(
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
   signal: AbortSignal,
-): AsyncIterable<TValue> {
+): AsyncIterableIterator<TValue> {
   const values: TValue[] = [];
   const pending: {
     resolve: (result: IteratorResult<TValue>) => void;
@@ -238,7 +254,10 @@ export function observableToAsyncIterable<TValue>(
     signal.addEventListener('abort', abort, { once: true });
   }
 
-  const iterator: AsyncIterator<TValue> = {
+  const iterator: AsyncIterableIterator<TValue> = {
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
     async next() {
       if (values.length > 0) {
         return { value: values.shift() as TValue, done: false };
@@ -262,9 +281,5 @@ export function observableToAsyncIterable<TValue>(
       return { value: undefined, done: true };
     },
   };
-  return {
-    [Symbol.asyncIterator]() {
-      return iterator;
-    },
-  };
+  return iterator;
 }

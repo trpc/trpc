@@ -69,6 +69,8 @@ process.on('SIGTERM', () => {
 });
 ```
 
+`wss` can be any object with `clients` and `on('connection')`, as described by the `WSServer` and `WSClient` types from `@trpc/server/adapters/ws`.
+
 ### Sharing a port with your HTTP server
 
 To serve HTTP and WebSockets on the same port, pass your HTTP server to `WebSocketServer`. `ws` then handles the upgrade requests, and your adapter handles the rest.

@@ -202,11 +202,11 @@ export const trpcSubscriptionOptions = <
   const _subscribe: ReturnType<
     TRPCSubscriptionOptions<any, TFeatureFlags>
   >['subscribe'] = (innerOpts) => {
-    return subscribe(
-      path.join('.'),
-      input === skipToken ? undefined : input,
-      innerOpts,
-    );
+    return subscribe(path.join('.'), input === skipToken ? undefined : input, {
+      ...innerOpts,
+      // `subscribe` needs at least one defined callback to return an `Unsubscribable`
+      onComplete: () => innerOpts.onComplete?.(),
+    });
   };
 
   return {

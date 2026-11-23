@@ -10,6 +10,7 @@ import {
   createTRPCHeyApiClientConfig,
 } from '../src/heyapi';
 import type { Document } from '../src/types';
+import { memoize } from './memoize';
 import { client as heyapiClient } from './routers/appRouter-heyapi/client.gen';
 import { Sdk as HeyapiSdk } from './routers/appRouter-heyapi/sdk.gen';
 import type {
@@ -74,23 +75,23 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('router json generation', () => {
-    let doc: Document;
-
-    beforeAll(async () => {
-      doc = await generateOpenAPIDocument(appRouterPath, {
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(appRouterPath, {
         title: 'Test API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
     it('produces a spec with no validation errors when validated', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenApi(spec);
 
       expect(JSON.stringify(problems, null, 2)).toEqual('[]');
     });
 
-    it('returns a valid tRPC OpenAPI 3.1 document', () => {
+    it('returns a valid tRPC OpenAPI 3.1 document', async () => {
+      const doc = await getDoc();
       const paths = doc.paths ?? {};
 
       expect(doc.openapi).toBe('3.1.1');
@@ -107,7 +108,8 @@ describe('generateOpenAPIDocument', () => {
       expect(Object.keys(paths)).toContain('/user.create');
     });
 
-    it('serialises the error shape from errorFormatter into components', () => {
+    it('serialises the error shape from errorFormatter into components', async () => {
+      const doc = await getDoc();
       // The default router uses `initTRPC.create()` with no custom error formatter,
       // so the error response schema should match the DefaultErrorShape type.
       const envelopeSchema = getErrorEnvelopeSchema(doc);
@@ -132,7 +134,8 @@ describe('generateOpenAPIDocument', () => {
       expect(errorSchema.required).toContain('data');
     });
 
-    it('handles bigint inferred return types as integer schema', () => {
+    it('handles bigint inferred return types as integer schema', async () => {
+      const doc = await getDoc();
       const responseSchema = requireOutputData({
         doc,
         procPath: 'inferredReturns.bigintReturn',
@@ -144,7 +147,8 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
-    it('strips Zod brand metadata from branded types', () => {
+    it('strips Zod brand metadata from branded types', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc);
 
       // Brand internals must never appear in the OpenAPI output
@@ -181,7 +185,8 @@ describe('generateOpenAPIDocument', () => {
       expect(JSON.stringify(activeSchema)).not.toContain('__brand');
     });
 
-    it('extracts named TS types at any depth into components/schemas', () => {
+    it('extracts named TS types at any depth into components/schemas', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
 
       // Named interfaces should appear in schemas by their TS name
@@ -251,7 +256,8 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
-    it('handles recursive types via self-referencing $ref', () => {
+    it('handles recursive types via self-referencing $ref', async () => {
+      const doc = await getDoc();
       const schemas = getSchemas(doc);
 
       // TreeNode: children is an array of TreeNode (self-ref)
@@ -301,7 +307,8 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
-    it('adds discriminator to discriminated unions', () => {
+    it('adds discriminator to discriminated unions', async () => {
+      const doc = await getDoc();
       // Zod discriminatedUnion input (discriminant: "type")
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'complexTypes.discriminatedUnion', 'post'),
@@ -343,7 +350,8 @@ describe('generateOpenAPIDocument', () => {
       expect(valueSchema).not.toHaveProperty('discriminator');
     });
 
-    it('emits additionalProperties: false for closed objects', () => {
+    it('emits additionalProperties: false for closed objects', async () => {
+      const doc = await getDoc();
       // Named schema: UserProfile is a closed object
       expect(requireSchema(doc, 'UserProfile').additionalProperties).toBe(
         false,
@@ -582,23 +590,23 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('custom errorFormatter', () => {
-    let doc: Document;
-
-    beforeAll(async () => {
-      doc = await generateOpenAPIDocument(errorFormatterRouterPath, {
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(errorFormatterRouterPath, {
         exportName: 'ErrorFormatterRouter',
         title: 'Error Formatter API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
     it('produces a valid OpenAPI spec', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenApi(spec);
       expect(problems).toEqual([]);
     });
 
-    it('serialises the custom error shape into the error response', () => {
+    it('serialises the custom error shape into the error response', async () => {
+      const doc = await getDoc();
       const envelopeSchema = getErrorEnvelopeSchema(doc);
 
       // The envelope wraps the error shape: { error: TRPCErrorShape }
@@ -627,7 +635,8 @@ describe('generateOpenAPIDocument', () => {
       expect(dataSchema.properties).toHaveProperty('zodError');
     });
 
-    it('still includes standard error fields', () => {
+    it('still includes standard error fields', async () => {
+      const doc = await getDoc();
       const envelopeSchema = getErrorEnvelopeSchema(doc);
       const errorSchema = requireSchemaObject(
         requireProperty(envelopeSchema, 'error'),
@@ -665,28 +674,29 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.router.ts',
     );
-    let doc: Document;
-
-    beforeAll(async () => {
-      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(descriptionsRouterPath, {
         exportName: 'descriptionsRouter',
         title: 'Descriptions API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
     it('produces a valid OpenAPI spec', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenApi(spec);
       expect(problems).toEqual([]);
     });
 
-    it('extracts JSDoc from procedure properties into operation description', () => {
+    it('extracts JSDoc from procedure properties into operation description', async () => {
+      const doc = await getDoc();
       const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
     });
 
-    it('extracts JSDoc from nested subrouter procedure properties', () => {
+    it('extracts JSDoc from nested subrouter procedure properties', async () => {
+      const doc = await getDoc();
       const nestedOp = requireOperation(doc, 'subrouter.hello');
       expect(nestedOp.description).toBe('Hello zod Procedure details');
     });
@@ -697,25 +707,25 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.router.ts',
     );
-    let doc: Document;
-
-    beforeAll(async () => {
-      // The router file is automatically imported at runtime, so Zod
-      // .describe() metadata flows through without an explicit `router` arg.
-      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
+    // The router file is automatically imported at runtime, so Zod
+    // .describe() metadata flows through without an explicit `router` arg.
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(descriptionsRouterPath, {
         exportName: 'descriptionsRouter',
         title: 'Descriptions API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
     it('produces a valid OpenAPI spec', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenApi(spec);
       expect(problems).toEqual([]);
     });
 
-    it('overlays Zod .describe() strings onto input schemas', () => {
+    it('overlays Zod .describe() strings onto input schemas', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'hello'),
         doc,
@@ -732,7 +742,8 @@ describe('generateOpenAPIDocument', () => {
       expect(nameSchema.description).toBe('Name of the user');
     });
 
-    it('overlays Zod .describe() strings on nested subrouter procedures', () => {
+    it('overlays Zod .describe() strings on nested subrouter procedures', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'subrouter.hello'),
         doc,
@@ -748,7 +759,8 @@ describe('generateOpenAPIDocument', () => {
       expect(nameSchema.description).toBe('Name of the user');
     });
 
-    it('overlays Zod .describe() strings through array item $refs', () => {
+    it('overlays Zod .describe() strings through array item $refs', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'referencedChildren'),
         doc,
@@ -774,7 +786,8 @@ describe('generateOpenAPIDocument', () => {
       expect(childNameSchema.description).toBe('Child name');
     });
 
-    it('wraps referenced property leaf descriptions using allOf in generated output schema', () => {
+    it('wraps referenced property leaf descriptions using allOf in generated output schema', async () => {
+      const doc = await getDoc();
       const outputSchema = requireOutputData({
         doc,
         procPath: 'referencedChildLeafOutput',
@@ -792,7 +805,8 @@ describe('generateOpenAPIDocument', () => {
       });
     });
 
-    it('still preserves JSDoc descriptions on operations', () => {
+    it('still preserves JSDoc descriptions on operations', async () => {
+      const doc = await getDoc();
       const helloOp = requireOperation(doc, 'hello');
       expect(helloOp.description).toBe('Hello zod Procedure details');
     });
@@ -803,23 +817,23 @@ describe('generateOpenAPIDocument', () => {
       routersDir,
       'descriptionsRouter.router.ts',
     );
-    let doc: Document;
-
-    beforeAll(async () => {
-      doc = await generateOpenAPIDocument(descriptionsRouterPath, {
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(descriptionsRouterPath, {
         exportName: 'descriptionsRouter',
         title: 'Descriptions API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
     it('produces a valid OpenAPI spec', async () => {
+      const doc = await getDoc();
       const spec = JSON.stringify(doc, null, 2);
       const problems = await validateOpenApi(spec);
       expect(problems).toEqual([]);
     });
 
-    it('extracts JSDoc from inline input type properties', () => {
+    it('extracts JSDoc from inline input type properties', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'helloInline'),
         doc,
@@ -834,7 +848,8 @@ describe('generateOpenAPIDocument', () => {
       expect(nameSchema.description).toBe('doc comment on name');
     });
 
-    it('resolves primitive type alias output to its base type', () => {
+    it('resolves primitive type alias output to its base type', async () => {
+      const doc = await getDoc();
       // HelloGreeting is `type HelloGreeting = string` — the alias identity is
       // lost when resolved through tRPC's $types, so no description is expected.
       const outputSchema = requireOutputData({
@@ -845,7 +860,8 @@ describe('generateOpenAPIDocument', () => {
       expect(outputSchema.type).toBe('string');
     });
 
-    it('extracts JSDoc from nested inline subrouter input properties', () => {
+    it('extracts JSDoc from nested inline subrouter input properties', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'subrouterInline.hello'),
         doc,
@@ -887,7 +903,8 @@ describe('generateOpenAPIDocument', () => {
       ).toBe('Child gender');
     });
 
-    it('extracts JSDoc from inline output type defined inside callback', () => {
+    it('extracts JSDoc from inline output type defined inside callback', async () => {
+      const doc = await getDoc();
       const outputSchema = requireOutputData({
         doc,
         procPath: 'subrouterInline.hello',
@@ -909,7 +926,8 @@ describe('generateOpenAPIDocument', () => {
       ).toBe('Date of the greeting');
     });
 
-    it('extracts JSDoc from type alias used as input', () => {
+    it('extracts JSDoc from type alias used as input', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'directArrayInline', 'post'),
         doc,
@@ -919,7 +937,8 @@ describe('generateOpenAPIDocument', () => {
       expect(inputSchema.description).toBe('Array of inputs strings');
     });
 
-    it('extracts JSDoc from type alias used as output', () => {
+    it('extracts JSDoc from type alias used as output', async () => {
+      const doc = await getDoc();
       const outputSchema = requireOutputData({
         doc,
         procPath: 'directArrayInline',
@@ -931,17 +950,16 @@ describe('generateOpenAPIDocument', () => {
   });
 
   describe('superjson transformer', () => {
-    let doc: Document;
-
-    beforeAll(async () => {
-      doc = await generateOpenAPIDocument(superjsonRouterPath, {
+    const getDoc = memoize(() =>
+      generateOpenAPIDocument(superjsonRouterPath, {
         exportName: 'SuperjsonRouter',
         title: 'Superjson API',
         version: '1.0.0',
-      });
-    });
+      }),
+    );
 
-    it('generates integer schema for bigint fields', () => {
+    it('generates integer schema for bigint fields', async () => {
+      const doc = await getDoc();
       const inputSchema = requireSchemaObject(
         requireInputSchema(doc, 'getBigInt'),
         doc,

@@ -28,14 +28,9 @@ import type {
   Serialize,
   TrackedData,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  createDeferred,
-  makeAsyncResource,
-  run,
-} from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { uneval } from 'devalue';
-import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncIterable } from './zAsyncIterable';
@@ -48,118 +43,114 @@ type MyEvents = {
   data: [Error | number | typeof returnSymbol];
 };
 const orderedResults: number[] = [];
-const ctx = konn()
-  .beforeEach(() => {
-    const onIterableInfiniteSpy =
-      vi.fn<(args: { input: { lastEventId?: number } }) => void>();
+function setup() {
+  const onIterableInfiniteSpy =
+    vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new IterableEventEmitter<MyEvents>();
+  const ee = new IterableEventEmitter<MyEvents>();
 
-    const t = initTRPC.create({
-      transformer: superjson,
-    });
-    orderedResults.length = 0;
-    const infiniteYields = vi.fn();
+  const t = initTRPC.create({
+    transformer: superjson,
+  });
+  orderedResults.length = 0;
+  const infiniteYields = vi.fn();
 
-    const router = t.router({
-      sub: {
-        iterableEvent: t.procedure
-          .output(
-            zAsyncIterable({
-              yield: z.number(),
-              tracked: false,
-            }),
-          )
-          .subscription(async function* (opts) {
-            for await (const [thing] of ee.toIterable('data', {
-              signal: opts.signal,
-            })) {
-              if (thing instanceof Error) {
-                throw thing;
-              }
-              if (thing === returnSymbol) {
-                return;
-              }
-
-              yield thing;
-            }
+  const router = t.router({
+    sub: {
+      iterableEvent: t.procedure
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            tracked: false,
           }),
-
-        iterableInfinite: t.procedure
-          .input(
-            z.object({
-              lastEventId: z.coerce.number().min(0).optional(),
-            }),
-          )
-          .output(zAsyncIterable({ yield: z.number(), tracked: true }))
-          .subscription(async function* (opts) {
-            onIterableInfiniteSpy({
-              input: opts.input,
-            });
-            let idx = opts.input.lastEventId ?? 0;
-            while (true) {
-              yield tracked(String(idx), idx);
-              idx++;
-              await sleep();
-              infiniteYields();
+        )
+        .subscription(async function* (opts) {
+          for await (const [thing] of ee.toIterable('data', {
+            signal: opts.signal,
+          })) {
+            if (thing instanceof Error) {
+              throw thing;
             }
-          }),
-      },
-    });
+            if (thing === returnSymbol) {
+              return;
+            }
 
-    const linkSpy: TRPCLink<typeof router> = () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
-            complete: observer.complete,
+            yield thing;
+          }
+        }),
+
+      iterableInfinite: t.procedure
+        .input(
+          z.object({
+            lastEventId: z.coerce.number().min(0).optional(),
+          }),
+        )
+        .output(zAsyncIterable({ yield: z.number(), tracked: true }))
+        .subscription(async function* (opts) {
+          onIterableInfiniteSpy({
+            input: opts.input,
           });
-          return unsubscribe;
+          let idx = opts.input.lastEventId ?? 0;
+          while (true) {
+            yield tracked(String(idx), idx);
+            idx++;
+            await sleep();
+            infiniteYields();
+          }
+        }),
+    },
+  });
+
+  const linkSpy: TRPCLink<typeof router> = () => {
+    // here we just got initialized in the app - this happens once per app
+    // useful for storing cache for instance
+    return ({ next, op }) => {
+      // this is when passing the result to the next link
+      // each link needs to return an observable which propagates results
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            orderedResults.push(value.result.data as number);
+            observer.next(value);
+          },
+          error: observer.error,
+          complete: observer.complete,
         });
-      };
+        return unsubscribe;
+      });
     };
-    const opts = testServerAndClientResource(router, {
-      server: {},
-      client(opts) {
-        return {
-          links: [
-            linkSpy,
-            splitLink({
-              condition: (op) => op.type === 'subscription',
-              true: httpSubscriptionLink({
-                url: opts.httpUrl,
-                transformer: superjson,
-              }),
-              false: httpBatchStreamLink({
-                url: opts.httpUrl,
-                transformer: superjson,
-              }),
+  };
+  const opts = testServerAndClientResource(router, {
+    server: {},
+    client(opts) {
+      return {
+        links: [
+          linkSpy,
+          splitLink({
+            condition: (op) => op.type === 'subscription',
+            true: httpSubscriptionLink({
+              url: opts.httpUrl,
+              transformer: superjson,
             }),
-          ],
-        };
-      },
-    });
-    return {
-      ...opts,
-      ee,
-      infiniteYields,
-      onIterableInfiniteSpy,
-    };
-  })
-  .afterEach(async (opts) => {
-    await opts?.close?.();
-  })
-  .done();
+            false: httpBatchStreamLink({
+              url: opts.httpUrl,
+              transformer: superjson,
+            }),
+          }),
+        ],
+      };
+    },
+  });
+  return {
+    ...opts,
+    ee,
+    infiniteYields,
+    onIterableInfiniteSpy,
+  };
+}
 
 test('iterable event', async () => {
+  await using ctx = setup();
   const { client } = ctx;
 
   const onStarted = vi.fn<() => void>();
@@ -204,12 +195,152 @@ test('iterable event', async () => {
   });
 });
 
+test('async iterable', async () => {
+  await using ctx = setup();
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableEvent.subscribe(undefined);
+
+  const results: number[] = [];
+  const done = (async () => {
+    for await (const value of subscription) {
+      expectTypeOf(value).toEqualTypeOf<number>();
+      results.push(value);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
+  ctx.ee.emit('data', returnSymbol);
+
+  // completion ends the loop
+  await done;
+  expect(results).toEqual([1, 2]);
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
+
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+});
+
+test('async iterable - abort signal ends iteration', async () => {
+  await using ctx = setup();
+  const { client } = ctx;
+
+  const ac = new AbortController();
+  const subscription = client.sub.iterableEvent.subscribe(undefined, {
+    signal: ac.signal,
+  });
+
+  const results: number[] = [];
+  const done = (async () => {
+    for await (const value of subscription) {
+      results.push(value);
+    }
+  })();
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(1);
+  });
+
+  ctx.ee.emit('data', 1);
+
+  await vi.waitFor(() => {
+    expect(results).toEqual([1]);
+  });
+
+  ac.abort();
+
+  // aborting ends the iteration instead of leaving it hanging
+  await done;
+
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('data')).toBe(0);
+  });
+});
+
+test('async iterable - reconnects and continues', async () => {
+  await using ctx = setup();
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableInfinite.subscribe({});
+
+  const results: number[] = [];
+  const release = suppressLogs();
+  try {
+    for await (const value of subscription) {
+      results.push(value.data);
+      if (results.length === 3) {
+        // sever the connection mid-iteration
+        ctx.destroyConnections();
+      }
+      if (results.length >= 10) {
+        break;
+      }
+    }
+  } finally {
+    release();
+  }
+
+  // initial subscription + one reconnect
+  expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
+  // each id is the previous one or the next one: the reconnect replays the
+  // last id, and nothing is skipped
+  expect(
+    results.every((value, index) => {
+      if (index === 0) {
+        return true;
+      }
+      const step = value - results[index - 1]!;
+      return step === 0 || step === 1;
+    }),
+  ).toBe(true);
+  // values continue after the reconnect, replaying the last received id
+  // the first connection has no lastEventId, so the stream starts at 0
+  expect(results[0]).toBe(0);
+  expect(results.at(-1)).toBeGreaterThanOrEqual(8);
+});
+
+test('async iterable - stop iterating early unsubscribes', async () => {
+  await using ctx = setup();
+  const { client } = ctx;
+
+  const subscription = client.sub.iterableInfinite.subscribe({
+    lastEventId: 5,
+  });
+
+  const results: number[] = [];
+  for await (const value of subscription) {
+    expectTypeOf(value).toEqualTypeOf<{
+      data: number;
+      id: string;
+    }>();
+    results.push(value.data);
+    if (results.length >= 3) {
+      break;
+    }
+  }
+  expect(results).toEqual([5, 6, 7]);
+
+  await vi.waitFor(() => {
+    expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
+  });
+
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+});
+
 test(
   'iterable event with error',
   {
     timeout: 60_000,
   },
   async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     const onStarted =
@@ -303,6 +434,7 @@ test(
 );
 
 test('iterable event with bad yield', async () => {
+  await using ctx = setup();
   const onStarted = vi.fn<() => void>();
   const onData = vi.fn<(data: number) => void>();
   const onError = vi.fn<(err: TRPCClientError<typeof ctx.router>) => void>();
@@ -340,6 +472,7 @@ test('iterable event with bad yield', async () => {
 });
 
 test('disconnect and reconnect with an event id', async () => {
+  await using ctx = setup();
   const { client } = ctx;
 
   const onStarted =
@@ -439,50 +572,46 @@ describe('auth / connectionParams', async () => {
     }>()
     .create();
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const eeEmit = (data: number) => {
-        ee.emit('data', data);
-      };
+  function setup() {
+    const ee = new EventEmitter();
+    const eeEmit = (data: number) => {
+      ee.emit('data', data);
+    };
 
-      const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data', {
-            signal: opts.signal,
-          })) {
-            const num = data[0] as number;
-            yield {
-              user: opts.ctx.user,
-              num,
-            };
+    const appRouter = t.router({
+      iterableEvent: t.procedure.subscription(async function* (opts) {
+        for await (const data of on(ee, 'data', {
+          signal: opts.signal,
+        })) {
+          const num = data[0] as number;
+          yield {
+            user: opts.ctx.user,
+            num,
+          };
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(appRouter, {
+      server: {
+        async createContext(opts) {
+          let user: User | null = null;
+          if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
+            user = USER_MOCK;
           }
-        }),
-      });
 
-      const opts = testServerAndClientResource(appRouter, {
-        server: {
-          async createContext(opts) {
-            let user: User | null = null;
-            if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
-              user = USER_MOCK;
-            }
-
-            return {
-              user,
-            };
-          },
+          return {
+            user,
+          };
         },
-      });
+      },
+    });
 
-      return { ...opts, eeEmit };
-    })
-    .afterEach((ctx) => {
-      return ctx.close?.();
-    })
-    .done();
-  type AppRouter = typeof ctx.router;
+    return { ...opts, eeEmit };
+  }
+  type AppRouter = ReturnType<typeof setup>['router'];
   test('do a call without auth', async () => {
+    await using ctx = setup();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpSubscriptionLink({
@@ -518,6 +647,7 @@ describe('auth / connectionParams', async () => {
   });
 
   test('with auth', async () => {
+    await using ctx = setup();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpSubscriptionLink({
@@ -576,61 +706,57 @@ describe('headers / eventSourceOptions', async () => {
     }>()
     .create();
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const eeEmit = (data: number) => {
-        ee.emit('data', data);
-      };
+  function setup() {
+    const ee = new EventEmitter();
+    const eeEmit = (data: number) => {
+      ee.emit('data', data);
+    };
 
-      const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data', {
-            signal: opts.signal,
-          })) {
-            const num = data[0] as number;
-            yield {
-              user: opts.ctx.user,
-              op: opts.ctx.op,
-              num,
-            };
+    const appRouter = t.router({
+      iterableEvent: t.procedure.subscription(async function* (opts) {
+        for await (const data of on(ee, 'data', {
+          signal: opts.signal,
+        })) {
+          const num = data[0] as number;
+          yield {
+            user: opts.ctx.user,
+            op: opts.ctx.op,
+            num,
+          };
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(appRouter, {
+      server: {
+        async createContext(opts) {
+          let user: User | null = null;
+          const token = opts.req?.headers?.['token'];
+          if (token === USER_TOKEN) {
+            user = USER_MOCK;
           }
-        }),
-      });
 
-      const opts = testServerAndClientResource(appRouter, {
-        server: {
-          async createContext(opts) {
-            let user: User | null = null;
-            const token = opts.req?.headers?.['token'];
-            if (token === USER_TOKEN) {
-              user = USER_MOCK;
-            }
+          const type = opts.req?.headers?.['op-type'];
+          const path = opts.req?.headers?.['op-path'];
 
-            const type = opts.req?.headers?.['op-type'];
-            const path = opts.req?.headers?.['op-path'];
+          let op: { type: string; path: string } | undefined;
+          if (typeof type === 'string' && typeof path === 'string') {
+            op = { type, path };
+          }
 
-            let op: { type: string; path: string } | undefined;
-            if (typeof type === 'string' && typeof path === 'string') {
-              op = { type, path };
-            }
-
-            return {
-              user,
-              op,
-            };
-          },
+          return {
+            user,
+            op,
+          };
         },
-      });
+      },
+    });
 
-      return { ...opts, eeEmit };
-    })
-    .afterEach((ctx) => {
-      return ctx.close?.();
-    })
-    .done();
-  type AppRouter = typeof ctx.router;
+    return { ...opts, eeEmit };
+  }
+  type AppRouter = ReturnType<typeof setup>['router'];
   test('do a call without auth', async () => {
+    await using ctx = setup();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpSubscriptionLink({
@@ -667,6 +793,7 @@ describe('headers / eventSourceOptions', async () => {
   });
 
   test('with auth', async () => {
+    await using ctx = setup();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpSubscriptionLink({
@@ -725,35 +852,31 @@ describe('transformers / different serialize-deserialize', async () => {
   };
   const t = initTRPC.create({ transformer });
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const eeEmit = (data: number) => {
-        ee.emit('data', data);
-      };
+  function setup() {
+    const ee = new EventEmitter();
+    const eeEmit = (data: number) => {
+      ee.emit('data', data);
+    };
 
-      const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data', {
-            signal: opts.signal,
-          })) {
-            const num = data[0] as number;
-            yield tracked(String(num), { num });
-          }
-        }),
-      });
+    const appRouter = t.router({
+      iterableEvent: t.procedure.subscription(async function* (opts) {
+        for await (const data of on(ee, 'data', {
+          signal: opts.signal,
+        })) {
+          const num = data[0] as number;
+          yield tracked(String(num), { num });
+        }
+      }),
+    });
 
-      const opts = testServerAndClientResource(appRouter, {});
+    const opts = testServerAndClientResource(appRouter, {});
 
-      return { ...opts, eeEmit };
-    })
-    .afterEach((ctx) => {
-      return ctx.close?.();
-    })
-    .done();
+    return { ...opts, eeEmit };
+  }
 
-  type AppRouter = typeof ctx.router;
+  type AppRouter = ReturnType<typeof setup>['router'];
   test('serializes correctly', async () => {
+    await using ctx = setup();
     const client = createTRPCClient<AppRouter>({
       links: [
         httpSubscriptionLink({
@@ -929,8 +1052,6 @@ describe('timeouts', async () => {
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
 
-    const fakeTimers = fakeTimersResource();
-
     const onConnection = vi.fn<() => void>();
 
     const t = initTRPC.create({
@@ -1007,18 +1128,13 @@ describe('timeouts', async () => {
         };
       },
     });
-    return makeAsyncResource(
-      {
-        ...opts,
-        deferred: () => deferred,
-        results: results,
-        operations: operations,
-        onConnection,
-      },
-      async () => {
-        vi.useRealTimers();
-      },
-    );
+    return {
+      ...opts,
+      deferred: () => deferred,
+      results: results,
+      operations: operations,
+      onConnection,
+    };
   };
 
   test('works', async () => {
@@ -1030,8 +1146,10 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
+    using timers = fakeTimersResource();
     await using ctx = getCtx(opts);
-    const sub = ctx.client.infinite.subscribe(undefined, {});
+    const ac = new AbortController();
+    ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
 
     ctx.deferred().resolve();
 
@@ -1039,7 +1157,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(
+    await timers.advanceTimersByTimeAsync(
       opts.sse.client.reconnectAfterInactivityMs + 100,
     );
 
@@ -1065,7 +1183,7 @@ describe('timeouts', async () => {
       `[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`,
     );
 
-    sub.unsubscribe();
+    ac.abort();
   });
 
   test('does not timeout if ping is enabled', async () => {
@@ -1081,8 +1199,10 @@ describe('timeouts', async () => {
       },
     } as const satisfies CtxOpts;
 
+    using timers = fakeTimersResource();
     await using ctx = getCtx(opts);
-    const sub = ctx.client.infinite.subscribe(undefined, {});
+    const ac = new AbortController();
+    ctx.client.infinite.subscribe(undefined, { signal: ac.signal });
 
     ctx.deferred().resolve();
 
@@ -1090,7 +1210,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(
+    await timers.advanceTimersByTimeAsync(
       opts.sse.client.reconnectAfterInactivityMs * 10,
     );
 
@@ -1108,11 +1228,12 @@ describe('timeouts', async () => {
 
     expect(connectedOpts).toHaveLength(1);
 
-    sub.unsubscribe();
+    ac.abort();
   });
 });
 
 test('cancel subscription by returning on the server', async () => {
+  await using ctx = setup();
   const onStartedSpy = vi.fn();
   const onDataSpy = vi.fn();
   const onCompleteSpy = vi.fn();

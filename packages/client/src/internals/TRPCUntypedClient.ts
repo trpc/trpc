@@ -2,7 +2,12 @@ import type {
   inferObservableValue,
   Unsubscribable,
 } from '@trpc/server/observable';
-import { observableToPromise, share } from '@trpc/server/observable';
+import {
+  observable,
+  observableToAsyncIterable,
+  observableToPromise,
+  share,
+} from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferAsyncIterableYield,
@@ -53,6 +58,40 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   /** Called when the connection connects, drops or reconnects. */
   onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
+
+type ObserverKey = keyof TRPCSubscriptionObserver<unknown, unknown>;
+
+/**
+ * Subscription options without callbacks: `TOpts` must not have any of the
+ * callback keys, not even set to `undefined`.
+ * @internal
+ */
+export type TRPCSubscriptionWithoutCallbacks<TOpts> = TOpts & {
+  // `keyof` a union only has its shared keys, so this one catches each member
+  [TKey in ObserverKey]?: never;
+} & {
+  [TKey in keyof TOpts & ObserverKey]: never;
+};
+
+/**
+ * Subscription callbacks, at least one of which is defined.
+ * @internal
+ */
+export type TRPCSubscriptionCallbacks<TValue, TError> = Partial<
+  TRPCSubscriptionObserver<TValue, TError>
+> &
+  {
+    [TKey in ObserverKey]: Pick<TRPCSubscriptionObserver<TValue, TError>, TKey>;
+  }[ObserverKey];
+
+const observerKeys: ObserverKey[] = [
+  'onStarted',
+  'onData',
+  'onError',
+  'onStopped',
+  'onComplete',
+  'onConnectionStateChange',
+];
 
 /**
  * The options of `createTRPCClient`.
@@ -142,15 +181,38 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       signal: opts?.signal,
     });
   }
-  /** Starts a subscription. Returns what stops it. */
+  /**
+   * Starts a subscription. With callbacks, returns what stops it. Without,
+   * returns an async iterator to read it with `for await`, which `signal`,
+   * `break` or `return()` stops. It can be iterated once.
+   * @see https://trpc.io/docs/client/vanilla/setup#5-use-subscriptions
+   */
+  public subscription(
+    path: string,
+    input: unknown,
+    opts: TRPCSubscriptionCallbacks<unknown, TRPCClientError<AnyRouter>> &
+      TRPCRequestOptions,
+  ): Unsubscribable;
+  public subscription<
+    TOpts extends TRPCRequestOptions &
+      Partial<TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>> =
+      TRPCRequestOptions,
+  >(
+    path: string,
+    input: unknown,
+    opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<unknown>;
   public subscription(
     path: string,
     input: unknown,
     opts: Partial<
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
-      TRPCRequestOptions,
-  ): Unsubscribable {
+      TRPCRequestOptions = {},
+  ): Unsubscribable | AsyncIterableIterator<unknown> {
+    const hasCallbacks = observerKeys.some(
+      (key) => typeof opts[key] === 'function',
+    );
     const observable$ = this.$request({
       type: 'subscription',
       path,
@@ -158,6 +220,40 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
       context: opts.context,
       signal: opts.signal,
     });
+    if (!hasCallbacks) {
+      const data$ = observable<unknown, TRPCClientError<AnyRouter>>(
+        (observer) =>
+          observable$.subscribe({
+            next(envelope) {
+              if (
+                envelope.result.type === 'data' ||
+                envelope.result.type === undefined
+              ) {
+                observer.next(envelope.result.data);
+              }
+            },
+            error: (err) => observer.error(err),
+            complete: () => observer.complete(),
+          }),
+      );
+      const iterator = observableToAsyncIterable(
+        data$,
+        opts.signal ?? new AbortController().signal,
+      );
+      // a second loop over the same iterator would split the data with the
+      // first, or end straight away once the first has left
+      let iterated = false;
+      iterator[Symbol.asyncIterator] = () => {
+        if (iterated) {
+          throw new Error(
+            'A subscription can only be iterated once. Call subscribe() again for another loop.',
+          );
+        }
+        iterated = true;
+        return iterator;
+      };
+      return iterator;
+    }
     return observable$.subscribe({
       next(envelope) {
         switch (envelope.result.type) {

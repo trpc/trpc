@@ -63,10 +63,13 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
   return [`### ${tier.title}`, '', '<table>', ...rows, '</table>'].join('\n');
 }
 
-/** The sponsor cloud's picture, centered, linking to the cloud on `/sponsor`. */
-export function sponsorCloudMarkdown(sponsors: ReadonlyArray<Sponsor>) {
+/**
+ * The sponsor cloud's picture, centered, linking to the cloud on `/sponsor`,
+ * at a URL that never changes, so the READMEs change only with the sponsors.
+ */
+export function sponsorCloudMarkdown() {
   const href = `${site.url}${sponsorPage.path}#${sponsorPage.cloudId}`;
-  const src = escapeHtml(sponsorCloudUrl(sponsors));
+  const src = escapeHtml(sponsorCloudUrl);
   return [
     '<p align="center">',
     `  <a href="${href}"><img src="${src}" width="${sponsorCloudDisplayWidth}" alt="${site.name}'s sponsors, each drawn bigger the more they've given"/></a>`,
@@ -98,7 +101,7 @@ export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
     },
   ];
   return [
-    ...(byWeight.length === 0 ? [] : [sponsorCloudMarkdown(sponsors)]),
+    ...(byWeight.length === 0 ? [] : [sponsorCloudMarkdown()]),
     ...tiers
       .filter((entry) => entry.sponsors.length > 0)
       .map((entry) => table(entry.sponsors, entry.tier)),

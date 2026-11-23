@@ -23,15 +23,15 @@ import { useOnScreen, usePrefersReducedMotion } from './use-playback.ts';
 
 const steps = [
   {
-    text: 'Before the route renders, its loader calls unstable_$prefetch for the post and its comments. Both requests go out at once.',
+    text: 'Before the route renders, its loader passes prefetch entries for the post and its comments to loadHandles. Both requests go out at once.',
     title: 'The loader starts both queries',
   },
   {
-    text: "unstable_$prefetch doesn't wait. The loader returns a handle for each query, its key and input, and the route renders while the requests are in flight.",
+    text: "A prefetch entry isn't waited for. The load resolves to a handle for each query, its key and input, and the route renders while the requests are in flight.",
     title: 'It returns handles right away',
   },
   {
-    text: 'Post and Comments each get a handle and read it with trpc.unstable_$fromHandle(). Until their data arrives, they suspend and show their Suspense fallbacks.',
+    text: 'Post and Comments each get a handle and read it with fromHandle(trpc, handle). Until their data arrives, they suspend and show their Suspense fallbacks.',
     title: 'Components read the handles',
   },
   {
@@ -218,13 +218,17 @@ export function LoaderHandles(_props: DemoProps) {
         <Panel active={step === 0 || step === 1} title="Route loader">
           <pre className="overflow-x-auto font-mono text-[0.7rem] leading-relaxed">
             <span className="text-muted-foreground">
-              {'loader: ({ params: { id } }) => ({'}
+              {
+                'loader: async ({ params: { id } }) => {\n  const [handles] = await loadHandles(trpc, {'
+              }
             </span>
-            {'\n  post: trpc.post.byId\n    .unstable_$prefetch({ id }),'}
+            {'\n    post: prefetchEntry(trpc.post.byId, { id }),'}
             {
-              '\n  comments: trpc.post.comments\n    .unstable_$prefetchInfinite(…),'
+              '\n    comments: prefetchInfiniteEntry(\n      trpc.post.comments,\n      …,\n    ),'
             }
-            <span className="text-muted-foreground">{'\n})'}</span>
+            <span className="text-muted-foreground">
+              {'\n  });\n  return handles;\n}'}
+            </span>
           </pre>
         </Panel>
         <Connector active={step === 1} label="returns" />

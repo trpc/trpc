@@ -18,6 +18,7 @@ import type {
   Link,
   Root as MdastRoot,
   Paragraph,
+  PhrasingContent,
 } from 'mdast';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -37,8 +38,15 @@ import { demoMarker, parseDemoFence } from '../src/demos/names.ts';
 import { versionsByPath } from '../src/site.ts';
 import { isUrlTabGroup, tabSlug } from '../src/tabs.ts';
 import { collapseRegions } from './collapse.ts';
+import { compactCode } from './compact-code.ts';
+import { takePopups } from './lazy-popups.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { chartHtml, decodeChart } from './charts.ts';
+import {
+  renderPopupMarkdown,
+  renderPopupMarkdownInline,
+  withConciseDocs,
+} from './popup-docs.ts';
 import { appOf, sampleApps } from './sample-apps.ts';
 import type { TwoslashCache } from './twoslash-cache.ts';
 
@@ -55,6 +63,11 @@ export interface RenderedMarkdown {
   readonly headings: ReadonlyArray<DocHeading>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
+  /**
+   * The hover popups' content, which `html` leaves out: each popup's
+   * container has its index here (`data-popup`). See {@link takePopups}.
+   */
+  readonly popups: ReadonlyArray<string>;
   /** Each `twoslash` block's `// ^?` types, in order. */
   readonly typeQueries: ReadonlyArray<ReadonlyArray<string>>;
 }
@@ -816,7 +829,7 @@ const defaultInlineApp = 'docs';
 
 /**
  * Fences with `twoslash` in their meta are compiled, so hovering a name shows
- * its type, `// ^?` pins a type under the line, and `// @errors: 2345` shows
+ * its type and the first paragraph of its JSDoc, `// ^?` pins a type under the line, and `// @errors: 2345` shows
  * an expected error. A compile error the block doesn't expect fails the
  * build.
  *
@@ -941,7 +954,15 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     flush: session?.flush ?? Effect.void,
     transformer: createTransformerFactory(
       twoslasher,
-      reusingPopups(rendererRich({ jsdoc: false, queryRendering: 'line' })),
+      reusingPopups(
+        withConciseDocs(
+          rendererRich({
+            queryRendering: 'line',
+            renderMarkdown: renderPopupMarkdown,
+            renderMarkdownInline: renderPopupMarkdownInline,
+          }),
+        ),
+      ),
     )({ explicitTrigger: true }),
   };
 });
@@ -987,6 +1008,47 @@ function parsing(
     .use(rehypeHeadings(headings, anchors));
 }
 
+/**
+ * Inline Markdown as a description reads it: inline code in backticks, as
+ * titles and descriptions write it (`src/content/inline-code.ts`), links
+ * and emphasis as their text, and images and HTML left out.
+ */
+const phrasingText = (nodes: ReadonlyArray<PhrasingContent>): string =>
+  nodes
+    .map((node) => {
+      if (node.type === 'text') {
+        return node.value;
+      }
+      if (node.type === 'inlineCode') {
+        return `\`${node.value}\``;
+      }
+      if (node.type === 'break') {
+        return ' ';
+      }
+      return 'children' in node ? phrasingText(node.children) : '';
+    })
+    .join('');
+
+/**
+ * A page's first paragraph with text, past any headings, code or HTML
+ * before it, as one line, as Docusaurus described a page without a
+ * description: its social card shows it (`vite.config.ts`). One that leads
+ * into a list, ending in a colon, ends in an ellipsis instead. Empty for a
+ * page without one.
+ */
+export function excerptOf(markdown: string) {
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);
+  for (const node of tree.children) {
+    if (node.type === 'paragraph') {
+      const text = phrasingText(node.children).replace(/\s+/g, ' ').trim();
+      if (text !== '') {
+        return text.replace(/:$/, '…');
+      }
+    }
+  }
+  return '';
+}
+
 /** The ids of the headings a page renders, which links can point at. */
 export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
   const anchors: Array<string> = [];
@@ -1001,6 +1063,22 @@ export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
     try: async () => processor.run(processor.parse(markdown)),
   });
   return anchors;
+});
+
+/** The `h2` and `h3` headings a page renders, without compiling its code. */
+export const headingsOf = Effect.fn('headingsOf')(function* (markdown: string) {
+  const headings: Array<DocHeading> = [];
+  const processor = parsing(
+    { basePath: '/docs', slug: 'index', sourceUrl: '' },
+    headings,
+    [],
+    [],
+  );
+  yield* Effect.tryPromise({
+    catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
+    try: async () => processor.run(processor.parse(markdown)),
+  });
+  return headings;
 });
 
 const twoslashFence = /^[ \t]*```\w*[^\n]*\btwoslash\b/m;
@@ -1062,11 +1140,14 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
     catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
     try: async () => processor.run(processor.parse(markdown)),
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
+  compactCode(tree);
+  const popups = takePopups(tree);
   const rendered: RenderedMarkdown = {
     anchors,
     headings,
     html: toHtml(tree),
     links,
+    popups,
     typeQueries,
   };
   return rendered;

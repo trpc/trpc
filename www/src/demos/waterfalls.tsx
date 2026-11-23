@@ -6,7 +6,6 @@ import type { DemoProps } from './names.ts';
 const blogs = {
   loader: createBlogRoutes('prefetch'),
   reader: createBlogRoutes('reader'),
-  top: createBlogRoutes('top'),
 };
 
 /** Where queries start, and the waterfall you get if they start where they're read. */
@@ -23,12 +22,6 @@ export function Waterfalls(props: DemoProps) {
             "The route loader starts every query from the URL: the article's id, or the list's page. One round trip.",
           label: 'the loader',
           value: 'loader',
-        },
-        {
-          description:
-            'Each page starts its queries as it renders, and passes the handles down. One round trip, a little later.',
-          label: 'the page',
-          value: 'top',
         },
         {
           description:

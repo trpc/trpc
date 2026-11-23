@@ -1,45 +1,40 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create({
-      errorFormatter({ shape }) {
-        return {
-          ...shape,
-          data: {
-            ...shape.data,
-            foo: 'bar' as const,
-          },
-        };
-      },
-    });
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(({ input }) => `__result${input.id}` as const),
-      }),
-      foo: t.procedure.query(() => 'foo' as const),
-      bar: t.procedure.query(() => 'bar' as const),
-    });
+function setup() {
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
+      };
+    },
+  });
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(({ input }) => `__result${input.id}` as const),
+    }),
+    foo: t.procedure.query(() => 'foo' as const),
+    bar: t.procedure.query(() => 'bar' as const),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 test('single query', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const results = client.useQueries((t) => [
@@ -68,6 +63,7 @@ test('single query', async () => {
 });
 
 test('different queries', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const results = client.useQueries((t) => [t.foo(), t.bar()]);
@@ -96,6 +92,7 @@ test('different queries', async () => {
 });
 
 test('mapping queries', async () => {
+  await using ctx = setup();
   const ids = ['1', '2', '3'];
 
   const { client, App } = ctx;
@@ -127,6 +124,7 @@ test('mapping queries', async () => {
 });
 
 test('single query with options', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   function MyComponent() {
     const results = client.useQueries((t) => [
@@ -150,6 +148,7 @@ test('single query with options', async () => {
 });
 
 test('combine function', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -183,6 +182,7 @@ test('combine function', async () => {
 
 // regression https://github.com/trpc/trpc/issues/6188
 test('regression #6188: conditionally returning an empty array', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const text = 'Bob';
 
@@ -211,6 +211,7 @@ test('regression #6188: conditionally returning an empty array', async () => {
 
 // regression https://github.com/trpc/trpc/issues/6188
 test('regression #6188: empty array first, and varying tuple lengths', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
   const text = 'Bob';
 
@@ -256,6 +257,7 @@ test('regression #6188: empty array first, and varying tuple lengths', async () 
 
 // the readonly-array overload must keep accepting readonly query options
 test('regression #6188: readonly query options are still accepted', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {
@@ -296,6 +298,7 @@ test('regression #6188: readonly query options are still accepted', async () => 
 
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
+  await using ctx = setup();
   const { client, App } = ctx;
 
   function MyComponent() {

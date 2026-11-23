@@ -3,6 +3,7 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  inferAsyncIterableYield,
   inferClientTypes,
   inferProcedureErrorShape,
   inferProcedureInput,
@@ -16,7 +17,11 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
+import type {
+  TRPCSubscriptionCallbacks,
+  TRPCSubscriptionObserver,
+  TRPCSubscriptionWithoutCallbacks,
+} from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCTaggedPromise } from './safe';
@@ -86,13 +91,21 @@ export type Resolver<TDef extends TRPCResolverDef> = (
  * The `.subscribe()` of a subscription procedure on the client.
  * @internal
  */
-export type SubscriptionResolver<TDef extends TRPCResolverDef> = (
-  input: TDef['input'],
-  opts: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
-    TRPCProcedureOptions,
-) => Unsubscribable;
+export type SubscriptionResolver<TDef extends TRPCResolverDef> = {
+  (
+    input: TDef['input'],
+    opts: TRPCSubscriptionCallbacks<TDef['output'], TRPCClientError<TDef>> &
+      TRPCProcedureOptions,
+  ): Unsubscribable;
+  <
+    TOpts extends TRPCProcedureOptions &
+      Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> =
+      TRPCProcedureOptions,
+  >(
+    input: TDef['input'],
+    opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
+  ): AsyncIterableIterator<inferAsyncIterableYield<TDef['output']>>;
+};
 
 type DecorateProcedure<
   TType extends ProcedureType,
