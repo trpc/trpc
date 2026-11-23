@@ -22,7 +22,7 @@ description: tRPC's test setup and TypeScript conventions, which win where the g
 
 ## TypeScript
 
-- Internal (non-exported) parameters, properties and options are required. Pass absence explicitly as `null`, `undefined`, a literal or a symbol, whichever fits: `x: T | undefined` that every caller passes is fine, but not `x?: T` or an optional or defaulted parameter. Optionals are only conveniences on public APIs; normalise a public options object once at the boundary into a fully required internal shape.
+- Internal (non-exported) parameters, properties and options are required. Pass absence explicitly as `null`, `undefined`, a literal or a symbol, whichever fits: `x: T | undefined` that every caller passes is fine, but not `x?: T` or an optional or defaulted parameter. Optionals are only conveniences on public APIs; normalise a public options object once at the boundary into a fully required internal shape. The `trpc/no-internal-optional` lint rule enforces this for the parameters of top-level functions a file doesn't export; it doesn't check types, since a non-exported type can still be public through an exported one.
 
   ```ts
   function connect(url: string, retry?: RetryOptions); // before
