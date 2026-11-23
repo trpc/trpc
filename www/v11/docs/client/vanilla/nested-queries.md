@@ -242,8 +242,49 @@ const settled = await experimental_settle(res);
 
 - **The callback runs once, on a stand-in for every item**, and returns the item's query. Read values of the item and put them in its input.
 - **Each item's promise settles by itself**, also when another item's author is slow.
-- **A chain works for every item too.** In the callback, build a query from the item, and return one that reads it: `experimental_query(client.team.byId, { id: experimental_dataOf(author).teamId })`.
-- **For the items of every list in a list, use `.flatMap()`**: `experimental_dataOf(pages).pages.flatMap((page) => page.items)` is one flat list of every page's items.
+- **Return an object for several queries per item.** They can read each other, and each runs once per item.
+- **An entry per item nests**, for a list in the item or in an item's query: its key is a list per item.
+- **For the items of every list in a list, use `.flatMap()`**: `experimental_dataOf(pages).pages.flatMap((page) => page.items)` is one flat list of every page's items. A list in a query that runs for every item is one flat list too, in that order.
+- **`null` skips**: an entry that is `null`, at the top or in an item's object, loads to `null`.
+
+```ts twoslash title='rows.ts'
+// @include: dq-router
+// @filename: rows.ts
+import { createTRPCClient } from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+declare const client: ReturnType<typeof createTRPCClient<AppRouter>>;
+declare const isAdmin: boolean;
+// ---cut---
+import {
+  experimental_dataOf,
+  experimental_load,
+  experimental_perItem,
+  experimental_query,
+} from '@trpc/client';
+
+const posts = experimental_query(client.post.list, {});
+const res = experimental_load(client, {
+  posts,
+  rows: experimental_perItem(experimental_dataOf(posts).items, (post) => {
+    const author = experimental_query(client.author.byId, { id: post.authorId });
+    return {
+      author,
+      // Reads the author: in the same request, once per post
+      moreFromTeam: experimental_query(client.post.list, {
+        teamId: experimental_dataOf(author).teamId,
+      }),
+      // A list in the item: a list per post
+      tags: experimental_perItem(post.tags, (tag) =>
+        experimental_query(client.tag.byIds, { ids: [tag.id] }),
+      ),
+    };
+  }),
+  draft: isAdmin ? experimental_query(client.post.bySlug, { slug: 'draft' }) : null,
+});
+
+const rows = await res.rows;
+//    ^?
+```
 - **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself.
 - **`experimental_settle()` awaits every promise**, and rejects if one does.
 - **With `httpBatchLink`, it works too.** The promises in a request resolve together, with its whole response. One that asks by itself resolves with its own response, later. In development, the client warns once.
@@ -576,7 +617,7 @@ The longest value a call reads, in characters of JSON: 1,024 by default. Every v
 Whether a value can be an object or a list: `false` by default. Without it, a value has to be a string, a number, a boolean or `null`. A value that isn't there is left out of the input, as JSON leaves it out.
 
 - **Why not by default:** a whole value is as big as the data it comes from, and it is copied into every input it goes in.
-- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A list of ids made with `.map()` needs it too, such as `experimental_dataOf(posts).items.map((post) => post.authorId)`. A value that a transformer makes, such as a `Date`, is an object too.
+- **Set it** to read an object or a list, such as the post's tags in `{ tags: it.tags }`. A list of ids made with `.map()` needs it too, such as `experimental_dataOf(posts).items.map((post) => post.authorId)`.
 - **Not needed for a list that [a query for every item](#per-item) reads.** The server runs it for every item of the list, and reads only the values of each item, such as `post.authorId`.
 
 #### `maxFillSize` {#limit-fill-size}

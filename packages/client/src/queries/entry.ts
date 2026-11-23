@@ -72,8 +72,11 @@ export const perItemState = Symbol('trpc.perItem');
  * @internal
  */
 export interface PerItemState {
-  /** The entry the callback returned, built with a stand-in for the item */
-  entry: object;
+  /**
+   * What the callback returned, built with a stand-in for the item: an
+   * entry, an entry per item, `null`, or an object of these
+   */
+  entry: object | null;
   /**
    * The list whose items it is loaded for. It is a list of lists, which are
    * flattened, for every `null` in its path
@@ -379,7 +382,7 @@ export interface experimental_InfiniteQueryEntryOptions<
 /**
  * A copy of an input as it is now, with its `experimental_dataOf()` values
  * in it: a later change to the object doesn't change the query, and a getter
- * in it runs once
+ * in it runs once. Inputs are plain objects, arrays and primitives
  */
 function copyInput(value: unknown): unknown {
   if (entryDataRefOf(value)) {
@@ -392,10 +395,6 @@ function copyInput(value: unknown): unknown {
       copy[index] = copyInput(item);
     });
     return copy;
-  }
-  if (value instanceof Date) {
-    // The time it holds, as `structuredClone()` reads it, not an override
-    return new Date(Date.prototype.getTime.call(value));
   }
   if (typeof value === 'object' && value !== null) {
     const proto = Object.getPrototypeOf(value);
@@ -578,8 +577,41 @@ export function experimental_dataOf(
 }
 
 /**
- * An entry to load for every item of a list in another entry's data. The
- * callback runs once, on a stand-in for every item, and returns the entry.
+ * What `experimental_perItem()`'s callback returns for an item: an entry, an
+ * entry per item of a list in it, an object of these, or `null` to skip
+ *
+ * Experimental: it may change in a minor release.
+ */
+export type experimental_ItemEntries =
+  | experimental_DataEntry
+  | experimental_PerItemEntry<any, any>
+  | null
+  | { [key: string]: experimental_ItemEntries };
+
+/** Whether a value is what `experimental_perItem()`'s callback can return */
+function isItemEntries(value: unknown): boolean {
+  if (value === null || perItemStateOf(value)) {
+    return true;
+  }
+  const inner = innerEntryOf(value);
+  if (inner) {
+    return true;
+  }
+  if (typeof value !== 'object') {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return (
+    (proto === Object.prototype || proto === null) &&
+    Object.values(value).every(isItemEntries)
+  );
+}
+
+/**
+ * What to load for every item of a list in another entry's data. The
+ * callback runs once, on a stand-in for every item, and returns an entry, or
+ * an object of entries: entries that read each other, and entries per item
+ * of a list in the item, nest.
  *
  * The list is an `experimental_dataOf()` value. Its items are its elements,
  * or, for a list from `.map()`, the values the callback returned. For the
@@ -588,18 +620,33 @@ export function experimental_dataOf(
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#per-item
+ * @example
+ * ```ts
+ * experimental_perItem(experimental_dataOf(posts).items, (post) => {
+ *   const author = experimental_query(trpc.author.byId, { id: post.authorId });
+ *   return {
+ *     author,
+ *     team: experimental_query(trpc.team.byId, {
+ *       id: experimental_dataOf(author).teamId,
+ *     }),
+ *   };
+ * });
+ * ```
  */
-export function experimental_perItem<TItem, TEntry>(
+export function experimental_perItem<
+  TItem,
+  TReturn extends experimental_ItemEntries,
+>(
   items: readonly TItem[],
-  entry: (item: TItem) => TEntry & experimental_DataEntry,
-): experimental_PerItemEntry<TEntry, TItem> {
+  entries: (item: TItem) => TReturn,
+): experimental_PerItemEntry<TReturn, TItem> {
   const list = entryDataRefOf(items);
   if (!list) {
     throw new Error(
       `\`experimental_perItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got ${JSON.stringify(items)}`,
     );
   }
-  const returned = entry(
+  const returned = entries(
     createEntryDataRef({
       entry: list.entry,
       path: dataPath(itemPathOf(list)),
@@ -607,9 +654,9 @@ export function experimental_perItem<TItem, TEntry>(
       shape: 'value',
     }) as TItem,
   );
-  if (queryEntryStateOf(returned)?.type !== 'query') {
+  if (!isItemEntries(returned)) {
     throw new Error(
-      `The callback of \`experimental_perItem()\` must return a query's entry, such as one from \`experimental_query()\`, got ${JSON.stringify(returned)}`,
+      `The callback of \`experimental_perItem()\` must return an entry, such as one from \`experimental_query()\`, or an object of entries, got ${JSON.stringify(returned)}`,
     );
   }
   const state: PerItemState = { entry: returned as object, list };

@@ -300,6 +300,7 @@ export interface TRPCLoadEntries {
     | experimental_QueryEntry<any, any>
     | experimental_InfiniteQueryEntry<any, any>
     | typeof skipToken
+    | null
     | experimental_TRPCEntryPerItem<any, any>
     | experimental_TRPCEntryFromData<any, any>
     | TRPCLoadEntries;
@@ -639,12 +640,26 @@ type LoadedEntry<TEntry, TWaited extends boolean> =
                   infer TInner,
                   infer TItem
                 >
-              ? experimental_PerItemEntry<LoadedEntry<TInner, false>, TItem>
-              : TEntry extends typeof skipToken
-                ? TEntry
+              ? LoadedPerItem<TInner, TItem>
+              : TEntry extends typeof skipToken | null
+                ? typeof skipToken
                 : TEntry extends TRPCLoadEntries
                   ? experimental_WithWait<TEntry, never>
                   : TEntry;
+
+/**
+ * An entry per item as the load has it: what the callback returned for an
+ * item, as an entry per item of each entry in it, in a group of the same keys
+ */
+type LoadedPerItem<TReturn, TItem> = TReturn extends null
+  ? typeof skipToken
+  : TReturn extends
+        | experimental_QueryEntry<any, any>
+        | experimental_InfiniteQueryEntry<any, any>
+        | AnyTRPCEntry
+        | experimental_FromDataEntry<any, any>
+    ? experimental_PerItemEntry<LoadedEntry<TReturn, false>, TItem>
+    : { [TKey in keyof TReturn]: LoadedPerItem<TReturn[TKey], TItem> };
 
 /**
  * A load's entries as TanStack Query entries: each entry of a description,
@@ -658,10 +673,6 @@ export type experimental_WithWait<TEntries, TWait extends string> = {
   >;
 };
 
-/**
- * Options of `loadHandles()` and `loadHandlesSettled()`
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#wait
- */
 /** A key whose entry is of one query, which a load can wait for */
 export type experimental_WaitableKey<TEntries> = {
   [TKey in keyof TEntries & string]: TEntries[TKey] extends
@@ -673,6 +684,10 @@ export type experimental_WaitableKey<TEntries> = {
     : never;
 }[keyof TEntries & string];
 
+/**
+ * Options of `loadHandles()` and `loadHandlesSettled()`
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#wait
+ */
 export interface TRPCLoadOptions<
   TEntries,
   TWait extends experimental_WaitableKey<TEntries>,

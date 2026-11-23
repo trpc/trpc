@@ -32,7 +32,6 @@ import type {
   experimental_DataEntry,
   experimental_DataOfEntry,
   experimental_PerItemEntry,
-  PerItemState,
   QueryEntryState,
   QueryEntryType,
 } from './entry';
@@ -55,26 +54,30 @@ export interface experimental_LoadEntries {
   [key: string]:
     | experimental_DataEntry
     | experimental_PerItemEntry<any, any>
-    | experimental_LoadEntries;
+    | experimental_LoadEntries
+    | null;
 }
+
+/** What an entry of a description loads to */
+type LoadedValue<TValue> = TValue extends null
+  ? null
+  : TValue extends experimental_PerItemEntry<infer TReturn, any>
+    ? Promise<LoadedValue<TReturn>[]>
+    : TValue extends experimental_DataEntry
+      ? Promise<experimental_DataOfEntry<TValue>>
+      : { [K in keyof TValue]: LoadedValue<TValue[K]> };
 
 /**
  * What `experimental_load()` returns: a promise for every entry, by its key,
- * that settles when its query is done. An entry per item has a promise of
- * its items' promises: it resolves when the list is there, and each item
- * settles by itself.
+ * that settles when its query is done, and `null` for a skipped one. An
+ * entry per item has a promise of a list, with what the callback returned
+ * loaded for every item: it resolves when the list is there, and each
+ * item's entries settle by themselves.
  *
  * Experimental: it may change in a minor release.
  */
 export type experimental_Loaded<TEntries> = {
-  [K in keyof TEntries]: TEntries[K] extends experimental_PerItemEntry<
-    infer TEntry,
-    any
-  >
-    ? Promise<Promise<experimental_DataOfEntry<TEntry>>[]>
-    : TEntries[K] extends experimental_DataEntry
-      ? Promise<experimental_DataOfEntry<TEntries[K]>>
-      : experimental_Loaded<TEntries[K]>;
+  [K in keyof TEntries]: LoadedValue<TEntries[K]>;
 };
 
 /**
@@ -85,7 +88,7 @@ export type experimental_Loaded<TEntries> = {
 export type experimental_Settled<TLoaded> =
   TLoaded extends Promise<infer TValue>
     ? experimental_Settled<TValue>
-    : TLoaded extends readonly Promise<unknown>[]
+    : TLoaded extends readonly unknown[]
       ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
       : TLoaded extends Record<string, unknown>
         ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
@@ -237,10 +240,9 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
 }
 
 /**
- * A copy of data, also of the plain objects, arrays, Dates, Maps and Sets in
- * it, as a transformer can carry them. `copies` has the copy of each object
- * copied so far, so a cycle, or an object in two places, is one copy, as a
- * transformer that keeps them gives them
+ * A copy of data: of its plain objects and arrays. Inputs and data are plain
+ * objects, arrays and primitives. `copies` has the copy of each object copied
+ * so far, so a cycle, or an object in two places, is one copy
  */
 function copyData(value: unknown, copies: Map<object, unknown>): unknown {
   if (typeof value !== 'object' || value === null) {
@@ -258,33 +260,12 @@ function copyData(value: unknown, copies: Map<object, unknown>): unknown {
     });
     return copy;
   }
-  if (value instanceof Map) {
-    const copy = new Map<unknown, unknown>();
-    copies.set(value, copy);
-    for (const [key, item] of Array.from(Map.prototype.entries.call(value))) {
-      copy.set(copyData(key, copies), copyData(item, copies));
-    }
-    return copy;
-  }
-  if (value instanceof Set) {
-    const copy = new Set<unknown>();
-    copies.set(value, copy);
-    for (const item of Array.from(Set.prototype.values.call(value))) {
-      copy.add(copyData(item, copies));
-    }
-    return copy;
-  }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};
     copies.set(value, copy);
     for (const key of Object.keys(value)) {
       setOwn(copy, key, copyData(value[key], copies));
     }
-    return copy;
-  }
-  if (value instanceof Date) {
-    const copy = new Date(Date.prototype.getTime.call(value));
-    copies.set(value, copy);
     return copy;
   }
   return value;
@@ -501,44 +482,15 @@ function anyTrue(checks: readonly Settles<boolean>[]): Promise<boolean> {
 }
 
 /**
- * Whether a value that isn't a plain object, an array or a Date has a
- * stand-in or an `experimental_dataOf()` value in it. `seen` keeps a cycle from looping
- */
-function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
-  if (standInOf(value) || entryDataRefOf(value)) {
-    return true;
-  }
-  // A typed array or `DataView` holds bytes only
-  if (
-    typeof value !== 'object' ||
-    value === null ||
-    ArrayBuffer.isView(value) ||
-    seen.has(value)
-  ) {
-    return false;
-  }
-  seen.add(value);
-  const values =
-    value instanceof Map
-      ? [...value.keys(), ...value.values()]
-      : value instanceof Set
-        ? [...value]
-        : Object.values(value);
-  return values.some((it) => hasStandIn(it, seen));
-}
-
-/**
  * A copy of an input, with each value read of another call in it replaced by
  * what `onRead` gives. `to` is where a value is in the input: `null` in an
- * array, where the server can't write. `copies` has the copy of each `Map`
- * and `Set` copied in this pass: one in two places of the input is one copy,
- * as a transformer that keeps references carries it
+ * array, where the server can't write. Inputs are plain objects, arrays and
+ * primitives: anything else is sent as it is
  */
 function mapInput(opts: {
   value: unknown;
   to: string[] | null;
   onRead: (read: Ref | EntryDataRef, to: string[] | null) => unknown;
-  copies: Map<object, unknown>;
 }): unknown {
   const { value, to } = opts;
   const read = standInOf(value) ?? entryDataRefOf(value);
@@ -558,24 +510,6 @@ function mapInput(opts: {
       );
     }
     return copy;
-  }
-  if (value instanceof Date) {
-    // The time it holds, as `structuredClone()` reads it, not an override
-    return new Date(Date.prototype.getTime.call(value));
-  }
-  // Sent as it is, with nothing filled in
-  if (isObject(value) && hasStandIn(value, new WeakSet())) {
-    throw new TypeError(
-      'experimental_load(): an input can have `experimental_dataOf()` values in plain objects, arrays and Dates, not in an instance of a class',
-    );
-  }
-  // A Map or a Set, as a transformer carries them, is read as it is now, as
-  // a plain object is. An instance of another class is sent as it is
-  if (isObject(value)) {
-    const proto: unknown = Object.getPrototypeOf(value);
-    if (proto === Map.prototype || proto === Set.prototype) {
-      return copyData(value, opts.copies);
-    }
   }
   return value;
 }
@@ -598,32 +532,13 @@ function firstPageInput(input: unknown, initialCursor: unknown) {
   };
 }
 
-/**
- * The entries of a description, and the key of each, with the entries of a
- * group under its key
- */
-function readLeaves(
-  entries: Record<string, unknown>,
-  at: string[],
-): { group: string[]; key: string; entry: object }[] {
-  if (!isPlainObject(entries)) {
-    throw new TypeError(
-      `experimental_load(): expects an object of entries, got ${String(entries)}`,
-    );
-  }
-  return Object.keys(entries).flatMap((key) => {
-    const value = entries[key];
-    if (innerEntryOf(value) || perItemStateOf(value)) {
-      return [{ group: at, key, entry: value as object }];
-    }
-    if (isPlainObject(value)) {
-      return readLeaves(value, [...at, key]);
-    }
-    throw new TypeError(
-      `experimental_load(): "${[...at, key].join('.')}" is no entry, such as one from \`experimental_query()\`, nor a group of them`,
-    );
-  });
-}
+/** What a description loads, as its calls */
+type Node =
+  | { kind: 'skip' }
+  | { kind: 'query'; call: Call }
+  /** An entry per item: what the callback returned, for each item of `scopes` */
+  | { kind: 'list'; scopes: Scope[]; item: Node }
+  | { kind: 'group'; members: [key: string, node: Node][] };
 
 /**
  * Loads the entries of a description, as one request where the link
@@ -683,31 +598,39 @@ export function experimental_load<
     return segments;
   }
 
-  /** The scopes of the list of an entry per item */
+  /**
+   * The scopes of the list of an entry per item: those of the lists the
+   * list is in, then one for each level of lists of its own. A list read of
+   * an item is in that item's lists
+   */
   function scopesOf(list: EntryDataRef): Scope[] {
     let scopes = scopesOfList.get(list);
     if (scopes) {
       return scopes;
     }
-    if (list.itemOf !== null) {
-      throw new TypeError(
-        'experimental_load(): the list of `experimental_perItem()` is read of the data of an entry, not of an item',
-      );
-    }
     const call = callFor(list.entry);
+    const outer = list.itemOf ? scopesOf(list.itemOf) : call.scopes;
+    // The `null`s of the item's list are its items
+    const ofItem = outer.slice(call.scopes.length);
+    let next = 0;
     const created: Scope[] = [];
     const path: Segment[] = [];
     for (const segment of segmentsOf(call, itemPathOf(list))) {
-      if (segment === null) {
-        const scope: Scope = { list: { call, path: [...path] } };
-        call.lists.push([...path]);
-        created.push(scope);
-        path.push(scope);
-      } else {
+      if (segment !== null) {
         path.push(segment);
+        continue;
       }
+      const bound = list.itemOf ? ofItem[next++] : undefined;
+      if (bound) {
+        path.push(bound);
+        continue;
+      }
+      const scope: Scope = { list: { call, path: [...path] } };
+      call.lists.push([...path]);
+      created.push(scope);
+      path.push(scope);
     }
-    scopes = [...call.scopes, ...created];
+    scopes = [...outer, ...created];
     scopesOfList.set(list, scopes);
     return scopes;
   }
@@ -785,7 +708,6 @@ export function experimental_load<
         standIns.set(standIn, ref);
         return standIn;
       },
-      copies: new Map(),
     });
     const holes: Hole[] = [];
     const blanked = mapInput({
@@ -802,7 +724,6 @@ export function experimental_load<
         ref.call.reads.push(ref.path);
         return undefined;
       },
-      copies: new Map(),
     });
     const inputCursor = isPlainObject(state.input)
       ? state.input['cursor']
@@ -1110,57 +1031,103 @@ export function experimental_load<
     }, failed);
   }
 
-  /** An entry per item's promise of its items' promises */
-  function loadPerItem(state: PerItemState): Promise<Promise<unknown>[]> {
-    const scopes = scopesOf(state.list);
-    const call = callFor(state.entry);
-    if (!call.scopes.every((scope, index) => scopes[index] === scope)) {
-      throw new TypeError(
-        'experimental_load(): the entry of `experimental_perItem()` reads the items of another list',
-      );
+  /**
+   * What a value of a description loads: an entry, an entry per item, a
+   * group, or `null` to skip. `bound` has the lists whose item is known
+   * where the value is. Makes every call it needs, before any is sent
+   */
+  function nodeOf(
+    value: unknown,
+    label: string,
+    bound: readonly Scope[],
+  ): Node {
+    if (value === null) {
+      return { kind: 'skip' };
     }
-    if (callFor(state.list.entry).scopes.length > 0) {
-      throw new TypeError(
-        'experimental_load(): the list of `experimental_perItem()` is in the data of an entry that reads an item. Its items are in more than one list',
-      );
+    if (innerEntryOf(value)) {
+      const call = callFor(value as object);
+      if (!call.scopes.every((scope) => bound.includes(scope))) {
+        throw new TypeError(
+          bound.length === 0
+            ? `experimental_load(): "${label}" reads an item of a list. Load it for every item with \`experimental_perItem()\``
+            : `experimental_load(): "${label}" reads the items of a list that \`experimental_perItem()\` isn't for`,
+        );
+      }
+      return { kind: 'query', call };
     }
-    return rejecting(
-      settles(async (): Promise<Outcome<Promise<unknown>[]>> => {
-        const all = await itemsOf(scopes, new Map());
-        if (!all.ok) {
-          return all;
-        }
-        const loaded = all.data.map((items) => {
-          const item = rejecting(valueOf({ call, path: [] }, items, 'data'));
-          // An item that nobody reads can fail
-          item.catch(nothing);
-          return item;
-        });
-        itemLists.add(loaded);
-        return { ok: true, data: loaded };
-      }, failed),
+    const perItem = perItemStateOf(value);
+    if (perItem) {
+      // Its own lists, below those whose item is known here. A list in the
+      // data of an entry that runs for every item of another list is the
+      // items of every one of them, in that list's order
+      const scopes = scopesOf(perItem.list).filter(
+        (scope) => !bound.includes(scope),
+      );
+      return {
+        kind: 'list',
+        scopes,
+        item: nodeOf(perItem.entry, label, [...bound, ...scopes]),
+      };
+    }
+    if (isPlainObject(value)) {
+      return {
+        kind: 'group',
+        members: Object.keys(value).map((key) => [
+          key,
+          nodeOf(value[key], label ? `${label}.${key}` : key, bound),
+        ]),
+      };
+    }
+    throw new TypeError(
+      `experimental_load(): "${label}" is no entry, such as one from \`experimental_query()\`, nor a group of them, nor \`null\``,
     );
   }
 
+  /** What a node loads to, for the items in `items` */
+  function resolve(node: Node, items: Items): unknown {
+    switch (node.kind) {
+      case 'skip':
+        return null;
+      case 'query': {
+        const loaded = rejecting(
+          valueOf({ call: node.call, path: [] }, items, 'data'),
+        );
+        // An entry that nobody reads can fail
+        loaded.catch(nothing);
+        return loaded;
+      }
+      case 'list': {
+        const loaded = rejecting(
+          settles(async (): Promise<Outcome<unknown[]>> => {
+            const all = await itemsOf(node.scopes, items);
+            if (!all.ok) {
+              return all;
+            }
+            const list = all.data.map((item) => resolve(node.item, item));
+            itemLists.add(list);
+            return { ok: true, data: list };
+          }, failed),
+        );
+        loaded.catch(nothing);
+        return loaded;
+      }
+      case 'group': {
+        const group: Record<string, unknown> = {};
+        for (const [key, member] of node.members) {
+          setOwn(group, key, resolve(member, items));
+        }
+        return group;
+      }
+    }
+  }
+
+  if (!isPlainObject(entries)) {
+    throw new TypeError(
+      `experimental_load(): expects an object of entries, got ${String(entries)}`,
+    );
+  }
   // Every call is made before any is sent, in the order of the entries
-  const leaves = readLeaves(entries, []).map((leaf) => {
-    const perItem = perItemStateOf(leaf.entry);
-    if (perItem) {
-      scopesOf(perItem.list);
-      callFor(perItem.entry);
-      return { ...leaf, load: () => loadPerItem(perItem) };
-    }
-    const call = callFor(leaf.entry);
-    if (call.scopes.length > 0) {
-      throw new TypeError(
-        `experimental_load(): "${[...leaf.group, leaf.key].join('.')}" reads an item of a list. Load it for every item with \`experimental_perItem()\``,
-      );
-    }
-    return {
-      ...leaf,
-      load: () => rejecting(valueOf({ call, path: [] }, new Map(), 'data')),
-    };
-  });
+  const root = nodeOf(entries, '', []);
   // In one step: the link takes the queries that read nothing into a batch,
   // and the calls that read them go in its request
   for (const call of calls) {
@@ -1195,21 +1162,7 @@ export function experimental_load<
       "experimental_load(): the link doesn't stream its responses, so the entries in a request settle together, with the whole response. Use `httpBatchStreamLink` for each entry to settle when its query is done",
     );
   }
-  const result: Record<string, unknown> = {};
-  for (const leaf of leaves) {
-    let group = result;
-    for (const key of leaf.group) {
-      if (!hasOwn(group, key)) {
-        setOwn(group, key, {});
-      }
-      group = group[key] as Record<string, unknown>;
-    }
-    const loaded = leaf.load();
-    // An entry that nobody reads can fail
-    loaded.catch(nothing);
-    setOwn(group, leaf.key, loaded);
-  }
-  return result as experimental_Loaded<TEntries>;
+  return resolve(root, new Map()) as experimental_Loaded<TEntries>;
 }
 
 async function settle(value: unknown): Promise<unknown> {

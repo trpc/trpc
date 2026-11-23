@@ -149,12 +149,11 @@ export function toTanStackEntries(opts: {
           ? value
           : { [fromDataState]: { entry: inner, source } };
     } else if (perItem) {
-      const inner = entryFor(perItem.entry, false);
-      const list = refFor(perItem.list);
       result =
-        inner === perItem.entry && list === perItem.list
-          ? value
-          : { [perItemState]: { entry: inner, list } };
+        perItem.entry !== null &&
+        (queryEntryStateOf(perItem.entry) || fromDataStateOf(perItem.entry))
+          ? perItemFor(perItem.entry, perItem, value)
+          : perItemFor(perItem.entry, perItem, null);
     } else if (shared) {
       const state = entryStateOf(value) ?? null;
       const kind: TRPCEntryKind =
@@ -170,14 +169,60 @@ export function toTanStackEntries(opts: {
     return result;
   }
 
+  /**
+   * What an entry per item loads, for TanStack Query: an entry per item for
+   * each entry the callback returned, in a group of the same keys, and
+   * `skipToken` for `null`. Each loads in a request of its own per item,
+   * and reads the item and the entries of the load only
+   */
+  function perItemFor(
+    returned: object | null,
+    perItem: { entry: object | null; list: EntryDataRef },
+    /** The entry per item itself, kept as it is if nothing changes */
+    same: object | null,
+  ): object {
+    if (returned === null) {
+      return skipToken as unknown as object;
+    }
+    if (perItemStateOf(returned)) {
+      throw new Error(
+        '`loadHandles()` loads an entry per item of a list in another entry, not of a list in an item: load the inner list with `experimental_load()`',
+      );
+    }
+    if (queryEntryStateOf(returned) || fromDataStateOf(returned)) {
+      if (queryEntryStateOf(returned)?.type === 'infinite') {
+        throw new Error(
+          '`loadHandles()` loads a query per item, not an infinite query',
+        );
+      }
+      const inner = entryFor(returned, false);
+      const list = refFor(perItem.list);
+      return same && inner === perItem.entry && list === perItem.list
+        ? same
+        : { [perItemState]: { entry: inner, list } };
+    }
+    return Object.fromEntries(
+      Object.entries(returned).map(([key, member]) => [
+        key,
+        perItemFor(
+          member as object | null,
+          { entry: member as object | null, list: perItem.list },
+          null,
+        ),
+      ]),
+    );
+  }
+
   function tree(values: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(
       Object.entries(values).map(([key, value]) => {
+        if (value === null) {
+          return [key, skipToken];
+        }
         if (
           value === skipToken ||
           entryDataRefOf(value) ||
-          typeof value !== 'object' ||
-          value === null
+          typeof value !== 'object'
         ) {
           return [key, value];
         }
@@ -193,42 +238,5 @@ export function toTanStackEntries(opts: {
     );
   }
 
-  return opts.wait.length === 0 && !hasDescriptionEntry(opts.entries, new Set())
-    ? opts.entries
-    : tree(opts.entries);
-}
-
-/**
- * Whether a load has an entry of a description, which isn't one of TanStack
- * Query yet, anywhere in it: in a group, or read by another entry
- */
-function hasDescriptionEntry(value: unknown, seen: Set<object>): boolean {
-  if (typeof value !== 'object' || value === null || seen.has(value)) {
-    return false;
-  }
-  seen.add(value);
-  const shared = queryEntryStateOf(value);
-  if (shared) {
-    return (
-      !entryStateOf(value) ||
-      shared.refs.some((ref) => hasDescriptionEntry(ref.entry, seen))
-    );
-  }
-  const fromData = fromDataStateOf(value);
-  if (fromData) {
-    return (
-      hasDescriptionEntry(fromData.entry, seen) ||
-      hasDescriptionEntry(fromData.source, seen)
-    );
-  }
-  const perItem = perItemStateOf(value);
-  if (perItem) {
-    return (
-      hasDescriptionEntry(perItem.entry, seen) ||
-      hasDescriptionEntry(perItem.list.entry, seen)
-    );
-  }
-  return isPlainObject(value)
-    ? Object.values(value).some((it) => hasDescriptionEntry(it, seen))
-    : false;
+  return tree(opts.entries);
 }

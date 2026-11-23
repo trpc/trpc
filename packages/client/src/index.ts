@@ -28,6 +28,7 @@ export {
   type experimental_InfiniteData,
   type experimental_InfiniteQueryEntry,
   type experimental_InfiniteQueryEntryOptions,
+  type experimental_ItemEntries,
   type experimental_PerItemEntry,
   type experimental_QueryEntry,
   type experimental_QueryEntryOptions,

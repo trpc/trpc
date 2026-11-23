@@ -1128,13 +1128,15 @@ describe('edges of a load', () => {
     experimental_perItem(experimental_dataOf(sparse).maybeIds, (id) =>
       prefetchEntry(trpc.author.maybe, { id }),
     );
+    // `null` skips the item's entry
+    experimental_perItem(experimental_dataOf(sparse).maybeIds, () => null);
     expect(() =>
       experimental_perItem(
         experimental_dataOf(sparse).maybeIds,
-        // @ts-expect-error the callback returns an entry, not `null`
-        () => null,
+        // @ts-expect-error the callback returns entries, not a string
+        () => 'author',
       ),
-    ).toThrow("must return a query's entry");
+    ).toThrow('must return an entry');
     // A prefetch entry can be skipped. One the load waits for can't
     prefetchEntry(trpc.author.byId, skipToken);
     prefetchInfiniteEntry(trpc.post.paged, skipToken);
@@ -1925,9 +1927,9 @@ describe('entryPerItem', () => {
       `[Error: \`experimental_perItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got [{"id":"t1"}]]`,
     );
     const { tags } = experimental_dataOf(post);
-    // @ts-expect-error only a query entry
+    // @ts-expect-error only entries
     expect(() => experimental_perItem(tags, (tag) => tag.id)).toThrow(
-      /must return a query's entry/,
+      /must return an entry/,
     );
   });
 });

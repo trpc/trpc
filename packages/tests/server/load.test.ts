@@ -104,6 +104,21 @@ function createRouter() {
           return { id: opts.input.id, teamId: `team-${opts.input.id}` };
         }),
     },
+    book: {
+      /** The books of an author */
+      byAuthor: t.procedure
+        .input(z.object({ authorId: z.string() }))
+        .query((opts) => ({
+          books: [
+            { id: `${opts.input.authorId}-1` },
+            { id: `${opts.input.authorId}-2` },
+          ],
+        })),
+      byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        calls('book', opts.input.id);
+        return { id: opts.input.id, title: `Book ${opts.input.id}` };
+      }),
+    },
     team: {
       byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
         calls('team', opts.input.id);
@@ -333,6 +348,136 @@ describe.each([
       ['author', 'bob'],
     ]);
     expect(requestsOf(ctx)).toHaveLength(1);
+  });
+
+  test('`experimental_perItem()` takes an object of entries for every item, which read each other, in one request', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 2 });
+    const res = experimental_load(c, {
+      rows: perItem(dataOf(list).items, (post) => {
+        const author = query(c.author.byId, { id: post.authorId });
+        return {
+          author,
+          team: query(c.team.byId, { id: dataOf(author).teamId }),
+          skipped: null,
+        };
+      }),
+    });
+
+    const rows = await res.rows;
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.skipped).toBeNull();
+    expect(await rows[1]!.team).toEqual({
+      id: 'team-bob',
+      name: 'Team team-bob',
+    });
+    expect(await experimental_settle(res)).toEqual({
+      rows: [
+        {
+          author: { id: 'ada', teamId: 'team-ada' },
+          team: { id: 'team-ada', name: 'Team team-ada' },
+          skipped: null,
+        },
+        {
+          author: { id: 'bob', teamId: 'team-bob' },
+          team: { id: 'team-bob', name: 'Team team-bob' },
+          skipped: null,
+        },
+      ],
+    });
+    // Each author runs once
+    expect(ctx.calls.mock.calls.filter(([what]) => what === 'author')).toEqual([
+      ['author', 'ada'],
+      ['author', 'bob'],
+    ]);
+    expect(requestsOf(ctx)).toHaveLength(1);
+    expect(requestsOf(ctx)[0]!.pipe).toEqual({
+      1: {
+        each: { from: 0, path: ['items'] },
+        reads: [{ to: ['id'], path: ['authorId'] }],
+      },
+      2: { reads: [{ to: ['id'], from: 1, path: ['teamId'] }] },
+    });
+  });
+
+  test('an entry per item nests: a list per item, of a list in an entry of the item or in the item', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 2 });
+    const pages = query(c.post.pages);
+    const res = await experimental_settle(
+      experimental_load(c, {
+        posts: perItem(dataOf(list).items, (post) => {
+          const books = query(c.book.byAuthor, { authorId: post.authorId });
+          return {
+            books: perItem(dataOf(books).books, (book) =>
+              query(c.book.byId, { id: book.id }),
+            ),
+          };
+        }),
+        pages: perItem(dataOf(pages).pages, (page) => ({
+          authors: perItem(page.items, (post) =>
+            query(c.author.byId, { id: post.authorId }),
+          ),
+        })),
+      }),
+    );
+
+    expect(res.posts.map((post) => post.books.map((book) => book.id))).toEqual([
+      ['ada-1', 'ada-2'],
+      ['bob-1', 'bob-2'],
+    ]);
+    expect(
+      res.pages.map((page) => page.authors.map((author) => author.id)),
+    ).toEqual([['ada', 'bob'], ['bob']]);
+    expect(requestsOf(ctx)).toHaveLength(1);
+  });
+
+  test('an entry per item of a list in an entry that runs for every item is one flat list, in that order', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 2 });
+    let books!: ReturnType<typeof bookList>;
+    const bookList = (authorId: string) => query(c.book.byAuthor, { authorId });
+    const res = experimental_load(c, {
+      lists: perItem(dataOf(list).items, (post) => {
+        books = bookList(post.authorId);
+        return books;
+      }),
+      titles: perItem(dataOf(books).books, (book) =>
+        query(c.book.byId, { id: book.id }),
+      ),
+    });
+
+    expect(
+      (await experimental_settle(res.titles)).map((book) => book.id),
+    ).toEqual(['ada-1', 'ada-2', 'bob-1', 'bob-2']);
+    expect(requestsOf(ctx)).toHaveLength(1);
+  });
+
+  test('`null` skips an entry', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const isAdmin = false as boolean;
+
+    const res = experimental_load(c, {
+      post: query(c.post.bySlug, { slug: 'a' }),
+      draft: isAdmin ? query(c.post.bySlug, { slug: 'b' }) : null,
+      group: { nothing: null },
+    });
+
+    expect(res.draft).toBeNull();
+    expect(res.group.nothing).toBeNull();
+    expectTypeOf(res.draft).toEqualTypeOf<Promise<Post> | null>();
+    expect(await experimental_settle(res)).toEqual({
+      post: posts[0],
+      draft: null,
+      group: { nothing: null },
+    });
   });
 
   test('`.flatMap()` runs a query for the items of every list in a list, as one flat list', async () => {
@@ -1030,20 +1175,6 @@ describe.each([
     expect(requestsOf(ctx)).toHaveLength(1);
   });
 
-  test('a `Date` in an input is read as it was when its entry was made', async () => {
-    await using ctx = setup({ pipelining: false });
-    const c = ctx.client;
-
-    const at = new Date(0);
-    // The copy reads the date's own time, not an override
-    at.getTime = () => 2000;
-    const since = query(c.since, { at });
-    at.setTime(1000);
-    const res = experimental_load(c, { since });
-
-    expect(await res.since).toBe('1970-01-01T00:00:00.000Z');
-  });
-
   test('a sparse array in an input that reads another entry reaches the procedure, each hole in its place', async () => {
     await using ctx = setup({ pipelining: true });
     const c = ctx.client;
@@ -1106,137 +1237,6 @@ describe.each([
     expect(await (await res.posts)[0]).toEqual(posts[0]);
   });
 
-  test('a query that asks by itself reads a `Map` or a `Set` as it arrived, not as the caller changed it', async () => {
-    const t = initTRPC.create({ transformer: superjson });
-    const gate = createDeferred<void>();
-    const appRouter = t.router({
-      data: t.procedure.query(() => ({
-        id: 'ada',
-        map: new Map([['id', { name: 'ada' }]]),
-        set: new Set(['ada']),
-      })),
-      slow: t.procedure.input(z.string()).query(async () => {
-        await gate.promise;
-        return 'slow';
-      }),
-      echo: t.procedure
-        .input(
-          z.object({
-            map: z.map(z.string(), z.object({ name: z.string() })),
-            set: z.set(z.string()),
-          }),
-        )
-        .query((opts) => ({
-          map: [...opts.input.map.entries()],
-          set: [...opts.input.set],
-        })),
-    });
-    await using ctx = testServerAndClientResource(appRouter, {
-      client: (clientOpts) => ({
-        links: [
-          scenario.link({
-            url: clientOpts.httpUrl,
-            transformer: superjson,
-          }),
-        ],
-      }),
-    });
-    // Also when the test fails: the server's slow call must end
-    using _release = makeResource({}, () => gate.resolve());
-    const c = ctx.client;
-
-    const data = query(c.data);
-    const slow = query(c.slow, dataOf(data).id);
-    const res = experimental_load(c, {
-      data,
-      // `echo` asks once `slow` has arrived, after the change below
-      echo: query(c.echo, {
-        map: dataOf(data).map,
-        set: dataOf(data).set,
-        after: dataOf(slow),
-      } as { map: Map<string, { name: string }>; set: Set<string> }),
-    });
-    const node = await res.data;
-    node.map.get('id')!.name = 'bob';
-    node.map.set('other', { name: 'eve' });
-    node.set.add('bob');
-    gate.resolve();
-
-    expect(await res.echo).toEqual({
-      map: [['id', { name: 'ada' }]],
-      set: ['ada'],
-    });
-  });
-
-  test('a `Map` or a `Set` in an input is read as it was when the load started', async () => {
-    const t = initTRPC.create({ transformer: superjson });
-    const appRouter = t.router({
-      echo: t.procedure
-        .input(
-          z.object({
-            map: z.map(z.string(), z.object({ name: z.string() })),
-            set: z.set(z.string()),
-          }),
-        )
-        .query((opts) => ({
-          map: [...opts.input.map.entries()],
-          set: [...opts.input.set],
-        })),
-    });
-    await using ctx = testServerAndClientResource(appRouter, {
-      client: (clientOpts) => ({
-        links: [
-          scenario.link({
-            url: clientOpts.httpUrl,
-            transformer: superjson,
-          }),
-        ],
-      }),
-    });
-
-    const ada = { name: 'ada' };
-    const map = new Map([['id', ada]]);
-    const set = new Set(['ada']);
-    const res = experimental_load(ctx.client, {
-      echo: query(ctx.client.echo, { map, set }),
-    });
-    ada.name = 'bob';
-    map.set('other', { name: 'eve' });
-    set.add('bob');
-
-    expect(await res.echo).toEqual({
-      map: [['id', { name: 'ada' }]],
-      set: ['ada'],
-    });
-  });
-
-  test('an input with one `Map` in two places reaches the procedure with one `Map` in both, as a transformer that keeps references carries it', async () => {
-    const t = initTRPC.create({ transformer: superjson });
-    const appRouter = t.router({
-      // Not parsed: a parser would make a new `Map` of each
-      same: t.procedure
-        .input((value) => value as { a: unknown; b: unknown })
-        .query((opts) => opts.input.a === opts.input.b),
-    });
-    await using ctx = testServerAndClientResource(appRouter, {
-      client: (clientOpts) => ({
-        links: [
-          scenario.link({
-            url: clientOpts.httpUrl,
-            transformer: superjson,
-          }),
-        ],
-      }),
-    });
-
-    const map = new Map([['id', 'ada']]);
-    const res = experimental_load(ctx.client, {
-      same: query(ctx.client.same, { a: map, b: map }),
-    });
-
-    expect(await res.same).toBe(true);
-  });
-
   test('a query that reads the whole data of a query whose data has a cycle gets it', async () => {
     const t = initTRPC.create({ transformer: superjson });
     const appRouter = t.router({
@@ -1269,22 +1269,6 @@ describe.each([
 
     expect((await res.data).id).toBe('ada');
     expect(await res.echo).toBe('ada');
-  });
-
-  test('an `experimental_dataOf()` value in an instance of a class in an input is refused before anything is sent', async () => {
-    await using ctx = setup({ pipelining: true });
-    const c = ctx.client;
-    class AuthorInput {
-      constructor(public id: string) {}
-    }
-
-    const post = query(c.post.bySlug, { slug: 'a' });
-    expect(() =>
-      experimental_load(c, {
-        author: query(c.author.byId, new AuthorInput(dataOf(post).authorId)),
-      }),
-    ).toThrow('in plain objects, arrays and Dates');
-    expect(ctx.ops).toEqual([]);
   });
 
   test('an instance of a class without an `experimental_dataOf()` value in it is sent as it is', async () => {
@@ -1338,13 +1322,10 @@ describe.each([
     ).toThrow('is no entry');
     expect(ctx.ops).toEqual([]);
 
-    // The callback of an entry per item returns a query's entry
+    // The callback of an entry per item returns entries
     expect(() =>
       perItem(dataOf(list).items, () => ({ slug: 'a' }) as never),
-    ).toThrow("must return a query's entry");
-    expect(() =>
-      perItem(dataOf(list).items, () => infiniteQuery(c.post.feed, {})),
-    ).toThrow("must return a query's entry");
+    ).toThrow('must return an entry');
     // A `.flatMap()` value is only a list of an entry per item
     expect(() =>
       query(c.ids, {

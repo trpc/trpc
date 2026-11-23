@@ -240,6 +240,51 @@ describe('a description of queries', () => {
     ).toEqual({ id: 'u2', teamId: 'team-u2' });
   });
 
+  test('an entry per item that returns an object loads as a group of entries per item, and `null` skips', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const posts = experimental_query(trpc.post.list, {});
+    const isAdmin = false as boolean;
+
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      rows: experimental_perItem(experimental_dataOf(posts).items, (post) => ({
+        author: experimental_query(trpc.author.byId, { id: post.authorId }),
+        none: null,
+      })),
+      draft: isAdmin
+        ? experimental_query(trpc.post.bySlug, { slug: 'd' })
+        : null,
+    });
+
+    expect(handles.draft).toBeUndefined();
+    expect(handles.rows.none).toBeUndefined();
+    const author = experimental_handleOfItem(handles.rows.author, {
+      slug: 'p0',
+      authorId: 'u1',
+    });
+    expect(author.input).toEqual({ id: 'u1' });
+  });
+
+  test('an entry per item of a list in an item loads with the client only', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const posts = experimental_query(trpc.post.list, {});
+
+    await expect(
+      loadHandles(trpc, {
+        posts,
+        rows: experimental_perItem(experimental_dataOf(posts).items, () => ({
+          authors: experimental_perItem(
+            experimental_dataOf(posts).items,
+            (post) =>
+              experimental_query(trpc.author.byId, { id: post.authorId }),
+          ),
+        })),
+      }),
+    ).rejects.toThrow(/not of a list in an item/);
+  });
+
   test('an infinite query of a description is an infinite entry, with its `getNextPageParam`', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
