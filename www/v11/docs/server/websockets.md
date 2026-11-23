@@ -382,4 +382,4 @@ See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org
 
 ### `{ id: null, type: 'reconnect' }`
 
-Tells clients to reconnect before shutting down the server. Invoked by `wssHandler.broadcastReconnectNotification()`.
+Tells clients to reconnect before shutting down the server. Invoked by `wssHandler.broadcastReconnectNotification()` or `broadcastReconnectNotification(wss)` from `@trpc/server/adapters/ws`.

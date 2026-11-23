@@ -301,36 +301,25 @@ You can now subscribe to the `randomNumber` topic and should receive a random nu
 
 ### Telling clients to reconnect
 
-tRPC can ask every connected client to reconnect. This is useful before shutting a server down, because clients reconnect and resume their subscriptions instead of losing them.
+Before you shut the server down, `broadcastReconnectNotification` tells every connected client to reconnect, so clients resume their subscriptions on the next server instead of losing them. Pass it `server.websocketServer`, which `@fastify/websocket` adds, and the same `experimental_encoder` as the plugin if you set one:
 
-The plugin decorates the Fastify instance with `broadcastReconnectNotification`. Fastify encapsulates decorations, so register the plugin with [`fastify-plugin`](https://github.com/fastify/fastify-plugin) to reach it from your root instance:
-
-```ts title='server.ts'
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: server.ts
 import ws from '@fastify/websocket';
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
-import fp from 'fastify-plugin';
-import { createContext } from './context';
-import { appRouter } from './router';
-
 const server = fastify();
-
 server.register(ws);
-server.register(fp(fastifyTRPCPlugin), {
-  prefix: '/trpc',
-  useWSS: true,
-  trpcOptions: { router: appRouter, createContext },
+// ---cut---
+import { broadcastReconnectNotification } from '@trpc/server/adapters/ws';
+
+process.on('SIGTERM', async () => {
+  broadcastReconnectNotification(server.websocketServer);
+  await server.close();
 });
-
-// Tell everyone to reconnect before the server goes away.
-server.broadcastReconnectNotification();
-
-await server.close();
 ```
 
-> ⚠️ Without `fastify-plugin`, the decoration belongs to the plugin's encapsulated scope and is not visible on your root instance.
-
-The `broadcastReconnectNotification` returned by [`applyWSSHandler`](../websockets.md) sends the same payload, so clients behave identically for a standalone server and a Fastify one.
+It sends to every open WebSocket on the server, including routes that tRPC doesn't serve.
 
 ## Fastify plugin options
 
