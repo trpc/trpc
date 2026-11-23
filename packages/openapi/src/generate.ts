@@ -491,7 +491,9 @@ function convertUnionType(
     schemas.push({ type: 'null' });
   }
 
-  const distinctSchemas = dedupeSchemas(schemas, ctx.schemas);
+  const distinctSchemas = dropSubsumedSchemas(
+    dedupeSchemas(schemas, ctx.schemas),
+  );
   if (distinctSchemas.length === 0) {
     return {};
   }
@@ -518,6 +520,20 @@ function convertUnionType(
   }
 
   return { oneOf: distinctSchemas };
+}
+
+/**
+ * A bare `{ type }` member already accepts every value of a sibling with the
+ * same `type` and extra keywords (`Date | string`, `'a' | (string & {})`).
+ * `oneOf` fails when more than one member matches, so drop those siblings.
+ */
+function dropSubsumedSchemas(schemas: SchemaObject[]): SchemaObject[] {
+  const bareTypes = new Set(
+    schemas.filter(isSimpleTypeSchema).map((s) => s.type),
+  );
+  return schemas.filter(
+    (s) => isSimpleTypeSchema(s) || !bareTypes.has(s.type),
+  );
 }
 
 function dedupeSchemas(
