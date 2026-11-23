@@ -57,6 +57,7 @@ A collection of resources on tRPC.
 | viteRPC - Monorepo template powered by Vite (Vite, tRPC, Tailwind CSS)                              | https://web.archive.org/web/20241114210459/https://github.com/mnik01/viteRPC                           |
 | Start UI [web] - Opinionated frontend starter (tRPC, Prisma, Next.js, Chakra UI)                    | https://github.com/bearstudio/start-ui-web                  |
 | Nx Plugin for AWS - Scaffold a project using tRPC with Nx, and deploy to AWS with CDK or Terraform  | https://awslabs.github.io/nx-plugin-for-aws/en/guides/trpc/ |
+| create-fate - Scaffold full-stack fate apps, with tRPC as one backend option                        | https://fate.technology/guide/getting-started               |
 
 ### Library adapters
 
@@ -82,6 +83,7 @@ A collection of resources on tRPC.
 | NestJS-tRPC - An opinionated approach to building end-to-end typesafe APIs with tRPC within NestJS. | https://www.nestjs-trpc.io/                                           |
 | vscode-trpc - tRPC adapter for VS Code extension development                                        | https://github.com/wszgrcy/vscode-toolkit                             |
 | HyperFetch - Call tRPC procedures as typed requests with caching, React hooks and subscriptions     | https://hyperfetch.bettertyped.com/docs/integrations/adapter-trpc/overview/ |
+| fate - Relay-inspired data client with normalized caching, composable views, and tRPC integration   | https://fate.technology/integrations/server#trpc-fate-setup           |
 
 ## 🍀 Starting points, example projects, etc
 
