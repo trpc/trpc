@@ -531,9 +531,7 @@ function dropSubsumedSchemas(schemas: SchemaObject[]): SchemaObject[] {
   const bareTypes = new Set(
     schemas.filter(isSimpleTypeSchema).map((s) => s.type),
   );
-  return schemas.filter(
-    (s) => isSimpleTypeSchema(s) || !bareTypes.has(s.type),
-  );
+  return schemas.filter((s) => isSimpleTypeSchema(s) || !bareTypes.has(s.type));
 }
 
 function dedupeSchemas(
