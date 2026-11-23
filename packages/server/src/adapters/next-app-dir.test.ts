@@ -1,4 +1,5 @@
 import { RedirectType } from 'next/navigation';
+import { z } from 'zod';
 import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
 import { redirect, TRPCRedirectError } from './next-app-dir/redirect';
@@ -200,4 +201,78 @@ test('form data cannot add properties to String.prototype', async () => {
   const polluted = ('' as any).nextAppDirPolluted;
   delete (String.prototype as any).nextAppDirPolluted;
   expect(polluted).toBeUndefined();
+});
+
+describe('input only has what the validator returned', () => {
+  function setup() {
+    const t = initTRPC.create();
+    const received = vi.fn<(input: unknown) => void>();
+    const base = t.procedure.experimental_caller(nextAppDirCaller({}));
+    const schema = z.object({ displayName: z.string() });
+    return {
+      received,
+      mutation: base.input(schema).mutation((opts) => {
+        received(opts.input);
+      }),
+      query: base.input(schema).query((opts) => {
+        received(opts.input);
+      }),
+      chained: base
+        .input(z.object({ orgId: z.string() }))
+        .input(schema)
+        .mutation((opts) => {
+          received(opts.input);
+        }),
+    };
+  }
+
+  test('mutation called with an object', async () => {
+    const { mutation, received } = setup();
+
+    await (mutation as any)({ displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('mutation called with form data', async () => {
+    const { mutation, received } = setup();
+    const formData = new FormData();
+    formData.set('displayName', 'alice');
+    formData.set('role', 'admin');
+
+    await (mutation as any)(formData);
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('mutation called by useActionState with the previous state first', async () => {
+    const { mutation, received } = setup();
+
+    await (mutation as any)(null, { displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('query', async () => {
+    const { query, received } = setup();
+
+    await (query as any)({ displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('chained inputs are still merged', async () => {
+    const { chained, received } = setup();
+
+    await (chained as any)({
+      orgId: 'o1',
+      displayName: 'alice',
+      role: 'admin',
+    });
+
+    expect(received).toHaveBeenCalledWith({
+      orgId: 'o1',
+      displayName: 'alice',
+    });
+  });
 });

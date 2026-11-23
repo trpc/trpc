@@ -113,7 +113,9 @@ export function nextAppDirCaller<TContext, TMeta>(
             ctx,
             getRawInput: async () => input,
             path,
-            input,
+            // the input validators build `input` from `getRawInput()`;
+            // seeding it would merge unvalidated keys into their result
+            input: undefined,
             signal: undefined,
             batchIndex: 0,
           })
@@ -131,7 +133,9 @@ export function nextAppDirCaller<TContext, TMeta>(
             ctx,
             getRawInput: async () => input,
             path,
-            input,
+            // the input validators build `input` from `getRawInput()`;
+            // seeding it would merge unvalidated keys into their result
+            input: undefined,
             signal: undefined,
             batchIndex: 0,
           })
