@@ -31,6 +31,7 @@ export {
   type RouterBuilder as TRPCRouterBuilder,
   type RouterCallerFactory as TRPCRouterCallerFactory,
   type RootConfig as TRPCRootConfig,
+  type PathSeparator as TRPCPathSeparator,
   type AnyRootTypes as AnyTRPCRootTypes,
   type MiddlewareFunction as TRPCMiddlewareFunction,
   type MiddlewareBuilder as TRPCMiddlewareBuilder,
@@ -145,8 +146,8 @@ export {
 } from '../../unstable-core-do-not-import';
 
 /**
- * @deprecated
- * Use `Awaited<ReturnType<typeof myFunction>>` instead
+ * The type a function's promise resolves to.
+ * @deprecated Use `Awaited<ReturnType<typeof myFunction>>` instead.
  */
 export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
   Awaited<ReturnType<TFunction>>;

@@ -142,3 +142,38 @@ test('content-type header should be matched case-insensitively', async () => {
 
   expect(seqRes.status).toBe(415);
 });
+
+test('content-type header set by the caller in any case replaces the default', async () => {
+  const mockFetch = getMockFetch();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure
+      .input(z.string())
+      .mutation(({ input }) => `Hello ${input}`),
+  });
+
+  await using ctx = testServerAndClientResource(router, {
+    client(opts) {
+      return {
+        links: [
+          httpLink({
+            url: opts.httpUrl,
+            fetch: mockFetch,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }),
+        ],
+      };
+    },
+  });
+
+  const result = await ctx.client.hello.mutate('test');
+  expect(result).toBe('Hello test');
+
+  const [, options] = mockFetch.mock.calls[0]!;
+  expect(options!.headers).toEqual({
+    'Content-Type': 'application/json',
+  });
+});

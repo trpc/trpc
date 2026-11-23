@@ -7,6 +7,7 @@ type PackageJson = {
   name: string;
   version: string;
   private?: boolean;
+  keywords?: string[];
   main?: string;
   module?: string;
   types?: string;
@@ -65,6 +66,18 @@ for (const dir of fs.readdirSync(path.join(root, 'packages'))) {
   packages.set(pkg.name, { pkg, tarball: path.join(tarballDir, tarball) });
 
   const files = new Set(listFiles(pkgRoot));
+  // `prepack` writes the agent skills from the docs (https://trpc.io/docs/skills)
+  if (pkg.keywords?.includes('tanstack-intent')) {
+    if (![...files].some((file) => /^skills\/[^/]+\/SKILL\.md$/.test(file)))
+      failures.push(`${pkg.name}: no skills/*/SKILL.md in the tarball`);
+    const skillsDir = path.join(pkgDir, 'skills');
+    for (const file of fs.existsSync(skillsDir) ? listFiles(skillsDir) : []) {
+      if (!files.has(`skills/${file}`))
+        failures.push(
+          `${pkg.name}: skill file "skills/${file}" is not in the tarball`,
+        );
+    }
+  }
   const bins =
     typeof pkg.bin === 'string' ? [pkg.bin] : Object.values(pkg.bin ?? {});
   const targets = new Set([
@@ -118,7 +131,7 @@ function getPacked(name: string) {
 }
 
 const OPTIONAL_PEERS = [
-  '@hey-api/openapi-ts@^0.99.0',
+  '@hey-api/openapi-ts@0.0.0-next-20260930190945',
   '@tanstack/react-query@^5.80.3',
   '@types/aws-lambda@^8',
   '@types/express@^5',
@@ -165,13 +178,13 @@ export type T4 = Expect<Equal<IsAny<ReturnType<WS['request']>>, false>>;
 export type T5 = Expect<Equal<IsAny<NonNullable<WS['connection']>['ws']>, false>>;
 export type T6 = Expect<Equal<NonNullable<WS['connection']>['id'], number>>;
 `;
-const FULL_ASSERTIONS = `
+const OPENAPI_ASSERTIONS = `
 import { configureTRPCHeyApiClient, createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
 import type { HeyAPIResolvers } from '@trpc/openapi/heyapi';
-type IsAnyFull<T> = 0 extends 1 & T ? true : false;
-export const heyApiConfigIsTyped: IsAnyFull<ReturnType<typeof createTRPCHeyApiClientConfig>> = false;
-export const heyApiResolversAreTyped: IsAnyFull<HeyAPIResolvers> = false;
-export const heyApiClientIsTyped: IsAnyFull<Parameters<typeof configureTRPCHeyApiClient>[0]> = false;
+type IsAnyOpenAPI<T> = 0 extends 1 & T ? true : false;
+export const heyApiConfigIsTyped: IsAnyOpenAPI<ReturnType<typeof createTRPCHeyApiClientConfig>> = false;
+export const heyApiResolversAreTyped: IsAnyOpenAPI<HeyAPIResolvers> = false;
+export const heyApiClientIsTyped: IsAnyOpenAPI<Parameters<typeof configureTRPCHeyApiClient>[0]> = false;
 `;
 
 const scenarios = [
@@ -180,17 +193,37 @@ const scenarios = [
     packages: ['@trpc/server', '@trpc/client'],
     extraDeps: [] as string[],
     typescript: ['5.7.2', '6', '7'],
+    legacyPeerDeps: false,
     skipEntry: (name: string, subpath: string) =>
       name === '@trpc/server' && ADAPTERS_WITH_OPTIONAL_PEERS.includes(subpath),
     assertions: ASSERTIONS,
   },
   {
     name: 'full',
-    packages: [...packages.keys()].filter((name) => name !== '@trpc/upgrade'),
-    extraDeps: OPTIONAL_PEERS,
+    // @trpc/openapi needs TypeScript 7.1, so it has a scenario of its own
+    packages: [...packages.keys()].filter(
+      (name) => name !== '@trpc/upgrade' && name !== '@trpc/openapi',
+    ),
+    extraDeps: OPTIONAL_PEERS.filter(
+      (dep) => !dep.startsWith('@hey-api/openapi-ts@'),
+    ),
     typescript: ['5.8.2', '6'],
+    legacyPeerDeps: false,
     skipEntry: () => false,
-    assertions: ASSERTIONS + FULL_ASSERTIONS,
+    assertions: ASSERTIONS,
+  },
+  {
+    name: 'openapi',
+    packages: ['@trpc/server', '@trpc/client', '@trpc/openapi'],
+    extraDeps: OPTIONAL_PEERS.filter(
+      (dep) => dep.startsWith('@hey-api/openapi-ts@') || dep.startsWith('zod@'),
+    ),
+    typescript: ['7.1.0-beta'],
+    // @trpc/server's typescript peer (`>=5.7.2`) doesn't match a prerelease
+    legacyPeerDeps: true,
+    skipEntry: (name: string, subpath: string) =>
+      name === '@trpc/server' && ADAPTERS_WITH_OPTIONAL_PEERS.includes(subpath),
+    assertions: ASSERTIONS + OPENAPI_ASSERTIONS,
   },
 ];
 
@@ -225,6 +258,7 @@ for (const scenario of scenarios) {
         '--no-fund',
         '--ignore-scripts',
         '--loglevel=error',
+        ...(scenario.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
         ...tarballs,
         ...scenario.extraDeps,
         '@types/node@^24',

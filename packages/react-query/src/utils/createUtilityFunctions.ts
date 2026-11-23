@@ -8,13 +8,12 @@ import {
 import type { TRPCClient, TRPCClientError } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import/clientish/inferrable';
 import { getClientArgs } from '../internals/getClientArgs';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
 import {
-  buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
+  fetchQueryData,
 } from '../internals/trpcResult';
 import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
@@ -97,16 +96,12 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
               : { signal: null }),
           },
         };
-
-        const result = await untypedClient.query(
-          ...getClientArgs(queryKey, actualOpts),
-        );
-
-        if (isAsyncIterable(result)) {
-          return buildQueryFromAsyncIterable(result, queryClient, queryKey);
-        }
-
-        return result;
+        return fetchQueryData({
+          context: queryFnContext,
+          fallback: { client: queryClient, queryKey },
+          request: () =>
+            untypedClient.query(...getClientArgs(queryKey, actualOpts)),
+        });
       };
 
       return Object.assign(
@@ -128,7 +123,13 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.fetchQuery({
         ...opts,
         queryKey,
-        queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+        queryFn: (queryFnContext) =>
+          fetchQueryData({
+            context: queryFnContext,
+            fallback: { client: queryClient, queryKey },
+            request: () =>
+              untypedClient.query(...getClientArgs(queryKey, opts)),
+          }),
       });
     },
 
@@ -152,7 +153,13 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.prefetchQuery({
         ...opts,
         queryKey,
-        queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+        queryFn: (queryFnContext) =>
+          fetchQueryData({
+            context: queryFnContext,
+            fallback: { client: queryClient, queryKey },
+            request: () =>
+              untypedClient.query(...getClientArgs(queryKey, opts)),
+          }),
       });
     },
 
@@ -176,7 +183,13 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.ensureQueryData({
         ...opts,
         queryKey,
-        queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+        queryFn: (queryFnContext) =>
+          fetchQueryData({
+            context: queryFnContext,
+            fallback: { client: queryClient, queryKey },
+            request: () =>
+              untypedClient.query(...getClientArgs(queryKey, opts)),
+          }),
       });
     },
 
@@ -222,7 +235,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.setQueryData(queryKey, updater, options);
     },
 
-    // eslint-disable-next-line max-params
+    // oxlint-disable-next-line max-params
     setQueriesData: (queryKey, filters, updater, options) => {
       return queryClient.setQueriesData(
         {

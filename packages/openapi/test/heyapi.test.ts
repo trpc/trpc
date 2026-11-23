@@ -364,7 +364,7 @@ describe('createTRPCHeyApiClientConfig', () => {
       {
         label: 'undefined',
         value: undefined,
-        expectedParsed: '{"json":null,"meta":{"values":["undefined"]}}',
+        expectedParsed: '{"json":null,"meta":{"values":["undefined"],"v":1}}',
       },
       { label: 'null', value: null, expectedParsed: '{"json":null}' },
       {

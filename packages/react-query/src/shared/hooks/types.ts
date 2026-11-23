@@ -33,11 +33,17 @@ import type { JSX, ReactNode } from 'react';
 import type { TRPCContextProps } from '../../internals/context';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
 
+/**
+ * A page of data and the cursor that fetched it.
+ */
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
   data: TData;
 };
 
+/**
+ * tRPC options for a single hook call, passed as `trpc`.
+ */
 export interface TRPCReactRequestOptions
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
   extends Omit<TRPCRequestOptions, 'signal'> {
@@ -51,6 +57,9 @@ export interface TRPCReactRequestOptions
   abortOnUnmount?: boolean;
 }
 
+/**
+ * Adds the `trpc` option to TanStack Query options.
+ */
 export interface TRPCUseQueryBaseOptions {
   /**
    * tRPC-related options
@@ -58,6 +67,10 @@ export interface TRPCUseQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
+/**
+ * Options for `useQuery`: TanStack Query options without `queryKey`, plus `trpc`.
+ * @see https://trpc.io/docs/client/react/useQuery
+ */
 export interface UseTRPCQueryOptions<
   TOutput,
   TData,
@@ -71,6 +84,10 @@ export interface UseTRPCQueryOptions<
     >,
     TRPCUseQueryBaseOptions {}
 
+/**
+ * Options for `useSuspenseQuery`.
+ * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+ */
 export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
   extends
     DistributiveOmit<
@@ -79,6 +96,10 @@ export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
+/**
+ * Options for `usePrefetchQuery`.
+ * @see https://trpc.io/docs/client/react/suspense#component-level-prefetching-with-useprefetchquery
+ */
 export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
   extends
     DistributiveOmit<
@@ -100,6 +121,9 @@ export interface DefinedUseTRPCQueryOptions<
   initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
+/**
+ * TanStack Query options with a tRPC query key.
+ */
 export interface TRPCQueryOptions<TData, TError>
   extends
     DistributiveOmit<QueryOptions<TData, TError, TData, any>, 'queryKey'>,
@@ -107,10 +131,17 @@ export interface TRPCQueryOptions<TData, TError>
   queryKey: TRPCQueryKey;
 }
 
+/**
+ * The type of the `cursor` field in a procedure's input.
+ */
 export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
+/**
+ * Options for `useInfiniteQuery`. Use `initialCursor` instead of `initialPageParam`.
+ * @see https://trpc.io/docs/client/react/useInfiniteQuery
+ */
 export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
   extends
     DistributiveOmit<
@@ -124,9 +155,16 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
       'queryKey' | 'initialPageParam'
     >,
     TRPCUseQueryBaseOptions {
+  /**
+   * The cursor for the first page.
+   */
   initialCursor?: ExtractCursorType<TInput>;
 }
 
+/**
+ * Options for `usePrefetchInfiniteQuery`.
+ * @see https://trpc.io/docs/client/react/suspense#component-level-prefetching-with-useprefetchinfinitequery
+ */
 export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
     FetchInfiniteQueryOptions<
@@ -139,9 +177,16 @@ export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
     'queryKey' | 'initialPageParam'
   > &
     TRPCUseQueryBaseOptions & {
+      /**
+       * The cursor for the first page.
+       */
       initialCursor?: ExtractCursorType<TInput>;
     };
 
+/**
+ * Options for `useSuspenseInfiniteQuery`.
+ * @see https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
+ */
 export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
   extends
     DistributiveOmit<
@@ -155,9 +200,16 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
       'queryKey' | 'initialPageParam'
     >,
     TRPCUseQueryBaseOptions {
+  /**
+   * The cursor for the first page.
+   */
   initialCursor?: ExtractCursorType<TInput>;
 }
 
+/**
+ * Options for `useMutation`.
+ * @see https://trpc.io/docs/client/react/useMutation
+ */
 export interface UseTRPCMutationOptions<
   TInput,
   TError,
@@ -168,6 +220,10 @@ export interface UseTRPCMutationOptions<
     UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
+/**
+ * Options for `useSubscription`.
+ * @see https://trpc.io/docs/client/react/useSubscription#options
+ */
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   /**
    * @deprecated
@@ -197,6 +253,10 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   trpc?: Pick<TRPCRequestOptions, 'context'>;
 }
 
+/**
+ * Fields shared by every `useSubscription` result.
+ * @see https://trpc.io/docs/client/react/useSubscription#return-type
+ */
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'idle' | 'connecting' | 'pending' | 'error';
   data: undefined | TOutput;
@@ -207,6 +267,9 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   reset: () => void;
 }
 
+/**
+ * `useSubscription` result while the subscription is not running.
+ */
 export interface TRPCSubscriptionIdleResult<
   TOutput,
 > extends TRPCSubscriptionBaseResult<TOutput, null> {
@@ -215,6 +278,9 @@ export interface TRPCSubscriptionIdleResult<
   error: null;
 }
 
+/**
+ * `useSubscription` result while connecting or reconnecting.
+ */
 export interface TRPCSubscriptionConnectingResult<
   TOutput,
   TError,
@@ -224,6 +290,10 @@ export interface TRPCSubscriptionConnectingResult<
   error: TError | null;
 }
 
+/**
+ * `useSubscription` result while the subscription is active. It stays
+ * `pending` after data arrives, so `data` may be set.
+ */
 export interface TRPCSubscriptionPendingResult<
   TOutput,
 > extends TRPCSubscriptionBaseResult<TOutput, undefined> {
@@ -232,6 +302,9 @@ export interface TRPCSubscriptionPendingResult<
   error: null;
 }
 
+/**
+ * `useSubscription` result after an error that stopped the subscription.
+ */
 export interface TRPCSubscriptionErrorResult<
   TOutput,
   TError,
@@ -241,12 +314,19 @@ export interface TRPCSubscriptionErrorResult<
   error: TError;
 }
 
+/**
+ * The result of `useSubscription`. Check `status` to narrow it.
+ * @see https://trpc.io/docs/client/react/useSubscription#return-type
+ */
 export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>
   | TRPCSubscriptionErrorResult<TOutput, TError>
   | TRPCSubscriptionPendingResult<TOutput>;
 
+/**
+ * Props for the `Provider` from `createTRPCReact`.
+ */
 export interface TRPCProviderProps<
   TRouter extends AnyRouter,
   TSSRContext,
@@ -255,10 +335,17 @@ export interface TRPCProviderProps<
   client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
+/**
+ * The `Provider` component from `createTRPCReact`.
+ * @see https://trpc.io/docs/client/react/setup#4-add-trpc-providers
+ */
 export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
   props: TRPCProviderProps<TRouter, TSSRContext>,
 ) => JSX.Element;
 
+/**
+ * A function that creates a tRPC client.
+ */
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCUntypedClient<TRouter>;
@@ -329,8 +416,14 @@ export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
   TRPCHookResult & UseMutationResult<TData, TError, TVariables, TContext>;
 
+/**
+ * Extra fields that tRPC adds to every hook result.
+ */
 export interface TRPCHookResult {
   trpc: {
+    /**
+     * The dot-separated procedure path, such as `post.byId`.
+     */
     path: string;
   };
 }

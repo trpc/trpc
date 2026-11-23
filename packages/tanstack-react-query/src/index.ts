@@ -24,3 +24,5 @@ export type {
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/useSubscription';
 export type * from './internals/types';
+export { unstable_createHydrateClient } from './internals/HydrateClient';
+export type { unstable_HydrateClientProps } from './internals/HydrateClient';

@@ -7,7 +7,7 @@ import type {
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { createTRPCClient } from '../createTRPCClient';
 import { TRPCClientError } from '../TRPCClientError';
-import { experimental_localLink as localLink } from './localLink';
+import { localLink } from './localLink';
 
 class RateLimitError extends Error {
   constructor(public readonly retryAfterMs: number) {

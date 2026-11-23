@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* oxlint-disable typescript/no-non-null-assertion */
 import {
   isObservable,
   observableToAsyncIterable,
@@ -23,6 +23,7 @@ import {
 } from '../utils';
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
+import { urlPathToProcedurePath } from './pathSeparator';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -52,7 +53,13 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
+  | 'GET'
+  | 'POST'
+  | 'HEAD'
+  | 'OPTIONS'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -123,7 +130,11 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | null;
-  errors: TRPCError[];
+  /**
+   * errors aligned with `untransformedJSON` by index; entries are `undefined`
+   * for successful responses
+   */
+  errors: (TRPCError | undefined)[];
   headers: Headers;
 }) {
   const {
@@ -135,7 +146,13 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     headers,
   } = initOpts;
 
-  let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
+  const definedErrors = errors.filter((error): error is TRPCError =>
+    Boolean(error),
+  );
+
+  let status = untransformedJSON
+    ? getHTTPStatusCode(untransformedJSON, errors)
+    : 200;
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -150,7 +167,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
       info,
       paths: info?.calls.map((call) => call.path),
       data,
-      errors,
+      errors: definedErrors,
       eagerGeneration,
       type:
         info?.calls.find((call) => call.procedure?._def.type)?.procedure?._def
@@ -160,7 +177,12 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   if (meta.headers) {
     if (meta.headers instanceof Headers) {
       for (const [key, value] of meta.headers.entries()) {
-        headers.append(key, value);
+        if (key === 'content-type') {
+          // a response has one content type, so replace the default
+          headers.set(key, value);
+        } else {
+          headers.append(key, value);
+        }
       }
     } else {
       /**
@@ -168,6 +190,9 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
        */
       for (const [key, value] of Object.entries(meta.headers)) {
         if (Array.isArray(value)) {
+          if (key.toLowerCase() === 'content-type' && value.length > 0) {
+            headers.delete(key);
+          }
           for (const v of value) {
             headers.append(key, v);
           }
@@ -252,6 +277,10 @@ function isDataStream(v: unknown) {
 
 type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 
+/**
+ * Handles a Fetch API `Request` for a router and returns its `Response`.
+ * Every adapter uses it; call it to write your own.
+ */
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -280,7 +309,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         undefined,
         await getRequestInfo({
           req,
-          path: decodePath(opts.path),
+          path: urlPathToProcedurePath(
+            decodePath(opts.path),
+            config.pathSeparator,
+          ),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
@@ -391,6 +423,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
 
         if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
+          const accepted = opts.allowMethodOverride
+            ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
+            : TYPE_ACCEPTED_METHOD_MAP;
+          // a 405 must list the methods the procedure accepts (RFC 9110 15.5.6)
+          headers.set('allow', accepted[proc._def.type].join(', '));
           throw new TRPCError({
             code: 'METHOD_NOT_SUPPORTED',
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
@@ -778,9 +815,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
 
-    const errors = results
-      .map(([error]) => error)
-      .filter(Boolean) as TRPCError[];
+    const errors = results.map(([error]) => error);
 
     const headResponse = initResponse({
       ctx: ctxManager.valueOrUndefined(),
@@ -814,6 +849,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type: info?.type ?? 'unknown',
     });
 
+    headers.set('content-type', 'application/json');
     const headResponse = initResponse({
       ctx,
       info,

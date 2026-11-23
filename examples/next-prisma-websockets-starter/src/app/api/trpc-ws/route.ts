@@ -10,6 +10,7 @@ import { Socket } from 'node:net';
 import { WebSocketServer } from 'ws';
 import { createContext } from '~/server/context';
 import { appRouter } from '~/server/routers/_app';
+import { isAllowedOrigin } from '~/server/wsOrigin';
 
 const handleConnection = getWSConnectionHandler({
   // Only used by `applyWSSHandler()`, not when handling a single connection
@@ -20,6 +21,9 @@ const handleConnection = getWSConnectionHandler({
 });
 
 export function GET(req: Request) {
+  if (!isAllowedOrigin(req.headers.get('origin') ?? undefined)) {
+    return new Response(null, { status: 403 });
+  }
   return upgradeWebSocket((ws) => {
     // tRPC and next-auth read the url and headers from a Node.js request
     const url = new URL(req.url);

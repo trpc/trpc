@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import type * as trpcNext from '@trpc/server/adapters/next';
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+/* oxlint-disable typescript/no-unused-vars */
+// oxlint-disable-next-line typescript/no-empty-object-type
 interface CreateContextOptions {
   // session: Session | null
 }
@@ -17,12 +15,12 @@ export async function createContextInner(_opts: CreateContextOptions) {
 export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
- * Creates context for an incoming request
+ * Creates context for an incoming request, from the route handler or a server component
  * @see https://trpc.io/docs/v11/context
  */
-export async function createContext(
-  opts: trpcNext.CreateNextContextOptions,
-): Promise<Context> {
+export async function createContext(opts: {
+  headers: Headers;
+}): Promise<Context> {
   // for API-response caching see https://trpc.io/docs/v11/caching
 
   return await createContextInner({});

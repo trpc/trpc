@@ -5,6 +5,7 @@ export default {
     ignoreDuringBuilds: true,
   },
   serverExternalPackages: ['@trpc/server'],
+  transpilePackages: ['@shared/ui'],
   webpack: (config) => {
     // This is only intended to pass CI and should be skiped in your app
     if (config.name === 'server')

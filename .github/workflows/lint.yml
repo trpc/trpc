@@ -1,12 +1,13 @@
 name: autofix.ci # for "security reasons", this has to be named autofix.ai
 permissions:
   contents: read
+# Not on pushes to `main`: every commit there passed the merge queue (see main.yml).
 on:
   pull_request:
   merge_group:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
 env:
@@ -45,5 +46,5 @@ jobs:
 
       # the merge queue can't receive autofix commits, so any fix means failure
       - name: Ensure no autofixes are needed
-        if: ${{ github.event_name == 'merge_group' && (failure() || success()) }}
+        if: ${{ github.event_name != 'pull_request' && (failure() || success()) }}
         run: git diff --exit-code
