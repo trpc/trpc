@@ -294,7 +294,8 @@ export const appRouter = router({
 An output validator describes the final value returned by a procedure. Keep a
 plugin's output schema separate from its middleware procedure, then compose it
 with the application's schema using the validator library's schema-composition
-API. Add one `.output()` validator to the final procedure.
+API. Add one `.output()` validator to the final procedure: a second `.output()`,
+or a plugin procedure that already has one, throws `Duplicate key output`.
 
 ```ts twoslash
 // @target: esnext
