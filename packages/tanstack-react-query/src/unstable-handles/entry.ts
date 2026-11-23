@@ -3,6 +3,18 @@ import { skipToken } from '@tanstack/react-query';
 import type { OperationPipeline } from '@trpc/client/unstable-internals';
 import { pipelineContext } from '@trpc/client/unstable-internals';
 import type {
+  EntryDataRef,
+  EntryInputRef,
+  QueryEntryState,
+} from '@trpc/client/unstable-internals';
+import {
+  blankInput,
+  isReplaced,
+  queryEntryState,
+  readInputRefs,
+  replaceEntryDataRefs,
+} from '@trpc/client/unstable-internals';
+import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
 } from '../internals/createOptionsProxy';
@@ -12,20 +24,7 @@ import type {
   TRPCQueryKey,
 } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
-import type { EntryDataRef, EntryInputRef } from './dataRef';
-import {
-  createEntryDataRef,
-  blankInput,
-  entryDataRefOf,
-  onlyAsList,
-  replaceEntryDataRefs,
-} from './dataRef';
-import { itemPathOf } from './list';
-import { dataPath } from './path';
 import type {
-  AnyTRPCEntry,
-  DataEntry,
-  DataOfEntry,
   EntryArgs,
   HandleType,
   PrefetchEntryArgs,
@@ -33,8 +32,6 @@ import type {
   TRPCInfiniteEntryOptions,
   TRPCInfiniteQueryEntry,
   TRPCQueryEntry,
-  experimental_TRPCEntryFromData,
-  experimental_TRPCEntryPerItem,
 } from './types';
 import { nothing } from './utils';
 
@@ -81,23 +78,6 @@ export function ownContextOf(
 ): Readonly<Record<PropertyKey, unknown>> | null {
   const context = opts?.trpc?.context;
   return context && Reflect.ownKeys(context).length > 0 ? context : null;
-}
-
-/**
- * Whether TanStack Query sets what an `experimental_dataOf()` value in an
- * entry's input goes to, so the query never reads it: a cursor that
- * `initialCursor` takes the place of, or an infinite query's direction. The
- * one rule for what an entry reads, on the client and on the server
- */
-function isReplaced(
-  opts: { type: HandleType; cursorFromOptions: boolean },
-  ref: EntryInputRef,
-) {
-  return (
-    opts.type === 'infinite' &&
-    ((ref.to[0] === 'cursor' && opts.cursorFromOptions) ||
-      ref.to[0] === 'direction')
-  );
 }
 
 /** Builds an entry's `EntryRequest`. Pure: it reads only what the entry was built with */
@@ -153,6 +133,12 @@ function planRequest(opts: {
 
 export const entryState = Symbol('trpc.handleEntry');
 export interface EntryState {
+  /** The function that built it, for messages */
+  fn: string;
+  /** The input as it was given, with its `experimental_dataOf()` values */
+  input: unknown;
+  /** The options as they were given */
+  opts: unknown;
   kind: TRPCEntryKind;
   type: HandleType;
   /** The procedure's path */
@@ -184,51 +170,12 @@ export interface EntryState {
   queryClient: QueryClient;
 }
 
-export function createEntry(state: EntryState) {
-  return { [entryState]: state };
+export function createEntry(state: EntryState, shared: QueryEntryState) {
+  return { [entryState]: state, [queryEntryState]: shared };
 }
 
 export function entryStateOf(entry: unknown): EntryState | undefined {
   return (entry as { [entryState]?: EntryState } | null)?.[entryState];
-}
-
-export const entryPerItemState = Symbol('trpc.handleEntryPerItem');
-
-/** What `experimental_entryPerItem()` returns */
-export interface EntryPerItemState {
-  /** The entry the callback returned, built with a stand-in for the item */
-  entry: object;
-  /**
-   * The list whose items it is loaded for. It is a list of lists, which are
-   * flattened, for every `null` in its path
-   */
-  list: EntryDataRef;
-}
-
-export function entryPerItemStateOf(
-  value: unknown,
-): EntryPerItemState | undefined {
-  return (value as { [entryPerItemState]?: EntryPerItemState } | null)?.[
-    entryPerItemState
-  ];
-}
-
-export const entryFromDataState = Symbol('trpc.handleEntryFromData');
-
-/** What `experimental_dataOf(entry, (data) => entry)` returns */
-export interface EntryFromDataState {
-  /** The entry the callback returned, built with a stand-in for the data */
-  entry: object;
-  /** The entry whose data it is built from, which the load doesn't wait for */
-  source: object;
-}
-
-export function entryFromDataStateOf(
-  value: unknown,
-): EntryFromDataState | undefined {
-  return (value as { [entryFromDataState]?: EntryFromDataState } | null)?.[
-    entryFromDataState
-  ];
 }
 
 export interface ProxyContext {
@@ -305,21 +252,17 @@ export function entry(opts: {
   opts: unknown;
 }) {
   const ctx = readProxy(opts.procedure, opts.fn);
-  const refs: EntryInputRef[] = [];
-  replaceEntryDataRefs(opts.input, [], (ref) => refs.push(ref));
-  if (refs.some((ref) => ref.shape === 'flat')) {
-    throw new Error(
-      `${onlyAsList}, not a value in the input of \`${opts.fn}()\`. To read a part of every item, use \`.map()\``,
-    );
-  }
   const queryOpts = opts.opts as TRPCQueryBaseOptions | undefined;
   const cursorFromOptions =
     opts.type === 'infinite' &&
     (opts.opts as { initialCursor?: unknown } | undefined)?.initialCursor !=
       null;
-  const read = refs.filter(
-    (ref) => !isReplaced({ type: opts.type, cursorFromOptions }, ref),
-  );
+  const { all: refs, read } = readInputRefs({
+    fn: opts.fn,
+    type: opts.type,
+    input: opts.input,
+    cursorFromOptions,
+  });
   const trpcOpts = (pipeline: OperationPipeline) => ({
     ...queryOpts?.trpc,
     context: { ...queryOpts?.trpc?.context, ...pipelineContext(pipeline) },
@@ -331,180 +274,56 @@ export function entry(opts: {
     );
   // Without `experimental_dataOf()` values, a bad input or option throws here, not in the load
   const built = refs.length === 0 ? options(opts.input, null) : null;
-  return createEntry({
-    type: opts.type,
-    kind: opts.kind,
-    path: ctx.path,
-    refs: read,
-    options: (optionsOpts) =>
-      optionsOpts.pipeline === null && built
-        ? built
-        : options(
-            // What the query doesn't read has no data to fill in
-            replaceEntryDataRefs(opts.input, [], (ref) =>
-              isReplaced({ type: opts.type, cursorFromOptions }, ref)
-                ? blankInput
-                : optionsOpts.dataOfRef(ref),
+  const infiniteOpts = opts.opts as
+    | { initialCursor?: unknown; getNextPageParam?: (page: any) => unknown }
+    | undefined;
+  return createEntry(
+    {
+      fn: opts.fn,
+      input: opts.input,
+      opts: opts.opts,
+      type: opts.type,
+      kind: opts.kind,
+      path: ctx.path,
+      refs: read,
+      options: (optionsOpts) =>
+        optionsOpts.pipeline === null && built
+          ? built
+          : options(
+              // What the query doesn't read has no data to fill in
+              replaceEntryDataRefs(opts.input, [], (ref) =>
+                isReplaced({ type: opts.type, cursorFromOptions }, ref)
+                  ? blankInput
+                  : optionsOpts.dataOfRef(ref),
+              ),
+              optionsOpts.pipeline,
             ),
-            optionsOpts.pipeline,
-          ),
-    request: planRequest({
+      request: planRequest({
+        type: opts.type,
+        path: ctx.path,
+        input: opts.input,
+        opts: opts.opts,
+        allRefs: refs,
+        refs: read,
+      }),
+      cursorFromOptions,
+      context: ownContextOf(queryOpts),
+      queryClient: queryClientOf(ctx),
+    },
+    {
       type: opts.type,
       path: ctx.path,
       input: opts.input,
-      opts: opts.opts,
-      allRefs: refs,
       refs: read,
-    }),
-    cursorFromOptions,
-    context: ownContextOf(queryOpts),
-    queryClient: queryClientOf(ctx),
-  });
-}
-
-/**
- * The data of another entry in the same load, to build an entry's input from.
- * Use it, or anything in it, as an input or as a value inside one.
- *
- * It holds no data when you call it: it records which part of the data you read,
- * and the load fills that in once the entry it comes from has data. So don't
- * compute with it or branch on it. To read a part of every item of an array, use
- * `.map()`: `experimental_dataOf(posts).map((post) => post.authorId)`. Its callback runs once,
- * on a stand-in for every item, and must return the item or a part of it.
- *
- * To load a query for every item, use `experimental_entryPerItem()`.
- *
- * The load waits for that data, whatever the kind of either entry, and rejects
- * with the error of the entry it comes from if that one fails. With
- * `loadHandlesSettled()`, that error is in the results instead.
- *
- * With a callback, it gives an entry that the load doesn't wait for the data
- * for: `experimental_dataOf(post, (post) => entry)`. The callback runs once,
- * on a stand-in for the data, and returns the entry. Its handle is unfinished,
- * since the data isn't known when the load returns:
- * `experimental_handleOfItem(handle, data)` finishes it, in the component
- * that has the data.
- * @example
- * ```ts
- * const post = ensureEntry(trpc.post.bySlug, { slug });
- * const [handles] = await loadHandles(trpc, {
- *   post,
- *   author: prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).authorId }),
- * });
- * ```
- * @example
- * ```ts
- * // Without waiting for the post
- * const post = prefetchEntry(trpc.post.bySlug, { slug });
- * const [handles] = await loadHandles(trpc, {
- *   post,
- *   author: experimental_dataOf(post, (post) =>
- *     prefetchEntry(trpc.author.byId, { id: post.authorId }),
- *   ),
- * });
- * // In a component that has the post
- * useSuspenseQuery(fromHandle(trpc, experimental_handleOfItem(handles.author, post)));
- * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#data-of
- */
-export function experimental_dataOf<TEntry extends DataEntry>(
-  entry: TEntry,
-): DataOfEntry<TEntry>;
-export function experimental_dataOf<
-  TEntry extends DataEntry,
-  TInner extends AnyTRPCEntry,
->(
-  entry: TEntry,
-  entryFrom: (data: DataOfEntry<TEntry>) => TInner,
-): experimental_TRPCEntryFromData<TInner, DataOfEntry<TEntry>>;
-export function experimental_dataOf(
-  entry: unknown,
-  entryFrom?: (data: any) => unknown,
-): unknown {
-  if (!entryStateOf(entry) && !entryFromDataStateOf(entry)) {
-    throw new Error(
-      `\`experimental_dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(entry)}`,
-    );
-  }
-  const source = entry as object;
-  const data = createEntryDataRef({
-    entry: source,
-    path: dataPath([]),
-    itemOf: null,
-    shape: 'value',
-  });
-  if (entryFrom === undefined) {
-    return data;
-  }
-  const returned = entryFrom(data);
-  if (!entryStateOf(returned)) {
-    throw new Error(
-      `The callback of \`experimental_dataOf()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(returned)}`,
-    );
-  }
-  const state: EntryFromDataState = { entry: returned as object, source };
-  return { [entryFromDataState]: state };
-}
-
-/**
- * An entry to load for every item of a list in another entry's data. The
- * callback runs once, on a stand-in for every item, and returns the entry.
- *
- * The load gives one handle for it. `experimental_handleOfItem(handle, item)` is the handle
- * of an item's query, also for an item that loaded later, such as one on a
- * later page.
- *
- * The list is a `experimental_dataOf()` value. Its items are its elements, or,
- * for a list from `.map()`, the values the callback returned. For the items of
- * every list in a list, such as of every page of an infinite query, use
- * `.flatMap()`: `experimental_dataOf(posts).pages.flatMap((page) => page.items)`.
- * @example
- * ```ts
- * const posts = ensureEntry(trpc.post.list);
- * const [handles] = await loadHandles(trpc, {
- *   posts,
- *   authors: experimental_entryPerItem(experimental_dataOf(posts), (post) =>
- *     prefetchEntry(trpc.author.byId, { id: post.authorId }),
- *   ),
- * });
- * // In a component, for one post
- * useSuspenseQuery(fromHandle(trpc, experimental_handleOfItem(handles.authors, post)));
- * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#entry-per-item
- */
-export function experimental_entryPerItem<
-  TItem,
-  TDef extends ResolverDef,
-  TKind extends TRPCEntryKind,
->(
-  items: readonly TItem[],
-  entry: (item: TItem) => TRPCQueryEntry<TDef, TKind>,
-): experimental_TRPCEntryPerItem<TRPCQueryEntry<TDef, TKind>, TItem>;
-export function experimental_entryPerItem(
-  items: unknown,
-  entry: (item: any) => unknown,
-): unknown {
-  const list = entryDataRefOf(items);
-  if (!list) {
-    throw new Error(
-      `\`experimental_entryPerItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got ${JSON.stringify(items)}`,
-    );
-  }
-  const returned = entry(
-    createEntryDataRef({
-      entry: list.entry,
-      path: dataPath(itemPathOf(list)),
-      itemOf: list,
-      shape: 'value',
-    }),
+      context: ownContextOf(queryOpts),
+      initialCursor:
+        opts.type === 'infinite' ? infiniteOpts?.initialCursor : undefined,
+      getNextPageParam:
+        opts.type === 'infinite'
+          ? (infiniteOpts?.getNextPageParam ?? null)
+          : null,
+    },
   );
-  if (entryStateOf(returned)?.type !== 'query') {
-    throw new Error(
-      `The callback of \`experimental_entryPerItem()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got ${JSON.stringify(returned)}`,
-    );
-  }
-  const state: EntryPerItemState = { entry: returned as object, list };
-  return { [entryPerItemState]: state };
 }
 
 /**

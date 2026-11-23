@@ -1,30 +1,20 @@
 import type {
-  AnyProcedure,
   AnyRouter,
-  inferProcedureInput,
-  InferrableClientTypes,
-  inferTransformedProcedureOutput,
   PipelineCallReads,
   PipelinePath,
-  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  createRecursiveProxy,
-  hasOwn,
-  isObject,
-  makeResource,
-} from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCClient } from './createTRPCClient';
-import { getUntypedClient } from './createTRPCClient';
-import type { TRPCRequestOptions } from './internals/TRPCUntypedClient';
-import type { TRPCProcedureOptions } from './internals/types';
+import { hasOwn, isObject } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCClient } from '../createTRPCClient';
+import { getUntypedClient } from '../createTRPCClient';
+import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
+import type { TRPCProcedureOptions } from '../internals/types';
 import type {
   Outcome,
   PipelinedData,
   PipelinedRun,
   PipelineSource,
   Settles,
-} from './links/internals/pipeline';
+} from '../links/internals/pipeline';
 import {
   createOperationPipeline,
   failed,
@@ -34,178 +24,81 @@ import {
   pipelineContext,
   readPipelinedRun,
   settles,
-} from './links/internals/pipeline';
+} from '../links/internals/pipeline';
+import type { OperationContext } from '../links/types';
+import type { EntryDataRef } from './dataRef';
+import { entryDataRefOf } from './dataRef';
+import type {
+  experimental_DataEntry,
+  experimental_DataOfEntry,
+  experimental_PerItemEntry,
+  PerItemState,
+  QueryEntryState,
+  QueryEntryType,
+} from './entry';
+import { innerEntryOf, perItemStateOf, queryEntryStateOf } from './entry';
+import { itemPathOf } from './path';
 
 /**
- * `experimental_nested()` records the queries its callback makes, then sends
- * them. The callback gets stand-ins for data that isn't there yet: what it
- * reads of them becomes a read in a pipelined batch, and the server fills it
- * in. What a link can't pipeline, a query asks for by itself, once the data
- * it reads is there.
+ * `experimental_load()` sends the queries of a description. What an input
+ * reads of another query's data becomes a read in a pipelined batch, and the
+ * server fills it in. What a link can't pipeline, a query asks for by itself,
+ * once the data it reads is there.
  */
 
-/** @internal */
-export declare const nestedResult: unique symbol;
-/** @internal */
-export declare const standInOf: unique symbol;
-
 /**
- * What a part of `experimental_nested()`'s callback resolves to: a stand-in,
- * or `.with()` or `.map()` of one.
+ * What `experimental_load()` takes: entries by key, or groups of them
  *
  * Experimental: it may change in a minor release.
  */
-export interface experimental_NestedShape<TResult> {
-  readonly [nestedResult]: TResult;
+export interface experimental_LoadEntries {
+  [key: string]:
+    | experimental_DataEntry
+    | experimental_PerItemEntry<any, any>
+    | experimental_LoadEntries;
 }
 
 /**
- * A node of `experimental_nested()`'s result: the data of a query, or of an
- * item of a list, and an edge for each query that reads it.
+ * What `experimental_load()` returns: a promise for every entry, by its key,
+ * that settles when its query is done. An entry per item has a promise of
+ * its items' promises: it resolves when the list is there, and each item
+ * settles by itself.
  *
  * Experimental: it may change in a minor release.
  */
-export interface experimental_Node<TNode, TEdges> {
-  node: TNode;
-  edges: TEdges;
-}
-
-type Edges = Record<string, experimental_NestedShape<unknown>>;
-
-type ResultOf<TShape> =
-  TShape extends experimental_NestedShape<infer TResult> ? TResult : never;
-
-/** Each edge settles by itself, once its own query is done */
-type EdgesOf<TEdges> = { [K in keyof TEdges]: Promise<ResultOf<TEdges[K]>> };
-
-type MapItem<TItem, TReturn> =
-  TReturn extends experimental_NestedShape<infer TResult>
-    ? TResult
-    : keyof TReturn extends never
-      ? TItem
-      : experimental_Node<TItem, EdgesOf<TReturn>>;
-
-/** Data the client gets as a promise or a stream: no stand-in can read it */
-type IsAsync<TValue> = [
-  Extract<TValue, PromiseLike<unknown> | AsyncIterable<unknown>>,
-] extends [never]
-  ? false
-  : true;
-
-type StandInKeys<TValue> = [TValue] extends [readonly (infer TItem)[]]
-  ? {
-      /**
-       * Runs a query for every item. Return the item's edges, `{}` for the
-       * items as they are, or a `.map()` of a list in the item
-       */
-      map: <TReturn extends experimental_NestedShape<unknown> | Edges>(
-        fn: (item: experimental_StandIn<TItem>) => TReturn,
-      ) => experimental_NestedShape<MapItem<TItem, TReturn>[]>;
-    }
-  : [TValue] extends [ReadonlyMap<unknown, unknown> | ReadonlySet<unknown>]
-    ? // Read whole: what is read of data is its own keys, and a `size` is none
-      unknown
-    : [TValue] extends [object]
-      ? {
-          readonly [
-            K in keyof TValue as K extends 'then'
-              ? // A stand-in is no promise: it has no `then` to read
-                never
-              : K extends string
-                ? IsAsync<TValue[K]> extends true
-                  ? never
-                  : K
-                : never
-          ]: experimental_StandIn<TValue[K]>;
-        }
-      : unknown;
-
-/**
- * Data that isn't there yet, in `experimental_nested()`'s callback. Put it, or
- * a value in it, in a query's input. It has no methods, so nothing can be
- * computed from it. A value that can be `null` or `undefined` has no keys.
- *
- * Experimental: it may change in a minor release.
- */
-export type experimental_StandIn<TValue> = experimental_NestedShape<TValue> & {
-  readonly [standInOf]: TValue;
-} & StandInKeys<TValue>;
-
-/** A query's data, in `experimental_nested()`'s callback */
-type QueryStandIn<TValue> = experimental_StandIn<TValue> & {
-  /** Runs queries that read this query's data, as the node's edges */
-  with: <TEdges extends Edges>(
-    fn: (node: experimental_StandIn<TValue>) => TEdges,
-  ) => experimental_NestedShape<experimental_Node<TValue, EdgesOf<TEdges>>>;
-};
-
-/** An input in which any value can be a stand-in of the same type */
-type WithStandIns<TInput> =
-  | TInput
-  | { readonly [standInOf]: TInput }
-  | (TInput extends object
-      ? TInput extends Date | ((...args: any[]) => unknown)
-        ? never
-        : { [K in keyof TInput]: WithStandIns<TInput[K]> }
-      : never);
-
-type NestedQueryRecord<
-  TRoot extends InferrableClientTypes,
-  TRecord extends RouterRecord,
-> = {
-  [
-    K in keyof TRecord as TRecord[K] extends AnyProcedure
-      ? TRecord[K]['_def']['type'] extends 'query'
-        ? K
-        : never
-      : K
-  ]: TRecord[K] extends AnyProcedure
-    ? {
-        query: (
-          input: WithStandIns<inferProcedureInput<TRecord[K]>>,
-        ) => QueryStandIn<inferTransformedProcedureOutput<TRoot, TRecord[K]>>;
-      }
-    : TRecord[K] extends RouterRecord
-      ? NestedQueryRecord<TRoot, TRecord[K]>
-      : never;
+export type experimental_Loaded<TEntries> = {
+  [K in keyof TEntries]: TEntries[K] extends experimental_PerItemEntry<
+    infer TEntry,
+    any
+  >
+    ? Promise<Promise<experimental_DataOfEntry<TEntry>>[]>
+    : TEntries[K] extends experimental_DataEntry
+      ? Promise<experimental_DataOfEntry<TEntries[K]>>
+      : experimental_Loaded<TEntries[K]>;
 };
 
 /**
- * The queries of a router, as `experimental_nested()`'s callback gets them.
- * There are no mutations or subscriptions.
+ * What `experimental_load()` returns, with every promise awaited
  *
  * Experimental: it may change in a minor release.
  */
-export type experimental_NestedQueries<TRouter extends AnyRouter> =
-  NestedQueryRecord<
-    {
-      transformer: TRouter['_def']['_config']['$types']['transformer'];
-      errorShape: TRouter['_def']['_config']['$types']['errorShape'];
-    },
-    TRouter['_def']['record']
-  >;
-
-/**
- * `experimental_nested()`'s result, with every edge awaited.
- *
- * Experimental: it may change in a minor release.
- */
-export type experimental_Settled<TResult> =
-  TResult extends experimental_Node<infer TNode, infer TEdges>
-    ? experimental_Node<
-        TNode,
-        { [K in keyof TEdges]: experimental_Settled<Awaited<TEdges[K]>> }
-      >
-    : TResult extends readonly unknown[]
-      ? // Each position of a tuple, and `readonly`, as they are
-        { [K in keyof TResult]: experimental_Settled<TResult[K]> }
-      : TResult;
+export type experimental_Settled<TLoaded> =
+  TLoaded extends Promise<infer TValue>
+    ? experimental_Settled<TValue>
+    : TLoaded extends readonly Promise<unknown>[]
+      ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
+      : TLoaded extends Record<string, unknown>
+        ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
+        : TLoaded;
 
 /** A list's item, in a path: the item a run is for */
 interface Scope {
   list: Ref;
 }
-type Segment = string | Scope;
+/** Every item of a list, in a path: what `.map()` reads */
+const every = { every: true } as const;
+type Every = typeof every;
+type Segment = string | Scope | Every;
 
 /** Where a value is: the data of a call, and the keys to it */
 interface Ref {
@@ -213,7 +106,7 @@ interface Ref {
   path: Segment[];
 }
 
-/** A value of an input that is a stand-in, and where it goes */
+/** A value of an input that is read of another call, and where it goes */
 interface Hole {
   /** `null` in an array: the server can't write there */
   to: string[] | null;
@@ -221,14 +114,19 @@ interface Hole {
 }
 
 interface Call {
+  type: QueryEntryType;
   path: string;
-  /** With the stand-ins in it */
+  /** With a stand-in for each value it reads */
   input: unknown;
   /** With `undefined` for each stand-in, for the server to fill in */
   blanked: unknown;
   holes: Hole[];
-  /** The lists it is in, outer first: it runs once for each item */
+  /** The lists it runs for, outer first: it runs once for each item */
   scopes: Scope[];
+  /** Its own context, which a link may route by: then it goes alone */
+  context: OperationContext | null;
+  /** Of an infinite query: the cursor of its first page */
+  firstCursor: unknown;
   /**
    * What gets every run's data in a request that is already there: its own
    * operation, or a call the server makes in another's request. `null` if
@@ -241,7 +139,7 @@ interface Call {
   sent: Settles<Outcome<unknown>> | null;
   /** What the inputs of other calls read of its data */
   reads: Segment[][];
-  /** The lists in its data that a `.map()` runs for */
+  /** The lists in its data that an entry per item runs for */
   lists: Segment[][];
   /** The outcome of each run, by its indexes */
   runs: Map<string, Settles<Outcome<Run>>>;
@@ -258,24 +156,19 @@ interface Run {
   /** A copy of what other calls' inputs read */
   read: unknown;
   /**
-   * The items of each list a `.map()` runs for, by where the list is: see
-   * `listKey()`. The items are the caller's
+   * The items of each list an entry per item runs for, by where the list is:
+   * see `listKey()`. The items are the caller's
    */
   lists: ReadonlyMap<string, readonly unknown[]>;
 }
 
-type Shape =
-  | { kind: 'value'; ref: Ref }
-  | { kind: 'node'; ref: Ref; edges: Record<string, Shape> }
-  | { kind: 'list'; scope: Scope; item: Shape };
-
 /** The indexes of the items a run is for, by list */
 type Items = Map<Scope, number>;
 
-const shapes = /* @__PURE__ */ new WeakMap<object, Shape>();
-/** What `experimental_settle()` awaits the edges of */
-const nodes = /* @__PURE__ */ new WeakSet<object>();
-const lists = /* @__PURE__ */ new WeakSet<object>();
+/** What a stand-in in a call's input reads */
+const standIns = /* @__PURE__ */ new WeakMap<object, Ref>();
+/** What `experimental_settle()` awaits the items of */
+const itemLists = /* @__PURE__ */ new WeakSet<object>();
 const warned = /* @__PURE__ */ new WeakSet<object>();
 
 /**
@@ -294,15 +187,8 @@ function nothing() {
   // For a promise that nothing may read
 }
 
-function shapeOf(value: unknown) {
-  return isObject(value) || typeof value === 'function'
-    ? (shapes.get(value) ?? null)
-    : null;
-}
-
-function asShape(value: unknown, shape: Shape) {
-  shapes.set(value as object, shape);
-  return value;
+function standInOf(value: unknown) {
+  return isObject(value) ? (standIns.get(value) ?? null) : null;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -314,7 +200,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isScope(segment: Segment): segment is Scope {
-  return typeof segment !== 'string';
+  return typeof segment !== 'string' && segment !== every;
 }
 
 function sameScopes(a: readonly Scope[], b: readonly Scope[]) {
@@ -323,7 +209,21 @@ function sameScopes(a: readonly Scope[], b: readonly Scope[]) {
 
 /** A path as the server reads it, with a `null` for each list's items */
 function wirePath(path: readonly Segment[]): PipelinePath {
-  return path.map((segment) => (isScope(segment) ? null : segment));
+  return path.map((segment) => (typeof segment === 'string' ? segment : null));
+}
+
+/**
+ * A path in a call's data as a path in the result of its request: the data
+ * of a query, or the first page of an infinite query. `null` for what isn't
+ * in that result
+ */
+function requestPath(call: Call, path: readonly Segment[]) {
+  if (call.type === 'query') {
+    return wirePath(path);
+  }
+  return path[0] === 'pages' && path[1] === '0'
+    ? wirePath(path.slice(2))
+    : null;
 }
 
 /** Sets a key as an own property, also one named `__proto__` */
@@ -407,7 +307,7 @@ function copyReads(value: unknown, paths: readonly Segment[][]): unknown {
     const keys =
       segment === undefined
         ? []
-        : !isScope(segment)
+        : typeof segment === 'string'
           ? [segment]
           : array
             ? Array.from(value.keys(), String)
@@ -455,7 +355,7 @@ function recordLists(opts: {
       if (Array.isArray(value)) {
         opts.lists.set(listKey(at), [...value]);
       }
-    } else if (!isScope(segment)) {
+    } else if (typeof segment === 'string') {
       if (hasOwn(value, segment)) {
         recordLists({
           ...opts,
@@ -484,6 +384,24 @@ function snapshotOf(call: Call, data: unknown): Run {
   return { data, read: copyReads(data, call.reads), lists };
 }
 
+/** What `path` leads to in `value`, with every item of a list for `every` */
+function readEvery(value: unknown, path: readonly Segment[]): unknown {
+  const at = path.indexOf(every);
+  if (at === -1) {
+    let read = value;
+    for (const segment of path) {
+      read = hasOwn(read, segment as string)
+        ? (read as Record<string, unknown>)[segment as string]
+        : undefined;
+    }
+    return read;
+  }
+  const list = readEvery(value, path.slice(0, at));
+  return Array.isArray(list)
+    ? Array.from(list, (item) => readEvery(item, path.slice(at + 1)))
+    : undefined;
+}
+
 /**
  * What `path` leads to in a run, through the items of its lists as they
  * arrived: `read` for what an input reads, `data` for what the caller gets.
@@ -497,7 +415,10 @@ function walk(opts: {
 }) {
   let value = opts.run[opts.as];
   const at: (string | number)[] = [];
-  for (const segment of opts.path) {
+  for (const [index, segment] of opts.path.entries()) {
+    if (segment === every) {
+      return { value: readEvery(value, opts.path.slice(index)), list: [] };
+    }
     let key: string | number;
     if (isScope(segment)) {
       // What an input reads is a copy as it arrived already, items and all
@@ -506,7 +427,7 @@ function walk(opts: {
       }
       key = opts.items.get(segment) ?? -1;
     } else {
-      key = segment;
+      key = segment as string;
     }
     at.push(key);
     value = hasOwn(value, String(key))
@@ -581,10 +502,10 @@ function anyTrue(checks: readonly Settles<boolean>[]): Promise<boolean> {
 
 /**
  * Whether a value that isn't a plain object, an array or a Date has a
- * stand-in in it. `seen` keeps a cycle from looping
+ * stand-in or an `experimental_dataOf()` value in it. `seen` keeps a cycle from looping
  */
 function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
-  if (shapeOf(value)) {
+  if (standInOf(value) || entryDataRefOf(value)) {
     return true;
   }
   // A typed array or `DataView` holds bytes only
@@ -606,47 +527,35 @@ function hasStandIn(value: unknown, seen: WeakSet<object>): boolean {
   return values.some((it) => hasStandIn(it, seen));
 }
 
-/** One pass of `mapInput()` over an input */
-interface InputPass {
-  onStandIn: (standIn: unknown, hole: Hole) => unknown;
-  /**
-   * The copy of each `Map` and `Set` copied in this pass, and what is in
-   * them: one in two places of the input is one copy, as a transformer that
-   * keeps references carries it
-   */
-  copies: Map<object, unknown>;
-}
-
-/** A pass of `mapInput()` that replaces each stand-in with what `onStandIn` gives */
-function inputPass(onStandIn: InputPass['onStandIn']): InputPass {
-  return { onStandIn, copies: new Map() };
-}
-
 /**
- * A copy of an input, with each stand-in in it replaced. `to` is where a
- * value is in the input: `null` in an array, where the server can't write
+ * A copy of an input, with each value read of another call in it replaced by
+ * what `onRead` gives. `to` is where a value is in the input: `null` in an
+ * array, where the server can't write. `copies` has the copy of each `Map`
+ * and `Set` copied in this pass: one in two places of the input is one copy,
+ * as a transformer that keeps references carries it
  */
-function mapInput(
-  value: unknown,
-  to: string[] | null,
-  pass: InputPass,
-): unknown {
-  const shape = shapeOf(value);
-  if (shape) {
-    if (shape.kind !== 'value') {
-      throw new TypeError(
-        'experimental_nested(): an input can have stand-ins in it, not `.with()` or `.map()`',
-      );
-    }
-    return pass.onStandIn(value, { to, ref: shape.ref });
+function mapInput(opts: {
+  value: unknown;
+  to: string[] | null;
+  onRead: (read: Ref | EntryDataRef, to: string[] | null) => unknown;
+  copies: Map<object, unknown>;
+}): unknown {
+  const { value, to } = opts;
+  const read = standInOf(value) ?? entryDataRefOf(value);
+  if (read) {
+    return opts.onRead(read, to);
   }
   if (Array.isArray(value)) {
-    return value.map((item) => mapInput(item, null, pass));
+    return value.map((item) => mapInput({ ...opts, value: item, to: null }));
   }
   if (isPlainObject(value)) {
     const copy: Record<string, unknown> = {};
     for (const key of Object.keys(value)) {
-      setOwn(copy, key, mapInput(value[key], to && [...to, key], pass));
+      setOwn(
+        copy,
+        key,
+        mapInput({ ...opts, value: value[key], to: to && [...to, key] }),
+      );
     }
     return copy;
   }
@@ -657,7 +566,7 @@ function mapInput(
   // Sent as it is, with nothing filled in
   if (isObject(value) && hasStandIn(value, new WeakSet())) {
     throw new TypeError(
-      'experimental_nested(): an input can have stand-ins in plain objects, arrays and Dates, not in an instance of a class',
+      'experimental_load(): an input can have `experimental_dataOf()` values in plain objects, arrays and Dates, not in an instance of a class',
     );
   }
   // A Map or a Set, as a transformer carries them, is read as it is now, as
@@ -665,207 +574,250 @@ function mapInput(
   if (isObject(value)) {
     const proto: unknown = Object.getPrototypeOf(value);
     if (proto === Map.prototype || proto === Set.prototype) {
-      return copyData(value, pass.copies);
+      return copyData(value, opts.copies);
     }
   }
   return value;
 }
 
 /**
- * Sends the queries of `experimental_nested()`'s callback as one request
- * where the link pipelines, and resolves once the data at the root is there.
- * Each edge is a promise of its own that settles when its query is done, and
- * rejects by itself if it fails.
+ * The input of an infinite query's first page, as TanStack Query's
+ * `infiniteQueryOptions()` sends it: without `direction` from the input, and
+ * with `initialCursor` in place of the input's `cursor`
+ */
+function firstPageInput(input: unknown, initialCursor: unknown) {
+  if (!isPlainObject(input)) {
+    return input;
+  }
+  const { cursor: inputCursor, direction: _direction, ...rest } = input;
+  const cursor = initialCursor ?? inputCursor;
+  return {
+    ...rest,
+    ...(cursor !== undefined ? { cursor } : {}),
+    direction: 'forward',
+  };
+}
+
+/**
+ * The entries of a description, and the key of each, with the entries of a
+ * group under its key
+ */
+function readLeaves(
+  entries: Record<string, unknown>,
+  at: string[],
+): { group: string[]; key: string; entry: object }[] {
+  if (!isPlainObject(entries)) {
+    throw new TypeError(
+      `experimental_load(): expects an object of entries, got ${String(entries)}`,
+    );
+  }
+  return Object.keys(entries).flatMap((key) => {
+    const value = entries[key];
+    if (innerEntryOf(value) || perItemStateOf(value)) {
+      return [{ group: at, key, entry: value as object }];
+    }
+    if (isPlainObject(value)) {
+      return readLeaves(value, [...at, key]);
+    }
+    throw new TypeError(
+      `experimental_load(): "${[...at, key].join('.')}" is no entry, such as one from \`experimental_query()\`, nor a group of them`,
+    );
+  });
+}
+
+/**
+ * Loads the entries of a description, as one request where the link
+ * pipelines. Returns at once, with a promise for every entry, by its key,
+ * that settles when its query is done and rejects by itself if it fails. An
+ * entry per item has a promise of its items' promises.
  *
- * The callback runs once, at once, before any data is there: it can read
- * values and pass them to inputs, but can't branch on them or compute with
- * them. An input can have stand-ins in plain objects, arrays and Dates.
+ * An entry that another one reads with `experimental_dataOf()` is loaded
+ * also when it isn't in `entries`.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/vanilla/nested-queries#without-tanstack-query
+ * @see https://trpc.io/docs/client/vanilla/nested-queries
  *
  * @example
  * ```ts
- * const posts = await experimental_nested(client, (q) =>
- *   q.post.list.query({ limit: 20 }).items.map((post) => ({
- *     author: q.author.byId.query({ id: post.authorId }),
- *   })),
- * );
- * const author = await posts[0].edges.author;
+ * const post = experimental_query(client.post.bySlug, { slug });
+ * const res = experimental_load(client, {
+ *   post,
+ *   author: experimental_query(client.author.byId, {
+ *     id: experimental_dataOf(post).authorId,
+ *   }),
+ * });
+ * const author = await res.author;
  * ```
  */
-export function experimental_nested<
+export function experimental_load<
   TRouter extends AnyRouter,
-  TShape extends experimental_NestedShape<unknown>,
+  TEntries extends experimental_LoadEntries,
 >(
   client: TRPCClient<TRouter>,
-  build: (q: experimental_NestedQueries<TRouter>) => TShape,
+  entries: TEntries,
   opts?: TRPCProcedureOptions,
-): Promise<ResultOf<TShape>> {
+): experimental_Loaded<TEntries> {
   const untyped = getUntypedClient(client);
-  const request = (pipeline: TRPCRequestOptions['context']) => ({
+  const request = (call: Call, pipeline: TRPCRequestOptions['context']) => ({
     signal: opts?.signal,
-    context: { ...opts?.context, ...pipeline },
+    context: { ...opts?.context, ...call.context, ...pipeline },
   });
   const calls: Call[] = [];
-  /** The lists whose callback runs, outer first */
-  const scopes: Scope[] = [];
-
-  /** Whether a stand-in is of this call, and its lists are all in `active` */
-  const checkScopes = (ref: Ref, active: readonly Scope[]) => {
-    if (!calls.includes(ref.call)) {
-      throw new TypeError(
-        'experimental_nested(): a stand-in of another `experimental_nested()` call was used',
-      );
-    }
-    if (
-      !ref.call.scopes.every((scope) => active.includes(scope)) ||
-      !ref.path.every(
-        (segment) => !isScope(segment) || active.includes(segment),
-      )
-    ) {
-      throw new TypeError(
-        'experimental_nested(): a stand-in of an item was used outside the `.map()` callback it came from',
-      );
-    }
-  };
+  const callOfEntry = new Map<object, Call>();
+  /** The lists of an entry per item, one for each level of lists */
+  const scopesOfList = new Map<EntryDataRef, Scope[]>();
 
   /**
-   * Whether everything a shape reads, its edges and items too, is in `active`.
-   * A list's items read its own list
+   * A path in an entry's data, as the engine reads it. Of an infinite query,
+   * which loads its first page, every page is that page
    */
-  const checkShape = (shape: Shape, active: readonly Scope[]): void => {
-    switch (shape.kind) {
-      case 'value':
-        checkScopes(shape.ref, active);
-        return;
-      case 'node':
-        checkScopes(shape.ref, active);
-        for (const edge of Object.values(shape.edges)) {
-          checkShape(edge, active);
-        }
-        return;
-      case 'list':
-        checkScopes(shape.scope.list, active);
-        checkShape(shape.item, [...active, shape.scope]);
-        return;
+  function segmentsOf(call: Call, path: PipelinePath): (string | null)[] {
+    const segments = [...path];
+    if (
+      call.type === 'infinite' &&
+      segments[0] === 'pages' &&
+      segments.length > 1
+    ) {
+      segments[1] ??= '0';
     }
-  };
+    return segments;
+  }
 
-  const edgesOf = (value: unknown) => {
-    const edges: Record<string, Shape> = {};
-    if (!isPlainObject(value)) {
+  /** The scopes of the list of an entry per item */
+  function scopesOf(list: EntryDataRef): Scope[] {
+    let scopes = scopesOfList.get(list);
+    if (scopes) {
+      return scopes;
+    }
+    if (list.itemOf !== null) {
       throw new TypeError(
-        'experimental_nested(): `.with()` and `.map()` callbacks return an object of edges',
+        'experimental_load(): the list of `experimental_perItem()` is read of the data of an entry, not of an item',
       );
     }
-    // Its type would have the edge, and the result would not
-    if (Object.getOwnPropertySymbols(value).length > 0) {
-      throw new TypeError(
-        'experimental_nested(): the key of an edge is a string, not a symbol',
-      );
+    const call = callFor(list.entry);
+    const created: Scope[] = [];
+    const path: Segment[] = [];
+    for (const segment of segmentsOf(call, itemPathOf(list))) {
+      if (segment === null) {
+        const scope: Scope = { list: { call, path: [...path] } };
+        call.lists.push([...path]);
+        created.push(scope);
+        path.push(scope);
+      } else {
+        path.push(segment);
+      }
     }
-    for (const key of Object.keys(value)) {
-      const edge = shapeOf(value[key]);
-      if (!edge) {
+    scopes = [...call.scopes, ...created];
+    scopesOfList.set(list, scopes);
+    return scopes;
+  }
+
+  /** An `experimental_dataOf()` value as a place in a call's data */
+  function refOf(read: EntryDataRef): Ref {
+    const call = callFor(read.entry);
+    const segments = segmentsOf(call, read.path);
+    // The `null`s of an item's list are its items; any other is every item
+    const itemScopes = read.itemOf ? scopesOf(read.itemOf) : [];
+    const own = itemScopes.slice(call.scopes.length);
+    let next = 0;
+    return {
+      call,
+      path: segments.map((segment) => segment ?? own[next++] ?? every),
+    };
+  }
+
+  /**
+   * The scopes of a call: the lists of the items it reads, outer first. A
+   * call reads the items of one list, and of the lists that one is in
+   */
+  function scopesOfReads(refs: readonly Ref[]): Scope[] {
+    let scopes: Scope[] = [];
+    for (const ref of refs) {
+      const read = [...ref.call.scopes, ...ref.path.filter(isScope)];
+      const [longer, shorter] =
+        read.length > scopes.length ? [read, scopes] : [scopes, read];
+      if (!shorter.every((scope, index) => longer[index] === scope)) {
         throw new TypeError(
-          `experimental_nested(): the edge "${key}" is no query of \`q\`, stand-in, \`.with()\` or \`.map()\``,
+          'experimental_load(): an entry reads the items of two lists. An entry per item reads the items of one list',
         );
       }
-      checkShape(edge, scopes);
-      setOwn(edges, key, edge);
+      scopes = longer;
     }
-    return edges;
-  };
+    return scopes;
+  }
 
-  const standIn = (ref: Ref): unknown =>
-    asShape(
-      new Proxy(nothing, {
-        get: (_target, key) =>
-          typeof key === 'string' && key !== 'then'
-            ? standIn({ call: ref.call, path: [...ref.path, key] })
-            : undefined,
-        apply: (_target, _this, args: unknown[]) => {
-          const method = ref.path[ref.path.length - 1];
-          const of: Ref = { call: ref.call, path: ref.path.slice(0, -1) };
-          const [fn] = args;
-          if (method === 'map' && typeof fn === 'function') {
-            const scope: Scope = { list: of };
-            of.call.lists.push(of.path);
-            const item: Ref = { call: of.call, path: [...of.path, scope] };
-            scopes.push(scope);
-            // Also when the callback throws, and the builder goes on
-            using _scope = makeResource({}, () => {
-              scopes.pop();
-            });
-            const returned: unknown = fn(standIn(item));
-            const shape = shapeOf(returned);
-            if (shape) {
-              checkShape(shape, scopes);
-            }
-            const edges = shape ? null : edgesOf(returned);
-            return asShape(
-              {},
-              {
-                kind: 'list',
-                scope,
-                item:
-                  shape ??
-                  (edges && Object.keys(edges).length > 0
-                    ? { kind: 'node', ref: item, edges }
-                    : { kind: 'value', ref: item }),
-              },
-            );
-          }
-          if (
-            method === 'with' &&
-            of.path.length === 0 &&
-            typeof fn === 'function'
-          ) {
-            return asShape(
-              {},
-              { kind: 'node', ref: of, edges: edgesOf(fn(standIn(of))) },
-            );
-          }
-          throw new TypeError(
-            `experimental_nested(): \`${typeof method === 'string' ? method : ''}()\` was called on a stand-in. The callback runs once, before any data is there: pass values to inputs, without computing with them`,
-          );
-        },
-      }),
-      { kind: 'value', ref },
-    );
-
-  const q = createRecursiveProxy(({ path, args }) => {
-    const procedure = path.slice(0, -1).join('.');
-    if (path[path.length - 1] !== 'query') {
+  /**
+   * The call of an entry, made once, after the calls of what it reads. An
+   * entry built from another's data, with `experimental_dataOf(entry, fn)`,
+   * is the entry its callback returned: the same call
+   */
+  function callFor(entry: object): Call {
+    const made = callOfEntry.get(entry);
+    if (made) {
+      return made;
+    }
+    const inner = innerEntryOf(entry);
+    if (inner && inner !== entry) {
+      const call = callFor(inner);
+      callOfEntry.set(entry, call);
+      return call;
+    }
+    const state: QueryEntryState | null = queryEntryStateOf(entry);
+    if (!state) {
       throw new TypeError(
-        `experimental_nested(): \`q.${path.join('.')}()\`: \`q\` has queries only, as \`.query()\``,
+        `experimental_load(): \`experimental_dataOf()\` reads an entry, such as one from \`experimental_query()\`, got ${JSON.stringify(entry)}`,
       );
     }
     // Read once, as it is now: a later change to the object doesn't change
     // the call, and the request and a query that asks by itself agree
-    const input = mapInput(
-      args[0],
-      [],
-      inputPass((it) => it),
-    );
+    const raw =
+      state.type === 'infinite'
+        ? firstPageInput(state.input, state.initialCursor)
+        : state.input;
+    const refs: Ref[] = [];
+    const input = mapInput({
+      value: raw,
+      to: [],
+      onRead: (read) => {
+        const ref = 'call' in read ? read : refOf(read);
+        refs.push(ref);
+        const standIn = {};
+        standIns.set(standIn, ref);
+        return standIn;
+      },
+      copies: new Map(),
+    });
     const holes: Hole[] = [];
-    const blanked = mapInput(
-      input,
-      [],
-      inputPass((_standIn, hole) => {
-        checkScopes(hole.ref, scopes);
-        holes.push(hole);
-        hole.ref.call.reads.push(hole.ref.path);
+    const blanked = mapInput({
+      value: input,
+      to: [],
+      onRead: (read, to) => {
+        const ref = read as Ref;
+        holes.push({
+          // An infinite query's whole input, which the server can't write
+          // `cursor` and `direction` into
+          to: state.type === 'infinite' && to?.length === 0 ? null : to,
+          ref,
+        });
+        ref.call.reads.push(ref.path);
         return undefined;
-      }),
-    );
+      },
+      copies: new Map(),
+    });
+    const inputCursor = isPlainObject(state.input)
+      ? state.input['cursor']
+      : undefined;
     const call: Call = {
-      path: procedure,
+      type: state.type,
+      path: state.path.join('.'),
       input,
       blanked,
       holes,
-      scopes: [...scopes],
+      scopes: scopesOfReads(refs),
+      context: state.context,
+      firstCursor:
+        state.initialCursor ??
+        (entryDataRefOf(inputCursor) ? undefined : inputCursor),
       source: null,
       frame: [],
       sent: null,
@@ -873,15 +825,20 @@ export function experimental_nested<
       lists: [],
       runs: new Map(),
     };
+    callOfEntry.set(entry, call);
     calls.push(call);
-    return standIn({ call, path: [] });
-  }) as experimental_NestedQueries<TRouter>;
+    return call;
+  }
 
   /**
    * Has the server make the call in the request of what it reads, if that
    * request hasn't gone and the link pipelines. Its input is filled in there.
    */
   function pipe(call: Call) {
+    if (call.context) {
+      // A link may route it by its context: it goes alone
+      return;
+    }
     const inner = call.scopes[call.scopes.length - 1] ?? null;
     const reads: PipelineCallReads<PipelineSource>['reads'] = [];
     let frame: Scope[] = [];
@@ -909,12 +866,11 @@ export function experimental_nested<
       if (!ref.call.source || ref.path.some(isScope)) {
         return;
       }
-      reads.push({
-        kind: 'whole',
-        to,
-        from: ref.call.source,
-        path: wirePath(ref.path),
-      });
+      const path = requestPath(ref.call, ref.path);
+      if (!path) {
+        return;
+      }
+      reads.push({ kind: 'whole', to, from: ref.call.source, path });
       if (ref.call.frame.length > frame.length) {
         frame = ref.call.frame;
       }
@@ -923,10 +879,11 @@ export function experimental_nested<
     // A call in a list runs for every item of it, unless what it reads does
     if (inner && (readsItem || !sameScopes(frame, call.scopes))) {
       const { list } = inner;
-      if (!list.call.source) {
+      const path = list.call.source && requestPath(list.call, list.path);
+      if (!list.call.source || !path) {
         return;
       }
-      each = { from: list.call.source, path: wirePath(list.path) };
+      each = { from: list.call.source, path };
       frame = [...list.call.frame, ...list.path.filter(isScope), inner];
     }
     if (!sameScopes(frame, call.scopes)) {
@@ -949,9 +906,15 @@ export function experimental_nested<
     if (!run) {
       run = settles(async (): Promise<Outcome<Run>> => {
         const outcome = await startRun(call, items);
-        return outcome.ok
-          ? { ok: true, data: snapshotOf(call, outcome.data) }
-          : outcome;
+        if (!outcome.ok) {
+          return outcome;
+        }
+        // An infinite query's data, as TanStack Query has it: its pages
+        const data =
+          call.type === 'infinite'
+            ? { pages: [outcome.data], pageParams: [call.firstCursor] }
+            : outcome.data;
+        return { ok: true, data: snapshotOf(call, data) };
       }, failed);
       call.runs.set(key, run);
     }
@@ -994,9 +957,19 @@ export function experimental_nested<
         }
       }
       const input = await fill(call.input, items);
-      return input.ok
-        ? outcomeOf(untyped.query(call.path, input.data, request(undefined)))
-        : input;
+      if (!input.ok) {
+        return input;
+      }
+      return outcomeOf(
+        untyped.query(
+          call.path,
+          // A whole input that was read: its first page's, once it is there
+          call.type === 'infinite' && call.holes.some((hole) => !hole.to)
+            ? firstPageInput(input.data, undefined)
+            : input.data,
+          request(call, undefined),
+        ),
+      );
     }, failed);
   }
 
@@ -1081,9 +1054,9 @@ export function experimental_nested<
 
   function fill(value: unknown, items: Items): Settles<Outcome<unknown>> {
     return settles(async (): Promise<Outcome<unknown>> => {
-      const shape = shapeOf(value);
-      if (shape?.kind === 'value') {
-        return valueOf(shape.ref, items, 'read');
+      const ref = standInOf(value);
+      if (ref) {
+        return valueOf(ref, items, 'read');
       }
       if (Array.isArray(value)) {
         // Every index, a hole too: it is sent as `undefined` is
@@ -1105,72 +1078,99 @@ export function experimental_nested<
     }, failed);
   }
 
-  function resolve(shape: Shape, items: Items): Settles<Outcome<unknown>> {
-    return settles(async (): Promise<Outcome<unknown>> => {
-      switch (shape.kind) {
-        case 'value':
-          return valueOf(shape.ref, items, 'data');
-        case 'node': {
-          const value = await valueOf(shape.ref, items, 'data');
-          if (!value.ok) {
-            return value;
-          }
-          const node = {
-            node: value.data,
-            edges: {} as Record<string, Promise<unknown>>,
-          };
-          for (const [key, edgeShape] of Object.entries(shape.edges)) {
-            const edge = rejecting(resolve(edgeShape, items));
-            // An edge that nobody reads can fail
-            edge.catch(nothing);
-            setOwn(node.edges, key, edge);
-          }
-          nodes.add(node);
-          return { ok: true, data: node };
-        }
-        case 'list': {
-          const { list } = shape.scope;
-          const run = await runOf(list.call, items);
-          if (!run.ok) {
-            return run;
-          }
-          const { list: listItems } = walk({
-            run: run.data,
-            path: list.path,
-            items,
-            as: 'data',
-          });
-          const resolved = await allOk(
-            listItems.map((_item, index) =>
-              resolve(shape.item, new Map(items).set(shape.scope, index)),
-            ),
-          );
-          if (resolved.ok) {
-            lists.add(resolved.data);
-          }
-          return resolved;
-        }
+  /**
+   * The items of every level of the lists `scopes` are, as they arrived:
+   * each as the indexes of its items. Rejects if a list's call failed
+   */
+  function itemsOf(
+    scopes: readonly Scope[],
+    items: Items,
+  ): Settles<Outcome<Items[]>> {
+    return settles(async (): Promise<Outcome<Items[]>> => {
+      const [scope, ...rest] = scopes;
+      if (!scope) {
+        return { ok: true, data: [items] };
       }
+      const run = await runOf(scope.list.call, items);
+      if (!run.ok) {
+        return run;
+      }
+      const { list } = walk({
+        run: run.data,
+        path: scope.list.path,
+        items,
+        as: 'data',
+      });
+      const levels = await allOk(
+        list.map((_item, index) =>
+          itemsOf(rest, new Map(items).set(scope, index)),
+        ),
+      );
+      return levels.ok ? { ok: true, data: levels.data.flat() } : levels;
     }, failed);
   }
 
-  const root = shapeOf(build(q));
-  if (!root) {
-    throw new TypeError(
-      'experimental_nested(): the callback returns a query of `q`, or a stand-in, `.with()` or `.map()` of one',
+  /** An entry per item's promise of its items' promises */
+  function loadPerItem(state: PerItemState): Promise<Promise<unknown>[]> {
+    const scopes = scopesOf(state.list);
+    const call = callFor(state.entry);
+    if (!call.scopes.every((scope, index) => scopes[index] === scope)) {
+      throw new TypeError(
+        'experimental_load(): the entry of `experimental_perItem()` reads the items of another list',
+      );
+    }
+    if (callFor(state.list.entry).scopes.length > 0) {
+      throw new TypeError(
+        'experimental_load(): the list of `experimental_perItem()` is in the data of an entry that reads an item. Its items are in more than one list',
+      );
+    }
+    return rejecting(
+      settles(async (): Promise<Outcome<Promise<unknown>[]>> => {
+        const all = await itemsOf(scopes, new Map());
+        if (!all.ok) {
+          return all;
+        }
+        const loaded = all.data.map((items) => {
+          const item = rejecting(valueOf({ call, path: [] }, items, 'data'));
+          // An item that nobody reads can fail
+          item.catch(nothing);
+          return item;
+        });
+        itemLists.add(loaded);
+        return { ok: true, data: loaded };
+      }, failed),
     );
   }
-  checkShape(root, []);
+
+  // Every call is made before any is sent, in the order of the entries
+  const leaves = readLeaves(entries, []).map((leaf) => {
+    const perItem = perItemStateOf(leaf.entry);
+    if (perItem) {
+      scopesOf(perItem.list);
+      callFor(perItem.entry);
+      return { ...leaf, load: () => loadPerItem(perItem) };
+    }
+    const call = callFor(leaf.entry);
+    if (call.scopes.length > 0) {
+      throw new TypeError(
+        `experimental_load(): "${[...leaf.group, leaf.key].join('.')}" reads an item of a list. Load it for every item with \`experimental_perItem()\``,
+      );
+    }
+    return {
+      ...leaf,
+      load: () => rejecting(valueOf({ call, path: [] }, new Map(), 'data')),
+    };
+  });
   // In one step: the link takes the queries that read nothing into a batch,
   // and the calls that read them go in its request
   for (const call of calls) {
     if (call.holes.length === 0 && call.scopes.length === 0) {
-      const pipeline = createOperationPipeline();
+      const pipeline = call.context ? null : createOperationPipeline();
       call.sent = outcomeOf(
         untyped.query(
           call.path,
           call.blanked,
-          request(pipelineContext(pipeline)),
+          request(call, pipeline ? pipelineContext(pipeline) : undefined),
         ),
       );
       call.source = pipeline;
@@ -1192,43 +1192,55 @@ export function experimental_nested<
     warned.add(untyped);
     // oxlint-disable-next-line no-console
     console.warn(
-      "experimental_nested(): the link doesn't stream its responses, so the edges in a request settle together, with the whole response. Use `httpBatchStreamLink` for each edge to settle when its query is done",
+      "experimental_load(): the link doesn't stream its responses, so the entries in a request settle together, with the whole response. Use `httpBatchStreamLink` for each entry to settle when its query is done",
     );
   }
-  return rejecting(resolve(root, new Map())) as Promise<ResultOf<TShape>>;
+  const result: Record<string, unknown> = {};
+  for (const leaf of leaves) {
+    let group = result;
+    for (const key of leaf.group) {
+      if (!hasOwn(group, key)) {
+        setOwn(group, key, {});
+      }
+      group = group[key] as Record<string, unknown>;
+    }
+    const loaded = leaf.load();
+    // An entry that nobody reads can fail
+    loaded.catch(nothing);
+    setOwn(group, leaf.key, loaded);
+  }
+  return result as experimental_Loaded<TEntries>;
 }
 
 async function settle(value: unknown): Promise<unknown> {
-  if (nodes.has(value as object)) {
-    const { node, edges } = value as experimental_Node<
-      unknown,
-      Record<string, Promise<unknown>>
-    >;
-    const keys = Object.keys(edges);
-    const settled = await Promise.all(
-      keys.map(async (key) => settle(await edges[key])),
-    );
+  const awaited = await value;
+  if (itemLists.has(awaited as object)) {
+    return Promise.all((awaited as unknown[]).map(settle));
+  }
+  if (value !== awaited) {
+    return awaited;
+  }
+  if (isPlainObject(value)) {
+    const keys = Object.keys(value);
+    const settled = await Promise.all(keys.map((key) => settle(value[key])));
     const resolved: Record<string, unknown> = {};
     keys.forEach((key, index) => {
       setOwn(resolved, key, settled[index]);
     });
-    return { node, edges: resolved };
-  }
-  if (lists.has(value as object)) {
-    return Promise.all((value as unknown[]).map(settle));
+    return resolved;
   }
   return value;
 }
 
 /**
- * Awaits every edge of `experimental_nested()`'s result, so that each is a
- * value. Rejects if an edge does.
+ * Awaits every promise of `experimental_load()`'s result, the items of an
+ * entry per item too, so that each is a value. Rejects if one does.
  *
  * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/vanilla/nested-queries#without-tanstack-query
+ * @see https://trpc.io/docs/client/vanilla/nested-queries
  */
-export async function experimental_settle<TResult>(
-  result: TResult | Promise<TResult>,
-): Promise<experimental_Settled<TResult>> {
-  return (await settle(await result)) as experimental_Settled<TResult>;
+export async function experimental_settle<TLoaded>(
+  loaded: TLoaded,
+): Promise<experimental_Settled<TLoaded>> {
+  return (await settle(loaded)) as experimental_Settled<TLoaded>;
 }

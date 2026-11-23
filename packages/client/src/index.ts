@@ -18,14 +18,29 @@ export {
 } from './createTRPCClient';
 
 export {
-  experimental_nested,
+  experimental_query,
+  experimental_infiniteQuery,
+  experimental_dataOf,
+  experimental_perItem,
+  type experimental_DataEntry,
+  type experimental_DataOfEntry,
+  type experimental_FromDataEntry,
+  type experimental_InfiniteData,
+  type experimental_InfiniteQueryEntry,
+  type experimental_InfiniteQueryEntryOptions,
+  type experimental_PerItemEntry,
+  type experimental_QueryEntry,
+  type experimental_QueryEntryOptions,
+  type experimental_QueryProcedure,
+  type experimental_QueryProcedures,
+} from './queries/entry';
+export {
+  experimental_load,
   experimental_settle,
-  type experimental_NestedQueries,
-  type experimental_NestedShape,
-  type experimental_Node,
+  type experimental_LoadEntries,
+  type experimental_Loaded,
   type experimental_Settled,
-  type experimental_StandIn,
-} from './nested';
+} from './queries/load';
 
 export { type TRPCProcedureOptions } from './internals/types';
 

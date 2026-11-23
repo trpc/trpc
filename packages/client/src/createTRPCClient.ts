@@ -178,6 +178,10 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ): TRPCClient<TRouter> {
   const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
+    // What `experimental_query()` reads of a procedure: its path
+    if (path[path.length - 1] === '~path') {
+      return path.slice(0, -1);
+    }
     const pathCopy = [...path];
     const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 

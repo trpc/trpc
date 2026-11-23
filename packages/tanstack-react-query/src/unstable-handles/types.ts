@@ -4,12 +4,20 @@ import type {
   InfiniteData,
 } from '@tanstack/react-query';
 import type { skipToken } from '@tanstack/react-query';
+import type {
+  experimental_FromDataEntry,
+  experimental_InfiniteQueryEntry,
+  experimental_PerItemEntry,
+  experimental_QueryEntry,
+  experimental_QueryProcedure,
+} from '@trpc/client';
 import type { coerceAsyncIterableToArray } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
 } from '../internals/createOptionsProxy';
 import type {
+  DefaultFeatureFlags,
   ExtractCursorType,
   ResolverDef,
   TRPCQueryBaseOptions,
@@ -79,7 +87,7 @@ interface TRPCQueryHandleBase<TDef extends ResolverDef> {
   readonly [handleDef]: TDef & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
   /**
-   * Only when an `experimental_entryPerItem()` entry is loaded for the items of
+   * Only when an `experimental_perItem()` entry is loaded for the items of
    * a list in the data: what that entry loads for an item. When the query is
    * fetched again, it loads that for its items, in the same request.
    */
@@ -108,7 +116,7 @@ interface TRPCInfiniteQueryHandleBase<TDef extends ResolverDef> {
   >;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
   /**
-   * Only when an `experimental_entryPerItem()` entry is loaded for the items of
+   * Only when an `experimental_perItem()` entry is loaded for the items of
    * every page: what that entry loads for an item. A page that is fetched
    * later then loads it for its items, in the same request.
    */
@@ -126,7 +134,7 @@ export type TRPCInfiniteQueryHandle<TDef extends ResolverDef = ResolverDef> =
     HandleInput<InfiniteHandleInput<TDef['input']>>;
 
 /**
- * What an `experimental_entryPerItem()` entry loads for an item: the handle of
+ * What an `experimental_perItem()` entry loads for an item: the handle of
  * that entry, and where the list of items is in one request's result.
  */
 export interface PerItemQueries extends experimental_TRPCQueryHandlePerItem<
@@ -159,6 +167,8 @@ export interface TRPCQueryEntry<
 > {
   /** Type-only: never present at runtime. */
   readonly [entryDef]: { def: TDef; kind: TKind; type: 'query' };
+  /** Type-only: never present at runtime. What `experimental_dataOf()` reads */
+  readonly '~entryData': coerceAsyncIterableToArray<TDef['output']>;
 }
 
 /**
@@ -171,6 +181,8 @@ export interface TRPCInfiniteQueryEntry<
 > {
   /** Type-only: never present at runtime. */
   readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
+  /** Type-only: never present at runtime. What `experimental_dataOf()` reads */
+  readonly '~entryData': LoadedInfiniteData<TDef>;
 }
 
 /** Any query or infinite query entry. */
@@ -178,42 +190,30 @@ export type AnyTRPCEntry =
   | TRPCQueryEntry<any, any>
   | TRPCInfiniteQueryEntry<any, any>;
 
-export declare const entryPerItemDef: unique symbol;
-
 /**
  * An entry to load for every item of a list in another entry's data, from
- * `experimental_entryPerItem()`. Its handle is a `experimental_TRPCQueryHandlePerItem`.
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#entry-per-item
+ * `experimental_perItem()`. Its handle is a `experimental_TRPCQueryHandlePerItem`.
  */
-export interface experimental_TRPCEntryPerItem<
+export type experimental_TRPCEntryPerItem<
   TEntry = AnyTRPCEntry,
   TItem = unknown,
-> {
-  /** Type-only: never present at runtime. */
-  readonly [entryPerItemDef]: { entry: TEntry; item: TItem };
-}
-
-export declare const entryFromDataDef: unique symbol;
+> = experimental_PerItemEntry<TEntry, TItem>;
 
 /**
  * An entry built from the data of another entry, from
  * `experimental_dataOf(entry, (data) => entry)`. The load doesn't wait for
  * that data. Its handle is unfinished: `experimental_handleOfItem(handle, data)`
  * finishes it in the component that has the data.
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#without-waiting
  */
-export interface experimental_TRPCEntryFromData<
+export type experimental_TRPCEntryFromData<
   TEntry = AnyTRPCEntry,
   TData = unknown,
-> {
-  /** Type-only: never present at runtime. */
-  readonly [entryFromDataDef]: { entry: TEntry; data: TData };
-}
+> = experimental_FromDataEntry<TEntry, TData>;
 
 /**
  * A serializable reference to a query that needs an item to be finished:
  * `experimental_handleOfItem(handle, item)` gives the query's handle. From an
- * `experimental_entryPerItem()` entry, where the item is an item of the list,
+ * `experimental_perItem()` entry, where the item is an item of the list,
  * or from `experimental_dataOf(entry, (data) => entry)`, where it is that
  * entry's data.
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#entry-per-item
@@ -242,7 +242,7 @@ export interface experimental_TRPCQueryHandlePerItem<
   }[];
   /**
    * Only when its query's data has a list that an
-   * `experimental_entryPerItem()` entry is loaded for: what that entry loads
+   * `experimental_perItem()` entry is loaded for: what that entry loads
    * for an item. The finished handle keeps it.
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
@@ -282,7 +282,7 @@ export interface experimental_TRPCInfiniteQueryHandlePerItem<
   }[];
   /**
    * Only when its query's pages have a list that an
-   * `experimental_entryPerItem()` entry is loaded for: what that entry loads
+   * `experimental_perItem()` entry is loaded for: what that entry loads
    * for an item. The finished handle keeps it.
    */
   readonly experimental_perItem?: readonly PerItemQueries[];
@@ -297,6 +297,8 @@ export interface experimental_TRPCInfiniteQueryHandlePerItem<
 export interface TRPCLoadEntries {
   [key: string]:
     | AnyTRPCEntry
+    | experimental_QueryEntry<any, any>
+    | experimental_InfiniteQueryEntry<any, any>
     | typeof skipToken
     | experimental_TRPCEntryPerItem<any, any>
     | experimental_TRPCEntryFromData<any, any>
@@ -565,10 +567,120 @@ export type inferInfiniteQueryHandle<
 export type experimental_inferHandles<
   TEntries extends TRPCLoadEntries | ((...args: any[]) => TRPCLoadEntries),
 > = HandlesOf<
-  TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries
+  experimental_WithWait<
+    TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries,
+    never
+  >
 >;
 
 export type HandleType = 'query' | 'infinite';
 
 /** What `experimental_dataOf()` takes: an entry, also one built from another's data */
 export type DataEntry = AnyTRPCEntry | experimental_TRPCEntryFromData<any, any>;
+
+/** The `ResolverDef` of a procedure that a description's entry was built with */
+type DefOfProcedure<TProcedure> = TProcedure extends {
+  '~types': {
+    input: infer TInput;
+    output: infer TOutput;
+    errorShape: infer TErrorShape;
+  };
+}
+  ? {
+      input: TInput;
+      output: TOutput;
+      transformer: boolean;
+      errorShape: TErrorShape;
+      featureFlags: DefaultFeatureFlags;
+    }
+  : TProcedure extends experimental_QueryProcedure<infer TInput, infer TOutput>
+    ? {
+        input: TInput;
+        output: TOutput;
+        transformer: boolean;
+        errorShape: any;
+        featureFlags: DefaultFeatureFlags;
+      }
+    : never;
+
+/** An entry as the load has it: one of a description is a prefetch entry, or an ensure entry if waited for */
+type LoadedEntry<TEntry, TWaited extends boolean> =
+  TEntry extends experimental_QueryEntry<infer TProcedure, any>
+    ? TRPCQueryEntry<
+        DefOfProcedure<TProcedure>,
+        TWaited extends true ? 'ensure' : 'prefetch'
+      >
+    : TEntry extends experimental_InfiniteQueryEntry<infer TProcedure, any>
+      ? TRPCInfiniteQueryEntry<
+          DefOfProcedure<TProcedure>,
+          TWaited extends true ? 'ensure' : 'prefetch'
+        >
+      : TEntry extends TRPCQueryEntry<infer TDef, infer TKind>
+        ? TRPCQueryEntry<
+            TDef,
+            TWaited extends true
+              ? TKind extends 'prefetch'
+                ? 'ensure'
+                : TKind
+              : TKind
+          >
+        : TEntry extends TRPCInfiniteQueryEntry<infer TDef, infer TKind>
+          ? TRPCInfiniteQueryEntry<
+              TDef,
+              TWaited extends true
+                ? TKind extends 'prefetch'
+                  ? 'ensure'
+                  : TKind
+                : TKind
+            >
+          : TEntry extends experimental_FromDataEntry<infer TInner, infer TData>
+            ? experimental_FromDataEntry<LoadedEntry<TInner, TWaited>, TData>
+            : TEntry extends experimental_PerItemEntry<
+                  infer TInner,
+                  infer TItem
+                >
+              ? experimental_PerItemEntry<LoadedEntry<TInner, false>, TItem>
+              : TEntry extends typeof skipToken
+                ? TEntry
+                : TEntry extends TRPCLoadEntries
+                  ? experimental_WithWait<TEntry, never>
+                  : TEntry;
+
+/**
+ * A load's entries as TanStack Query entries: each entry of a description,
+ * from `experimental_query()` and the like, is a prefetch entry, and the
+ * entry of each key in `TWait` an ensure entry
+ */
+export type experimental_WithWait<TEntries, TWait extends string> = {
+  [TKey in keyof TEntries]: LoadedEntry<
+    TEntries[TKey],
+    TKey extends TWait ? true : false
+  >;
+};
+
+/**
+ * Options of `loadHandles()` and `loadHandlesSettled()`
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#wait
+ */
+/** A key whose entry is of one query, which a load can wait for */
+export type experimental_WaitableKey<TEntries> = {
+  [TKey in keyof TEntries & string]: TEntries[TKey] extends
+    | AnyTRPCEntry
+    | experimental_QueryEntry<any, any>
+    | experimental_InfiniteQueryEntry<any, any>
+    | experimental_FromDataEntry<any, any>
+    ? TKey
+    : never;
+}[keyof TEntries & string];
+
+export interface TRPCLoadOptions<
+  TEntries,
+  TWait extends experimental_WaitableKey<TEntries>,
+> {
+  /**
+   * The keys of the entries to wait for, as if each were an ensure entry: the
+   * load resolves once they have data, `data` has it, and an entry that reads
+   * them with `experimental_dataOf()` gets a finished handle
+   */
+  wait?: readonly TWait[];
+}

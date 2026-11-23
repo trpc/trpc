@@ -10,11 +10,42 @@ import { TRPCEntryError } from './entryError';
 import { isServerEnvironment } from './handle';
 import { beginEntries, handlesOfLoads, settledOf, startEntries } from './load';
 import { describeEntries } from './plan';
+import { toTanStackEntries } from './shared';
 import type {
   TRPCLoadEntries,
   TRPCLoadedHandles,
+  TRPCLoadOptions,
   TRPCSettledHandles,
+  experimental_WaitableKey,
+  experimental_WithWait,
 } from './types';
+
+/**
+ * The entries of a load, as TanStack Query entries of the root proxy. A
+ * proxy that isn't the root throws, as it always has; entries it can't read
+ * make the load reject
+ */
+function readLoad(opts: {
+  trpc: unknown;
+  fn: string;
+  entries: Record<string, unknown>;
+  wait: readonly string[] | undefined;
+}) {
+  const root = readRoot(opts.trpc, opts.fn);
+  try {
+    return {
+      queryClient: queryClientOf(root),
+      entries: toTanStackEntries({
+        root,
+        entries: opts.entries,
+        wait: opts.wait ?? [],
+      }),
+      error: null,
+    };
+  } catch (error) {
+    return { queryClient: queryClientOf(root), entries: {}, error };
+  }
+}
 
 export {
   prefetchEntry,
@@ -23,9 +54,15 @@ export {
   prefetchInfiniteEntry,
   fetchInfiniteEntry,
   ensureInfiniteEntry,
-  experimental_dataOf,
-  experimental_entryPerItem,
 } from './entry';
+// The functions that describe what to load are the client's: the same
+// description loads with `loadHandles()` and with `experimental_load()`
+export {
+  experimental_dataOf,
+  experimental_infiniteQuery,
+  experimental_perItem,
+  experimental_query,
+} from '@trpc/client';
 export { fromHandle, experimental_handleOfItem } from './handle';
 export type {
   TRPCQueryHandle,
@@ -33,14 +70,13 @@ export type {
   AnyTRPCHandle,
   TRPCQueryEntry,
   TRPCInfiniteQueryEntry,
-  experimental_TRPCEntryPerItem,
-  experimental_TRPCEntryFromData,
   experimental_TRPCQueryHandlePerItem,
   experimental_TRPCInfiniteQueryHandlePerItem,
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadEntries,
   TRPCLoadedHandles,
+  TRPCLoadOptions,
   TRPCSettledHandles,
   TRPCEntryResult,
   TRPCEntryOptions,
@@ -113,7 +149,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * a fetch or ensure entry built from it with `experimental_dataOf(entry, (data) => entry)`.
  * That is so also when the cache has data for it, such as from `setQueryData()`.
  * A prefetch entry built from it with a callback, or with
- * `experimental_entryPerItem()`, doesn't start, and the load still resolves,
+ * `experimental_perItem()`, doesn't start, and the load still resolves,
  * with its unfinished handle. A throw while
  * it starts an entry that reads no other entry, such as from a `staleTime`
  * function, makes it reject too, whatever the entry's kind.
@@ -142,13 +178,24 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
 export function loadHandles<
   TFeatureFlags extends FeatureFlags,
   TEntries extends TRPCLoadEntries,
+  TWait extends experimental_WaitableKey<TEntries> = never,
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
-): Promise<TRPCLoadedHandles<TEntries>> {
-  return startEntries({
-    queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
+  opts?: TRPCLoadOptions<TEntries, TWait>,
+): Promise<TRPCLoadedHandles<experimental_WithWait<TEntries, TWait>>> {
+  const load = readLoad({
+    trpc,
+    fn: 'loadHandles',
     entries,
+    wait: opts?.wait,
+  });
+  if (load.error !== null) {
+    return Promise.reject(load.error);
+  }
+  return startEntries({
+    queryClient: load.queryClient,
+    entries: load.entries,
     settle: false,
   }) as Promise<any>;
 }
@@ -164,7 +211,7 @@ export function loadHandles<
  * handle, and its result, if it has one, is the same error. One built from it
  * with `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle,
  * and its result, if it has one, is the same error. An
- * `experimental_entryPerItem()` over it has no handle, and its result, if it has
+ * `experimental_perItem()` over it has no handle, and its result, if it has
  * one, is an empty list. So check the
  * results before you return the handles. If the failed entry is a prefetch entry,
  * which has no result to hold the error, the load rejects with it when another
@@ -196,13 +243,24 @@ export function loadHandles<
 export function loadHandlesSettled<
   TFeatureFlags extends FeatureFlags,
   TEntries extends TRPCLoadEntries,
+  TWait extends experimental_WaitableKey<TEntries> = never,
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
-): Promise<TRPCSettledHandles<TEntries>> {
-  return startEntries({
-    queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
+  opts?: TRPCLoadOptions<TEntries, TWait>,
+): Promise<TRPCSettledHandles<experimental_WithWait<TEntries, TWait>>> {
+  const load = readLoad({
+    trpc,
+    fn: 'loadHandlesSettled',
     entries,
+    wait: opts?.wait,
+  });
+  if (load.error !== null) {
+    return Promise.reject(load.error);
+  }
+  return startEntries({
+    queryClient: load.queryClient,
+    entries: load.entries,
     settle: true,
   }) as Promise<any>;
 }
@@ -253,9 +311,11 @@ function useHandles<
   TEntries extends TRPCLoadEntries,
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
-  entries: TEntries,
-): TRPCLoadedHandles<TEntries>[0] {
-  const queryClient = queryClientOf(readRoot(trpc, 'experimental_useHandles'));
+  given: TEntries,
+): TRPCLoadedHandles<experimental_WithWait<TEntries, never>>[0] {
+  const root = readRoot(trpc, 'experimental_useHandles');
+  const queryClient = queryClientOf(root);
+  const entries = toTanStackEntries({ root, entries: given, wait: [] });
   const key = describeEntries({ queryClient, entries });
   const loads = usedLoadsOf(queryClient);
   let used = loads.get(key);

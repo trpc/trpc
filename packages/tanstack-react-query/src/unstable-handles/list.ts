@@ -1,11 +1,16 @@
+import type { EntryDataRef } from '@trpc/client/unstable-internals';
+import type {
+  DataPath,
+  ItemPath,
+  RequestPath,
+} from '@trpc/client/unstable-internals';
+import { itemPathOf } from '@trpc/client/unstable-internals';
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import {
   bindPipelinePath,
   readPipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { EntryDataRef } from './dataRef';
 import type { EntryRequest } from './entry';
-import type { DataPath, ItemPath, RequestPath } from './path';
 import type { HandleType } from './types';
 
 /**
@@ -28,17 +33,6 @@ export function requestPath(opts: {
   return pages === 'pages' && (page === '0' || (opts.item && page === null))
     ? (opts.path.slice(2) as RequestPath)
     : null;
-}
-
-/**
- * The path to the items of the list an entry per item is for, with a `null`
- * for each level of lists, as the server walks it. What `.map()` returned is
- * a value for every item already. Any other list's items are its elements.
- */
-export function itemPathOf(list: EntryDataRef): ItemPath {
-  return (
-    list.shape === 'mapped' ? list.path : [...list.path, null]
-  ) as ItemPath;
 }
 
 /**
