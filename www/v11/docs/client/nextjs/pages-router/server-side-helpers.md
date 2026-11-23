@@ -104,7 +104,7 @@ Run the queries with the query client's methods:
 - `queryClient.query(trpc.post.byId.queryOptions(input)).catch(noop)` also caches the result, but never throws. Import `noop` from `@tanstack/react-query`.
 - `queryClient.infiniteQuery` does the same with `trpc.post.list.infiniteQueryOptions(input)`.
 
-Add `.catch(noop)` for data the page only shows, and leave it out when you need the result on the server, for instance to return `notFound`. Then send the cache to the page with `dehydrate`:
+Add `.catch(noop)` for data the page can fetch again in the browser. Leave it out when you need the result on the server, for instance to return `notFound`, or when a failed ISR revalidation should keep the last good page. Then send the cache to the page with `dehydrate`:
 
 ```ts twoslash
 // @filename: example.ts
