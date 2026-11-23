@@ -10,7 +10,7 @@ export default defineConfig({
     sourcemap: true,
     tsconfig: './tsconfig.build.json',
   },
-  unbundle: true,
+  // unbundle: true,
   format: ['cjs', 'esm'],
   outExtensions: (ctx) => ({
     dts: ctx.format === 'cjs' ? '.d.cts' : '.d.mts',

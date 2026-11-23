@@ -1,5 +1,3 @@
-'use client';
-
 import { hashKey } from '@tanstack/react-query';
 import * as React from 'react';
 import type {

@@ -1,9 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCClient, httpLink } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/routers/_app';
 import React from 'react';
 import superjson from 'superjson';
+import type { AppRouter } from '~/server/routers/_app';
 
 // `createTRPCOptionsProxy` must be importable from server components that run
 // on the edge runtime, where `react` resolves to its `react-server` build
