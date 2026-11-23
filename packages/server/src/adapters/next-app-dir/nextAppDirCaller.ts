@@ -40,6 +40,8 @@ export function nextAppDirCaller<TContext, TMeta>(
        * Called when a procedure throws.
        * `input` is the value the procedure received, so `FormData` is
        * already normalized to an object when `normalizeFormData` is on.
+       * If that conversion fails, the procedure doesn't run and `input` is
+       * the original `FormData`.
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
     } & CreateContextCallback<TContext, () => MaybePromise<TContext>>
