@@ -1,5 +1,8 @@
+import { RedirectType } from 'next/navigation';
+import { z } from 'zod';
 import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
+import { redirect, TRPCRedirectError } from './next-app-dir/redirect';
 
 test('experimental caller', async () => {
   const t = initTRPC.create();
@@ -90,4 +93,203 @@ test('with path extractor', async () => {
       expect.stringContaining('hello took'),
     );
   }
+});
+
+test('onError receives the submitted form data when useActionState passes the previous state first', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => {
+      throw new Error('boom');
+    });
+
+  const formData = new FormData();
+  formData.set('name', 'Ada');
+
+  await expect((proc as any)({ name: 'stale' }, formData)).rejects.toThrow(
+    'boom',
+  );
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0].input).toEqual({ name: 'Ada' });
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    path: '',
+    type: 'mutation',
+    error: { message: 'boom' },
+  });
+});
+
+test('onError receives the normalized form data for a single argument call', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => {
+      throw new Error('boom');
+    });
+
+  const formData = new FormData();
+  formData.set('name', 'Ada');
+
+  await expect((proc as any)(formData)).rejects.toThrow('boom');
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  // `formDataToObject` returns a null-prototype object, so this compares values only
+  expect(onError.mock.calls[0]![0].input).toEqual({ name: 'Ada' });
+});
+
+test('redirect accepts the redirect types of the installed Next.js', () => {
+  // Next 15 types these as an enum, Next 16 as 'push' | 'replace'; tRPC takes
+  // whichever the installed `next/navigation` uses. The tests run on Next 16,
+  // so the bare string is accepted (Next 15's own `redirect()` rejects it)
+  const viaConst = redirect('/a', RedirectType.replace) as unknown;
+  assert(viaConst instanceof TRPCRedirectError);
+  expect(viaConst.args).toEqual(['/a', 'replace']);
+
+  const viaString = redirect('/b', 'push') as unknown;
+  assert(viaString instanceof TRPCRedirectError);
+  expect(viaString.args).toEqual(['/b', 'push']);
+
+  // @ts-expect-error not a Next.js redirect type
+  redirect('/c', 'bogus');
+});
+
+test('onError is called and a TRPCError is thrown when form data cannot be normalized', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => 'ok');
+
+  // `user` as a scalar and `user.name` as a nested key collide, so
+  // `formDataToObject` throws while building the object.
+  const formData = new FormData();
+  formData.set('user', 'alice');
+  formData.set('user.name', 'bob');
+
+  await expect((proc as any)(formData)).rejects.toMatchObject({
+    name: 'TRPCError',
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    path: '',
+    type: 'mutation',
+    error: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+});
+
+test('form data cannot add properties to String.prototype', async () => {
+  const t = initTRPC.create();
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({}))
+    .mutation(() => 'ok');
+
+  // `a` holds a string, and `'x'.__proto__` is `String.prototype`
+  const formData = new FormData();
+  formData.append('a', 'x');
+  formData.append('a[__proto__][nextAppDirPolluted]', 'yes');
+
+  await expect((proc as any)(formData)).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+  const polluted = ('' as any).nextAppDirPolluted;
+  delete (String.prototype as any).nextAppDirPolluted;
+  expect(polluted).toBeUndefined();
+});
+
+describe('input only has what the validator returned', () => {
+  function setup() {
+    const t = initTRPC.create();
+    const received = vi.fn<(input: unknown) => void>();
+    const base = t.procedure.experimental_caller(nextAppDirCaller({}));
+    const schema = z.object({ displayName: z.string() });
+    return {
+      received,
+      mutation: base.input(schema).mutation((opts) => {
+        received(opts.input);
+      }),
+      query: base.input(schema).query((opts) => {
+        received(opts.input);
+      }),
+      chained: base
+        .input(z.object({ orgId: z.string() }))
+        .input(schema)
+        .mutation((opts) => {
+          received(opts.input);
+        }),
+    };
+  }
+
+  test('mutation called with an object', async () => {
+    const { mutation, received } = setup();
+
+    await (mutation as any)({ displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('mutation called with form data', async () => {
+    const { mutation, received } = setup();
+    const formData = new FormData();
+    formData.set('displayName', 'alice');
+    formData.set('role', 'admin');
+
+    await (mutation as any)(formData);
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('mutation called by useActionState with the previous state first', async () => {
+    const { mutation, received } = setup();
+
+    await (mutation as any)(null, { displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('query', async () => {
+    const { query, received } = setup();
+
+    await (query as any)({ displayName: 'alice', role: 'admin' });
+
+    expect(received).toHaveBeenCalledWith({ displayName: 'alice' });
+  });
+
+  test('chained inputs are still merged', async () => {
+    const { chained, received } = setup();
+
+    await (chained as any)({
+      orgId: 'o1',
+      displayName: 'alice',
+      role: 'admin',
+    });
+
+    expect(received).toHaveBeenCalledWith({
+      orgId: 'o1',
+      displayName: 'alice',
+    });
+  });
+});
+
+test('a large array index in form data is rejected without building a sparse array', async () => {
+  const t = initTRPC.create();
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({}))
+    .input(z.object({ items: z.array(z.string()) }))
+    .mutation((opts) => opts.input.items.length);
+
+  // a sparse array would have 1,000,001 holes for the validator to walk
+  const formData = new FormData();
+  formData.append('items[1000000]', 'x');
+
+  const error = await (proc as any)(formData).catch((cause: unknown) => cause);
+
+  expect(error).toMatchObject({ code: 'BAD_REQUEST' });
+  expect(error.cause.issues).toHaveLength(1);
 });

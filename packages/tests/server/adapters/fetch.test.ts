@@ -123,8 +123,8 @@ function createStreamSpy() {
 }
 
 async function startServer(
-  endpoint = '',
-  routerOptions?: AppRouterServerOptions,
+  endpoint: string,
+  routerOptions: AppRouterServerOptions | undefined,
 ) {
   const router = createAppRouter(routerOptions);
 
@@ -158,24 +158,12 @@ async function startServer(
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
-  return {
-    url,
-    close: server.close.bind(server),
-    router,
-    client,
-  };
+  return makeAsyncResource({ url, router, client }, () => server.close());
 }
 
 describe('with default server', () => {
-  let t: Awaited<ReturnType<typeof startServer>>;
-  beforeAll(async () => {
-    t = await startServer();
-  });
-  afterAll(async () => {
-    await t.close();
-  });
-
   test('simple query', async () => {
+    await using t = await startServer('', undefined);
     expect(
       await t.client.hello.query({
         who: 'test',
@@ -194,6 +182,7 @@ describe('with default server', () => {
   });
 
   test('streaming', async () => {
+    await using t = await startServer('', undefined);
     const spy = createStreamSpy();
 
     const client = createTRPCClient<AppRouter>({
@@ -222,12 +211,11 @@ describe('with default server', () => {
     'application/x-ndjson',
     'text/plain',
   ] as const)('streaming can opt into %s content-type', async (contentType) => {
-    const server = await startServer('', {
+    await using custom = await startServer('', {
       jsonl: {
         contentType,
       },
     });
-    await using custom = makeAsyncResource(server, server.close);
     const spy = createStreamSpy();
 
     const client = createTRPCClient<AppRouter>({
@@ -252,6 +240,7 @@ describe('with default server', () => {
   });
 
   test('query with headers', async () => {
+    await using t = await startServer('', undefined);
     const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
@@ -270,6 +259,7 @@ describe('with default server', () => {
   });
 
   test('response with headers', async () => {
+    await using t = await startServer('', undefined);
     const customLink: TRPCLink<AppRouter> = () => {
       return ({ next, op }) => {
         return next(op).pipe(
@@ -307,7 +297,7 @@ test.each([
   '/trpc/',
   '/x/y/z',
 ])('with "%s" endpoint', async (endpoint) => {
-  const custom = await startServer(endpoint);
+  await using custom = await startServer(endpoint, undefined);
   expect(
     await custom.client.hello.query({
       who: 'test',
@@ -315,25 +305,21 @@ test.each([
   ).toEqual({
     text: 'hello test',
   });
-
-  await custom.close();
 });
 
 // https://github.com/trpc/trpc/issues/5659
 test('mutation', async () => {
-  const t = await startServer();
+  await using t = await startServer('', undefined);
 
   const res = await Promise.all([
     t.client.helloMutation.mutate('world'),
     t.client.helloMutation.mutate('KATT'),
   ]);
   expect(res).toEqual(['hello world', 'hello KATT']);
-
-  await t.close();
 });
 
 test('batching', async () => {
-  const t = await startServer();
+  await using t = await startServer('', undefined);
 
   const normalResult = await (
     await fetch(`${t.url}/hello,foo?batch=1&input={}`)

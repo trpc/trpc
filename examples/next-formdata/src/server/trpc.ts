@@ -8,14 +8,14 @@
  * @see https://trpc.io/docs/v11/procedures
  */
 import { initTRPC } from '@trpc/server';
-import type * as trpcNext from '@trpc/server/adapters/next';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { ZodError } from 'zod';
 
 /**
  * Creates context for an incoming request
  * @see https://trpc.io/docs/v11/context
  */
-export async function createContext(opts: trpcNext.CreateNextContextOptions) {
+export async function createContext(opts: FetchCreateContextFnOptions) {
   return {
     req: opts.req,
   };

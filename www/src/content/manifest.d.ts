@@ -63,6 +63,6 @@ declare module '*.md' {
 declare module 'virtual:og-cards' {
   import type { OgCard } from '~/og/card.ts';
 
-  /** Each page's social card, by its path (`ogImagePath`), from `build/og-cards.ts`. */
+  /** Each page's social card, by the page's path, from `build/og-cards.ts`. */
   export const cards: ReadonlyMap<string, OgCard>;
 }

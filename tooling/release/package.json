@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -5,36 +5,35 @@ import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import React, { createContext } from 'react';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouterA = t.router({
-      serverAQuery: t.procedure.query(() => 'serverA'),
-    });
-    const appRouterB = t.router({
-      serverBQuery: t.procedure.query(() => 'serverB'),
-    });
-    const appRouterC = t.router({
-      serverCQuery: t.procedure.query(() => 'serverC'),
-    });
+function setup() {
+  const t = initTRPC.create();
+  const appRouterA = t.router({
+    serverAQuery: t.procedure.query(() => 'serverA'),
+  });
+  const appRouterB = t.router({
+    serverBQuery: t.procedure.query(() => 'serverB'),
+  });
+  const appRouterC = t.router({
+    serverCQuery: t.procedure.query(() => 'serverC'),
+  });
 
-    return {
-      A: testServerAndClientResource(appRouterA),
-      B: testServerAndClientResource(appRouterB),
-      C: testServerAndClientResource(appRouterC),
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx.A?.close();
-    await ctx.B?.close();
-    await ctx.C?.close();
-  })
-  .done();
+  const resources = {
+    A: testServerAndClientResource(appRouterA),
+    B: testServerAndClientResource(appRouterB),
+    C: testServerAndClientResource(appRouterC),
+  };
+  return makeAsyncResource(resources, async () => {
+    await resources.A.close();
+    await resources.B.close();
+    await resources.C.close();
+  });
+}
 
 test('multiple trpcProviders', async () => {
+  await using ctx = setup();
   const A = (() => {
     return {
       trpc: createTRPCReact<(typeof ctx)['A']['router']>({

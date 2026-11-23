@@ -20,6 +20,8 @@ export function Segmented<Value extends string>(props: {
     <ToggleGroup
       aria-label={props['aria-label']}
       aria-labelledby={props['aria-labelledby']}
+      // On a narrow screen, the options scroll rather than widen the page
+      className="max-w-full overflow-x-auto"
       onValueChange={(value) => {
         const next = props.options.find((option) => option.value === value[0]);
         if (next && next.value !== props.value) {

@@ -25,8 +25,8 @@ If the public API changes, show it in a short code block: before and after, or a
 ## Links
 
 <!--
-One bullet per docs page or example route this changes, linking this PR's Vercel preview: `[Page › Section](<preview URL>#<anchor>): what changed`.
-Run `pnpm preview-urls` for each project's preview URL; write the links when you open the PR, not "pending". `www/v11/docs/<path>.md` is at `/docs/<path>`.
+One bullet per docs page or example route this changes, linking this PR's Vercel preview, never trpc.io: `[Page › Section](<preview URL>/docs/<path>#<anchor>): what changed`.
+The preview URL comes from the branch name, so you can write it before Vercel builds: run `pnpm preview-urls` on the branch (or `pnpm preview-urls <branch> [fork-owner]`) and use its `www` line for docs. Write the links when you open the PR, not "pending" or "to follow". `www/v11/docs/<path>.md` is at `/docs/<path>`.
 If a project builds no preview, say so and link the page's file in this PR's diff instead.
 Write "None" if no page or route changes.
 -->

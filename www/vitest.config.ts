@@ -9,5 +9,6 @@ export default defineConfig({
     name: 'www',
     environment: 'node',
     include: ['build/**/*.test.ts', 'src/**/*.test.ts'],
+    setupFiles: ['./vitest.setup.ts'],
   },
 });
