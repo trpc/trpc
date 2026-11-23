@@ -1,9 +1,14 @@
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
 
+/**
+ * Options for `createWSClient`.
+ *
+ * @see https://trpc.io/docs/client/links/wsLink#wslink--createwsclient-options
+ */
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
-   * Ponyfill which WebSocket implementation to use
+   * The `WebSocket` class to use, for runtimes that don't have one.
    */
   WebSocket?: typeof WebSocket;
   /**
@@ -58,7 +63,7 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
     pongTimeoutMs?: number;
   };
   /**
-   * Custom encoder for wire encoding (e.g. custom binary formats)
+   * Encodes and decodes messages on the wire, for example as a binary format.
    * @default jsonEncoder
    */
   experimental_encoder?: Encoder;

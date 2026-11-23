@@ -3,7 +3,6 @@ import { useIsFetching } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getQueryKey } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
@@ -13,57 +12,53 @@ type Post = {
 };
 
 const defaultPost = { id: 0, text: 'new post' };
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
+function setup() {
+  const t = initTRPC.create();
 
-    const posts: Post[] = [defaultPost];
+  const posts: Post[] = [defaultPost];
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.number(),
-            }),
-          )
-          .query(({ input }) => posts.find((post) => post.id === input.id)),
-        all: t.procedure.query(() => posts),
-        list: t.procedure
-          .input(z.object({ cursor: z.number() }))
-          .query(({ input }) => {
-            return posts.slice(input.cursor);
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
           }),
-        moreLists: t.procedure
-          .input(z.object({ anotherKey: z.number(), cursor: z.number() }))
-          .query(({ input }) => {
-            return posts.slice(input.cursor);
+        )
+        .query(({ input }) => posts.find((post) => post.id === input.id)),
+      all: t.procedure.query(() => posts),
+      list: t.procedure
+        .input(z.object({ cursor: z.number() }))
+        .query(({ input }) => {
+          return posts.slice(input.cursor);
+        }),
+      moreLists: t.procedure
+        .input(z.object({ anotherKey: z.number(), cursor: z.number() }))
+        .query(({ input }) => {
+          return posts.slice(input.cursor);
+        }),
+      update: t.procedure
+        .input(
+          z.object({
+            name: z.string(),
           }),
-        update: t.procedure
-          .input(
-            z.object({
-              name: z.string(),
-            }),
-          )
-          .mutation(({ input }) => {
-            return {
-              user: {
-                name: input.name,
-              },
-            };
-          }),
-      }),
-    });
+        )
+        .mutation(({ input }) => {
+          return {
+            user: {
+              name: input.name,
+            },
+          };
+        }),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+}
 
 describe('getQueryKeys', () => {
   test('no input', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -98,6 +93,7 @@ describe('getQueryKeys', () => {
   });
 
   test('with input', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -142,6 +138,7 @@ describe('getQueryKeys', () => {
   });
 
   test('undefined input but type', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -171,6 +168,7 @@ describe('getQueryKeys', () => {
   });
 
   test('undefined input but type', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -203,6 +201,7 @@ describe('getQueryKeys', () => {
   });
 
   test('extra key in input but type', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -257,6 +256,7 @@ describe('getQueryKeys', () => {
   });
 
   test('infinite', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -283,6 +283,7 @@ describe('getQueryKeys', () => {
   });
 
   test('mutation', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -312,6 +313,7 @@ describe('getQueryKeys', () => {
   });
 
   test('on router', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -341,6 +343,7 @@ describe('getQueryKeys', () => {
   });
 
   test('forwarded to a real method', async () => {
+    await using ctx = setup();
     const { client, App } = ctx;
 
     function MyComponent() {
@@ -365,7 +368,8 @@ describe('getQueryKeys', () => {
     });
   });
 
-  test('outside of the react context', () => {
+  test('outside of the react context', async () => {
+    await using ctx = setup();
     const { client } = ctx;
 
     const all = getQueryKey(client.post.all, undefined, 'query');

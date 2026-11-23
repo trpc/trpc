@@ -1,5 +1,6 @@
 import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
 import {
+  assertNever,
   emptyObject,
   isAsyncIterable,
   isFunction,
@@ -404,6 +405,10 @@ function createConsumerStream<THead>(
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamsManager(abortController: AbortController) {
+  let terminalState:
+    | { type: 'closed' }
+    | { type: 'errored'; reason: unknown }
+    | undefined;
   const controllerMap = new Map<
     ChunkIndex,
     ReturnType<typeof createStreamController>
@@ -439,6 +444,7 @@ function createStreamsManager(abortController: AbortController) {
         }
       },
       closed: false,
+      // A lazy iterable may acquire its reader after the source closes or errors.
       getReaderResource: () => {
         const reader = stream.getReader();
 
@@ -462,7 +468,6 @@ function createStreamsManager(abortController: AbortController) {
         enqueue: () => {
           // noop
         },
-        getReaderResource: null,
         error: () => {
           // noop
         },
@@ -480,6 +485,12 @@ function createStreamsManager(abortController: AbortController) {
     if (!c) {
       c = createStreamController();
       controllerMap.set(chunkId, c);
+      // Buffered values can reveal nested async values after the source ends.
+      if (terminalState?.type === 'closed') {
+        c.close();
+      } else if (terminalState?.type === 'errored') {
+        c.error(terminalState.reason);
+      }
     }
     return c;
   }
@@ -488,6 +499,10 @@ function createStreamsManager(abortController: AbortController) {
    * Cancels all pending controllers and rejects deferred promises
    */
   function cancelAll(reason: unknown) {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'errored', reason };
     for (const controller of controllerMap.values()) {
       controller.error(reason);
     }
@@ -497,6 +512,10 @@ function createStreamsManager(abortController: AbortController) {
    * Closes all pending controllers to preserve buffered data
    */
   function closeAll() {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'closed' };
     for (const controller of controllerMap.values()) {
       controller.close();
     }
@@ -544,45 +563,57 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
     const controller = streamManager.getOrCreate(chunkId);
 
-    switch (type) {
-      case CHUNK_VALUE_TYPE_PROMISE: {
-        return run(async () => {
-          using reader = controller.getReaderResource();
+    if (type === CHUNK_VALUE_TYPE_PROMISE) {
+      const promise = run(async () => {
+        using reader = controller.getReaderResource();
 
-          const { value } = await reader.read();
-          const [_chunkId, status, data] = value as PromiseChunk;
+        const { done, value } = await reader.read();
+
+        if (done) {
+          throw new Error('Stream closed unexpectedly');
+        }
+
+        const [_chunkId, status, data] = value as PromiseChunk;
+        switch (status) {
+          case PROMISE_STATUS_FULFILLED:
+            return decode(data);
+          case PROMISE_STATUS_REJECTED:
+            throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+        }
+      });
+      // The promise is created eagerly, before anyone reads it, and may never be read.
+      promise.catch(() => {
+        // noop
+      });
+      return promise;
+    }
+    if (type === CHUNK_VALUE_TYPE_ASYNC_ITERABLE) {
+      return run(async function* () {
+        using reader = controller.getReaderResource();
+
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            throw new Error('Stream closed unexpectedly');
+          }
+
+          const [_chunkId, status, data] = value as IterableChunk;
+
           switch (status) {
-            case PROMISE_STATUS_FULFILLED:
+            case ASYNC_ITERABLE_STATUS_YIELD:
+              yield decode(data);
+              break;
+            case ASYNC_ITERABLE_STATUS_RETURN:
               return decode(data);
-            case PROMISE_STATUS_REJECTED:
+            case ASYNC_ITERABLE_STATUS_ERROR:
               throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
           }
-        });
-      }
-      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        return run(async function* () {
-          using reader = controller.getReaderResource();
-
-          while (true) {
-            const { value } = await reader.read();
-
-            const [_chunkId, status, data] = value as IterableChunk;
-
-            switch (status) {
-              case ASYNC_ITERABLE_STATUS_YIELD:
-                yield decode(data);
-                break;
-              case ASYNC_ITERABLE_STATUS_RETURN:
-                return decode(data);
-              case ASYNC_ITERABLE_STATUS_ERROR:
-                throw (
-                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                );
-            }
-          }
-        });
-      }
+        }
+      });
     }
+
+    assertNever(type);
   }
 
   function decode(value: EncodedValue): unknown {

@@ -1,0 +1,1022 @@
+{
+  "openapi": "3.1.1",
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
+  "info": {
+    "title": "tRPC API",
+    "version": "0.0.0"
+  },
+  "paths": {
+    "/plain": {
+      "get": {
+        "operationId": "plain",
+        "description": "Uses the router-wide error shape only",
+        "tags": [
+          "plain"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "style": "deepObject",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "/limited": {
+      "post": {
+        "operationId": "limited",
+        "description": "Can additionally fail with a rate-limit error",
+        "tags": [
+          "limited"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/LimitedError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chained": {
+      "post": {
+        "operationId": "chained",
+        "description": "Two chained `.errors()` handlers, each with their own shape",
+        "tags": [
+          "chained"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/ChainedError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chainedDuplicate": {
+      "post": {
+        "operationId": "chainedDuplicate",
+        "description": "Chained handlers that declare the *same* shape",
+        "tags": [
+          "chainedDuplicate"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/LimitedError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/neverClaims": {
+      "post": {
+        "operationId": "neverClaims",
+        "description": "A handler that never claims an error - stays on the router-wide shape",
+        "tags": [
+          "neverClaims"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/multiShape": {
+      "post": {
+        "operationId": "multiShape",
+        "description": "A single handler that can return either of two shapes",
+        "tags": [
+          "multiShape"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "ok"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "data"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/ChainedError"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LimitedErrorShape": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "requestId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus",
+                  "requestId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "RATE_LIMIT"
+                  },
+                  "retryAfterMs": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus",
+                  "kind",
+                  "retryAfterMs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "ChainedErrorShape": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "requestId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus",
+                  "requestId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "RATE_LIMIT"
+                  },
+                  "retryAfterMs": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus",
+                  "kind",
+                  "retryAfterMs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "code": {
+                "type": "number",
+                "enum": [
+                  -32700,
+                  -32603,
+                  -32600,
+                  -32099,
+                  -32029,
+                  -32028,
+                  -32022,
+                  -32015,
+                  -32013,
+                  -32012,
+                  -32009,
+                  -32008,
+                  -32005,
+                  -32004,
+                  -32003,
+                  -32002,
+                  -32001
+                ],
+                "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "BAD_GATEWAY",
+                      "BAD_REQUEST",
+                      "CLIENT_CLOSED_REQUEST",
+                      "CONFLICT",
+                      "FORBIDDEN",
+                      "GATEWAY_TIMEOUT",
+                      "INTERNAL_SERVER_ERROR",
+                      "METHOD_NOT_SUPPORTED",
+                      "NOT_FOUND",
+                      "NOT_IMPLEMENTED",
+                      "PARSE_ERROR",
+                      "PAYLOAD_TOO_LARGE",
+                      "PAYMENT_REQUIRED",
+                      "PRECONDITION_FAILED",
+                      "PRECONDITION_REQUIRED",
+                      "SERVICE_UNAVAILABLE",
+                      "TIMEOUT",
+                      "TOO_MANY_REQUESTS",
+                      "UNAUTHORIZED",
+                      "UNPROCESSABLE_CONTENT",
+                      "UNSUPPORTED_MEDIA_TYPE"
+                    ]
+                  },
+                  "httpStatus": {
+                    "type": "number"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "The path of the procedure that threw."
+                  },
+                  "stack": {
+                    "type": "string",
+                    "description": "The error's stack trace, only when `isDev` is set."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "const": "CONFLICT"
+                  },
+                  "conflictsWith": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "httpStatus",
+                  "kind",
+                  "conflictsWith"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "message",
+              "code",
+              "data"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "number",
+                      "enum": [
+                        -32700,
+                        -32603,
+                        -32600,
+                        -32099,
+                        -32029,
+                        -32028,
+                        -32022,
+                        -32015,
+                        -32013,
+                        -32012,
+                        -32009,
+                        -32008,
+                        -32005,
+                        -32004,
+                        -32003,
+                        -32002,
+                        -32001
+                      ],
+                      "description": "A JSON-RPC 2.0 error code tRPC sends, such as `-32004`."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_GATEWAY",
+                            "BAD_REQUEST",
+                            "CLIENT_CLOSED_REQUEST",
+                            "CONFLICT",
+                            "FORBIDDEN",
+                            "GATEWAY_TIMEOUT",
+                            "INTERNAL_SERVER_ERROR",
+                            "METHOD_NOT_SUPPORTED",
+                            "NOT_FOUND",
+                            "NOT_IMPLEMENTED",
+                            "PARSE_ERROR",
+                            "PAYLOAD_TOO_LARGE",
+                            "PAYMENT_REQUIRED",
+                            "PRECONDITION_FAILED",
+                            "PRECONDITION_REQUIRED",
+                            "SERVICE_UNAVAILABLE",
+                            "TIMEOUT",
+                            "TOO_MANY_REQUESTS",
+                            "UNAUTHORIZED",
+                            "UNPROCESSABLE_CONTENT",
+                            "UNSUPPORTED_MEDIA_TYPE"
+                          ]
+                        },
+                        "httpStatus": {
+                          "type": "number"
+                        },
+                        "path": {
+                          "type": "string",
+                          "description": "The path of the procedure that threw."
+                        },
+                        "stack": {
+                          "type": "string",
+                          "description": "The error's stack trace, only when `isDev` is set."
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "httpStatus",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "message",
+                    "code",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      "LimitedError": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/LimitedErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      },
+      "ChainedError": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "$ref": "#/components/schemas/ChainedErrorShape"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

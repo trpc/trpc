@@ -11,6 +11,7 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
@@ -30,7 +31,7 @@ export type UseProcedureRecord<
       ? Resolver<{
           input: inferProcedureInput<$Value>;
           output: inferTransformedProcedureOutput<TRoot, $Value>;
-          errorShape: TRoot['errorShape'];
+          errorShape: inferProcedureErrorShape<TRoot, $Value>;
           transformer: TRoot['transformer'];
         }>
       : $Value extends RouterRecord
@@ -100,9 +101,30 @@ export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
  * @internal
  */
 export function generateCacheTag(procedurePath: string, input: any) {
-  return input
+  return input !== undefined
     ? `${procedurePath}?input=${JSON.stringify(input)}`
     : procedurePath;
+}
+
+/**
+ * @internal
+ */
+export function generateCacheTags(
+  procedurePath: string,
+  input?: any,
+): string[] {
+  if (!procedurePath) {
+    return [];
+  }
+  const parts = procedurePath.split('.');
+  const tags: string[] = [];
+  for (let i = 1; i <= parts.length; i++) {
+    tags.push(parts.slice(0, i).join('.'));
+  }
+  if (input !== undefined) {
+    tags.push(`${procedurePath}?input=${JSON.stringify(input)}`);
+  }
+  return tags;
 }
 
 export function isFormData(value: unknown): value is FormData {
@@ -132,5 +154,5 @@ export type inferActionDef<
 > = {
   input: inferProcedureInput<TProc>;
   output: inferProcedureOutput<TProc>;
-  errorShape: TRoot['errorShape'];
+  errorShape: inferProcedureErrorShape<TRoot, TProc>;
 };

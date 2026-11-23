@@ -1,0 +1,8 @@
+[
+  "tRPC",
+  "@trpc/server",
+  "@trpc/client",
+  "@trpc/react",
+  "@trpc/next",
+  "Extra information"
+]

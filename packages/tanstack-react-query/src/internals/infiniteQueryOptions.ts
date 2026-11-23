@@ -34,7 +34,9 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -54,7 +56,9 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -79,7 +83,9 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -93,13 +99,15 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface DefinedTRPCInfiniteQueryOptionsOut<
+export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -118,13 +126,15 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
@@ -138,13 +148,15 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
@@ -163,6 +175,10 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
+/**
+ * The `infiniteQueryOptions` helper on a query procedure. Returns options for `useInfiniteQuery`, `prefetchInfiniteQuery` and so on.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ */
 export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,

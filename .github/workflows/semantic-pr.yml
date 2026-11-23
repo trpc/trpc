@@ -6,6 +6,8 @@ on:
       - opened
       - edited
       - synchronize
+  # the title is already validated on the PR; this only reports the required check
+  merge_group:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,10 +19,11 @@ permissions:
 jobs:
   test:
     name: test title
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           # Checkout the base branch to get the canonical package list
@@ -31,7 +34,7 @@ jobs:
       - name: Validate PR title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-          ADDITIONAL_SCOPES: www,example,ci,docs,deps,monorepo
+          ADDITIONAL_SCOPES: www,example,examples,ci,docs,deps,monorepo
           TYPES: feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
         run: |
           # Extract package names and combine with additional scopes

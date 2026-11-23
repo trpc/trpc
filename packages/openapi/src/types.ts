@@ -67,15 +67,14 @@ export type MediaTypeObject = Replace<
   }
 >;
 
-export interface ParameterBaseObject
-  extends Replace<
-    BaseOpenAPIV3_1.ParameterBaseObject,
-    {
-      schema?: SchemaObject | ReferenceObject;
-      examples?: Record<string, ReferenceObject | ExampleObject>;
-      content?: Record<string, MediaTypeObject>;
-    }
-  > {}
+export interface ParameterBaseObject extends Replace<
+  BaseOpenAPIV3_1.ParameterBaseObject,
+  {
+    schema?: SchemaObject | ReferenceObject;
+    examples?: Record<string, ReferenceObject | ExampleObject>;
+    content?: Record<string, MediaTypeObject>;
+  }
+> {}
 
 export interface ParameterObject extends ParameterBaseObject {
   name: string;

@@ -1,0 +1,26 @@
+{
+  "name": "examples-minimal-per-procedure-errors",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "build:client": "npm run build -w client",
+    "build:server": "npm run build -w server",
+    "build": "run-s build:server build:client",
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "dev": "run-p dev:*",
+    "start:client": "npm run start -w client",
+    "start:server": "npm run start -w server",
+    "start": "run-p start:*",
+    "typecheck:client": "npm run typecheck -w client",
+    "typecheck:server": "npm run typecheck -w server",
+    "typecheck": "run-s typecheck:*"
+  },
+  "devDependencies": {
+    "npm-run-all2": "catalog:",
+    "wait-port": "^1.1.0"
+  }
+}

@@ -23,9 +23,8 @@ function assertIsRequestId(
 ): asserts obj is number | string | null {
   if (
     obj !== null &&
-    typeof obj === 'number' &&
-    isNaN(obj) &&
-    typeof obj !== 'string'
+    typeof obj !== 'string' &&
+    (typeof obj !== 'number' || isNaN(obj))
   ) {
     throw new Error('Invalid request id');
   }
@@ -47,7 +46,11 @@ function assertIsJSONRPC2OrUndefined(
   }
 }
 
-/** @public */
+/**
+ * Checks that a message a WebSocket client sent is a valid tRPC message,
+ * and deserializes its input. Throws if it isn't.
+ * @public
+ */
 export function parseTRPCMessage(
   obj: unknown,
   transformer: CombinedDataTransformer,

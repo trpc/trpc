@@ -1,61 +1,112 @@
 name: subtree-matrix
+# Syncs the standalone examples to `trpc/examples-<name>`. They install
+# `@trpc/*@latest`, so the release workflow syncs them all once a release is
+# out. A push to main syncs only the examples whose files it changed, not
+# counting `package.json`s, whose versions the copy replaces anyway.
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      all:
+        type: boolean
+        required: true
+    secrets:
+      TRPC_DEPLOY_TOKEN:
+        required: true
   push:
     branches:
       - 'main'
+    paths:
+      - 'examples/**'
+      - '!examples/**/package.json'
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)
+  # Not `github.workflow`, which is the caller's when the release workflow
+  # calls this. Every sync pushes main, so they share one group.
+  group: subtree-main
+  # A newer pending run would otherwise cancel a release's waiting sync
+  queue: max
+  cancel-in-progress: false # A sync stopped halfway leaves some examples behind
+# Downstream pushes use the deploy key, not `GITHUB_TOKEN`
+permissions:
+  contents: read
 jobs:
-  sync-downstream:
+  pick:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: pick
+        env:
+          ALL: ${{ inputs.all || github.event_name == 'workflow_dispatch' }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          examples=(
+            .experimental/next-app-dir
+            minimal-react
+            minimal
+            next-big-router
+            next-formdata
+            next-minimal-starter
+            next-prisma-starter
+            next-prisma-todomvc
+            next-prisma-websockets-starter
+            tanstack-start-sse-chat
+          )
+          # Sync all of them when the push's previous commit is unknown
+          if [ "$ALL" != true ] && ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            ALL=true
+          fi
+          picked=()
+          for path in "${examples[@]}"; do
+            if [ "$ALL" = true ] || [ -n "$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- "examples/$path" ":(exclude,glob)examples/$path/**/package.json")" ]; then
+              picked+=("$path")
+            fi
+          done
+          matrix=$(printf '%s\n' "${picked[@]}" | jq -Rnc '[inputs | select(. != "") | {path: ., repo: ("trpc/examples-" + sub("^\\.experimental/"; ""))}]')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Syncing: $matrix"
 
+  sync-downstream:
+    needs: pick
+    if: needs.pick.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        path: [
-            #
-            .experimental/next-app-dir,
-            minimal-react,
-            minimal,
-            next-big-router,
-            next-formdata,
-            next-minimal-starter,
-            next-prisma-starter,
-            next-prisma-todomvc,
-            next-prisma-websockets-starter,
-            next-sse-chat,
-          ]
-
-    name: Update downstream ${{ matrix.path }} package
-
+        include: ${{ fromJSON(needs.pick.outputs.matrix) }}
+    name: Update ${{ matrix.repo }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # A sync pushes main's tip, not the commit that started it: a
+          # release's sync can start after a newer push's, and force-pushing
+          # the older commit would undo that push's examples.
+          ref: main
 
-      - name: Run find-and-replace to remove '.experimental/' from above paths
-        uses: mad9000/actions-find-and-replace-string@5
-        id: findandreplace
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          source: ${{ matrix.path }}
-          find: '.experimental/'
-          replace: ''
-      - name: Get the above output
-        run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
-
-      - uses: pnpm/action-setup@v5
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22.x
+          node-version: 24.x
           cache: 'pnpm'
+
+      # Copies the `@shared/ui` files the example uses into it, and replaces
+      # `catalog:` versions and `@trpc/*` (with `latest`), which only resolve
+      # in the monorepo. See tooling/subtree.
+      - name: Make the example standalone
+        run: |
+          pnpm install --frozen-lockfile --ignore-scripts --filter @tooling/subtree
+          pnpm --filter @tooling/subtree standalone "examples/${{ matrix.path }}" "$RUNNER_TEMP/standalone"
+          rm -rf "examples/${{ matrix.path }}"
+          mv "$RUNNER_TEMP/standalone" "examples/${{ matrix.path }}"
 
       - name: Install dependencies and create separate lockfile
         run: |
           cd ./examples/${{ matrix.path }}
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
       - name: Commit changes
@@ -68,7 +119,7 @@ jobs:
       - name: Sync downstream
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
-          repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
+          repo: ${{ matrix.repo }}
           path: 'examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository

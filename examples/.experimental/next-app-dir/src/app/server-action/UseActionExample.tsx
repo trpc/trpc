@@ -1,12 +1,18 @@
 'use client';
 
+import { Button } from '@shared/ui/components/button';
+import { Field, FieldLabel } from '@shared/ui/components/field';
+import { Input } from '@shared/ui/components/input';
+import { Spinner } from '@shared/ui/components/spinner';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAction } from 'trpc-api';
+import { JsonBlock } from '../_components/json-block';
 import { testAction } from './_actions';
 
 export function UseActionExample() {
   const [text, setText] = useState('');
-  const mutation = useAction(testAction, {
+  const testMutation = useAction(testAction, {
     onSuccess(data) {
       data;
       // ^?
@@ -18,35 +24,33 @@ export function UseActionExample() {
   });
 
   return (
-    <>
-      <p>
-        <label>
-          Text
-          <br />
-          <input
-            type={'text'}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-            }}
-            className="bg-slate-300 text-slate-900"
-          />
-        </label>
-      </p>
+    <div className="flex flex-col gap-4">
+      <Field className="max-w-sm">
+        <FieldLabel htmlFor="use-action-text">Text</FieldLabel>
+        <Input
+          id="use-action-text"
+          type="text"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+        />
+      </Field>
 
-      <p>
-        <button
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={testMutation.status === 'loading'}
           onClick={() => {
-            mutation.mutate({
+            testMutation.mutate({
               text,
             });
           }}
         >
+          {testMutation.status === 'loading' && <Spinner />}
           Run server action
-        </button>
-      </p>
-      <p>
-        <button
+        </Button>
+        <Button
+          variant="outline"
           onClick={async () => {
             const res = await testAction({
               text: '',
@@ -61,19 +65,14 @@ export function UseActionExample() {
               res.error;
               //   ^?
             }
-            alert('Check console');
+            toast('Check the console');
           }}
         >
           Run server action raw debugging
-        </button>
-      </p>
-      <pre
-        style={{
-          overflowX: 'scroll',
-        }}
-      >
-        {JSON.stringify(mutation, null, 4)}
-      </pre>
-    </>
+        </Button>
+      </div>
+
+      <JsonBlock label="useAction state" value={testMutation} />
+    </div>
   );
 }

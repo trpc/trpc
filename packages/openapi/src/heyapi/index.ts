@@ -4,19 +4,40 @@ import type {
   TRPCDataTransformer,
 } from '@trpc/server';
 
+/**
+ * A tRPC data transformer, such as `superjson`.
+ * @see https://trpc.io/docs/openapi#transformers
+ */
 export type DataTransformerOptions =
   | TRPCDataTransformer
   | TRPCCombinedDataTransformer;
+/**
+ * tRPC options for {@link configureTRPCHeyApiClient}.
+ */
 export interface TRPCHeyApiClientOptions {
+  /**
+   * The data transformer your tRPC server uses. Leave it out if the server
+   * has none.
+   * @see https://trpc.io/docs/openapi#with-a-transformer-superjson-devalue-etc
+   */
   transformer?: DataTransformerOptions;
 }
 
+/**
+ * The `~resolvers` type of the `@hey-api/typescript` plugin.
+ */
 export type HeyAPIResolvers = Plugins.HeyApiTypeScript.Resolvers;
 
+/**
+ * The config of a hey-api fetch client.
+ */
 export type HeyApiConfig = ReturnType<
   Plugins.HeyApiClientFetch.Client['getConfig']
 >;
 
+/**
+ * The parts of a hey-api client config that tRPC sets.
+ */
 export type TRPCHeyApiClientConfig = Required<
   Pick<HeyApiConfig, 'querySerializer'>
 > &
@@ -48,6 +69,8 @@ function resolveTransformer(
  *   ],
  * });
  * ```
+ *
+ * @see https://trpc.io/docs/openapi#hey-api-typescript
  */
 export function createTRPCHeyApiTypeResolvers(): HeyAPIResolvers {
   return {
@@ -150,6 +173,8 @@ export function createTRPCErrorInterceptor(
  *   transformer: superjson,
  * });
  * ```
+ *
+ * @see https://trpc.io/docs/openapi#with-a-transformer-superjson-devalue-etc
  */
 export function configureTRPCHeyApiClient(
   client: Plugins.HeyApiClientFetch.Client,

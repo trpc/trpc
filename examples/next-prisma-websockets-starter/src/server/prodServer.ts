@@ -1,13 +1,13 @@
 import next from 'next';
 import { createServer } from 'node:http';
 import { parse } from 'node:url';
-import type { Socket } from 'net';
 
 import { WebSocketServer } from 'ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 
 import { createContext } from './context';
 import { appRouter } from './routers/_app';
+import { isAllowedOrigin } from './wsOrigin';
 
 const port = parseInt(process.env.PORT || '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
@@ -20,7 +20,11 @@ void app.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
     await handle(req, res, parsedUrl);
   });
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({
+    server,
+    verifyClient: ({ origin }, callback) =>
+      callback(isAllowedOrigin(origin), 403),
+  });
   const handler = applyWSSHandler({ wss, router: appRouter, createContext });
 
   process.on('SIGTERM', () => {
@@ -29,7 +33,7 @@ void app.prepare().then(() => {
   });
 
   server.on('upgrade', (req, socket, head) => {
-    wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+    wss.handleUpgrade(req, socket, head, (ws) => {
       wss.emit('connection', ws, req);
     });
   });

@@ -12,28 +12,66 @@ function createBody(
     maxBodySize: number | null;
   },
 ): RequestInit['body'] {
+  let source: NodeHTTPRequest | IncomingMessage = req;
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
-    if (req.body === undefined) {
-      // If body property exists but is undefined, return undefined
+    if (req.body instanceof IncomingMessage) {
+      // An unparsed stream handed over by the adapter (Fastify does this for
+      // formData), so read it with the size limit
+      source = req.body;
+    } else if (req.body !== undefined) {
+      // If the body is already a string, return it directly
+      if (typeof req.body === 'string') {
+        return req.body;
+      }
+      // A raw body parser, such as `express.raw()`, leaves the bytes it read
+      // in a Buffer, which JSON.stringify would turn into `{"type":"Buffer"}`
+      if (Buffer.isBuffer(req.body)) {
+        return new Uint8Array(req.body);
+      }
+      // `express.json()` turns an empty body into `{}`, which would reach
+      // the procedure as its input
+      if (req.headers['content-length'] === '0') {
+        return undefined;
+      }
+      // If body exists but isn't a string, stringify it as JSON
+      return JSON.stringify(req.body);
+    } else if (req.readableEnded) {
+      // The stream was consumed without producing a parsed body — there is
+      // nothing left to read
       return undefined;
     }
-    // If the body is already a string, return it directly
-    if (typeof req.body === 'string') {
-      return req.body;
-    }
-    // formData use
-    if (req.body instanceof IncomingMessage) {
-      return req.body as any;
-    }
-    // If body exists but isn't a string, stringify it as JSON
-    return JSON.stringify(req.body);
+    // The property was defined without the stream being read — e.g. express
+    // 5's body-parser assigns `req.body = undefined` on content types it
+    // skips (such as multipart/form-data) — so stream it like an unparsed
+    // request
+  } else if (req.readableEnded) {
+    // Another middleware drained the stream without handing over what it
+    // read, so waiting for `data`/`end` would hang forever
+    return new ReadableStream({
+      start(controller) {
+        controller.error(
+          new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message:
+              'The request body has already been read by another middleware. Assign the parsed body to `req.body` so tRPC can use it',
+          }),
+        );
+      },
+    });
   }
   let size = 0;
   let hasClosed = false;
 
   return new ReadableStream({
     start(controller) {
+      const cleanup = () => {
+        source.off('data', onData);
+        source.off('end', onEnd);
+        source.off('error', onStreamError);
+        source.off('close', onClose);
+      };
+
       const onData = (chunk: Buffer) => {
         size += chunk.length;
         if (!opts.maxBodySize || size <= opts.maxBodySize) {
@@ -48,8 +86,7 @@ function createBody(
           }),
         );
         hasClosed = true;
-        req.off('data', onData);
-        req.off('end', onEnd);
+        cleanup();
       };
 
       const onEnd = () => {
@@ -57,19 +94,51 @@ function createBody(
           return;
         }
         hasClosed = true;
-        req.off('data', onData);
-        req.off('end', onEnd);
+        cleanup();
         controller.close();
       };
 
-      req.on('data', onData);
-      req.on('end', onEnd);
+      // the client disconnected, or the stream failed, before the body was
+      // fully sent — end the stream with an error instead of waiting for an
+      // `end` that will never come
+      const onStreamError = (cause: Error | undefined) => {
+        if (hasClosed) {
+          return;
+        }
+        hasClosed = true;
+        cleanup();
+        controller.error(
+          new TRPCError({
+            code: 'CLIENT_CLOSED_REQUEST',
+            message: 'The client disconnected while sending the request body',
+            cause,
+          }),
+        );
+      };
+
+      // `close` also fires after a clean `end`, where `onEnd` already closed
+      // the stream
+      const onClose = () => {
+        if (source.readableEnded) {
+          return;
+        }
+        onStreamError(undefined);
+      };
+
+      source.on('data', onData);
+      source.on('end', onEnd);
+      source.on('error', onStreamError);
+      source.on('close', onClose);
     },
     cancel() {
-      req.destroy();
+      source.destroy();
     },
   });
 }
+/**
+ * The full URL of a Node.js request, from its `Host` header and socket.
+ * Throws a `BAD_REQUEST` error if it isn't a valid URL.
+ */
 export function createURL(req: NodeHTTPRequest): URL {
   try {
     const protocol =
@@ -82,7 +151,7 @@ export function createURL(req: NodeHTTPRequest): URL {
 
     const host = req.headers.host ?? req.headers[':authority'] ?? 'localhost';
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    // oxlint-disable-next-line typescript/no-non-null-assertion
     return new URL(req.url!, `${protocol}//${host}`);
   } catch (cause) {
     throw new TRPCError({
@@ -116,7 +185,8 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
 }
 
 /**
- * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
+ * Turns a Node.js `IncomingMessage` into a Fetch API `Request`. The
+ * request's signal aborts when the client disconnects.
  */
 export function incomingMessageToRequest(
   req: NodeHTTPRequest,
@@ -131,14 +201,24 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
 
   const onAbort = () => {
-    res.off('close', onAbort);
+    res.off('close', onClose);
     req.off('aborted', onAbort);
 
     // abort the request
     ac.abort();
   };
 
-  res.once('close', onAbort);
+  const onClose = () => {
+    // `close` is also emitted after a response that was sent completely,
+    // so only abort if the connection closed before the response was ended
+    if (res.writableEnded) {
+      req.off('aborted', onAbort);
+      return;
+    }
+    onAbort();
+  };
+
+  res.once('close', onClose);
   req.once('aborted', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header

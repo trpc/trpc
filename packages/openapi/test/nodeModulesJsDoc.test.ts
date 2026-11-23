@@ -1,7 +1,8 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document } from '../src/types';
+import { memoize } from './memoize';
 import {
   requireOutputData,
   requireProperty,
@@ -15,23 +16,23 @@ const routerPath = path.resolve(
 );
 
 describe('JSDoc source filtering', () => {
-  let doc: Document;
-
-  beforeAll(async () => {
-    doc = await generateOpenAPIDocument(routerPath, {
+  const getDoc = memoize(() =>
+    generateOpenAPIDocument(routerPath, {
       exportName: 'NodeModulesJsDocRouter',
       title: 'JSDoc Source Filtering',
       version: '1.0.0',
-    });
-  });
+    }),
+  );
 
   it('produces a valid OpenAPI spec', async () => {
+    const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
     const problems = await validateOpenApi(spec);
     expect(problems).toEqual([]);
   });
 
-  it('keeps JSDoc from monorepo packages linked via node_modules', () => {
+  it('keeps JSDoc from monorepo packages linked via node_modules', async () => {
+    const doc = await getDoc();
     const output = requireOutputData({ doc, procPath: 'monorepoImport' });
     const requestInfoSchema = requireSchemaObject(
       requireProperty(output, 'requestInfo'),
@@ -44,10 +45,11 @@ describe('JSDoc source filtering', () => {
       'TRPCRequestInfo.accept',
     );
 
-    expect(acceptSchema.description).toBe('The `trpc-accept` header');
+    expect(acceptSchema.description).toBe('The `trpc-accept` header.');
   });
 
-  it('ignores JSDoc from external packages resolved from local node_modules', () => {
+  it('ignores JSDoc from external packages resolved from local node_modules', async () => {
+    const doc = await getDoc();
     const output = requireOutputData({
       doc,
       procPath: 'localNodeModulesImport',
@@ -73,7 +75,8 @@ describe('JSDoc source filtering', () => {
     expect(messageSchema.description).toBeUndefined();
   });
 
-  it('ignores JSDoc from external packages resolved from root node_modules', () => {
+  it('ignores JSDoc from external packages resolved from root node_modules', async () => {
+    const doc = await getDoc();
     const output = requireOutputData({
       doc,
       procPath: 'rootNodeModulesImport',
@@ -85,5 +88,15 @@ describe('JSDoc source filtering', () => {
     );
 
     expect(aliasOptionsSchema.description).toBeUndefined();
+  });
+
+  it('closes a third-party shape whose properties are all callable', async () => {
+    const doc = await getDoc();
+    // vite's `ResolverObject` is `{ buildStart?, resolveId }` — both hooks, so
+    // nothing survives serialisation and the shape must not claim open keys.
+    expect(doc.components?.schemas?.['ResolverObject']).toEqual({
+      type: 'object',
+      additionalProperties: false,
+    });
   });
 });

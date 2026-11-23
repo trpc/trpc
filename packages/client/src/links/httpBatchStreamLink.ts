@@ -5,7 +5,11 @@ import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals, raceAbortSignals } from '../internals/signals';
+import {
+  allAbortSignals,
+  raceAbortSignals,
+  raceAbortSignalsWithCleanup,
+} from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -18,6 +22,12 @@ import {
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
+/**
+ * Options for {@link httpBatchStreamLink}. Takes the same options as
+ * `httpBatchLink`, plus `streamHeader`.
+ *
+ * @see https://trpc.io/docs/client/links/httpBatchStreamLink#options
+ */
 export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
   HTTPBatchLinkOptions<TRoot> & {
     /**
@@ -29,7 +39,14 @@ export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
     streamHeader?: 'trpc-accept' | 'accept';
   };
 
+type BatchStreamOperation = Operation & {
+  releaseSignal: () => void;
+};
+
 /**
+ * A terminating link that batches calls like `httpBatchLink`, but streams each
+ * response back as soon as it is ready.
+ *
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
@@ -42,7 +59,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
   return () => {
     const batchLoader = (
       type: ProcedureType,
-    ): BatchLoader<Operation, HTTPResult> => {
+    ): BatchLoader<BatchStreamOperation, HTTPResult> => {
       return {
         validate(batchOps) {
           if (maxURLLength === Infinity && maxItems === Infinity) {
@@ -73,6 +90,15 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             ...batchOps.map((op) => op.signal),
           );
           const abortController = new AbortController();
+          abortController.signal.addEventListener(
+            'abort',
+            () => {
+              for (const op of batchOps) {
+                op.releaseSignal();
+              }
+            },
+            { once: true },
+          );
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
@@ -91,7 +117,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               }
               if (typeof opts.headers === 'function') {
                 return opts.headers({
-                  opList: batchOps as NonEmptyArray<Operation>,
+                  opList: batchOps as NonEmptyArray<BatchStreamOperation>,
                 });
               }
               return opts.headers;
@@ -111,25 +137,24 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               );
             }
 
-            return batchOps.map(
-              (): Promise<HTTPResult> =>
-                Promise.resolve({
-                  json,
-                  meta: {
-                    response: res,
-                  },
-                }),
+            return batchOps.map((): Promise<HTTPResult> =>
+              Promise.resolve({
+                json,
+                meta: {
+                  response: res,
+                },
+              }),
             );
           }
 
           const [head] = await jsonlStreamConsumer<
             Record<string, Promise<any>>
           >({
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            // oxlint-disable-next-line typescript/no-non-null-assertion
             from: res.body!,
             deserialize: (data) =>
               resolvedOpts.transformer.output.deserialize(data),
-            // onError: console.error,
+            onError: () => abortController.abort(),
             formatError(opts) {
               const error = opts.error as TRPCErrorShape;
               return TRPCClientError.from({
@@ -180,14 +205,27 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             'Subscriptions are unsupported by `httpBatchStreamLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
+        const ac = new AbortController();
         const loader = loaders[op.type];
-        const promise = loader.load(op);
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
+          op.signal,
+          ac.signal,
+        );
+        const promise = loader.load({
+          ...op,
+          signal,
+          releaseSignal: cleanup,
+        });
 
+        let isDone = false;
         let _res = undefined as HTTPResult | undefined;
         promise
           .then((res) => {
+            isDone = true;
             _res = res;
             if ('error' in res.json) {
+              // A failed op has nothing left to stream, so it must not hold the batch open.
+              ac.abort();
               observer.error(
                 TRPCClientError.from(res.json, {
                   meta: res.meta,
@@ -206,6 +244,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             observer.complete();
           })
           .catch((err) => {
+            isDone = true;
+            ac.abort();
             observer.error(
               TRPCClientError.from(err, {
                 meta: _res?.meta,
@@ -214,7 +254,9 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          // noop
+          if (!isDone) {
+            ac.abort();
+          }
         };
       });
     };
@@ -222,6 +264,6 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 }
 
 /**
- * @deprecated use {@link httpBatchStreamLink} instead
+ * @deprecated Use {@link httpBatchStreamLink} instead.
  */
 export const unstable_httpBatchStreamLink = httpBatchStreamLink;

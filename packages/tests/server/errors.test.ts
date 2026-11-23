@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+/* oxlint-disable typescript/no-empty-function */
 import http from 'http';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
@@ -14,8 +14,10 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import type { HTTPErrorHandler } from '@trpc/server/http';
 import { observable } from '@trpc/server/observable';
-import { isObject } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
+import {
+  isObject,
+  makeAsyncResource,
+} from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
 
@@ -126,6 +128,28 @@ test('unauthorized()', async () => {
   const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
+});
+
+test('malformed url-encoding in the path', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const router = t.router({
+    hello: t.procedure.query(() => 'world'),
+  });
+  await using ctx = testServerAndClientResource(router, {
+    server: {
+      onError,
+    },
+  });
+  const res = await fetch(`${ctx.httpUrl}/%`);
+
+  expect(res.status).toBe(400);
+  expect(onError).toHaveBeenCalledTimes(1);
+  const serverError = onError.mock.calls[0]![0]!.error;
+
+  expect(serverError).toBeInstanceOf(TRPCError);
+  expect(serverError.code).toBe('BAD_REQUEST');
 });
 
 test('getMessageFromUnknownError()', () => {
@@ -385,27 +409,22 @@ describe('links have meta data about http failures', async () => {
       },
     };
   }
-  const ctx = konn()
-    .beforeEach(() => {
-      return {
-        server: createServer(({ res }) => {
-          res.setHeader('content-type', 'application/json');
-          res.write(
-            JSON.stringify({
-              __error: {
-                foo: 'bar',
-              },
-            }),
-          );
-          res.end();
+  function setup() {
+    const server = createServer(({ res }) => {
+      res.setHeader('content-type', 'application/json');
+      res.write(
+        JSON.stringify({
+          __error: {
+            foo: 'bar',
+          },
         }),
-      };
-    })
-    .afterEach((opts) => {
-      opts.server?.close();
-    })
-    .done();
+      );
+      res.end();
+    });
+    return makeAsyncResource({ server }, () => server.close());
+  }
   test('httpLink', async () => {
+    await using ctx = setup();
     let meta = undefined as Record<string, unknown> | undefined;
 
     const client: any = createTRPCClient<any>({
@@ -448,6 +467,7 @@ describe('links have meta data about http failures', async () => {
   });
 
   test('httpBatchLink', async () => {
+    await using ctx = setup();
     let meta = undefined as Record<string, unknown> | undefined;
 
     const client: any = createTRPCClient<any>({
@@ -490,6 +510,7 @@ describe('links have meta data about http failures', async () => {
   });
 
   test('rethrow custom error', async () => {
+    await using ctx = setup();
     type AppRouter = any;
     class MyCustomError extends TRPCClientError<AppRouter> {
       constructor(message: string) {

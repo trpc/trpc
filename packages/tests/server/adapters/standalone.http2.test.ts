@@ -68,7 +68,7 @@ function createHttp2ServerResource(
 ) {
   const server = http2.createSecureServer(cert, (req, res) => {
     run(async () => handler(req, res)).catch((err) => {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.error(err);
       res.writeHead(500);
       res.end();
@@ -207,7 +207,7 @@ test('custom path', async () => {
   });
 
   {
-    const result = await fetch(`${server.url}/some-other-path`);
+    const result = await undici.fetch(`${server.url}/some-other-path`);
     expect(result.status).toBe(404);
     expect(await result.text()).toMatchInlineSnapshot(`"Not Found"`);
   }

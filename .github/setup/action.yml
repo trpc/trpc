@@ -1,24 +1,41 @@
 name: Setup Workflow
 description: Composite action that sets up pnpm
+inputs:
+  example:
+    description: Install only this example (a directory in `examples/`), the packages and the root, not the whole workspace
+    required: false
+    default: ''
 runs:
   using: 'composite'
   steps:
-    - uses: pnpm/action-setup@v5
-    - uses: actions/setup-node@v6
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
       with:
-        node-version: 24.x
+        node-version-file: '.nvmrc'
 
     - name: Get pnpm store directory
       shell: bash
       id: pnpm-cache
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-    - uses: actions/cache@v5
+    - uses: actions/cache@v6
       name: Setup pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
-    - run: pnpm install
+    - run: |
+        if [ -n "$EXAMPLE" ]; then
+          # Named outright: `--filter ./examples/x...` follows neither the `npm:@trpc/*` aliases to
+          # the packages nor `@shared/ui`. `/**` takes subprojects such as minimal-react's client.
+          pnpm install --workspace-root --filter './packages/*' --filter ./tooling/ui \
+            --filter "./examples/$EXAMPLE" --filter "./examples/$EXAMPLE/**"
+        else
+          pnpm install
+        fi
       shell: bash
+      env:
+        EXAMPLE: ${{ inputs.example }}
+        # `playwright@1.28.1` (via `konn`) downloads browsers on install; e2e uses the runner's Chrome
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'

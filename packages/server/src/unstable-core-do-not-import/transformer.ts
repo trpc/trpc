@@ -8,6 +8,9 @@ import type {
 import { isObject } from './utils';
 
 /**
+ * A transformer that serializes and deserializes data the same way in
+ * both directions, such as `superjson`.
+ * @see https://trpc.io/docs/server/data-transformers#datatransformer-interface
  * @public
  */
 export interface DataTransformer {
@@ -38,6 +41,8 @@ interface OutputDataTransformer extends DataTransformer {
 }
 
 /**
+ * A transformer with one serializer for inputs and another for outputs.
+ * @see https://trpc.io/docs/server/data-transformers#different-transformers-for-upload-and-download
  * @public
  */
 export interface CombinedDataTransformer {
@@ -52,6 +57,8 @@ export interface CombinedDataTransformer {
 }
 
 /**
+ * The half of a combined transformer the client uses: serializing inputs
+ * and deserializing outputs.
  * @public
  */
 export type CombinedDataTransformerClient = {
@@ -60,6 +67,9 @@ export type CombinedDataTransformerClient = {
 };
 
 /**
+ * A transformer: one for both directions, or separate ones for inputs and
+ * outputs.
+ * @see https://trpc.io/docs/server/data-transformers
  * @public
  */
 export type DataTransformerOptions = CombinedDataTransformer | DataTransformer;
@@ -108,7 +118,8 @@ function transformTRPCResponseItem<
 }
 
 /**
- * Takes a unserialized `TRPCResponse` and serializes it with the router's transformers
+ * Serializes a response, or a list of them, with the router's output
+ * transformer. Meant for custom adapters.
  **/
 export function transformTRPCResponse<
   TResponse extends

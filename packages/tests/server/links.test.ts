@@ -57,7 +57,7 @@ test('chainer', async () => {
 
   const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
-  result.context!['response'] = '[redacted]' as any;
+  result.context!['response'] = '[redacted]';
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -430,13 +430,16 @@ test('create client with links', async () => {
 });
 
 describe('loggerLink', () => {
-  const logger = {
-    error: vi.fn(),
-    log: vi.fn(),
-  };
-  const logLink = loggerLink({
-    console: logger,
-  })(mockRuntime);
+  function setup() {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    const logLink = loggerLink({
+      console: logger,
+    })(mockRuntime);
+    return { logger, logLink };
+  }
   const okLink: OperationLink<AnyRouter> = () =>
     observable((o) => {
       o.next({
@@ -451,12 +454,8 @@ describe('loggerLink', () => {
       o.error(new TRPCClientError('..'));
     });
 
-  beforeEach(() => {
-    logger.error.mockReset();
-    logger.log.mockReset();
-  });
-
   test('query', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -485,6 +484,7 @@ describe('loggerLink', () => {
   });
 
   test('subscription', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -507,6 +507,7 @@ describe('loggerLink', () => {
   });
 
   test('mutation', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, okLink],
       op: {
@@ -530,6 +531,7 @@ describe('loggerLink', () => {
   });
 
   test('query 2', () => {
+    const { logger, logLink } = setup();
     createChain({
       links: [logLink, errorLink],
       op: {
@@ -813,7 +815,7 @@ test('init with URL object', async () => {
 
   const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
-  result.context!['response'] = '[redacted]' as any;
+  result.context!['response'] = '[redacted]';
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -993,4 +995,157 @@ test('retryLink - unsubscribe during delay', async () => {
   await timers.runAllTimersAsync();
 
   expect(endingLink).toHaveBeenCalledTimes(1);
+});
+
+test('httpBatchStreamLink - unsubscribe aborts fetch', async () => {
+  let fetchSignal: AbortSignal | undefined;
+  const fetchCalled = new Promise<void>((resolve) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      fetchSignal = init?.signal ?? undefined;
+      resolve();
+      return new Response(
+        new ReadableStream({
+          start() {
+            // never enqueue or close - keeps the stream open
+          },
+        }),
+        { status: 200 },
+      );
+    });
+  });
+
+  try {
+    const links = [
+      httpBatchStreamLink({
+        url: 'http://localhost:9999',
+      })(mockRuntime),
+    ];
+
+    const chain = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'hello',
+        input: null,
+        context: {},
+        signal: null,
+      },
+    });
+
+    const sub = chain.subscribe({});
+
+    await fetchCalled;
+
+    expect(fetchSignal!.aborted).toBe(false);
+
+    sub.unsubscribe();
+
+    expect(fetchSignal!.aborted).toBe(true);
+    expect(fetchSignal!.reason?.name).toBe('AbortError');
+  } finally {
+    vi.restoreAllMocks();
+  }
+});
+
+test('httpLink - unsubscribe aborts fetch', async () => {
+  let fetchSignal: AbortSignal | undefined;
+  const fetchCalled = new Promise<void>((resolve) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      fetchSignal = init?.signal ?? undefined;
+      resolve();
+      return new Response(
+        new ReadableStream({
+          start() {
+            // never enqueue or close - keeps the stream open
+          },
+        }),
+        { status: 200 },
+      );
+    });
+  });
+
+  try {
+    const links = [
+      httpLink({
+        url: 'http://localhost:9999',
+      })(mockRuntime),
+    ];
+
+    const chain = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'hello',
+        input: null,
+        context: {},
+        signal: null,
+      },
+    });
+
+    const sub = chain.subscribe({});
+
+    await fetchCalled;
+
+    expect(fetchSignal!.aborted).toBe(false);
+
+    sub.unsubscribe();
+
+    expect(fetchSignal!.aborted).toBe(true);
+    expect(fetchSignal!.reason?.name).toBe('AbortError');
+  } finally {
+    vi.restoreAllMocks();
+  }
+});
+
+test('httpBatchLink - unsubscribe aborts fetch', async () => {
+  let fetchSignal: AbortSignal | undefined;
+  const fetchCalled = new Promise<void>((resolve) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      fetchSignal = init?.signal ?? undefined;
+      resolve();
+      return new Response(
+        new ReadableStream({
+          start() {
+            // never enqueue or close - keeps the stream open
+          },
+        }),
+        { status: 200 },
+      );
+    });
+  });
+
+  try {
+    const links = [
+      httpBatchLink({
+        url: 'http://localhost:9999',
+      })(mockRuntime),
+    ];
+
+    const chain = createChain({
+      links,
+      op: {
+        id: 1,
+        type: 'query',
+        path: 'hello',
+        input: null,
+        context: {},
+        signal: null,
+      },
+    });
+
+    const sub = chain.subscribe({});
+
+    await fetchCalled;
+
+    expect(fetchSignal!.aborted).toBe(false);
+
+    sub.unsubscribe();
+
+    expect(fetchSignal!.aborted).toBe(true);
+    expect(fetchSignal!.reason?.name).toBe('AbortError');
+  } finally {
+    vi.restoreAllMocks();
+  }
 });

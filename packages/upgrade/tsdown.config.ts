@@ -6,6 +6,8 @@ export default defineConfig([
       bin: './src/bin/index.ts',
     },
     format: 'es',
+    // `npx @trpc/upgrade` runs on the user's Node; 22 can't parse `using`
+    target: 'node20',
   },
   {
     entry: {
@@ -13,5 +15,6 @@ export default defineConfig([
       'transforms/provider': './src/transforms/provider.ts',
     },
     format: 'cjs',
+    target: 'node20',
   },
 ]);

@@ -14,8 +14,8 @@ import type { Client, ClientOptions, Config, RequestOptions } from './types.gen'
 export const createQuerySerializer = <T = unknown>({
   parameters = {},
   ...args
-}: QuerySerializerOptions = {}) => {
-  const querySerializer = (queryParams: T) => {
+}: QuerySerializerOptions = {}): ((queryParams: T) => string) => {
+  const querySerializer = (queryParams: T): string => {
     const search: string[] = [];
     if (queryParams && typeof queryParams === 'object') {
       for (const name in queryParams) {
@@ -118,14 +118,12 @@ const checkForExistence = (
   return false;
 };
 
-export const setAuthParams = async ({
-  security,
-  ...options
-}: Pick<Required<RequestOptions>, 'security'> &
-  Pick<RequestOptions, 'auth' | 'query'> & {
+export async function setAuthParams(
+  options: Pick<RequestOptions, 'auth' | 'query' | 'security'> & {
     headers: Headers;
-  }) => {
-  for (const auth of security) {
+  },
+): Promise<void> {
+  for (const auth of options.security ?? []) {
     if (checkForExistence(options, auth.name)) {
       continue;
     }
@@ -154,7 +152,7 @@ export const setAuthParams = async ({
         break;
     }
   }
-};
+}
 
 export const buildUrl: Client['buildUrl'] = (options) =>
   getUrl({
@@ -218,8 +216,10 @@ export const mergeHeaders = (
 
 type ErrInterceptor<Err, Res, Req, Options> = (
   error: Err,
-  response: Res,
-  request: Req,
+  /** response may be undefined due to a network error where no response object is produced */
+  response: Res | undefined,
+  /** request may be undefined, because error may be from building the request object itself */
+  request: Req | undefined,
   options: Options,
 ) => Err | Promise<Err>;
 

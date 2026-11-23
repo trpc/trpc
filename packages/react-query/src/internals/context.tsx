@@ -46,12 +46,19 @@ interface TRPCUseUtilsOptions {
    */
   trpc?: TRPCRequestOptions;
 }
+/**
+ * Options for the `fetch` and `prefetch` helpers.
+ */
 export interface TRPCFetchQueryOptions<TOutput, TError>
-  extends DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
+  extends
+    DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
     TRPCUseUtilsOptions {
   //
 }
 
+/**
+ * Options for the `fetchInfinite` and `prefetchInfinite` helpers.
+ */
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
     FetchInfiniteQueryOptions<
@@ -64,12 +71,18 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
     'queryKey' | 'initialPageParam'
   > &
     TRPCUseUtilsOptions & {
+      /**
+       * The cursor for the first page.
+       */
       initialCursor?: ExtractCursorType<TInput>;
     };
 
 /** @internal */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
 
+/**
+ * Props shared by the tRPC React context and its `Provider`.
+ */
 export interface TRPCContextPropsBase<TRouter extends AnyRouter, TSSRContext> {
   /**
    * The `TRPCClient`
@@ -107,14 +120,22 @@ export type DecoratedTRPCContextProps<
   client: TRPCClient<TRouter>;
 };
 
-export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
-  extends TRPCContextPropsBase<TRouter, TSSRContext> {
+/**
+ * Props for the tRPC React context: the base props plus a `QueryClient`.
+ */
+export interface TRPCContextProps<
+  TRouter extends AnyRouter,
+  TSSRContext,
+> extends TRPCContextPropsBase<TRouter, TSSRContext> {
   /**
    * The react-query `QueryClient`
    */
   queryClient: QueryClient;
 }
 
+/**
+ * The keys of {@link TRPCContextPropsBase}.
+ */
 export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
   'client',
   'ssrContext',
@@ -128,7 +149,9 @@ export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
 export interface TRPCContextState<
   TRouter extends AnyRouter,
   TSSRContext = undefined,
-> extends Required<TRPCContextProps<TRouter, TSSRContext>>,
+>
+  extends
+    Required<TRPCContextProps<TRouter, TSSRContext>>,
     TRPCQueryUtils<TRouter> {}
 
 /**
@@ -292,6 +315,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetqueriesdata
    */
+  // oxlint-disable-next-line max-params -- mirrors TanStack Query's own signature
   setQueriesData: (
     queryKey: TRPCQueryKey,
     filters: QueryFilters,
@@ -347,4 +371,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }
+/**
+ * The React context that holds the tRPC client and `QueryClient`.
+ */
 export const TRPCContext = React.createContext?.(null as any);

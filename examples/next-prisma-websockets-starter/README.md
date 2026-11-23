@@ -10,7 +10,7 @@ Try demo http://websockets.trpc.io/
 - ⚡ Database with Prisma
 - 🔐 Authorization using [next-auth](https://next-auth.js.org/)
 - ⚙️ VSCode extensions
-- 🎨 ESLint + Prettier
+- 🎨 Oxlint + Oxfmt
 - 💚 CI setup using GitHub Actions:
   - ✅ E2E testing with [Playwright](https://playwright.dev/)
   - ✅ Linting
@@ -18,7 +18,7 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
+pnpm create next-app --example https://github.com/trpc/examples-next-prisma-websockets-starter trpc-prisma-websockets-starter
 cd trpc-prisma-websockets-starter
 pnpm i
 pnpm dx
@@ -39,8 +39,12 @@ pnpm dx
       <td>Prisma schema</td>
     </tr>
     <tr>
-      <td><a href="./src/api/trpc/[trpc].tsx"><code>./src/api/trpc/[trpc].tsx</code></a></td>
+      <td><a href="./src/app/api/trpc/[trpc]/route.ts"><code>./src/app/api/trpc/[trpc]/route.ts</code></a></td>
       <td>tRPC response handler</td>
+    </tr>
+    <tr>
+      <td><a href="./src/app/page.tsx"><code>./src/app/page.tsx</code></a></td>
+      <td>Server component that starts the page's queries with handles</td>
     </tr>
     <tr>
       <td><a href="./src/server/routers"><code>./src/server/routers</code></a></td>
@@ -61,6 +65,10 @@ pnpm test-start # runs e2e tests on `next start` - build required before
 pnpm test:unit  # runs normal Vitest unit tests
 pnpm test:e2e   # runs e2e tests
 ```
+
+## Deployment
+
+Browsers don't apply CORS to WebSockets, so the WebSocket server only accepts connections from the app's own origin: `http://localhost:3000` locally, or the deployment's URL on Vercel. If you serve the app from other origins, list them in `WS_ALLOWED_ORIGINS`, separated by commas.
 
 ---
 

@@ -7,6 +7,7 @@ import { httpBatchLink, httpLink, httpSubscriptionLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { tap } from '@trpc/server/observable';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import { WebSocket } from 'ws';
 import type {
@@ -36,8 +37,9 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   transformer: TransformerOptions<inferClientTypes<TRouter>>['transformer'];
 }) => Partial<CreateTRPCClientOptions<TRouter>>;
 
-export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
-  extends TRPCServerResourceOpts<TRouter> {
+export interface TestServerAndClientResourceOpts<
+  TRouter extends AnyTRPCRouter,
+> extends TRPCServerResourceOpts<TRouter> {
   /**
    * Defaults to being lazy
    */
@@ -162,7 +164,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
             httpUrl: serverResource.httpUrl,
             wssUrl: serverResource.wssUrl,
             wsClient,
-            transformer: router._def._config.transformer as any,
+            transformer: router._def._config.transformer,
           })
         : opts.client
       : {}),
@@ -177,5 +179,14 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
     trpcClientOptions,
     linkSpy,
   };
-  return ctx;
+  // A client left open keeps reconnecting, and can reach a later test's
+  // server on a reused port. Its `close()` isn't awaited: it stops
+  // reconnecting at once, but can wait on requests that end only once the
+  // server, closed next, closes their socket.
+  // `typeof ctx` already has `[Symbol.asyncDispose]` from the server
+  // resource.
+  const resource: typeof ctx = makeAsyncResource(ctx, async () => {
+    void wsClient.close().catch(() => null);
+  });
+  return resource;
 }

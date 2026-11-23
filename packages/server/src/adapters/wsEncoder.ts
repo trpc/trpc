@@ -1,6 +1,6 @@
 /**
- * Encoder for WebSocket wire format.
- * Encodes outgoing messages and decodes incoming messages.
+ * Encodes the messages a WebSocket server sends and decodes the ones it
+ * gets. The client's `experimental_encoder` must match.
  *
  * @example
  * ```ts
@@ -11,15 +11,14 @@
  * ```
  */
 export interface Encoder {
-  /** Encode data for transmission over the wire */
-  encode(data: unknown): string | Uint8Array;
-  /** Decode data received from the wire */
+  /** Encodes a message to send. */
+  encode(data: unknown): string | Uint8Array<ArrayBuffer>;
+  /** Decodes a received message. */
   decode(data: string | ArrayBuffer | Uint8Array): unknown;
 }
 
 /**
- * Default JSON encoder - used when no encoder is specified.
- * This maintains backwards compatibility with existing behavior.
+ * The default encoder: JSON in text frames.
  */
 export const jsonEncoder: Encoder = {
   encode: (data) => JSON.stringify(data),

@@ -23,14 +23,22 @@ import {
   type NodeHTTPCreateContextOption,
 } from '../node-http';
 
+/** The options of the Fastify adapter's request handler. */
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> &
-  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
+> = HTTPBaseHandlerOptions<TRouter, TRequest> & {
+  /**
+   * The largest request body, in bytes. A larger one gets a
+   * `PAYLOAD_TOO_LARGE` error. It applies to bodies tRPC streams, such as
+   * `multipart/form-data`; JSON bodies are read by Fastify, so limit them
+   * with Fastify's `bodyLimit`.
+   */
+  maxBodySize?: number;
+} & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
 
-type FastifyRequestHandlerOptions<
+export type FastifyRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
@@ -40,6 +48,10 @@ type FastifyRequestHandlerOptions<
   path: string;
 };
 
+/**
+ * Handles one Fastify request for a router. `fastifyTRPCPlugin` uses it;
+ * call it yourself to mount tRPC on your own route.
+ */
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends FastifyRequest,
@@ -61,7 +73,7 @@ export async function fastifyRequestHandler<
     incomingMessage.body = opts.req.body;
   }
   const req = incomingMessageToRequest(incomingMessage, opts.res.raw, {
-    maxBodySize: null,
+    maxBodySize: opts.maxBodySize ?? null,
   });
 
   const res = await resolveResponse({

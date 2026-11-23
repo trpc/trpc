@@ -23,9 +23,9 @@ import type {
   TRPCQueryOptionsResult,
 } from './types';
 import {
-  buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
   getClientArgs,
+  streamIntoQuery,
   unwrapLazyArg,
 } from './utils';
 
@@ -36,7 +36,9 @@ interface UndefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UndefinedInitialDataOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -52,7 +54,9 @@ interface UndefinedTRPCQueryOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UndefinedInitialDataOptions<
+>
+  extends
+    UndefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
@@ -71,7 +75,9 @@ interface DefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       DefinedInitialDataOptions<
         coerceAsyncIterableToArray<NoInfer<TQueryFnData>>,
         TError,
@@ -82,12 +88,14 @@ interface DefinedTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface DefinedTRPCQueryOptionsOut<
+export interface DefinedTRPCQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DefinedInitialDataOptions<
+>
+  extends
+    DefinedInitialDataOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TData>,
@@ -101,12 +109,14 @@ interface DefinedTRPCQueryOptionsOut<
   >;
 }
 
-interface UnusedSkipTokenTRPCQueryOptionsIn<
+export interface UnusedSkipTokenTRPCQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UnusedSkipTokenOptions<
         coerceAsyncIterableToArray<TQueryFnData>,
         TError,
@@ -117,12 +127,14 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface UnusedSkipTokenTRPCQueryOptionsOut<
+export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UnusedSkipTokenOptions<
+>
+  extends
+    UnusedSkipTokenOptions<
       coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
@@ -136,6 +148,10 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<
   >;
 }
 
+/**
+ * The `queryOptions` helper on a query procedure. Returns options for `useQuery`, `prefetchQuery` and so on.
+ * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+ */
 export interface TRPCQueryOptions<
   TDef extends ResolverDef,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -234,13 +250,15 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
     unknown,
     TRPCQueryKey<TFeatureFlags['keyPrefix']>
   > = async (queryFnContext) => {
+    // aborted if the request answers with a stream that isn't read to the end
+    const abortController = new AbortController();
     const actualOpts = {
       ...opts,
       trpc: {
         ...opts?.trpc,
         ...(opts?.trpc?.abortOnUnmount
           ? { signal: queryFnContext.signal }
-          : { signal: null }),
+          : { signal: abortController.signal }),
       },
     };
     const queryKey = queryFnContext.queryKey;
@@ -248,7 +266,12 @@ export function trpcQueryOptions<TFeatureFlags extends FeatureFlags>(args: {
     const result = await query(...getClientArgs(queryKey, actualOpts));
 
     if (isAsyncIterable(result)) {
-      return buildQueryFromAsyncIterable(result, queryClient, queryKey);
+      return streamIntoQuery({
+        iterable: result,
+        context: queryFnContext,
+        queryClient,
+        abortController,
+      });
     }
 
     return result;

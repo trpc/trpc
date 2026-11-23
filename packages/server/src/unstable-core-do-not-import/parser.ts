@@ -98,7 +98,27 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque
-    return parser.parseAsync.bind(parser);
+    if (typeof parser.parse !== 'function') {
+      return parser.parseAsync.bind(parser);
+    }
+    // The sync path is several times faster and the only one zod's compiler supports, so try it first
+    const parse = parser.parse.bind(parser);
+    const parseAsync = parser.parseAsync.bind(parser);
+    let isAsync = false;
+    return (value) => {
+      if (!isAsync) {
+        try {
+          return parse(value);
+        } catch (cause) {
+          // a validation failure carries `issues`, anything else means the schema needs the async path (async refinement or transform)
+          if (Array.isArray((cause as { issues?: unknown } | null)?.issues)) {
+            throw cause;
+          }
+          isAsync = true;
+        }
+      }
+      return parseAsync(value);
+    };
   }
 
   if (typeof parser.parse === 'function') {

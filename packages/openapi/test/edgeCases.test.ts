@@ -1,7 +1,8 @@
 import * as path from 'node:path';
-import { beforeAll, describe, expect, expectTypeOf, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
 import type { Document } from '../src/types';
+import { memoize } from './memoize';
 import type {
   ConflictingIntersectionResponses,
   DisjointIntersectionResponses,
@@ -22,24 +23,24 @@ const edgeCaseRouterPath = path.resolve(routersDir, 'edgeCaseRouter.router.ts');
 const appRouterPath = path.resolve(routersDir, 'appRouter.router.ts');
 
 describe('generateOpenAPIDocument edge cases', () => {
-  let doc: Document;
-
-  beforeAll(async () => {
-    doc = await generateOpenAPIDocument(edgeCaseRouterPath, {
+  const getDoc = memoize(() =>
+    generateOpenAPIDocument(edgeCaseRouterPath, {
       exportName: 'EdgeCaseRouter',
       title: 'Edge Case API',
       version: '1.0.0',
-    });
-  });
+    }),
+  );
 
   it('produces a valid OpenAPI document', async () => {
+    const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
     const problems = await validateOpenApi(spec);
 
     expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
-  it('handles bigint types as integer schema', () => {
+  it('handles bigint types as integer schema', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'bigint' });
     expect(requireProperty(schema, 'id')).toEqual({
       type: 'integer',
@@ -47,7 +48,8 @@ describe('generateOpenAPIDocument edge cases', () => {
     });
   });
 
-  it('handles never type in optional fields', () => {
+  it('handles never type in optional fields', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'neverField' });
     expect(requireProperty(schema, 'valid')).toEqual({ type: 'string' });
     // `impossible?: never` is typed as `never | undefined` which collapses to
@@ -57,12 +59,88 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(schema.properties).toHaveProperty('impossible');
   });
 
-  it('unwraps Promise<T> return types', () => {
+  it('drops function-valued properties from the schema', async () => {
+    const doc = await getDoc();
+    const schema = requireOutputData({ doc, procPath: 'withFunctions' });
+
+    expect(requireProperty(schema, 'id')).toEqual({ type: 'string' });
+
+    expect(schema.properties).not.toHaveProperty('onEvent');
+    expect(schema.properties).not.toHaveProperty('optionalHook');
+    expect(schema.properties).not.toHaveProperty('ctor');
+
+    expect(schema.required ?? []).not.toContain('onEvent');
+    expect(schema.required ?? []).not.toContain('ctor');
+  });
+
+  it('treats Function, CallableFunction and NewableFunction as unserialisable', async () => {
+    const doc = await getDoc();
+    const schema = requireOutputData({
+      doc,
+      procPath: 'standardFunctionInterfaces',
+    });
+
+    expect(requireProperty(schema, 'id')).toEqual({ type: 'string' });
+
+    for (const prop of ['handler', 'callable', 'newable', 'optionalHandler']) {
+      expect(schema.properties).not.toHaveProperty(prop);
+      expect(schema.required ?? []).not.toContain(prop);
+    }
+
+    expect(schema.properties).not.toHaveProperty('nullableHandler');
+    expect(schema.required ?? []).not.toContain('nullableHandler');
+
+    for (const name of ['Function', 'CallableFunction', 'NewableFunction']) {
+      expect(doc.components?.schemas ?? {}).not.toHaveProperty(name);
+    }
+  });
+
+  it('drops a property that is only ever a function or null', async () => {
+    const doc = await getDoc();
+    const schema = requireOutputData({ doc, procPath: 'nullableFunction' });
+
+    expect(schema.properties).toEqual({ id: { type: 'string' } });
+    expect(schema.required).toEqual(['id']);
+  });
+
+  it('drops the callable member of a mixed union and makes it optional', async () => {
+    const doc = await getDoc();
+    const schema = requireOutputData({ doc, procPath: 'functionUnion' });
+
+    expect(schema.required ?? []).toEqual(['id']);
+
+    expect(requireProperty(schema, 'value')).toEqual({
+      oneOf: [
+        { $ref: '#/components/schemas/FunctionUnionTarget' },
+        { type: 'null' },
+      ],
+    });
+
+    expect(requireProperty(schema, 'inline')).toEqual({
+      $ref: '#/components/schemas/FunctionUnionTarget',
+    });
+  });
+
+  it('collapses an object whose properties are all callable', async () => {
+    const doc = await getDoc();
+    const schema = requireOutputData({ doc, procPath: 'onlyFunctions' });
+
+    // The shape was closed to begin with, so it stays closed: the value
+    // serialises to `{}`, not to an object with arbitrary unknown keys.
+    expect(schema).toEqual({
+      type: 'object',
+      additionalProperties: false,
+    });
+  });
+
+  it('unwraps Promise<T> return types', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'asyncReturn' });
     expect(requireProperty(schema, 'data')).toEqual({ type: 'string' });
   });
 
-  it('handles void/undefined inputs as no parameters', () => {
+  it('handles void/undefined inputs as no parameters', async () => {
+    const doc = await getDoc();
     const voidOp = requireOperation(doc, 'voidInput');
     expect(voidOp.parameters).toBeUndefined();
 
@@ -73,38 +151,45 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(voidExplicitOp.parameters).toBeUndefined();
   });
 
-  it('excludes subscriptions from OpenAPI paths', () => {
+  it('excludes subscriptions from OpenAPI paths', async () => {
+    const doc = await getDoc();
     expect(doc.paths?.['/sub']).toBeUndefined();
   });
 
-  it('does not emit component schemas for excluded subscription procedures', () => {
+  it('does not emit component schemas for excluded subscription procedures', async () => {
+    const doc = await getDoc();
     expect(doc.components?.schemas?.['AsyncIterable']).toBeUndefined();
   });
 
-  it('handles deeply nested routers', () => {
+  it('handles deeply nested routers', async () => {
+    const doc = await getDoc();
     expect(doc.paths?.['/level1.level2.level3.deep']).toBeDefined();
     const op = requireOperation(doc, 'level1.level2.level3.deep');
     expect(op.operationId).toBe('level1.level2.level3.deep');
   });
 
-  it('collapses true | false union to boolean', () => {
+  it('collapses true | false union to boolean', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'boolUnion' });
     expect(requireProperty(schema, 'flag')).toEqual({ type: 'boolean' });
   });
 
-  it('handles boolean | null', () => {
+  it('handles boolean | null', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'boolNullable' });
     expect(requireProperty(schema, 'flag')).toEqual({
       type: ['boolean', 'null'],
     });
   });
 
-  it('handles null-only return', () => {
+  it('handles null-only return', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'nullOnly' });
     expect(schema).toEqual({ type: 'null' });
   });
 
-  it('handles Uint8Array as binary format', () => {
+  it('handles Uint8Array as binary format', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'binary' });
     expect(requireProperty(schema, 'data')).toEqual({
       type: 'string',
@@ -112,19 +197,22 @@ describe('generateOpenAPIDocument edge cases', () => {
     });
   });
 
-  it('handles nullable objects in oneOf', () => {
+  it('handles nullable objects in oneOf', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'nullableObject' });
     // Should be oneOf: [objectSchema, { type: "null" }] or type: ["object", "null"]
     expect(JSON.stringify(schema)).toContain('null');
   });
 
-  it('handles mutations with no input', () => {
+  it('handles mutations with no input', async () => {
+    const doc = await getDoc();
     const op = requireOperation(doc, 'noInputMutation', 'post');
     expect(op).toBeDefined();
     expect(op.requestBody).toBeUndefined();
   });
 
-  it('handles complex nullable union (string | number | null)', () => {
+  it('handles complex nullable union (string | number | null)', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({ doc, procPath: 'complexNullable' });
     const valueSchema = requireProperty(schema, 'value');
     // Should have string, number, and null represented
@@ -134,7 +222,8 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(serialized).toContain('null');
   });
 
-  it('merges disjoint intersection into a single object schema', () => {
+  it('merges disjoint intersection into a single object schema', async () => {
+    const doc = await getDoc();
     // Verify the generated client type is a flat object with both properties
     type DisjointData = DisjointIntersectionResponses[200]['result']['data'];
     expectTypeOf<DisjointData>().toEqualTypeOf<{
@@ -155,7 +244,8 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(schema.required).toContain('age');
   });
 
-  it('uses allOf for intersection with conflicting property types', () => {
+  it('uses allOf for intersection with conflicting property types', async () => {
+    const doc = await getDoc();
     // Verify the generated client type preserves the intersection via allOf
     type ConflictingData =
       ConflictingIntersectionResponses[200]['result']['data'];
@@ -195,7 +285,8 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(idTypes).toContain('number');
   });
 
-  it('assigns correct tags based on top-level procedure path', () => {
+  it('assigns correct tags based on top-level procedure path', async () => {
+    const doc = await getDoc();
     const op = requireOperation(doc, 'level1.level2.level3.deep');
     expect(op.tags).toEqual(['level1']);
 
@@ -203,18 +294,21 @@ describe('generateOpenAPIDocument edge cases', () => {
     expect(simpleOp.tags).toEqual(['simpleQuery']);
   });
 
-  it('sets default error response reference', () => {
+  it('sets default error response reference', async () => {
+    const doc = await getDoc();
     const op = requireOperation(doc, 'simpleQuery');
     expect(op.responses?.['default']).toEqual({
       $ref: '#/components/responses/Error',
     });
   });
 
-  it('omits compiler-internal symbol keys from schemas', () => {
+  it('omits compiler-internal symbol keys from schemas', async () => {
+    const doc = await getDoc();
     expect(JSON.stringify(doc)).not.toMatch(/__@.*@\d+/);
   });
 
-  it('preserves literal computed property names in output schemas', () => {
+  it('preserves literal computed property names in output schemas', async () => {
+    const doc = await getDoc();
     const schema = requireOutputData({
       doc,
       procPath: 'literalComputedKey',
@@ -226,30 +320,30 @@ describe('generateOpenAPIDocument edge cases', () => {
 });
 
 describe('generateOpenAPIDocument default options', () => {
-  let doc: Document;
-
-  beforeAll(async () => {
-    doc = await generateOpenAPIDocument(appRouterPath);
-  });
+  const getDoc = memoize(() => generateOpenAPIDocument(appRouterPath));
 
   it('produces a valid OpenAPI document', async () => {
+    const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
     const problems = await validateOpenApi(spec);
 
     expect(JSON.stringify(problems, null, 2)).toEqual('[]');
   });
 
-  it('uses default title and version when not provided', () => {
+  it('uses default title and version when not provided', async () => {
+    const doc = await getDoc();
     expect(doc.info.title).toBe('tRPC API');
     expect(doc.info.version).toBe('0.0.0');
   });
 
-  it('uses default exportName AppRouter', () => {
+  it('uses default exportName AppRouter', async () => {
+    const doc = await getDoc();
     // appRouter.router.ts exports AppRouter, so default should work
     expect(doc.paths).toHaveProperty('/greeting');
   });
 
-  it('wraps output in success envelope correctly', () => {
+  it('wraps output in success envelope correctly', async () => {
+    const doc = await getDoc();
     const responseSchema = requireSchemaObject(
       requireResponseSchema({ doc, procPath: 'greeting' }),
       doc,
@@ -268,7 +362,8 @@ describe('generateOpenAPIDocument default options', () => {
     expect(resultSchema.required).toContain('data');
   });
 
-  it('wraps output without data for void procedures', () => {
+  it('wraps output without data for void procedures', async () => {
+    const doc = await getDoc();
     const responseSchema = requireSchemaObject(
       requireResponseSchema({
         doc,
@@ -292,7 +387,8 @@ describe('generateOpenAPIDocument default options', () => {
     expect(resultProps['data']).toBeUndefined();
   });
 
-  it('puts query input with deepObject style for GET', () => {
+  it('puts query input with deepObject style for GET', async () => {
+    const doc = await getDoc();
     const param = getParameter(doc, 'greeting');
     if (!param) {
       throw new Error('Expected greeting input parameter');
@@ -305,7 +401,8 @@ describe('generateOpenAPIDocument default options', () => {
     expect(param.content?.['application/json']?.schema).toBeDefined();
   });
 
-  it('puts mutation input as requestBody for POST', () => {
+  it('puts mutation input as requestBody for POST', async () => {
+    const doc = await getDoc();
     const requestBody = getRequestBody(doc, 'user.create', 'post');
     if (!requestBody) {
       throw new Error('Expected user.create request body');

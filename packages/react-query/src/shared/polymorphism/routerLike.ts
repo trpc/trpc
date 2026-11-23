@@ -15,6 +15,9 @@ export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record']
 >;
+/**
+ * The record behind {@link RouterLike}.
+ */
 export type RouterLikeInner<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,

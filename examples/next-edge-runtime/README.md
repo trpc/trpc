@@ -1,6 +1,13 @@
 # Next.js Edge Runtime + tRPC
 
-This example is the same as [next-minimal-starter](../next-minimal-starter/), excepts that it uses the [Next.js Edge Runtime](https://nextjs.org/docs/api-reference/edge-runtime) using tRPC's fetch adapter.
+A minimal Next.js App Router app that serves tRPC from the [Next.js Edge Runtime](https://nextjs.org/docs/app/api-reference/edge) using tRPC's fetch adapter.
+
+- `src/trpc/routers/_app.ts`: the router, with a `greeting` query
+- `src/app/api/trpc/[trpc]/route.ts`: the route handler serving it with `fetchRequestHandler`, on the edge runtime
+- `src/trpc/server.tsx`: `trpc` and `HydrateClient` for server components
+- `src/trpc/client.tsx`: the `TRPCReactProvider` and `useTRPC` hook for client components
+- `src/app/page.tsx`: a server component that starts `greeting` with [`loadHandles`](https://trpc.io/docs/client/tanstack-react-query/handles) and passes its handle down
+- `src/app/greeting.tsx`: reads the handle with `useSuspenseQuery(fromHandle(...))`
 
 ## Setup
 

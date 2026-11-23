@@ -4,7 +4,8 @@ This example demonstrates using **MessagePack binary encoding** with tRPC WebSoc
 
 ## Features
 
-- Next.js 15 with Pages Router
+- Next.js 15 with the App Router
+- Server components load the page's queries as handles; client components read them
 - tRPC WebSocket subscriptions
 - MessagePack binary encoding via `experimental_encoder`
 - Tailwind CSS
@@ -21,7 +22,7 @@ applyWSSHandler({
   experimental_encoder: msgpackEncoder,
 });
 
-// Client (trpc.ts)
+// Client (trpc/client.tsx)
 createWSClient({
   url: WS_URL,
   experimental_encoder: msgpackEncoder,
@@ -69,3 +70,5 @@ pnpm dev
 Then open [http://localhost:3000](http://localhost:3000).
 
 Open DevTools → Network → WS to see the binary MessagePack frames being sent over WebSocket.
+
+Browsers don't apply CORS to WebSockets, so the WebSocket server only accepts connections from `http://localhost:3000`. If you serve the app from other origins, list them in `WS_ALLOWED_ORIGINS`, separated by commas.

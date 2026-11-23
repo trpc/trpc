@@ -1,4 +1,4 @@
-/* eslint-disable max-params */
+/* oxlint-disable max-params */
 import type {
   ArraySchemaObject,
   Document,

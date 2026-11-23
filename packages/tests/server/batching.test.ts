@@ -1,6 +1,11 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { TRPCClientError } from '@trpc/client';
+import {
+  httpBatchLink,
+  httpBatchStreamLink,
+  TRPCClientError,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -11,6 +16,52 @@ const scenarios = [
   { clientLink: 'httpBatchStreamLink', transformer: 'none' },
   { clientLink: 'httpBatchStreamLink', transformer: 'superjson' },
 ] as const;
+
+describe.each([
+  { name: 'httpBatchLink', link: httpBatchLink },
+  { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
+])('$name input serialization', (scenario) => {
+  test.each([{ maxURLLength: 10_000 }, { maxItems: 10 }])(
+    'rejects unserializable input without blocking other requests (%j)',
+    async (limits) => {
+      const t = initTRPC.create();
+      const router = t.router({
+        echo: t.procedure.input(z.unknown()).query((opts) => opts.input),
+      });
+      await using ctx = testServerAndClientResource(router, {
+        client: (opts) => ({
+          links: [scenario.link({ url: opts.httpUrl, ...limits })],
+        }),
+      });
+
+      let results;
+      {
+        using fakeTimers = fakeTimersResource();
+        results = Promise.allSettled([
+          ctx.client.echo.query('first'),
+          ctx.client.echo.query(1n),
+          ctx.client.echo.query('last'),
+        ]);
+        await fakeTimers.advanceTimersByTimeAsync(0);
+      }
+
+      expect(await results).toEqual([
+        { status: 'fulfilled', value: 'first' },
+        {
+          status: 'rejected',
+          reason: expect.any(TRPCClientError),
+        },
+        { status: 'fulfilled', value: 'last' },
+      ]);
+      expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+
+      await expect(ctx.client.echo.query('next batch')).resolves.toBe(
+        'next batch',
+      );
+      expect(ctx.onRequestSpy).toHaveBeenCalledTimes(2);
+    },
+  );
+});
 
 describe.each(scenarios)(
   'Server support for $clientLink (transformer: $transformer)',
