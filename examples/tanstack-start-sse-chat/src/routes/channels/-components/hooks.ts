@@ -118,21 +118,29 @@ export function useChannelPosts(
     }),
   );
 
-  const messages = React.useMemo(() => {
-    // A live post can also be in a page fetched after it arrived, so dedupe by id
-    const byId = new Map<string, PostType>();
-    for (const page of query.data.pages) {
-      for (const post of page.items) {
-        byId.set(post.id, post);
-      }
-    }
-    for (const post of livePosts ?? []) {
-      byId.set(post.id, post);
-    }
-    return [...byId.values()].sort(
-      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-    );
-  }, [query.data.pages, livePosts]);
+  const messages = React.useMemo(
+    () =>
+      mergePosts(
+        query.data.pages.flatMap((page) => page.items),
+        livePosts ?? [],
+      ),
+    [query.data.pages, livePosts],
+  );
 
   return { query, messages };
+}
+
+/**
+ * Combines fetched and live posts, oldest first.
+ * A live post can also be in a page fetched after it arrived, and pages can
+ * overlap after a refetch, so posts are deduped by id.
+ */
+function mergePosts(fetched: PostType[], live: PostType[]) {
+  const byId = new Map<string, PostType>();
+  for (const post of [...fetched, ...live]) {
+    byId.set(post.id, post);
+  }
+  return [...byId.values()].sort(
+    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+  );
 }
