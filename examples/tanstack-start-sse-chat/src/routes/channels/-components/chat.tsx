@@ -19,7 +19,8 @@ import {
 } from '@shared/ui/components/message';
 import { Spinner } from '@shared/ui/components/spinner';
 import { Textarea } from '@shared/ui/components/textarea';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import {
@@ -32,11 +33,7 @@ import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import type { PostType } from '~/server/db/schema';
-import {
-  useChannelPosts,
-  useThrottledIsTypingMutation,
-  type useLivePosts,
-} from './hooks';
+import type { useLivePosts } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
 type LivePostsSubscription = ReturnType<typeof useLivePosts>;
@@ -91,7 +88,16 @@ export function Chat(
   }>,
 ) {
   const channelId = props.posts.input.channelId;
-  const channelPosts = useChannelPosts(props.posts);
+  const trpc = useTRPC();
+  const postsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (d) => d.nextCursor,
+      // `useLivePosts()` adds new posts to the cache, so there's no need to refetch
+      refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }),
+  );
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const session = useSession();
@@ -117,14 +123,14 @@ export function Chat(
               variant="outline"
               size="sm"
               disabled={
-                channelPosts.fetchStatus !== 'idle' || !channelPosts.hasNextPage
+                postsQuery.fetchStatus !== 'idle' || !postsQuery.hasNextPage
               }
               onClick={() => {
-                void channelPosts.fetchNextPage();
+                void postsQuery.fetchNextPage();
               }}
             >
               {run(() => {
-                switch (channelPosts.fetchStatus) {
+                switch (postsQuery.fetchStatus) {
                   case 'fetching':
                     return (
                       <>
@@ -140,7 +146,7 @@ export function Chat(
                       </>
                     );
                   case 'idle':
-                    return channelPosts.hasNextPage
+                    return postsQuery.hasNextPage
                       ? 'Load more'
                       : 'Fetched everything!';
                 }
@@ -149,7 +155,7 @@ export function Chat(
           </div>
 
           {/* `pages[0]` is the newest page, so show the pages in reverse */}
-          {channelPosts.data.pages
+          {postsQuery.data.pages
             .map((page, index) => (
               <PostPage
                 key={index}
@@ -287,12 +293,33 @@ function AddMessageForm(props: {
     });
   }
 
-  const isTypingMutation = useThrottledIsTypingMutation(channelId);
+  const { mutate: setIsTyping } = useMutation(
+    trpc.channel.isTyping.mutationOptions(),
+  );
+  const isTyping = React.useRef(false);
+  const isTypingTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
+  // Send whether we're typing as soon as it changes, and while it doesn't,
+  // again at most once a second so the server doesn't expire it
   React.useEffect(() => {
-    // update isTyping state
-    isTypingMutation(isFocused && message.trim().length > 0);
-  }, [isFocused, message, isTypingMutation]);
+    function send() {
+      if (isTypingTimeout.current) clearTimeout(isTypingTimeout.current);
+      isTypingTimeout.current = null;
+      setIsTyping({ typing: isTyping.current, channelId });
+    }
+
+    const nextIsTyping = isFocused && message.trim().length > 0;
+    const changed = nextIsTyping !== isTyping.current;
+    isTyping.current = nextIsTyping;
+    if (changed) {
+      send();
+      return;
+    }
+    if (isTypingTimeout.current) return;
+    isTypingTimeout.current = setTimeout(send, 1000);
+  }, [isFocused, message, channelId, setIsTyping]);
 
   return (
     <form
