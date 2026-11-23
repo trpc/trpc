@@ -276,3 +276,20 @@ describe('input only has what the validator returned', () => {
     });
   });
 });
+
+test('a large array index in form data is rejected without building a sparse array', async () => {
+  const t = initTRPC.create();
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({}))
+    .input(z.object({ items: z.array(z.string()) }))
+    .mutation((opts) => opts.input.items.length);
+
+  // a sparse array would have 1,000,001 holes for the validator to walk
+  const formData = new FormData();
+  formData.append('items[1000000]', 'x');
+
+  const error = await (proc as any)(formData).catch((cause: unknown) => cause);
+
+  expect(error).toMatchObject({ code: 'BAD_REQUEST' });
+  expect(error.cause.issues).toHaveLength(1);
+});

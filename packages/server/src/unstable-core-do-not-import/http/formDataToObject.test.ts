@@ -201,3 +201,65 @@ describe('prototype pollution', () => {
     expect((Object.prototype as any).pollution).toBeUndefined();
   });
 });
+
+describe('sparse arrays', () => {
+  test('an index far past the end makes an object, not a sparse array', () => {
+    const formData = new FormData();
+
+    formData.append('items[1000000]', 'x');
+    const result: any = formDataToObject(formData);
+
+    expect(Array.isArray(result.items)).toBe(false);
+    expect(Object.getPrototypeOf(result.items)).toBeNull();
+    expect(result.items).toEqual({ 1000000: 'x' });
+  });
+
+  test('an index that skips ahead turns an existing array into an object', () => {
+    const formData = new FormData();
+
+    formData.append('items[0]', 'a');
+    formData.append('items[2]', 'b');
+    const result: any = formDataToObject(formData);
+
+    expect(Array.isArray(result.items)).toBe(false);
+    expect(result.items).toEqual({ 0: 'a', 2: 'b' });
+  });
+
+  test('indices out of order make an object', () => {
+    const formData = new FormData();
+
+    formData.append('items[1]', 'b');
+    formData.append('items[0]', 'a');
+    const result: any = formDataToObject(formData);
+
+    expect(Array.isArray(result.items)).toBe(false);
+    expect(result.items).toEqual({ 0: 'a', 1: 'b' });
+  });
+
+  test('many fields cannot add up to a sparse array', () => {
+    const formData = new FormData();
+
+    for (let i = 0; i < 100; i++) {
+      formData.append(`items[${i}].tags[20]`, 'x');
+    }
+    const result: any = formDataToObject(formData);
+
+    expect(result.items).toHaveLength(100);
+    for (const item of result.items) {
+      expect(item.tags).toEqual({ 20: 'x' });
+    }
+  });
+
+  test('indices in order stay an array however many there are', () => {
+    const formData = new FormData();
+
+    for (let i = 0; i < 5000; i++) {
+      formData.append(`items[${i}].name`, `item ${i}`);
+    }
+    const result: any = formDataToObject(formData);
+
+    expect(Array.isArray(result.items)).toBe(true);
+    expect(result.items).toHaveLength(5000);
+    expect(result.items[4999]).toEqual({ name: 'item 4999' });
+  });
+});
