@@ -9,8 +9,8 @@ import type { TRPCClient, TRPCClientError } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import/clientish/inferrable';
+import type { TRPCQueryKey } from '../getQueryKey';
 import { getClientArgs } from '../internals/getClientArgs';
-import type { TRPCQueryKey } from '../internals/getQueryKey';
 import {
   createTRPCOptionsResult,
   fetchQueryData,

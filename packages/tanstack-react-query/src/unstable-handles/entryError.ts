@@ -2,7 +2,7 @@ import type { TRPCClientErrorLike } from '@trpc/client';
 import { isTRPCClientError } from '@trpc/client';
 import type { TRPC_ERROR_CODE_KEY, TRPCError } from '@trpc/server';
 import { getTRPCErrorFromUnknown } from '@trpc/server/unstable-core-do-not-import';
-import type { ResolverDef } from '../internals/types';
+import type { ResolverDef } from '../types';
 
 export type ErrorOf<TDef extends ResolverDef> = TRPCClientErrorLike<{
   transformer: TDef['transformer'];

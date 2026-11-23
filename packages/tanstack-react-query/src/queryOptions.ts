@@ -14,6 +14,12 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createTRPCOptionsResult,
+  getClientArgs,
+  streamIntoQuery,
+  unwrapLazyArg,
+} from './internals/utils';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -22,12 +28,6 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import {
-  createTRPCOptionsResult,
-  getClientArgs,
-  streamIntoQuery,
-  unwrapLazyArg,
-} from './utils';
 
 type ReservedOptions = 'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash';
 

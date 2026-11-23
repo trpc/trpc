@@ -1,4 +1,4 @@
-export { createTRPCContext } from './internals/Context';
+export { createTRPCContext } from './Context';
 export type {
   TRPCOptionsProxy,
   inferInput,
@@ -8,10 +8,10 @@ export type {
   DecorateRouterKeyable,
   DecorateQueryProcedure,
   DecorateSubscriptionProcedure,
-} from './internals/createOptionsProxy';
-export type { TRPCQueryOptions } from './internals/queryOptions';
-export type { TRPCInfiniteQueryOptions } from './internals/infiniteQueryOptions';
-export type { TRPCMutationOptions } from './internals/mutationOptions';
+} from './createOptionsProxy';
+export type { TRPCQueryOptions } from './queryOptions';
+export type { TRPCInfiniteQueryOptions } from './infiniteQueryOptions';
+export type { TRPCMutationOptions } from './mutationOptions';
 export type {
   TRPCSubscriptionOptions,
   TRPCSubscriptionStatus,
@@ -20,9 +20,9 @@ export type {
   TRPCSubscriptionIdleResult,
   TRPCSubscriptionPendingResult,
   TRPCSubscriptionResult,
-} from './internals/subscriptionOptions';
-export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
-export { useSubscription } from './internals/subscriptionOptions';
-export type * from './internals/types';
-export { unstable_createHydrateClient } from './internals/HydrateClient';
-export type { unstable_HydrateClientProps } from './internals/HydrateClient';
+} from './subscriptionOptions';
+export { createTRPCOptionsProxy } from './createOptionsProxy';
+export { useSubscription } from './subscriptionOptions';
+export type * from './types';
+export { unstable_createHydrateClient } from './HydrateClient';
+export type { unstable_HydrateClientProps } from './HydrateClient';

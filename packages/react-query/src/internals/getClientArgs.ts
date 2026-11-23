@@ -1,4 +1,4 @@
-import type { TRPCQueryKey } from './getQueryKey';
+import type { TRPCQueryKey } from '../getQueryKey';
 
 /**
  * @internal

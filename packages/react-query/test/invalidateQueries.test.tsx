@@ -4,7 +4,7 @@ import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
-import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
+import type { TRPCQueryKey } from '@trpc/react-query/getQueryKey';
 import React, { useState } from 'react';
 
 describe('invalidateQueries()', () => {

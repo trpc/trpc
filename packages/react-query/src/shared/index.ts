@@ -27,6 +27,6 @@ export {
    * @deprecated
    */
   TRPCContext,
-} from './../internals/context';
+} from '../context';
 
-export * from '../internals/context';
+export * from '../context';

@@ -8,7 +8,7 @@ export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
   parse: (input: unknown) => TOutput;
 };
 
-// Should be the same possible types as packages/client/src/links/internals/contentTypes.ts isOctetType
+// Should be the same possible types as packages/client/src/links/contentTypes.ts isOctetType
 
 /**
  * A `File`. Node 18 has no `File` type, but a `File` is always a `Blob`.

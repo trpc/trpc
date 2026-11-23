@@ -5,15 +5,11 @@ import type {
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
+import type { ResponseEsque } from '../types';
 import type { TRPCConnectionState } from './internals/subscriptions';
 
-export {
-  isNonJsonSerializable,
-  isFormData,
-  isOctetType,
-} from './internals/contentTypes';
+export { isNonJsonSerializable, isFormData, isOctetType } from './contentTypes';
 
 /**
  * Context an operation carries through the links, set per call.

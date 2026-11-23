@@ -1,4 +1,4 @@
-import type { FetchEsque, NativeFetchEsque } from './internals/types';
+import type { FetchEsque, NativeFetchEsque } from './types';
 
 type AnyFn = (...args: any[]) => unknown;
 

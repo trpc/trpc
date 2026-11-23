@@ -22,6 +22,11 @@ import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
 } from './infiniteQueryOptions';
+import {
+  getMutationKeyInternal,
+  getQueryKeyInternal,
+  unwrapLazyArg,
+} from './internals/utils';
 import type { MutationOptionsOverride } from './mutationOptions';
 import {
   trpcMutationOptions,
@@ -43,11 +48,6 @@ import type {
   TRPCQueryKey,
   WithRequired,
 } from './types';
-import {
-  getMutationKeyInternal,
-  getQueryKeyInternal,
-  unwrapLazyArg,
-} from './utils';
 
 /**
  * Key and filter helpers for a router path.

@@ -27,6 +27,7 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 import type {
   DefinedTRPCInfiniteQueryOptionsIn,
   DefinedTRPCInfiniteQueryOptionsOut,
@@ -37,8 +38,7 @@ import type {
   UndefinedTRPCInfiniteQueryOptionsOut,
   UndefinedTRPCQueryOptionsIn,
   UndefinedTRPCQueryOptionsOut,
-} from '../shared';
-import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
+} from './shared';
 
 interface TRPCUseUtilsOptions {
   /**

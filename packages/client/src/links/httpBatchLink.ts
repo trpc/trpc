@@ -7,8 +7,8 @@ import {
   allAbortSignals,
   raceAbortSignalsWithCleanup,
 } from '../internals/signals';
-import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
+import type { NonEmptyArray } from '../types';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {

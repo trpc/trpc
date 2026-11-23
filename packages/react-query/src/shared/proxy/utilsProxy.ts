@@ -38,13 +38,10 @@ import type {
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
   TRPCQueryUtils,
-} from '../../internals/context';
-import { contextProps } from '../../internals/context';
-import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
-import {
-  getMutationKeyInternal,
-  getQueryKeyInternal,
-} from '../../internals/getQueryKey';
+} from '../../context';
+import { contextProps } from '../../context';
+import type { QueryKeyKnown, QueryType } from '../../getQueryKey';
+import { getMutationKeyInternal, getQueryKeyInternal } from '../../getQueryKey';
 import type { InferMutationOptions } from '../../utils/inferReactQueryProcedure';
 import type { ExtractCursorType } from '../hooks/types';
 import type {

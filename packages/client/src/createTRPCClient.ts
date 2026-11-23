@@ -17,15 +17,15 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
+import type { TRPCTaggedPromise } from './safe';
+import type { TRPCClientError } from './TRPCClientError';
 import type {
   TRPCSubscriptionCallbacks,
   TRPCSubscriptionObserver,
   TRPCSubscriptionWithoutCallbacks,
-} from './internals/TRPCUntypedClient';
-import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
-import type { TRPCProcedureOptions } from './internals/types';
-import type { TRPCTaggedPromise } from './safe';
-import type { TRPCClientError } from './TRPCClientError';
+} from './TRPCUntypedClient';
+import { TRPCUntypedClient } from './TRPCUntypedClient';
+import type { TRPCProcedureOptions } from './types';
 
 /**
  * The type of a client for a router.

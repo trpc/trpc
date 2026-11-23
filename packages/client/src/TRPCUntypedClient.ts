@@ -15,15 +15,15 @@ import type {
   Maybe,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
-import { createChain } from '../links/internals/createChain';
-import type { TRPCConnectionState } from '../links/internals/subscriptions';
+import { createChain } from './links/internals/createChain';
+import type { TRPCConnectionState } from './links/internals/subscriptions';
 import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
-} from '../links/types';
-import { TRPCClientError } from '../TRPCClientError';
+} from './links/types';
+import { TRPCClientError } from './TRPCClientError';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 /** The options of a call made with the untyped client. */

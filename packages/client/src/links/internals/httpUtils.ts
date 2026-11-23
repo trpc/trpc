@@ -13,11 +13,7 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
 import { throwIfAborted } from '../../internals/signals';
-import type {
-  FetchEsque,
-  RequestInitEsque,
-  ResponseEsque,
-} from '../../internals/types';
+import type { FetchEsque, RequestInitEsque, ResponseEsque } from '../../types';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { HTTPHeaders } from '../types';

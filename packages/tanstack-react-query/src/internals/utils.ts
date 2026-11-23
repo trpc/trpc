@@ -20,7 +20,7 @@ import type {
   TRPCQueryKeyWithoutPrefix,
   TRPCQueryKeyWithPrefix,
   TRPCQueryOptionsResult,
-} from './types';
+} from '../types';
 
 /**
  * @internal

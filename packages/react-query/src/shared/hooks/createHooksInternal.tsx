@@ -21,14 +21,11 @@ import {
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { SSRState, TRPCContextState } from '../../internals/context';
-import { TRPCContext } from '../../internals/context';
+import type { SSRState, TRPCContextState } from '../../context';
+import { TRPCContext } from '../../context';
+import type { TRPCQueryKey } from '../../getQueryKey';
+import { getMutationKeyInternal, getQueryKeyInternal } from '../../getQueryKey';
 import { getClientArgs } from '../../internals/getClientArgs';
-import type { TRPCQueryKey } from '../../internals/getQueryKey';
-import {
-  getMutationKeyInternal,
-  getQueryKeyInternal,
-} from '../../internals/getQueryKey';
 import { fetchQueryData, useHookResult } from '../../internals/trpcResult';
 import type {
   QueriesResults,

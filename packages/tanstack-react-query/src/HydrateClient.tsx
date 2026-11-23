@@ -1,8 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary } from '@tanstack/react-query';
 import * as React from 'react';
-import { dehydrateUnsent } from './hydration';
-import { unwrapLazyArg } from './utils';
+import { dehydrateUnsent } from './internals/hydration';
+import { unwrapLazyArg } from './internals/utils';
 
 /** The props of the component `unstable_createHydrateClient` returns. */
 export interface unstable_HydrateClientProps {
