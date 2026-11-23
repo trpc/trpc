@@ -9,10 +9,9 @@ import { getUntypedClient } from '../createTRPCClient';
 import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from '../internals/types';
 import type {
+  OperationPipeline,
   Outcome,
-  PipelinedData,
-  PipelinedRun,
-  PipelineSource,
+  PipelinedRuns,
   Settles,
 } from '../links/internals/pipeline';
 import {
@@ -20,11 +19,16 @@ import {
   failed,
   isUnread,
   outcomeOf,
-  pipeCall,
   pipelineContext,
   readPipelinedRun,
   settles,
 } from '../links/internals/pipeline';
+import type { PriorFailure } from '../links/internals/pipelineContext';
+import {
+  isPipelineFallback,
+  priorFailureContext,
+  readsContext,
+} from '../links/internals/pipelineContext';
 import type { OperationContext } from '../links/types';
 import type { EntryDataRef } from './dataRef';
 import { entryDataRefOf } from './dataRef';
@@ -131,15 +135,24 @@ interface Call {
   /** Of an infinite query: the cursor of its first page */
   firstCursor: unknown;
   /**
-   * What gets every run's data in a request that is already there: its own
-   * operation, or a call the server makes in another's request. `null` if
-   * each run makes a request of its own
+   * The pipeline of the operation made for it as the load starts, which the
+   * operations that read it name: `null` if it has none, and each run asks
+   * by itself
    */
-  source: PipelineSource | null;
-  /** The lists of `source`'s runs */
+  pipeline: OperationPipeline | null;
+  /**
+   * The lists of the runs of that operation: its data has a run for every
+   * item of them, if there are any
+   */
   frame: Scope[];
-  /** The request of a call that reads nothing */
+  /** The outcome of that operation */
   sent: Settles<Outcome<unknown>> | null;
+  /** How each run went first, by its indexes: see `tryOf()` */
+  tries: Map<string, Settles<Try>>;
+  /** The operation each run that asks by itself made, by its indexes */
+  spawns: Map<string, Spawn>;
+  /** The data of each run that has it, by its indexes */
+  done: Map<string, Run>;
   /** What the inputs of other calls read of its data */
   reads: Segment[][];
   /** The lists in its data that an entry per item runs for */
@@ -168,6 +181,22 @@ interface Run {
 /** The indexes of the items a run is for, by list */
 type Items = Map<Scope, number>;
 
+/** An operation a run made by itself, and its outcome */
+interface Spawn {
+  /** What the operations that read it name: `null` for one that goes alone */
+  pipeline: OperationPipeline | null;
+  sent: Settles<Outcome<unknown>>;
+}
+
+/**
+ * How a run went in the operation made for its call: its data, the
+ * operation it made by itself, or its error
+ */
+type Try =
+  | { kind: 'data'; data: unknown }
+  | { kind: 'spawn'; spawn: Spawn }
+  | { kind: 'error'; error: unknown };
+
 /** What a stand-in in a call's input reads */
 const standIns = /* @__PURE__ */ new WeakMap<object, Ref>();
 /** What `experimental_settle()` awaits the items of */
@@ -188,6 +217,18 @@ function isDev() {
 
 function nothing() {
   // For a promise that nothing may read
+}
+
+/**
+ * The error of an operation that failed because one it reads did: that
+ * one's, as the caller should see it
+ */
+function ownError(error: unknown) {
+  return isPipelineFallback(error) === 'blocked' &&
+    error instanceof Error &&
+    error.cause !== undefined
+    ? error.cause
+    : error;
 }
 
 function standInOf(value: unknown) {
@@ -463,23 +504,6 @@ function allOk<TData>(
   );
 }
 
-/** Whether one of the checks is `true`, as soon as one is */
-function anyTrue(checks: readonly Settles<boolean>[]): Promise<boolean> {
-  return new Promise((resolve) => {
-    let left = checks.length;
-    if (left === 0) {
-      resolve(false);
-    }
-    for (const check of checks) {
-      void check.then((it) => {
-        left--;
-        if (it || left === 0) {
-          resolve(it);
-        }
-      });
-    }
-  });
-}
 
 /**
  * A copy of an input, with each value read of another call in it replaced by
@@ -739,9 +763,12 @@ export function experimental_load<
       firstCursor:
         state.initialCursor ??
         (entryDataRefOf(inputCursor) ? undefined : inputCursor),
-      source: null,
+      pipeline: null,
       frame: [],
       sent: null,
+      tries: new Map(),
+      spawns: new Map(),
+      done: new Map(),
       reads: [],
       lists: [],
       runs: new Map(),
@@ -752,21 +779,18 @@ export function experimental_load<
   }
 
   /**
-   * Has the server make the call in the request of what it reads, if that
-   * request hasn't gone and the link pipelines. Its input is filled in there.
+   * What the operation of a call reads of the operations of the calls it
+   * reads, for a link that pipelines to put it in their request: `null` if
+   * no request can have it, and each of its runs asks by itself
    */
-  function pipe(call: Call) {
-    if (call.context) {
-      // A link may route it by its context: it goes alone
-      return;
-    }
+  function declare(call: Call) {
     const inner = call.scopes[call.scopes.length - 1] ?? null;
-    const reads: PipelineCallReads<PipelineSource>['reads'] = [];
+    const reads: PipelineCallReads<OperationPipeline>['reads'] = [];
     let frame: Scope[] = [];
     let readsItem = false;
     for (const { to, ref } of call.holes) {
       if (!to) {
-        return;
+        return null;
       }
       const item = inner && [...inner.list.path, inner];
       if (
@@ -777,48 +801,225 @@ export function experimental_load<
       ) {
         const path = ref.path.slice(item.length);
         if (path.some(isScope)) {
-          return;
+          return null;
         }
         reads.push({ kind: 'item', to, path: wirePath(path) });
         readsItem = true;
         continue;
       }
       // An item of an outer list: no request has it on its own
-      if (!ref.call.source || ref.path.some(isScope)) {
-        return;
+      if (!ref.call.pipeline || ref.path.some(isScope)) {
+        return null;
       }
       const path = requestPath(ref.call, ref.path);
       if (!path) {
-        return;
+        return null;
       }
-      reads.push({ kind: 'whole', to, from: ref.call.source, path });
+      reads.push({ kind: 'whole', to, from: ref.call.pipeline, path });
       if (ref.call.frame.length > frame.length) {
         frame = ref.call.frame;
       }
     }
-    let each: PipelineCallReads<PipelineSource>['each'] = null;
+    let each: PipelineCallReads<OperationPipeline>['each'] = null;
     // A call in a list runs for every item of it, unless what it reads does
     if (inner && (readsItem || !sameScopes(frame, call.scopes))) {
       const { list } = inner;
-      const path = list.call.source && requestPath(list.call, list.path);
-      if (!list.call.source || !path) {
-        return;
+      const path = list.call.pipeline && requestPath(list.call, list.path);
+      if (!list.call.pipeline || !path) {
+        return null;
       }
-      each = { from: list.call.source, path };
+      each = { from: list.call.pipeline, path };
       frame = [...list.call.frame, ...list.path.filter(isScope), inner];
     }
     if (!sameScopes(frame, call.scopes)) {
-      return;
+      return null;
     }
-    const piped = pipeCall({
-      path: call.path,
-      input: call.blanked,
-      reads: { each, reads },
+    return { reads: { each, reads }, frame };
+  }
+
+  /** A filled input, or a rejection that a link passes on as `blocked` */
+  function inputFor(call: Call, items: Items) {
+    return fill({ value: call.input, items, skip: null }).then((input) =>
+      input.ok ? input.data : Promise.reject(input.error),
+    );
+  }
+
+  /**
+   * Once the calls a call reads, that run once, have their final data: what
+   * an operation for every item waits for before it asks for its runs by
+   * themselves
+   */
+  function sourcesReady(call: Call) {
+    const sources = new Set([
+      ...call.holes.map((hole) => hole.ref.call),
+      ...call.frame.map((scope) => scope.list.call),
+    ]);
+    return allOk(
+      Array.from(sources)
+        .filter((source) => source.scopes.length === 0)
+        .map((source) => runOf(source, new Map())),
+    ).then((ready) => (ready.ok ? undefined : Promise.reject(ready.error)));
+  }
+
+  /** The key of a run: the indexes of its items */
+  function keyOf(call: Call, items: Items) {
+    return call.scopes.map((scope) => items.get(scope)).join();
+  }
+
+  /**
+   * How a run went in the operation made for its call as the load started:
+   * its data, or its error. One the server didn't make, made for no such
+   * item, or that failed in a request with others, makes an operation by
+   * itself: a retrying link counts a run's own failure as its first attempt
+   */
+  function tryOf(call: Call, items: Items): Settles<Try> {
+    const key = keyOf(call, items);
+    let tried = call.tries.get(key);
+    if (!tried) {
+      tried = settles(
+        async (): Promise<Try> => {
+          if (!call.sent) {
+            return { kind: 'spawn', spawn: spawn(call, items, null) };
+          }
+          const outcome = await call.sent;
+          if (!outcome.ok) {
+            const fallback = isPipelineFallback(outcome.error);
+            if (fallback === 'not-run') {
+              return { kind: 'spawn', spawn: spawn(call, items, null) };
+            }
+            return { kind: 'error', error: ownError(outcome.error) };
+          }
+          if (call.frame.length === 0) {
+            return { kind: 'data', data: outcome.data };
+          }
+          const run = await readPipelinedRun(
+            outcome.data as PipelinedRuns,
+            call.frame.map((scope) => items.get(scope) ?? -1),
+          );
+          if (run.kind === 'data') {
+            return { kind: 'data', data: run.data };
+          }
+          if (run.kind === 'error' && run.mark !== 'source-failed') {
+            // Its own error, or one the client made for a run it couldn't
+            // read, which another attempt doesn't change
+            return isUnread(run.error)
+              ? { kind: 'error', error: run.error }
+              : {
+                  kind: 'spawn',
+                  spawn: spawn(call, items, { error: run.error, attempts: 1 }),
+                };
+          }
+          // A run that reads one that failed, or one the server didn't make.
+          // A run it reads for the same item may make an operation by
+          // itself: this one goes in its request
+          await Promise.all(
+            call.holes
+              .filter((hole) => hole.ref.call.scopes.length > 0)
+              .map((hole) => tryOf(hole.ref.call, items)),
+          );
+          return { kind: 'spawn', spawn: spawn(call, items, null) };
+        },
+        (error) => ({ kind: 'error', error }),
+      );
+      call.tries.set(key, tried);
+    }
+    return tried;
+  }
+
+  /**
+   * What gets the data of a call's run in a request that may still be open:
+   * the operation the run made by itself, or the operation made for a call
+   * that runs once. `null` for a run of a call for every item that made none
+   */
+  function requestOf(call: Call, items: Items) {
+    const spawned = call.spawns.get(keyOf(call, items));
+    if (spawned) {
+      return spawned.pipeline;
+    }
+    return call.scopes.length === 0 ? call.pipeline : null;
+  }
+
+  /**
+   * The operation a run makes by itself, at once, so that a link that
+   * retries decides on it at once. What it reads of data that is there is
+   * filled in. What it reads of a request that may be open goes in that
+   * request, where a link pipelines; it waits for anything else, and goes by
+   * itself once that is there
+   */
+  function spawn(call: Call, items: Items, prior: PriorFailure | null): Spawn {
+    const key = keyOf(call, items);
+    const made = call.spawns.get(key);
+    if (made) {
+      return made;
+    }
+    const wholeInput =
+      call.type === 'infinite' && call.holes.some((hole) => !hole.to);
+    const firstPage = (input: unknown) =>
+      wholeInput ? firstPageInput(input, undefined) : input;
+    if (call.context) {
+      // A context of its own, which a link may route by: it goes alone, as
+      // it is, once all it reads is there
+      const alone: Spawn = {
+        pipeline: null,
+        sent: settles(async (): Promise<Outcome<unknown>> => {
+          const filled = await fill({ value: call.input, items, skip: null });
+          return filled.ok
+            ? outcomeOf(
+                untyped.query(
+                  call.path,
+                  firstPage(filled.data),
+                  request(call, undefined),
+                ),
+              )
+            : filled;
+        }, failed),
+      };
+      call.spawns.set(key, alone);
+      return alone;
+    }
+    const pipeline = createOperationPipeline();
+    const reads: PipelineCallReads<OperationPipeline>['reads'] = [];
+    let complete = true;
+    const known = mapInput({
+      value: call.input,
+      to: [],
+      onRead: (read, to) => {
+        const ref = read as Ref;
+        const done = ref.call.done.get(keyOf(ref.call, items));
+        if (done) {
+          return walk({ run: done, path: ref.path, items, as: 'read' }).value;
+        }
+        const from =
+          to && !ref.path.some(isScope) ? requestOf(ref.call, items) : null;
+        const path = from && requestPath(ref.call, ref.path);
+        if (from && path && to) {
+          reads.push({ kind: 'whole', to, from, path });
+        } else {
+          complete = false;
+        }
+        return undefined;
+      },
     });
-    if (piped) {
-      call.source = piped;
-      call.frame = frame;
-    }
+    const context: OperationContext = {
+      ...pipelineContext(pipeline),
+      ...(complete && reads.length === 0
+        ? {}
+        : readsContext({
+            // A read it can't put in a request: it goes once all is there
+            reads: { each: null, reads: complete ? reads : [] },
+            perItem: false,
+            resolve: () => inputFor(call, items).then(firstPage),
+          })),
+      ...(prior ? priorFailureContext(prior) : {}),
+    };
+    const result: Spawn = {
+      pipeline,
+      sent: outcomeOf(
+        untyped.query(call.path, firstPage(known), request(call, context)),
+      ),
+    };
+    call.spawns.set(key, result);
+    return result;
   }
 
   function runOf(call: Call, items: Items) {
@@ -826,135 +1027,29 @@ export function experimental_load<
     let run = call.runs.get(key);
     if (!run) {
       run = settles(async (): Promise<Outcome<Run>> => {
-        const outcome = await startRun(call, items);
+        const tried = await tryOf(call, items);
+        if (tried.kind === 'error') {
+          return failed(tried.error);
+        }
+        const outcome =
+          tried.kind === 'data'
+            ? { ok: true as const, data: tried.data }
+            : await tried.spawn.sent;
         if (!outcome.ok) {
-          return outcome;
+          return failed(ownError(outcome.error));
         }
         // An infinite query's data, as TanStack Query has it: its pages
         const data =
           call.type === 'infinite'
             ? { pages: [outcome.data], pageParams: [call.firstCursor] }
             : outcome.data;
-        return { ok: true, data: snapshotOf(call, data) };
+        const snapshot = snapshotOf(call, data);
+        call.done.set(key, snapshot);
+        return { ok: true, data: snapshot };
       }, failed);
       call.runs.set(key, run);
     }
     return run;
-  }
-
-  /**
-   * A run's data, from the outcome of what gets it: its own request, or the
-   * call the server made. One the server didn't make, or made for no such
-   * item, asks by itself, once the data it reads is there
-   */
-  function startRun(call: Call, items: Items): Settles<Outcome<unknown>> {
-    if (call.sent) {
-      return call.sent;
-    }
-    const { source } = call;
-    return settles(async (): Promise<Outcome<unknown>> => {
-      if (source && 'owner' in source) {
-        const settled = await source.settled;
-        if (settled.status === 'ran') {
-          if (!settled.outcome.ok) {
-            return settled.outcome;
-          }
-          const run = await readRun(
-            settled.outcome.data,
-            call.frame.map((scope) => items.get(scope) ?? -1),
-          );
-          if (run.kind === 'data') {
-            return { ok: true, data: run.data };
-          }
-          // A run that reads a run the server didn't make, or that failed,
-          // doesn't run: the server sends an error in its place. It asks by
-          // itself, as a call does whose source failed
-          if (
-            run.kind === 'error' &&
-            !(await blockedBySource(call, items, run))
-          ) {
-            return failed(run.error);
-          }
-        }
-      }
-      const input = await fill(call.input, items);
-      if (!input.ok) {
-        return input;
-      }
-      return outcomeOf(
-        untyped.query(
-          call.path,
-          // A whole input that was read: its first page's, once it is there
-          call.type === 'infinite' && call.holes.some((hole) => !hole.to)
-            ? firstPageInput(input.data, undefined)
-            : input.data,
-          request(call, undefined),
-        ),
-      );
-    }, failed);
-  }
-
-  /**
-   * Whether a run's error is what the server sends in place of a run that
-   * reads one it didn't make, or that failed: an error the server marked
-   * `source-failed` beside it, in its envelope, and a call the run reads
-   * that the server refused or that failed on the server, for the run's
-   * items. What a run reads is what its input reads, and the list it runs
-   * for, which is in a call's data too. Any other error is the run's own, at
-   * once, whatever its code or its `data`. The server sends a failed source
-   * before the runs that read it, so this resolves at the first one, and
-   * doesn't wait for a source still to come. An error the client made, such
-   * as for a result it couldn't deserialize, doesn't say the server didn't
-   * run it
-   */
-  function blockedBySource(
-    call: Call,
-    items: Items,
-    run: Extract<PipelinedRun, { kind: 'error' }>,
-  ) {
-    if (run.mark !== 'source-failed') {
-      return Promise.resolve(false);
-    }
-    const sources = new Set([
-      ...call.holes.map((hole) => hole.ref.call),
-      ...call.frame.map((scope) => scope.list.call),
-    ]);
-    return anyTrue(
-      Array.from(sources, (source) =>
-        settles(
-          async () => {
-            const from = source.source;
-            // An operation of its own: its request's outcome
-            if (!from || !('owner' in from)) {
-              const sent = await source.sent;
-              return sent ? !sent.ok : false;
-            }
-            const settled = await from.settled;
-            if (settled.status === 'not-run') {
-              return true;
-            }
-            if (!settled.outcome.ok) {
-              return !isUnread(settled.outcome.error);
-            }
-            const run = await readRun(
-              settled.outcome.data,
-              source.frame.map((scope) => items.get(scope) ?? -1),
-            );
-            return run.kind === 'error'
-              ? !isUnread(run.error)
-              : run.kind !== 'data';
-          },
-          () => false,
-        ),
-      ),
-    );
-  }
-
-  /** The run at `indexes` of a call's data */
-  async function readRun(data: PipelinedData, indexes: readonly number[]) {
-    return data.kind === 'each'
-      ? readPipelinedRun(data.runs, indexes)
-      : ({ kind: 'data', data: data.data } as const);
   }
 
   function valueOf(
@@ -973,19 +1068,34 @@ export function experimental_load<
     }, failed);
   }
 
-  function fill(value: unknown, items: Items): Settles<Outcome<unknown>> {
+  /**
+   * A copy of an input with what it reads filled in, for the items in
+   * `items`. What `skip` reads is left `undefined`: a request fills it in
+   */
+  function fill(opts: {
+    value: unknown;
+    items: Items;
+    skip: ReadonlySet<Ref> | null;
+  }): Settles<Outcome<unknown>> {
+    const { value, items } = opts;
     return settles(async (): Promise<Outcome<unknown>> => {
       const ref = standInOf(value);
       if (ref) {
-        return valueOf(ref, items, 'read');
+        return opts.skip?.has(ref)
+          ? { ok: true, data: undefined }
+          : valueOf(ref, items, 'read');
       }
       if (Array.isArray(value)) {
         // Every index, a hole too: it is sent as `undefined` is
-        return allOk(Array.from(value, (item) => fill(item, items)));
+        return allOk(
+          Array.from(value, (item) => fill({ ...opts, value: item })),
+        );
       }
       if (isPlainObject(value)) {
         const keys = Object.keys(value);
-        const values = await allOk(keys.map((key) => fill(value[key], items)));
+        const values = await allOk(
+          keys.map((key) => fill({ ...opts, value: value[key] })),
+        );
         if (!values.ok) {
           return values;
         }
@@ -1128,33 +1238,54 @@ export function experimental_load<
   }
   // Every call is made before any is sent, in the order of the entries
   const root = nodeOf(entries, '', []);
-  // In one step: the link takes the queries that read nothing into a batch,
-  // and the calls that read them go in its request
+  // In one step: an operation for every call that a request can have. A
+  // link that pipelines puts each one that reads others in their request
   for (const call of calls) {
     if (call.holes.length === 0 && call.scopes.length === 0) {
-      const pipeline = call.context ? null : createOperationPipeline();
+      call.pipeline = call.context ? null : createOperationPipeline();
       call.sent = outcomeOf(
         untyped.query(
           call.path,
           call.blanked,
-          request(call, pipeline ? pipelineContext(pipeline) : undefined),
+          request(
+            call,
+            call.pipeline ? pipelineContext(call.pipeline) : undefined,
+          ),
         ),
       );
-      call.source = pipeline;
-    } else {
-      pipe(call);
+      continue;
     }
+    // One with a context of its own goes alone: a link may route by it
+    const declared = call.context ? null : declare(call);
+    if (!declared) {
+      continue;
+    }
+    const pipeline = createOperationPipeline();
+    call.pipeline = pipeline;
+    call.frame = declared.frame;
+    const perItem = declared.frame.length > 0;
+    call.sent = outcomeOf(
+      untyped.query(
+        call.path,
+        call.blanked,
+        request(call, {
+          ...pipelineContext(pipeline),
+          ...readsContext({
+            reads: declared.reads,
+            perItem,
+            resolve: perItem
+              ? () => sourcesReady(call)
+              : () => inputFor(call, new Map()),
+          }),
+        }),
+      ),
+    );
   }
   if (
     isDev() &&
     !warned.has(untyped) &&
-    calls.some((call) => call.source && 'owner' in call.source) &&
-    calls.some(
-      (call) =>
-        call.source &&
-        !('owner' in call.source) &&
-        call.source.streams === false,
-    )
+    calls.some((call) => call.pipeline?.attached) &&
+    calls.some((call) => call.pipeline?.streams === false)
   ) {
     warned.add(untyped);
     // oxlint-disable-next-line no-console

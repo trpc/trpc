@@ -323,8 +323,9 @@ describe('a description of queries', () => {
       post: { slug: 'a', authorId: 'u1' },
       author: { id: 'u1', teamId: 'team-u1' },
     });
-    // The author goes in the post's request: the links see one operation
-    expect(resource.requests).toEqual(['post.bySlug']);
+    // The links see an operation for each query, and the author goes in the
+    // post's request
+    expect(resource.requests).toEqual(['post.bySlug', 'author.byId']);
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 

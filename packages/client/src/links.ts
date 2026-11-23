@@ -11,6 +11,7 @@ export * from './links/httpSubscriptionLink';
 export * from './links/retryLink';
 export * from './links/localLink';
 export { experimental_pipelining } from './links/internals/pipeline';
+export { experimental_inputOf } from './links/internals/pipelineContext';
 export type {
   experimental_Pipelining,
   experimental_PipeliningLinkOptions,

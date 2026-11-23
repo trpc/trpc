@@ -1,3 +1,5 @@
+import type { Observable, Unsubscribable } from '@trpc/server/observable';
+import { observable } from '@trpc/server/observable';
 import type {
   PipelineCallReads,
   PipelinedBatchPlan,
@@ -17,14 +19,20 @@ import {
   planPipelinedBatch,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isTRPCClientError, TRPCClientError } from '../../TRPCClientError';
-import type { Operation } from '../types';
+import type { Operation, OperationResultEnvelope } from '../types';
 import type {
   ContentOptions,
   HTTPResult,
   ResolvedHTTPLinkOptions,
 } from './httpUtils';
 import { getBody, getUrl } from './httpUtils';
-import { pipelineOf } from './pipelineContext';
+import type { OperationReads } from './pipelineContext';
+import {
+  pipelineOf,
+  readsOf,
+  resolveReads,
+  withoutReads,
+} from './pipelineContext';
 
 export { pipelineContext } from './pipelineContext';
 
@@ -116,6 +124,17 @@ export interface OperationPipeline {
   sent: Promise<readonly string[]>;
   /** Only for the link that takes the operation */
   settleSent: (paths: readonly string[]) => void;
+  /**
+   * The call the operation is in this attempt, if a link put it in the
+   * request of an operation it reads, rather than in a request of its own.
+   * The operations that read it go in that request too
+   */
+  attached: PipelinedCall | null;
+  /**
+   * What runs each time a link opens it: the operations that read it, and
+   * wait for an attempt of it to go in
+   */
+  onOpen: Set<() => void>;
   /** What a link that serializes an operation's context gets: it has no cycles */
   toJSON: () => unknown;
 }
@@ -243,6 +262,8 @@ export function createOperationPipeline(): OperationPipeline {
     calls: [],
     sent: sent.promise,
     settleSent: sent.resolve,
+    attached: null,
+    onOpen: new Set(),
     toJSON: () => ({
       calls: pipeline.calls.map((call) => ({
         path: call.path,
@@ -456,12 +477,69 @@ export interface PipelinedBatch {
   results: readonly (HTTPResult | Promise<HTTPResult>)[];
 }
 
+type RoutedEnvelope = OperationResultEnvelope<unknown, TRPCClientError<any>>;
+
+/**
+ * What an operation reads, by what gets the data of each operation in this
+ * attempt: its request, or the call a link put it in. `null` if one of them
+ * has neither open now
+ */
+function sourcesNow(
+  reads: OperationReads['reads'],
+): PipelineCallReads<PipelineSource> | null {
+  const sourceOf = (pipeline: OperationPipeline): PipelineSource | null =>
+    pipeline.attached ?? (pipeline.open ? pipeline : null);
+  const each = reads.each && {
+    from: sourceOf(reads.each.from),
+    path: reads.each.path,
+  };
+  if (each && !each.from) {
+    return null;
+  }
+  const whole: PipelineCallReads<PipelineSource>['reads'] = [];
+  for (const read of reads.reads) {
+    if (read.kind === 'item') {
+      whole.push(read);
+      continue;
+    }
+    const from = sourceOf(read.from);
+    if (!from) {
+      return null;
+    }
+    whole.push({ ...read, from });
+  }
+  return {
+    each: each as PipelineCallReads<PipelineSource>['each'],
+    reads: whole,
+  };
+}
+
+/** The operations an operation reads */
+function pipelinesRead(reads: OperationReads['reads']) {
+  return new Set([
+    ...(reads.each ? [reads.each.from] : []),
+    ...reads.reads.flatMap((read) =>
+      read.kind === 'whole' ? [read.from] : [],
+    ),
+  ]);
+}
+
 /** What a batch link does with the operations it takes, when it pipelines */
 export interface BatchPipelining {
   /** Lets calls go in an operation's request, as the link takes it */
   open: (op: Pick<Operation, 'context' | 'type'>) => void;
   /** Ends what an operation's calls wait for, once it has a result */
   close: (op: Pick<Operation, 'context'>) => void;
+  /**
+   * Takes an operation whose input reads other operations' data: into the
+   * request of what it reads, as a call, while that request is open. Else it
+   * waits for an attempt of what it reads to open one, or for that data, and
+   * goes by itself with `send`. `null` for an operation that reads nothing
+   */
+  route: (
+    op: Operation,
+    send: (op: Operation) => Observable<RoutedEnvelope, TRPCClientError<any>>,
+  ) => Observable<RoutedEnvelope, TRPCClientError<any>> | null;
   /**
    * Once every call of an operation has its result: a link that streams
    * keeps reading the response for them, also when the operation failed
@@ -908,7 +986,121 @@ export function experimental_pipelining(
           const sent = createDeferred<readonly string[]>();
           pipeline.sent = sent.promise;
           pipeline.settleSent = sent.resolve;
+          // An attempt of its own: not a call in another's request
+          pipeline.attached = null;
+          for (const listener of Array.from(pipeline.onOpen)) {
+            listener();
+          }
         }
+      },
+      route(op, send) {
+        const reads = readsOf(op);
+        const own = pipelineOf(op);
+        if (!reads || !own || op.type !== 'query') {
+          return null;
+        }
+        return observable<RoutedEnvelope, TRPCClientError<any>>((observer) => {
+          let done = false;
+          let alone: Unsubscribable | null = null;
+          const listening = new Map<OperationPipeline, () => void>();
+          const stopListening = () => {
+            for (const [pipeline, listener] of listening) {
+              pipeline.onOpen.delete(listener);
+            }
+            listening.clear();
+          };
+          const fail = (error: TRPCClientError<any>) => {
+            if (!done) {
+              done = true;
+              stopListening();
+              observer.error(error);
+            }
+          };
+          /** Into the open request of what it reads, as a call */
+          const attach = () => {
+            const sources = sourcesNow(reads.reads);
+            const call =
+              sources &&
+              pipeCall({ path: op.path, input: op.input, reads: sources });
+            if (!call) {
+              return false;
+            }
+            own.attached = call;
+            stopListening();
+            // The operations that read it, and wait for an attempt of it
+            for (const listener of Array.from(own.onOpen)) {
+              listener();
+            }
+            void call.settled.then((settled) => {
+              if (done || own.attached !== call) {
+                return;
+              }
+              if (settled.status === 'not-run') {
+                wait();
+                return;
+              }
+              if (!settled.outcome.ok) {
+                fail(TRPCClientError.from(settled.outcome.error as Error));
+                return;
+              }
+              const data = settled.outcome.data;
+              done = true;
+              observer.next({
+                result: {
+                  type: 'data',
+                  data: data.kind === 'once' ? data.data : data.runs,
+                },
+              });
+              observer.complete();
+            });
+            return true;
+          };
+          /**
+           * Until an attempt of what it reads opens a request to go in, or
+           * that data is there and it goes by itself
+           */
+          const wait = () => {
+            own.attached = null;
+            for (const pipeline of pipelinesRead(reads.reads)) {
+              const listener = () => {
+                if (!done && own.attached === null) {
+                  attach();
+                }
+              };
+              pipeline.onOpen.add(listener);
+              listening.set(pipeline, listener);
+            }
+            resolveReads(reads).then(
+              (input) => {
+                if (done || own.attached !== null) {
+                  return;
+                }
+                stopListening();
+                alone = send({ ...withoutReads(op), input }).subscribe({
+                  next: (envelope) => observer.next(envelope),
+                  error: (error) => fail(error),
+                  complete: () => {
+                    done = true;
+                    observer.complete();
+                  },
+                });
+              },
+              (error: TRPCClientError<any>) => {
+                if (!done && own.attached === null) {
+                  fail(error);
+                }
+              },
+            );
+          };
+          if (!attach()) {
+            wait();
+          }
+          return () => {
+            done = true;
+            stopListening();
+            alone?.unsubscribe();
+          };
+        });
       },
       close: closePipeline,
       settled: (op) =>

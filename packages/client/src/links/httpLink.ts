@@ -17,11 +17,13 @@ import {
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
+import { takeOperation } from './internals/pipelineContext';
 import {
   isFormData,
   isOctetType,
   type HTTPHeaders,
   type Operation,
+  type OperationResultEnvelope,
   type TRPCLink,
 } from './types';
 
@@ -85,9 +87,11 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   return () => {
-    return (operationOpts) => {
-      const { op } = operationOpts;
-      return observable((observer) => {
+    const send = (op: Operation) => {
+      return observable<
+        OperationResultEnvelope<unknown, TRPCClientError<TRouter>>,
+        TRPCClientError<TRouter>
+      >((observer) => {
         const { path, input, type } = op;
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
@@ -163,5 +167,6 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
         };
       });
     };
+    return (operationOpts) => takeOperation(operationOpts.op, send);
   };
 }

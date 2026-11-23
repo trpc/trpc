@@ -21,7 +21,8 @@ import {
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { BatchPipelining } from './internals/pipeline';
-import type { Operation, TRPCLink } from './types';
+import { priorFailureOf, takeOperation } from './internals/pipelineContext';
+import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 /**
  * Options for {@link httpBatchStreamLink}. Takes the same options as
@@ -232,8 +233,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
     const mutation = dataLoader(batchLoader('mutation'));
 
     const loaders = { query, mutation };
-    return ({ op }) => {
-      return observable((observer) => {
+    const send = (op: Operation) => {
+      return observable<
+        OperationResultEnvelope<unknown, TRPCClientError<TRouter>>,
+        TRPCClientError<TRouter>
+      >((observer) => {
         /* istanbul ignore if -- @preserve */
         if (op.type === 'subscription') {
           throw new Error(
@@ -310,6 +314,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           }
         };
       });
+    };
+    return ({ op }) => {
+      // A call that reads another's data goes in its request, where it can
+      const routed = priorFailureOf(op) ? null : pipelining?.route(op, send);
+      return routed ?? takeOperation(op, send);
     };
   };
 }
