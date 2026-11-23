@@ -155,3 +155,30 @@ test('redirect accepts the redirect types of the installed Next.js', () => {
   // @ts-expect-error not a Next.js redirect type
   redirect('/c', 'bogus');
 });
+
+test('onError is called and a TRPCError is thrown when form data cannot be normalized', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+
+  const proc = t.procedure
+    .experimental_caller(nextAppDirCaller({ onError }))
+    .mutation(() => 'ok');
+
+  // `user` as a scalar and `user.name` as a nested key collide, so
+  // `formDataToObject` throws while building the object.
+  const formData = new FormData();
+  formData.set('user', 'alice');
+  formData.set('user.name', 'bob');
+
+  await expect((proc as any)(formData)).rejects.toMatchObject({
+    name: 'TRPCError',
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    path: '',
+    type: 'mutation',
+    error: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+});
