@@ -1504,13 +1504,37 @@ describe('edges of a load', () => {
     ).toEqual([['author.byId', { id: 'u2' }]]);
   });
 
-  test("the entries that read a fetch entry that joins a finishing fetch fill in that fetch's write to the cache", async () => {
+  test("the entries that read a fetch entry that joins a finishing fetch fill in that fetch's write to the cache, also when a listener writes after it", async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const { queryClient } = resource;
+    // A listener told before the load's writes to the query on its success
+    const written = new Set<string>();
+    using _listener = makeResource(
+      {},
+      queryClient.getQueryCache().subscribe((event) => {
+        const { queryHash } = event.query;
+        if (
+          event.type === 'updated' &&
+          event.action.type === 'success' &&
+          !event.action.manual &&
+          queryHash.includes('written') &&
+          !written.has(queryHash)
+        ) {
+          written.add(queryHash);
+          queryClient.setQueryData(event.query.queryKey, {
+            id: 'listener',
+            title: 'Listener',
+            authorId: 'listener',
+            tags: [],
+          });
+        }
+      }),
+    );
     // Whichever step after the other fetch starts the load joins it in
-    for (let ticks = 0; ticks < 8; ticks++) {
-      const slug = `finishing-${ticks}`;
+    for (let run = 0; run < 16; run++) {
+      const ticks = run % 8;
+      const slug = `finishing-${run < 8 ? 'alone' : 'written'}-${ticks}`;
       const key = trpc.post.bySlug.queryKey({ slug });
       // The cache keeps the data it has: the fetch resolves to what it fetched
       queryClient.setQueryDefaults(key, {
@@ -1546,8 +1570,8 @@ describe('edges of a load', () => {
       expect(queryClient.getQueryData(key)).toMatchObject({
         authorId: 'cache',
       });
-      expect({ ticks, author: handles.author }).toMatchObject({
-        ticks,
+      expect({ slug, author: handles.author }).toMatchObject({
+        slug,
         author: { input: { id: 'cache' } },
       });
     }

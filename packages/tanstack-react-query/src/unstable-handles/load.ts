@@ -388,6 +388,13 @@ export function beginEntries(opts: {
       leaf: LinkedLeaf;
       data: Unit<unknown, EntryFailure>;
       armed: boolean;
+      /**
+       * Before it is armed, once the query has started: how many writes the
+       * query had then, and the data of the first success after them that
+       * isn't a write such as `setQueryData()`. That is a joined fetch's,
+       * whose function had returned. `null` until the query has started
+       */
+      early: { writes: number; success: { data: unknown } | null } | null;
     }[]
   >();
   /**
@@ -423,6 +430,7 @@ export function beginEntries(opts: {
       leaf,
       data,
       armed: false,
+      early: null,
     };
     watched.set(queryHash, [...(watched.get(queryHash) ?? []), one]);
     state.unwatch ??= queryClient.getQueryCache().subscribe((event) => {
@@ -432,6 +440,18 @@ export function beginEntries(opts: {
       const { action } = event;
       for (const each of watched.get(event.query.queryHash) ?? []) {
         if (!each.armed) {
+          // A notification of an action from before the load started has
+          // no write after the query started, unless a listener told before
+          // this one wrote since: then the load started a fetch, whose own
+          // success comes once it is armed
+          if (
+            each.early?.success === null &&
+            action.type === 'success' &&
+            !action.manual &&
+            event.query.state.dataUpdateCount > each.early.writes
+          ) {
+            each.early.success = { data: action.data };
+          }
           continue;
         }
         // Not a write, such as `setQueryData()`, while the request runs:
@@ -465,12 +485,14 @@ export function beginEntries(opts: {
         one.armed = true;
       });
       // A joined fetch whose function had returned can write before then.
-      // The `QueryClient` method resolves after that write: if it was the
-      // only one since, the data is what it wrote
-      const writes = query.state.dataUpdateCount;
-      return promise.then((value) =>
-        query.state.dataUpdateCount === writes + 1 ? query.state.data : value,
-      );
+      // The `QueryClient` method resolves after that write, and the data is
+      // what it wrote, also if a listener wrote after it
+      const early: NonNullable<typeof one.early> = {
+        writes: query.state.dataUpdateCount,
+        success: null,
+      };
+      one.early = early;
+      return promise.then((value) => (early.success ?? { data: value }).data);
     };
   }
 
