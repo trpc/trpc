@@ -395,6 +395,57 @@ describe.each([
   });
 });
 
+test('a query that waits twice for the query it reads goes by itself once, when that one has its data', async () => {
+  const { appRouter } = createRouter();
+  let fetches = 0;
+  await using ctx = testServerAndClientResource(appRouter, {
+    server: { experimental_allowPipelining: true },
+    client: (clientOpts) => ({
+      links: [
+        retryLink({
+          retry: (opts) =>
+            !experimental_isPipelineFallback(opts.error) && opts.attempts < 3,
+          retryDelayMs: () => 0,
+        }),
+        httpBatchLink({
+          url: clientOpts.httpUrl,
+          experimental_pipelining: experimental_pipelining(),
+          fetch: async (input, init) => {
+            fetches++;
+            // The first request fails as a whole: b waits for a's retry
+            if (fetches === 1) {
+              throw new TypeError('fetch failed');
+            }
+            const res = await fetch(input, init);
+            if (fetches > 2) {
+              return res;
+            }
+            // b goes in a's retry, and its result is left out, as by a proxy
+            // that drops what it doesn't expect: b waits again
+            const results: unknown[] = await res.json();
+            return Response.json(results.slice(0, 1), res);
+          },
+        }),
+      ],
+    }),
+  });
+  const a = query(ctx.client.a, { key: 'a' });
+
+  const res = await experimental_settle(
+    experimental_load(ctx.client, {
+      a,
+      b: query(ctx.client.b, { key: dataOf(a).next }),
+    }),
+  );
+
+  expect(res.b).toMatchObject({ key: 'a+' });
+  expect(
+    ctx.onRequestSpy.mock.calls.map(
+      ([req]) => new URL(req.url!, 'http://localhost').pathname,
+    ),
+  ).toEqual(['/a,b', '/b']);
+});
+
 describe('a link that does not pipeline', () => {
   test('gets the input of a query that reads another once that has data, and sends each by itself', async () => {
     const { appRouter } = createRouter();

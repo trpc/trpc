@@ -1251,8 +1251,45 @@ export function experimental_pipelining(
             return true;
           };
           /**
+           * The data it reads, filled into its input, once that is there:
+           * asked for once, however often it waits
+           */
+          let resolved: Outcome<unknown> | null = null;
+          let resolving = false;
+          /** By itself, once that data is there, if no request has it */
+          const goAlone = () => {
+            if (done || alone || own.attached !== null || !resolved) {
+              return;
+            }
+            if (!resolved.ok) {
+              fail(pipelineFallback(resolved.error));
+              return;
+            }
+            stopListening();
+            if (reads.perItem) {
+              // Its runs are for items it doesn't know: the engine asks
+              // for each by itself
+              done = true;
+              observer.next({ result: { type: 'data', data: notRun } });
+              observer.complete();
+              return;
+            }
+            alone = send({
+              ...withoutReads(op),
+              input: resolved.data,
+            }).subscribe({
+              next: (envelope) => observer.next(envelope),
+              error: (error) => fail(error),
+              complete: () => {
+                done = true;
+                observer.complete();
+              },
+            });
+          };
+          /**
            * Until an attempt of what it reads opens a request to go in, or
-           * that data is there and it goes by itself
+           * that data is there and it goes by itself. It waits again when a
+           * request it went in leaves it out
            */
           const wait = () => {
             own.attached = null;
@@ -1270,35 +1307,15 @@ export function experimental_pipelining(
               pipeline.onOpen.add(listener);
               listening.set(pipeline, listener);
             }
-            reads.resolve().then(
-              (input) => {
-                if (done || own.attached !== null) {
-                  return;
-                }
-                stopListening();
-                if (reads.perItem) {
-                  // Its runs are for items it doesn't know: the engine asks
-                  // for each by itself
-                  done = true;
-                  observer.next({ result: { type: 'data', data: notRun } });
-                  observer.complete();
-                  return;
-                }
-                alone = send({ ...withoutReads(op), input }).subscribe({
-                  next: (envelope) => observer.next(envelope),
-                  error: (error) => fail(error),
-                  complete: () => {
-                    done = true;
-                    observer.complete();
-                  },
-                });
-              },
-              (error: unknown) => {
-                if (!done && own.attached === null) {
-                  fail(pipelineFallback(error));
-                }
-              },
-            );
+            if (resolving) {
+              goAlone();
+              return;
+            }
+            resolving = true;
+            void outcomeOf(reads.resolve()).then((outcome) => {
+              resolved = outcome;
+              goAlone();
+            });
           };
           if (!attach()) {
             wait();
