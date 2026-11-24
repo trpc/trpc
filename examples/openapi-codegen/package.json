@@ -9,8 +9,8 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 3000 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
+    "test-dev": "start-server-and-test 'tsx src/server' tcp:3000 'tsx src/client'",
+    "test-start": "start-server-and-test 'node dist/server' tcp:3000 'node dist/client'"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -24,7 +24,7 @@
     "@types/node": "^24.19.2",
     "esbuild": "^0.28.2",
     "npm-run-all2": "catalog:",
-    "start-server-and-test": "^1.12.0",
+    "start-server-and-test": "catalog:",
     "tsx": "^4.23.15",
     "typescript": "catalog:",
     "wait-port": "^1.1.0"

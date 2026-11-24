@@ -328,7 +328,9 @@ function copyData(value: unknown, copies: Map<object, unknown>): unknown {
     return copies.get(value);
   }
   if (value instanceof Date) {
-    return new Date(value.getTime());
+    const copy = new Date(value.getTime());
+    copies.set(value, copy);
+    return copy;
   }
   if (value instanceof Map) {
     const copy = new Map<unknown, unknown>();
@@ -614,7 +616,17 @@ type Node =
   | { kind: 'skip' }
   | { kind: 'query'; call: Call }
   /** An entry per item: what the callback returned, for each item of `scopes` */
-  | { kind: 'list'; scopes: Scope[]; item: Node }
+  | {
+      kind: 'list';
+      /**
+       * The call whose data the list is in. An infinite query's list of
+       * pages is its first page, with no scope of its own: the list still
+       * waits for that call, and fails with it
+       */
+      source: Call;
+      scopes: Scope[];
+      item: Node;
+    }
   | { kind: 'group'; members: [key: string, node: Node][] };
 
 /**
@@ -1145,8 +1157,14 @@ export function experimental_load<
         if (done) {
           return walk({ run: done, path: ref.path, items, as: 'read' }).value;
         }
+        // An infinite query's whole input, which the server can't write
+        // `cursor` and `direction` into, as for the operation made as the
+        // load starts: it waits for that input
+        const wholeInfinite = call.type === 'infinite' && to?.length === 0;
         const from =
-          to && !ref.path.some(isScope) ? requestOf(ref.call, items) : null;
+          to && !wholeInfinite && !ref.path.some(isScope)
+            ? requestOf(ref.call, items)
+            : null;
         const path = from && requestPath(ref.call, ref.path);
         if (from && path && to) {
           reads.push({ kind: 'whole', to, from, path });
@@ -1375,6 +1393,7 @@ export function experimental_load<
       );
       return {
         kind: 'list',
+        source: callFor(perItem.list.entry),
         scopes,
         item: nodeOf(perItem.entry, label, [...bound, ...scopes]),
       };
@@ -1412,6 +1431,14 @@ export function experimental_load<
             const all = await itemsOf(node.scopes, items);
             if (!all.ok) {
               return all;
+            }
+            // The run of the call the list is in, for each item: the items
+            // waited for it already, unless its list had no scope
+            const sources = await allOk(
+              all.data.map((row) => runOf(node.source, row)),
+            );
+            if (!sources.ok) {
+              return sources;
             }
             const list = all.data.map((item) => resolve(node.item, item));
             itemLists.add(list);

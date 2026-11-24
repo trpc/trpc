@@ -28,7 +28,7 @@ skill:
 
 The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) and [HTTP API(v2)](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), and [Lambda Function URL](https://docs.aws.amazon.com/lambda/latest/dg/urls-configuration.html) use cases.
 
-> `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway)).
+> `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway-streaming)).
 > If you'd like to have a Resource per procedure, you can use the `httpLink` instead ([more info](https://github.com/trpc/trpc/issues/5738#issuecomment-2130001522)).
 
 ## Example apps
@@ -41,14 +41,6 @@ The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>API Gateway with NodeJS client.</td>
-      <td>
-        <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway">Source</a></li>
-        </ul>
-      </td>
-    </tr>
     <tr>
       <td>API Gateway REST API with response streaming.</td>
       <td>
