@@ -504,7 +504,6 @@ function allOk<TData>(
   );
 }
 
-
 /**
  * A copy of an input, with each value read of another call in it replaced by
  * what `onRead` gives. `to` is where a value is in the input: `null` in an
