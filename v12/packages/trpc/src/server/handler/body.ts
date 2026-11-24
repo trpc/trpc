@@ -34,6 +34,8 @@ export const parsedBody = (
   const { body } = node;
   if (typeof body === 'string') return encoder.encode(body);
   if (body instanceof Uint8Array) return body;
+  // `express.json()` makes `{}` of an empty body, which isn't an input.
+  if (request.headers['content-length'] === '0') return new Uint8Array();
   if (
     body !== undefined &&
     isJsonContentType(request.headers['content-type'] ?? null)

@@ -280,9 +280,13 @@ function replayParsedBody(web: Request, source: object): Request | Response {
   const replay =
     typeof body === 'string' || body instanceof Uint8Array
       ? body
-      : body !== undefined && isJsonContentType(web.headers.get('content-type'))
-        ? JSON.stringify(body)
-        : undefined;
+      : // `express.json()` makes `{}` of an empty body, which isn't an input.
+        web.headers.get('content-length') === '0'
+        ? ''
+        : body !== undefined &&
+            isJsonContentType(web.headers.get('content-type'))
+          ? JSON.stringify(body)
+          : undefined;
   if (replay === undefined) {
     const message =
       'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.';

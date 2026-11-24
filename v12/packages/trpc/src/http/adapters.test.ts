@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Match, Scope } from 'effect';
 import { HttpMiddleware, HttpServer } from 'effect/http';
+import { createTRPCUntypedClient, httpLink as v11HttpLink } from '@trpc/client';
 import {
   createTrpcClient,
   httpLink,
@@ -17,6 +18,7 @@ import {
   type FetchLike,
   type WebSocketHandlerLike,
 } from '@trpc12/trpc/http';
+import { createV11Handler } from '@trpc12/trpc/interop';
 import {
   createFetchHandler,
   initTrpc,
@@ -34,6 +36,9 @@ const router = t.router({
   save: t.procedure
     .input(z.object({ n: z.number() }))
     .mutation((opts) => opts.input.n * 2),
+  greet: t.procedure
+    .input(z.string().optional())
+    .mutation((opts) => `hello ${opts.input ?? 'nobody'}`),
 });
 const handler = createFetchHandler({ router });
 
@@ -47,8 +52,9 @@ const plain: FetchLike & WebSocketHandlerLike = {
 /**
  * Reads the body the way `express.json()`, `express.text()` or
  * `express.raw()` do, picked by an `x-parser` header, whatever the
- * content type; without one, JSON only. Other types are read and dropped,
- * as a parser that doesn't set `req.body` leaves them.
+ * content type; without one, JSON only, and an empty one is `{}`. Other
+ * types are read and dropped, as a parser that doesn't set `req.body`
+ * leaves them.
  */
 async function parse(req: IncomingMessage & { body?: unknown }) {
   const chunks: Buffer[] = [];
@@ -61,7 +67,9 @@ async function parse(req: IncomingMessage & { body?: unknown }) {
   req.body = Match.value(parser).pipe(
     Match.when('text', () => String(raw)),
     Match.when('raw', () => new Uint8Array(raw)),
-    Match.orElse((): unknown => JSON.parse(String(raw))),
+    Match.orElse((): unknown =>
+      raw.length === 0 ? {} : JSON.parse(String(raw)),
+    ),
   );
 }
 
@@ -135,6 +143,20 @@ test("another library's fetch handler gets bodies a parser already read, as JSON
   expect(await unread.json()).toMatchObject({
     json: { error: { message: expect.stringMatching(/already read/) } },
   });
+});
+
+test('a v11 mutation without input gets undefined, not the {} express.json() makes of its empty body', async () => {
+  const legacy = createV11Handler({ router, batch: false });
+  const another: FetchLike = { fetch: (request) => legacy.fetch(request) };
+  for (const app of [toHttpEffect(legacy), toHttpEffect(another)]) {
+    await using server = await listenParsed(app, parse);
+    const client = createTRPCUntypedClient<any>({
+      links: [v11HttpLink({ url: server.url })],
+    });
+    expect(await client.mutation('greet')).toBe('hello nobody');
+    expect(await client.mutation('save', { n: 2 })).toBe(4);
+  }
+  await legacy.dispose();
 });
 
 test('upgrades reach the endpoint only, through createFetchHandler() and other handlers alike', async () => {
