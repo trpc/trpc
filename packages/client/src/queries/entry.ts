@@ -182,26 +182,21 @@ export function readInputRefs(opts: {
 
 /**
  * The path of a procedure of a tRPC client, or of the options proxy of
- * `@trpc/tanstack-react-query`: both answer `~path`
+ * `@trpc/tanstack-react-query`. Both are proxies whose `toString()` names
+ * the path, as `tRPC.proxy(post.byId)`: reading it costs a client nothing
  * @internal
  */
 export function procedurePathOf(procedure: unknown, fn: string): string[] {
-  const read: unknown =
-    (typeof procedure === 'function' || typeof procedure === 'object') &&
-    procedure !== null
-      ? Reflect.get(procedure, '~path')
-      : undefined;
-  const path: unknown = typeof read === 'function' ? read() : null;
-  if (
-    !Array.isArray(path) ||
-    path.length === 0 ||
-    !path.every((it) => typeof it === 'string')
-  ) {
+  const named =
+    typeof procedure === 'function'
+      ? /^tRPC\.proxy\((.+)\)$/.exec(String(procedure))
+      : null;
+  if (!named?.[1]) {
     throw new Error(
       `\`${fn}()\` expects a procedure of a tRPC client or of a tRPC options proxy, such as \`trpc.post.byId\`, got ${String(procedure)}`,
     );
   }
-  return path;
+  return named[1].split('.');
 }
 
 declare const queryEntryDef: unique symbol;
