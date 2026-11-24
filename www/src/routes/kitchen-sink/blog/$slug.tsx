@@ -14,9 +14,14 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import {
+  experimental_dataOf,
+  type experimental_inferHandles,
   fromHandle,
   type inferQueryHandle,
   loadHandles,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  type TRPCLoadEntries,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
@@ -26,9 +31,44 @@ import { AuthorCard } from './-components/author-card.tsx';
 import { DevNote, noteTextClass, SeeItYourself } from './-components/note.tsx';
 import { useBlogPreload } from './-components/settings.tsx';
 import { formatDate } from './-date.ts';
-import { postPageEntries } from './-entries.ts';
 import { usePageLink, usePostLink } from './-links.ts';
 import { isNotFound, loaderTRPC, type TRPC, useTRPC } from './-trpc.ts';
+
+/**
+ * Every query the post's page needs, from the URL alone: a post, its author,
+ * and what else the author's team wrote. The loader waits for none of them:
+ * each part of the page shows when its query has loaded.
+ */
+function postPageEntries(trpc: TRPC, opts: { readonly slug: string }) {
+  const post = prefetchEntry(trpc.blog.postBySlug, { slug: opts.slug });
+  // The author's id is in the post, which hasn't loaded yet. The callback
+  // runs once, on a stand-in for the post, and the server reads the id from
+  // the post in the same request
+  const author = experimental_dataOf(post, (it) =>
+    prefetchEntry(trpc.blog.authorById, { id: it.authorId }),
+  );
+  return {
+    post,
+    author,
+    // A second step: the list is filtered by the author's team, and only the
+    // author has its id. Post, author and the list's first page are one
+    // request. Later pages are requests of their own.
+    //
+    // The input has nothing of this post in it, so the list is one query for
+    // all of the team's posts: going from one to the next finds it in the
+    // cache. The card leaves the open post out when it reads the list
+    moreFromTeam: experimental_dataOf(author, (it) =>
+      prefetchInfiniteEntry(
+        trpc.blog.posts,
+        { teamId: it.teamId, limit: 5 },
+        { getNextPageParam: (lastPage) => lastPage.nextCursor },
+      ),
+    ),
+  } satisfies TRPCLoadEntries;
+}
+
+/** What the post page's loader gives its components */
+export type PostPageHandles = experimental_inferHandles<typeof postPageEntries>;
 
 export const Route = createFileRoute('/kitchen-sink/blog/$slug')({
   loader: async (opts) => {

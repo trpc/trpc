@@ -10,7 +10,15 @@ import {
   useMatch,
   useNavigate,
 } from '@tanstack/react-router';
-import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import {
+  experimental_dataOf,
+  experimental_perItem,
+  type experimental_inferHandles,
+  loadHandles,
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  type TRPCLoadEntries,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense, useState } from 'react';
 
 import { pageHead } from '~/seo.ts';
@@ -21,7 +29,6 @@ import {
   BlogPreloadProvider,
   BlogSettingsBar,
 } from './-components/settings.tsx';
-import { postListEntries } from './-entries.ts';
 import { contentId } from './-links.ts';
 import { meter } from './-request-meter.ts';
 import {
@@ -37,9 +44,36 @@ import {
   getQueryClient,
   loaderTRPC,
   TRPCProvider,
+  type TRPC,
   trpcClient,
   useTRPC,
 } from './-trpc.ts';
+
+/**
+ * Every query the post list needs, from the URL alone. The loader waits for
+ * none of them: each part of the list shows when its query has loaded.
+ */
+function postListEntries(trpc: TRPC) {
+  const posts = prefetchInfiniteEntry(
+    trpc.blog.posts,
+    { limit: 10 },
+    { getNextPageParam: (lastPage) => lastPage.nextCursor },
+  );
+  return {
+    posts,
+    // An author for every post. The authors' ids are in the posts, which
+    // haven't loaded yet, so the callback runs once on a stand-in for every
+    // post. The server runs `blog.authorById` for every post it found, in the
+    // same request: for this first page, and for each page the list loads later
+    authors: experimental_perItem(
+      experimental_dataOf(posts).pages.flatMap((page) => page.items),
+      (post) => prefetchEntry(trpc.blog.authorById, { id: post.authorId }),
+    ),
+  } satisfies TRPCLoadEntries;
+}
+
+/** What the list's loader gives its components */
+export type PostListHandles = experimental_inferHandles<typeof postListEntries>;
 
 /**
  * The showcase's own query client, for its pages alone: the rest of the
@@ -108,10 +142,7 @@ function BlogFrame() {
         <code>experimental_dataOf</code>, and wait for none. The link pipelines,
         so the browser sends them in one request, and the server fills in each
         input from the data before it.{' '}
-        <a
-          className="underline"
-          href={showcaseFileUrl(showcase, '-entries.ts')}
-        >
+        <a className="underline" href={showcaseFileUrl(showcase, '$slug.tsx')}>
           How it works
         </a>{' '}
         ·{' '}

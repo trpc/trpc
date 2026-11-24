@@ -19,7 +19,7 @@ import {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 
-import type { PostPageHandles } from '../-entries.ts';
+import type { PostPageHandles } from '../$slug.tsx';
 import { usePostLink } from '../-links.ts';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevFallback, DevNote } from './note.tsx';

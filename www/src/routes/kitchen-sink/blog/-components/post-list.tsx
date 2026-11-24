@@ -13,7 +13,7 @@ import {
 import { Suspense, useEffect, useRef } from 'react';
 
 import { formatDate } from '../-date.ts';
-import type { PostListHandles } from '../-entries.ts';
+import type { PostListHandles } from '../route.tsx';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevNote, DevNoteText } from './note.tsx';
 import { usePostLink } from '../-links.ts';
