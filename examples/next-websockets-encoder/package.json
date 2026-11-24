@@ -40,7 +40,7 @@
     "npm-run-all2": "catalog:",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "postcss": "^8.5.32",
+    "postcss": "^8.5.33",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.9.2"
   },
