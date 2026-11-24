@@ -50,15 +50,23 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
 } & LocalContextOption<inferRouterContext<TRouter>> &
   RuntimeOption<inferRouterServices<TRouter>>;
 
+/**
+ * What `createContext` receives: `info.signal` aborts when the call is
+ * aborted or interrupted, like the handler's `info.signal`.
+ */
+type LocalCreateContext<TCtx> = (opts: {
+  readonly info: { readonly signal: AbortSignal };
+}) => MaybePromise<TCtx>;
+
 /** `createContext` is required when the router's procedures need a `ctx`. */
 type LocalContextOption<TCtx> = {} extends TCtx
   ? {
       /** Runs once per call. */
-      createContext?: () => MaybePromise<TCtx>;
+      createContext?: LocalCreateContext<TCtx>;
     }
   : {
       /** Runs once per call. */
-      createContext: () => MaybePromise<TCtx>;
+      createContext: LocalCreateContext<TCtx>;
     };
 
 /**
@@ -148,7 +156,14 @@ export function localLink<TRouter extends AnyRouter>(
           }
           const context = yield* services;
           const ctx = yield* Effect.promise(
-            async () => (await opts.createContext?.()) ?? {},
+            async (interrupted) =>
+              (await opts.createContext?.({
+                info: {
+                  signal: op.signal
+                    ? AbortSignal.any([op.signal, interrupted])
+                    : interrupted,
+                },
+              })) ?? {},
           );
           const response = createResponseHandle();
           const data = yield* withSignal((interrupted) =>

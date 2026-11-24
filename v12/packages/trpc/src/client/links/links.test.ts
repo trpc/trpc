@@ -312,6 +312,41 @@ test("interrupting a localLink call aborts the procedure's signal", async () => 
   await vi.waitFor(() => expect(seen.aborted).toBe(1));
 });
 
+test("aborting a localLink call aborts createContext's signal and skips the procedure", async () => {
+  const seen = { aborted: 0, ran: 0 };
+  const bare = initTrpc();
+  const local = bare.router({
+    ping: bare.procedure.query(() => {
+      seen.ran++;
+      return 'pong';
+    }),
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof local>(),
+    links: [
+      localLink({
+        router: local,
+        createContext: (opts) =>
+          new Promise<object>((resolve) =>
+            opts.info.signal.addEventListener('abort', () => {
+              seen.aborted++;
+              resolve({});
+            }),
+          ),
+      }),
+    ],
+  });
+  const controller = new AbortController();
+  const call = safe(
+    client.ping.query(undefined, { signal: controller.signal }),
+  );
+  setTimeout(() => controller.abort(), 20);
+  const [, err] = await call;
+  expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(seen.aborted).toBe(1));
+  expect(seen.ran).toBe(0);
+});
+
 test('localLink fails unknown paths and wrong methods; deferred failures arrive as errors', async () => {
   const untyped = createUntypedClient({
     links: [localLink({ router, createContext: () => ({ token: null }) })],
