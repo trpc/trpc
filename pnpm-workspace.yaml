@@ -33,6 +33,12 @@ minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
+# Sub-dependencies forced past their parents' ranges. None of them reach a
+# published @trpc/* package: they're dev tooling, examples and the docs site.
+overrides:
+  # serverless 3 (lambda examples) and isomorphic-ws still resolve ws 7.
+  ws@7: ^8.23.0
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
