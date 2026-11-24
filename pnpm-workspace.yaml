@@ -39,6 +39,11 @@ overrides:
   # next pins postcss exactly; @tailwindcss/typography (docs) pins postcss-selector-parser.
   next>postcss: 'catalog:'
   postcss-selector-parser@6: ^6.1.5
+  # Exact pins: @remix-run/server-runtime (docs samples, types only),
+  # satori (docs OG images) and @hey-api/json-schema-ref-parser.
+  turbo-stream@2: ^3.0.0
+  fflate@0.7: ^0.7.5
+  js-yaml@5: ^5.4.1
 
 allowBuilds:
   '@prisma/client': true
