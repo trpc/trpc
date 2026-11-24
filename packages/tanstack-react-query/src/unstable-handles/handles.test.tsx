@@ -857,7 +857,7 @@ describe('loading', () => {
         },
       ),
     });
-    expect(lastParams[0]).toBeUndefined();
+    expect(lastParams).toEqual([undefined]);
   });
 
   test('infinite entries can load several pages up front', async () => {

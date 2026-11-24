@@ -3989,8 +3989,21 @@ describe.each([
       ),
     });
     expect(data.tags).toEqual([[{ id: 't1' }], [{ id: 't2' }]]);
-    // The refused request, and one for the two items
+    // The refused request, with the call for every item, and one for the
+    // two items
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+    const [first, second] = resource.onRequestSpy.mock.calls.map(
+      ([req]) => new URL(req.url!, 'http://localhost'),
+    );
+    expect(first!.pathname.endsWith('/post.bySlug,tag.byIds')).toBe(true);
+    expect(JSON.parse(first!.searchParams.get('pipe')!)).toEqual({
+      1: {
+        each: { from: 0, path: ['tags'] },
+        reads: [{ to: ['ids', '0'], path: ['id'] }],
+      },
+    });
+    expect(second!.pathname.endsWith('/tag.byIds,tag.byIds')).toBe(true);
+    expect(second!.searchParams.get('pipe')).toBeNull();
   });
 
   test("an entry per item of a prefetch entry's list loads in one request, which the load does not wait for", async () => {

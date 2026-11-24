@@ -460,6 +460,14 @@ describe('a description of queries', () => {
     );
 
     expect(handles.author.input).toEqual({ id: 'u1' });
+    // The author's query got its data from the post's request: this waits
+    // for it, and fetches nothing
+    expect(
+      await resource.queryClient.fetchQuery({
+        ...fromHandle(trpc, handles.author),
+        staleTime: Infinity,
+      }),
+    ).toEqual({ id: 'u1', teamId: 'team-u1' });
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
