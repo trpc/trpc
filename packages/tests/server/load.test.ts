@@ -1647,6 +1647,32 @@ describe('a `splitLink` that sends a query and one that reads it to different li
   });
 });
 
+test('a query that asks by itself reads a `Date` in two places of the data as one `Date`', async () => {
+  const t = initTRPC.create({ transformer: superjson });
+  const appRouter = t.router({
+    source: t.procedure.query(() => {
+      const key = new Date(1000);
+      return { key, values: new Map([[key, 'ok']]) };
+    }),
+    lookup: t.procedure
+      .input((value) => value as { key: Date; values: Map<Date, string> })
+      .query((opts) => opts.input.values.get(opts.input.key) ?? 'missing'),
+  });
+  await using ctx = testServerAndClientResource(appRouter, {
+    client: (clientOpts) => ({
+      links: [httpLink({ url: clientOpts.httpUrl, transformer: superjson })],
+    }),
+  });
+  const c = ctx.client;
+
+  const source = query(c.source);
+  const res = experimental_load(c, {
+    lookup: query(c.lookup, dataOf(source)),
+  });
+
+  expect(await res.lookup).toBe('ok');
+});
+
 test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {
   const t = initTRPC.create({ transformer: superjson });
   const gate = createDeferred();

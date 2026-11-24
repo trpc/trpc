@@ -328,7 +328,9 @@ function copyData(value: unknown, copies: Map<object, unknown>): unknown {
     return copies.get(value);
   }
   if (value instanceof Date) {
-    return new Date(value.getTime());
+    const copy = new Date(value.getTime());
+    copies.set(value, copy);
+    return copy;
   }
   if (value instanceof Map) {
     const copy = new Map<unknown, unknown>();
