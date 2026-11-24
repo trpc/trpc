@@ -12,14 +12,20 @@ import { avatars, post, teams, users } from './data.ts';
 
 const t = initTRPC.create();
 
-/** The runs of each query, by the load's session and the query's key */
-const runs = new Map<string, number>();
+/**
+ * The runs of each query, by the load's session and the query's key, the
+ * one counted last at the end. Exported for its test
+ */
+export const runs = new Map<string, number>();
+/** The most counters kept: past it, the one counted longest ago goes */
+const maxCounters = 5000;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * The run of a query, which fails while it is within `failTimes`. Old
- * sessions go, so the map stays small.
+ * The run of a query, which fails while it is within `failTimes`. The
+ * counters counted longest ago go, so the map stays small, and the ones of a
+ * load that is retrying stay.
  */
 async function run(opts: {
   readonly failTimes: number;
@@ -29,9 +35,14 @@ async function run(opts: {
   await wait(120);
   const key = `${opts.session}:${opts.key}`;
   const count = (runs.get(key) ?? 0) + 1;
+  // Counted last: at the end
+  runs.delete(key);
   runs.set(key, count);
-  if (runs.size > 5000) {
-    runs.clear();
+  for (const oldest of runs.keys()) {
+    if (runs.size <= maxCounters) {
+      break;
+    }
+    runs.delete(oldest);
   }
   if (count <= opts.failTimes) {
     throw new TRPCError({
