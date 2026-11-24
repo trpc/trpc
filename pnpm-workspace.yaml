@@ -33,6 +33,22 @@ minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
+# Sub-dependencies forced past their parents' ranges. None of them reach a
+# published @trpc/* package: they're dev tooling, examples and the docs site.
+overrides:
+  # next pins postcss exactly; @tailwindcss/typography (docs) pins postcss-selector-parser.
+  next>postcss: 'catalog:'
+  postcss-selector-parser@6: ^6.1.5
+  # Exact pins: @remix-run/server-runtime (docs samples, types only),
+  # satori (docs OG images) and @hey-api/json-schema-ref-parser.
+  turbo-stream@2: ^3.0.0
+  fflate@0.7: ^0.7.5
+  js-yaml@5: ^5.4.1
+  # eslint, ts-morph, swagger's apidom and @vercel/nft (nuxt example). Not
+  # minimatch 9: typedoc 0.27 calls Minimatch#matchOne, which 11 removed.
+  minimatch@10: ^11.0.5
+  glob@13: ^14.0.4
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
@@ -101,6 +117,7 @@ catalog:
   node-fetch: ^3.3.2
   npm-run-all2: ^9.0.4
   sury: 11.1.0
+  postcss: ^8.5.33
   start-server-and-test: ^3.0.13
   yaml: 2.9.1
 

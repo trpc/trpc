@@ -68,7 +68,7 @@
     "oxfmt": "catalog:",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "postcss": "^8.5.32",
+    "postcss": "catalog:",
     "prisma": "^6.7.0",
     "start-server-and-test": "catalog:",
     "tailwindcss": "catalog:www",
