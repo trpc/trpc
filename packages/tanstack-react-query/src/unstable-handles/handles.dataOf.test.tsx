@@ -2614,6 +2614,44 @@ describe('a list fetch that streams its items', () => {
     const released = new Promise<void>((resolve) => {
       releaser.release = resolve;
     });
+    // The requests the client still reads: it lets go of one, and aborts
+    // it, once it has read what it needs of it
+    const unread = new Set<object>();
+    const send = globalThis.fetch;
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (input, init) => {
+        const response = await send(input, init);
+        if (!response.body) {
+          return response;
+        }
+        const reader = response.body.getReader();
+        const token = {};
+        unread.add(token);
+        const read = () => unread.delete(token);
+        init?.signal?.addEventListener('abort', read);
+        const body = new ReadableStream<Uint8Array>({
+          // The client asks for more once it has read what came before
+          async pull(controller) {
+            const chunk = await reader.read().catch((error: unknown) => {
+              read();
+              throw error;
+            });
+            if (chunk.done) {
+              read();
+              controller.close();
+            } else {
+              controller.enqueue(chunk.value);
+            }
+          },
+          cancel(reason) {
+            read();
+            return reader.cancel(reason);
+          },
+        });
+        return new Response(body, response);
+      });
+    using _fetch = makeResource({}, () => fetchSpy.mockRestore());
     await using resource = pipeliningCtx({
       link: httpBatchStreamLink,
       latency: 0,
@@ -2682,11 +2720,16 @@ describe('a list fetch that streams its items', () => {
       run: newerRun,
     });
 
-    // The held result comes, and changes nothing
+    // The held result comes, and changes nothing. Nothing is fetching
+    // already: the client has it once it has read the response it is in
+    // to its end
+    const held = [...unread];
+    expect(held).not.toHaveLength(0);
     releaser.release();
     await vi.waitFor(() => {
-      expect(resource.queryClient.isFetching()).toBe(0);
+      expect(held.filter((token) => unread.has(token))).toEqual([]);
     });
+    expect(resource.queryClient.isFetching()).toBe(0);
     expect(resource.queryClient.getQueryData(authorKey)).toEqual({
       id: 'u0',
       run: newerRun,
