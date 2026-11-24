@@ -1555,6 +1555,34 @@ describe.each([
     });
   });
 
+  test("an entry per item of an infinite query's `pages` has a row for the first page, and rejects if the query fails", async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      feed: t.procedure
+        .input(z.object({ cursor: z.number().nullish(), fail: z.boolean() }))
+        .query((opts) => {
+          if (opts.input.fail) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'no feed' });
+          }
+          return { at: opts.input.cursor ?? 0 };
+        }),
+      other: t.procedure.query(() => 'other'),
+    });
+    await using ctx = setupRouter(appRouter);
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const ok = infiniteQuery(c.feed, { fail: false });
+    const failing = infiniteQuery(c.feed, { fail: true });
+    const res = experimental_load(c, {
+      ok: perItem(dataOf(ok).pages, () => query(c.other)),
+      failing: perItem(dataOf(failing).pages, () => query(c.other)),
+    });
+
+    expect(await experimental_settle(res.ok)).toEqual(['other']);
+    await expect(res.failing).rejects.toThrow('no feed');
+  });
+
   test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
     await using ctx = setup({ pipelining: true });
     using _quiet = quietWarnings();

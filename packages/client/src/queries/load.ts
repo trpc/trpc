@@ -616,7 +616,17 @@ type Node =
   | { kind: 'skip' }
   | { kind: 'query'; call: Call }
   /** An entry per item: what the callback returned, for each item of `scopes` */
-  | { kind: 'list'; scopes: Scope[]; item: Node }
+  | {
+      kind: 'list';
+      /**
+       * The call whose data the list is in. An infinite query's list of
+       * pages is its first page, with no scope of its own: the list still
+       * waits for that call, and fails with it
+       */
+      source: Call;
+      scopes: Scope[];
+      item: Node;
+    }
   | { kind: 'group'; members: [key: string, node: Node][] };
 
 /**
@@ -1383,6 +1393,7 @@ export function experimental_load<
       );
       return {
         kind: 'list',
+        source: callFor(perItem.list.entry),
         scopes,
         item: nodeOf(perItem.entry, label, [...bound, ...scopes]),
       };
@@ -1420,6 +1431,14 @@ export function experimental_load<
             const all = await itemsOf(node.scopes, items);
             if (!all.ok) {
               return all;
+            }
+            // The run of the call the list is in, for each item: the items
+            // waited for it already, unless its list had no scope
+            const sources = await allOk(
+              all.data.map((row) => runOf(node.source, row)),
+            );
+            if (!sources.ok) {
+              return sources;
             }
             const list = all.data.map((item) => resolve(node.item, item));
             itemLists.add(list);
