@@ -6112,6 +6112,47 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('the same entries with an entry of a proxy for another tRPC client are another load', async () => {
+    await using resource = ctx();
+    await using other = ctx();
+    const trpc = resource.optionsProxyClient;
+    // Of the same client, and of another one, with the same `QueryClient`
+    const sameClient = createTRPCOptionsProxy<AppRouter>({
+      client: getUntypedClient(resource.client),
+      queryClient: resource.queryClient,
+    });
+    const otherClient = createTRPCOptionsProxy<AppRouter>({
+      client: getUntypedClient(other.client),
+      queryClient: resource.queryClient,
+    });
+    const seen: unknown[] = [];
+    function Card(props: { items: TRPCOptionsProxy<AppRouter> }) {
+      const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
+      seen.push(
+        experimental_useHandles(trpc, {
+          post,
+          tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+            prefetchEntry(props.items.tag.byIds, { ids: [tag.id] }),
+          ),
+        }),
+      );
+      return null;
+    }
+    resource.renderApp(
+      <>
+        <Card items={trpc} />
+        <Card items={sameClient} />
+        <Card items={otherClient} />
+      </>,
+    );
+    // Its requests go another way
+    expect(seen[1]).toBe(seen[0]);
+    expect(seen[2]).not.toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('the same entries with another `trpc.context` are another load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

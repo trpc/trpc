@@ -329,23 +329,29 @@ function describeSymbol(symbol: symbol) {
 }
 
 /**
- * Every function a context has had, by its number. Held weakly: an inline
- * function is new on every render
+ * Every object a description has told apart by which one it is, such as a
+ * function in a context, by its number. Held weakly: an inline function is
+ * new on every render
  */
-const functionIds = new WeakMap<object, number>();
-const nextFunctionId = { value: 0 };
+const objectIds = new WeakMap<object, number>();
+const nextObjectId = { value: 0 };
+
+/** Which object a value is, as a number that no other object has */
+function idOf(value: object) {
+  let id = objectIds.get(value);
+  if (id === undefined) {
+    id = nextObjectId.value++;
+    objectIds.set(value, id);
+  }
+  return id;
+}
 
 /**
  * A function as a string that no other function has: a link can route by
  * which function a context has
  */
 function describeFunction(fn: object) {
-  let id = functionIds.get(fn);
-  if (id === undefined) {
-    id = nextFunctionId.value++;
-    functionIds.set(fn, id);
-  }
-  return `function:${id}`;
+  return `function:${idOf(fn)}`;
 }
 
 /**
@@ -511,6 +517,8 @@ export function describeEntries(opts: {
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       // Where its requests go, and so whether they can go in another's
       context: describeContext(leaf.state.context),
+      // The client or router they go through: the same for every proxy of it
+      transport: idOf(leaf.state.transport as object),
       built:
         leaf.built.by === 'entryPerItem'
           ? [leaf.built.by, describeRef(leaf.built.list)]
