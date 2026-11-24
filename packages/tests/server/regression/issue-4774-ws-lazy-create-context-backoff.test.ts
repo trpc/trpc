@@ -20,6 +20,7 @@ function setup(opts: {
   createContext: () => object;
   delayMs: number;
   closeMs?: number;
+  url?: WebSocketClientOptions['url'];
 }) {
   const retryDelayMs = vi.fn<
     NonNullable<WebSocketClientOptions['retryDelayMs']>
@@ -35,6 +36,7 @@ function setup(opts: {
         closeMs: opts.closeMs ?? 0,
       },
       retryDelayMs,
+      ...(opts.url && { url: opts.url }),
     },
     client(clientOpts) {
       return {
@@ -175,4 +177,51 @@ test('a request waiting out the backoff before the lazy client goes idle shows c
   expect(await query).toBe('hello');
   expect(ctx.retryDelayMs).toHaveBeenCalledTimes(1);
   expect(states.at(-1)).toBe('pending');
+});
+
+test('a socket from a reconnect abandoned by close() does not clear a later rejection', async () => {
+  let isRejecting = true;
+  const createContext = vi.fn((): object => {
+    if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
+    return {};
+  });
+  // the second socket is the retried query's reconnect: it waits for its URL
+  let releaseUrl = () => {};
+  const abandonedUrl = new Promise<void>((resolve) => {
+    releaseUrl = resolve;
+  });
+  let urlCalls = 0;
+  const url = async () => {
+    urlCalls++;
+    if (urlCalls === 2) await abandonedUrl;
+    return ctx.wssUrl;
+  };
+  await using ctx = setup({ createContext, delayMs: 10, closeMs: 200, url });
+
+  const abortController = new AbortController();
+  ctx.client.greeting
+    .query(undefined, { signal: abortController.signal })
+    .catch(() => null);
+  await vi.waitFor(() => {
+    expect(urlCalls).toBe(2);
+  });
+  // cancelling it leaves nothing in flight, so the client closes
+  abortController.abort();
+  await vi.waitFor(() => {
+    expect(ctx.wsClient.connectionState.get().state).toBe('idle');
+  });
+
+  await expect(
+    ctx.client.greeting.query(undefined, { context: { retry: false } }),
+  ).rejects.toThrow();
+  isRejecting = false;
+  // the abandoned reconnect's socket opens now
+  releaseUrl();
+  await vi.waitFor(() => {
+    expect(createContext).toHaveBeenCalledTimes(3);
+  });
+
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  // the rejection before it still delays the next connection
+  expect(ctx.attemptIndexes()).toEqual([1, 1]);
 });

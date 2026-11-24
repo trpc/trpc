@@ -258,6 +258,8 @@ export class WsClient {
     this.allowReconnect = false;
     this.connectionRejected = false;
     this.reconnecting = null;
+    const nextConnection = this.nextConnection;
+    this.nextConnection = null;
     this.replacementError = null;
     this.retiredConnection = null;
     this.inactivityTimeoutEnabled = false;
@@ -283,7 +285,7 @@ export class WsClient {
     }
 
     await Promise.all(requestsToAwait).catch(() => null);
-    this.nextConnection?.ws?.close();
+    nextConnection?.ws?.close();
     await this.activeConnection.close().catch(() => null);
 
     callUserCallback(() =>
@@ -667,7 +669,11 @@ export class WsClient {
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
-    this.connectionRejected = false;
+    // A socket from a reconnect that `close()` abandoned says nothing about
+    // the connection the client now uses.
+    if (ws === this.activeConnection.ws || ws === this.nextConnection?.ws) {
+      this.connectionRejected = false;
+    }
 
     /**
      * Fails the queries and mutations sent on `ws`. Its subscriptions are
