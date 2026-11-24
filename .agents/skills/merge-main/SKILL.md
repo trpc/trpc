@@ -25,7 +25,8 @@ Sort every commit before you merge:
 - **Shared at the root** (`www/`, `tooling/ui/`, `tooling/subtree/`, the workspace files): merge in place. Check `v12`'s side of them still works.
 - **Workflows, and root files `v12` owns:** go to the `v11-*` copies by hand, as `v11-folder.md` lists.
 - **A fix or feature in a v11 package:** decide whether `v12/` needs it too. Find the counterpart in `v12/packages/` (search for the symbol, adapter or behaviour) and read its tests.
-  - Same bug or gap: fix it in `v12/` after the merge, in its own commit with a test, as `v12/AGENTS.md` says.
+  - Same bug or gap: port it in step 5.
+  - A fix that would reverse a recorded `v12` decision or tested behaviour: don't port it; list it for the human.
   - Not there (rewritten, removed or already right): note why in one line.
   - Security fixes (`main`'s advisories, and `Merge commit from fork` commits) always get this check.
 
@@ -66,12 +67,21 @@ chore: merge main into v12
 Brings in trpc/trpc#…, with main's other commits since the last sync.
 
 - <each resolution that wasn't mechanical>
-- v12/: <what gets ported, in the next commit> / <what isn't needed, and why>
+- v12/: <what gets ported, in the commits after this one> / <what needs a human call> / <what isn't needed, and why>
 ```
 
 Push with a plain `git push origin HEAD:v12`, not `pnpm land`, which would rebase the merge flat. If `v12` moved meanwhile, don't rebase the merge or merge `v12` into it. Reset to `origin/v12` and run step 2's merge again: rerere replays your resolutions; check and stage them.
 
-## 5. Afterwards
+## 5. Port
 
-- Land each `v12/` fix from step 1 with `pnpm land` in `v12/`, as usual.
-- A new kind of conflict or resolution gets one bullet in `v11-folder.md`, so the next sync knows it.
+Port step 1's fixes right after the push, as part of the sync: don't ask first. Each is one semantic commit in `v12/`, with a test that fails without it, named for what it fixes in v12 and ending with the PR it ports:
+
+```text
+fix(client): release a streamed batch once a call's deferred values settle
+
+Port of trpc/trpc#8195.
+```
+
+PRs that fix one bug together (a fix and its follow-up) share a commit. Land them with `pnpm land`, which rebases only the commits after the merge. Independent ports can run in parallel, each in its own worktree.
+
+A new kind of conflict or resolution gets one bullet in `v11-folder.md`, so the next sync knows it.
