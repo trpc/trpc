@@ -10,8 +10,10 @@ export * from './links/wsLink/wsLink';
 export * from './links/httpSubscriptionLink';
 export * from './links/retryLink';
 export * from './links/localLink';
-export { experimental_pipelining } from './links/internals/pipeline';
-export { experimental_inputOf } from './links/internals/pipelineContext';
+export {
+  experimental_inputOf,
+  experimental_pipelining,
+} from './links/internals/pipeline';
 export type {
   experimental_Pipelining,
   experimental_PipeliningLinkOptions,

@@ -1,8 +1,5 @@
-import type { Observable, Unsubscribable } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
 import type { PipelineCallReads } from '@trpc/server/unstable-core-do-not-import';
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from '../../TRPCClientError';
 import type { Operation, OperationContext } from '../types';
 import type { OperationPipeline } from './pipeline';
 
@@ -67,13 +64,6 @@ export interface OperationReads {
    * now. `null` if not
    */
   known: () => { input: unknown } | null;
-  /**
-   * Its input as the server filled it in, once an attempt of it ran in the
-   * request of what it reads: a retry of it is then an operation like any
-   * other, with that input, and the operations that read it go in its
-   * request. `null` until then
-   */
-  filled: { input: unknown } | null;
 }
 
 const readsKey = '~reads';
@@ -100,28 +90,29 @@ export function withoutReads<TOp extends Pick<Operation, 'context'>>(
 }
 
 /**
- * The operation as a retry sends it: with its input as the server filled it
- * in, if an attempt of it ran, and nothing more to read. As it is if not
+ * Writes an operation's input as the server filled it in, once an attempt of
+ * it ran in the request of what it reads, and takes out what it reads. The
+ * links hold this operation: a retry of it is then one like any other, with
+ * that input, which the operations that read it go in the request of
  * @internal
  */
-export function withFilledInput<
-  TOp extends Pick<Operation, 'context' | 'input'>,
->(op: TOp): TOp {
-  const filled = readsOf(op)?.filled;
-  return filled ? { ...withoutReads(op), input: filled.input } : op;
+export function fillOperation(op: Operation, input: unknown) {
+  op.input = input;
+  delete op.context[readsKey];
 }
 
 /**
- * An operation that failed once already, where the link that sent it can't
- * retry it: a run of a call for every item, in its request. A link that
- * retries, such as `retryLink`, counts that failure and takes it out; the
- * link that sends the operation fails it with that error if none did.
+ * An operation that failed once already, in the request of what it reads,
+ * where no link could see it: a run of a call for every item. The link that
+ * sends it fails its first attempt with that error, without sending it, so
+ * that a link that retries, such as `retryLink`, counts it as one, and no
+ * retry happens without one
  * @internal
  */
 export interface PriorFailure {
   error: unknown;
-  /** The attempts made, that one included */
-  attempts: number;
+  /** Whether an attempt failed with it already */
+  replayed: boolean;
 }
 
 const priorFailureKey = '~priorFailure';
@@ -136,127 +127,15 @@ export function priorFailureOf(
   const failure = op.context[priorFailureKey] as
     | Partial<PriorFailure>
     | undefined;
-  return isObject(failure) && typeof failure.attempts === 'number'
+  return isObject(failure) && typeof failure.replayed === 'boolean'
     ? (failure as PriorFailure)
     : null;
 }
 
-/** The operation, with its prior failure counted: taken out of its context */
-export function withoutPriorFailure<TOp extends Pick<Operation, 'context'>>(
-  op: TOp,
-): TOp {
-  const { [priorFailureKey]: _failure, ...context } = op.context;
-  return { ...op, context };
-}
+/** The errors that `pipelineFallback()` made */
+export const fallbacks = /* @__PURE__ */ new WeakSet<object>();
 
-/**
- * The errors of an operation that didn't fail for itself: one the link
- * couldn't put in the request of what it reads, and that is for every item
- * (`not-run`), or one whose input reads an operation that failed
- * (`blocked`). A link that retries passes them on: sending it again changes
- * nothing.
- */
-const fallbacks = /* @__PURE__ */ new WeakMap<object, 'not-run' | 'blocked'>();
-
-/** An error that `isPipelineFallback()` marks */
-export function pipelineFallback(
-  kind: 'not-run' | 'blocked',
-  cause: unknown,
-): TRPCClientError<any> {
-  const error = new TRPCClientError<any>(
-    kind === 'blocked'
-      ? 'An operation this one reads failed'
-      : 'The operation runs for every item, and could not go in the request of what it reads',
-    { cause: cause instanceof Error ? cause : undefined },
-  );
-  fallbacks.set(error, kind);
-  return error;
-}
-
-/** What an error is if `pipelineFallback()` made it */
-export function isPipelineFallback(
-  error: unknown,
-): 'not-run' | 'blocked' | null {
-  return isObject(error) ? (fallbacks.get(error) ?? null) : null;
-}
-
-/**
- * The input of an operation as a link that doesn't pipeline sends it: with
- * what it reads of other operations filled in, once they have their data.
- * Rejects with an operation's prior failure, if no link counted it.
- *
- * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/vanilla/nested-queries#links
- */
-export function experimental_inputOf(
-  op: Pick<Operation, 'context' | 'input'>,
-): Promise<unknown> {
-  const failure = priorFailureOf(op);
-  if (failure) {
-    return Promise.reject(failure.error);
-  }
-  const reads = readsOf(op);
-  return reads ? resolveReads(reads) : Promise.resolve(op.input);
-}
-
-/**
- * The input of an operation that reads others, once they have their data.
- * Rejects with `blocked` if one fails, and with `not-run` for an operation
- * for every item, once it could go by itself
- * @internal
- */
-export function resolveReads(reads: OperationReads): Promise<unknown> {
-  return reads.resolve().then(
-    (input) =>
-      reads.perItem ? Promise.reject(pipelineFallback('not-run', null)) : input,
-    (error: unknown) =>
-      Promise.reject(
-        isPipelineFallback(error) ? error : pipelineFallback('blocked', error),
-      ),
-  );
-}
-
-/**
- * How a terminating link takes an operation: one with a prior failure that
- * no link counted fails with it, one whose input reads others' data goes
- * once that is filled in, and any other one goes as it is
- * @internal
- */
-export function takeOperation<TEnvelope>(
-  op: Operation,
-  send: (op: Operation) => Observable<TEnvelope, TRPCClientError<any>>,
-): Observable<TEnvelope, TRPCClientError<any>> {
-  const failure = priorFailureOf(op);
-  const reads = readsOf(op);
-  if (!failure && !reads) {
-    return send(op);
-  }
-  return observable((observer) => {
-    if (failure) {
-      observer.error(TRPCClientError.from(failure.error as Error));
-      return;
-    }
-    let sent: Unsubscribable | null = null;
-    let done = false;
-    experimental_inputOf(op).then(
-      (input) => {
-        if (!done) {
-          sent = send({ ...withoutReads(op), input }).subscribe(observer);
-        }
-      },
-      (error: unknown) => {
-        if (!done) {
-          observer.error(
-            isPipelineFallback(error)
-              ? (error as TRPCClientError<any>)
-              : TRPCClientError.from(error as Error),
-          );
-        }
-      },
-    );
-    return () => {
-      done = true;
-      sent?.unsubscribe();
-    };
-  });
+/** Whether `pipelineFallback()` made an error */
+export function isPipelineFallback(error: unknown): boolean {
+  return isObject(error) && fallbacks.has(error);
 }

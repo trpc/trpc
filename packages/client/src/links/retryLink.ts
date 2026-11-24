@@ -4,13 +4,7 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
-import { TRPCClientError } from '../TRPCClientError';
-import {
-  isPipelineFallback,
-  priorFailureOf,
-  withFilledInput,
-  withoutPriorFailure,
-} from './internals/pipelineContext';
+import type { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
@@ -54,7 +48,7 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
     return (callOpts) => {
       // initialized for request
       return observable((observer) => {
-        let next$: Unsubscribable | undefined;
+        let next$: Unsubscribable;
         let currentAttempt = 0;
         let disposed = false;
         let callNextTimeout: ReturnType<typeof setTimeout> | undefined =
@@ -62,39 +56,10 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 
         let lastEventId: string | undefined = undefined;
 
-        // A run that failed in the request of what it reads, sent again by
-        // itself: that failure was its first attempt
-        const prior = priorFailureOf(callOpts.op);
-        const baseOp = prior ? withoutPriorFailure(callOpts.op) : callOpts.op;
-        if (prior) {
-          const error = TRPCClientError.from(
-            prior.error as Error,
-          ) as TRPCClientError<TInferrable>;
-          if (!opts.retry({ op: baseOp, attempts: prior.attempts, error })) {
-            observer.error(error);
-            return () => {
-              // Nothing was sent
-            };
-          }
-          retryAfter(prior.attempts);
-        } else {
-          attempt(1);
-        }
-
-        function retryAfter(attempts: number) {
-          const delayMs = opts.retryDelayMs?.(attempts) ?? 0;
-          if (delayMs <= 0) {
-            attempt(attempts + 1);
-            return;
-          }
-          callNextTimeout = setTimeout(() => attempt(attempts + 1), delayMs);
-        }
+        attempt(1);
 
         function opWithLastEventId() {
-          // A query whose input the server filled in, in the request of what
-          // it read: a retry sends it with that input, in a request of its own
-          // that the queries reading it go in
-          const op = currentAttempt > 1 ? withFilledInput(baseOp) : baseOp;
+          const op = callOpts.op;
           if (!lastEventId) {
             return op;
           }
@@ -114,12 +79,6 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 
           const subscription = callOpts.next(op).subscribe({
             error(error) {
-              // It didn't fail for itself: what it reads did, or it waits
-              // for that data. Sending it again changes nothing
-              if (isPipelineFallback(error)) {
-                observer.error(error);
-                return;
-              }
               const shouldRetry = opts.retry({
                 op,
                 attempts,
@@ -172,7 +131,7 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
         }
         return () => {
           disposed = true;
-          next$?.unsubscribe();
+          next$.unsubscribe();
           clearTimeout(callNextTimeout);
         };
       });

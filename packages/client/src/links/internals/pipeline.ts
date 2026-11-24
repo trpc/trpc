@@ -28,9 +28,12 @@ import type {
 import { getBody, getUrl } from './httpUtils';
 import type { OperationReads } from './pipelineContext';
 import {
+  fallbacks,
+  fillOperation,
+  isPipelineFallback,
   pipelineOf,
+  priorFailureOf,
   readsOf,
-  resolveReads,
   withoutReads,
 } from './pipelineContext';
 
@@ -1015,11 +1018,25 @@ export function experimental_pipelining(
         }
       },
       route(op, send) {
+        const failure = priorFailureOf(op);
+        if (failure && !failure.replayed) {
+          // A run's failure in the request of its list: its first attempt,
+          // for a link that retries to count. Without one, it is final
+          failure.replayed = true;
+          return observable<RoutedEnvelope, TRPCClientError<any>>(
+            (observer) => {
+              observer.error(TRPCClientError.from(failure.error as Error));
+            },
+          );
+        }
         const reads = readsOf(op);
         const own = pipelineOf(op);
         if (!reads || !own || op.type !== 'query') {
           return null;
         }
+        // A link that pipelines has it: what reads it can say what it reads
+        own.limits = limits;
+        own.streams = link.streams;
         return observable<RoutedEnvelope, TRPCClientError<any>>((observer) => {
           let done = false;
           let alone: Unsubscribable | null = null;
@@ -1064,7 +1081,10 @@ export function experimental_pipelining(
               // links that log it and for a retry of it. The client may not
               // have read all of that data yet, so it waits a moment for it,
               // and no more: a slow call it reads doesn't hold its result
-              reads.filled = reads.perItem ? null : await knownSoon(reads);
+              const known = reads.perItem ? null : await knownSoon(reads);
+              if (known) {
+                fillOperation(op, known.input);
+              }
               if (done || own.attached !== call) {
                 return;
               }
@@ -1104,12 +1124,20 @@ export function experimental_pipelining(
               pipeline.onOpen.add(listener);
               listening.set(pipeline, listener);
             }
-            resolveReads(reads).then(
+            reads.resolve().then(
               (input) => {
                 if (done || own.attached !== null) {
                   return;
                 }
                 stopListening();
+                if (reads.perItem) {
+                  // Its runs are for items it doesn't know: the engine asks
+                  // for each by itself
+                  done = true;
+                  observer.next({ result: { type: 'data', data: notRun } });
+                  observer.complete();
+                  return;
+                }
                 alone = send({ ...withoutReads(op), input }).subscribe({
                   next: (envelope) => observer.next(envelope),
                   error: (error) => fail(error),
@@ -1119,9 +1147,9 @@ export function experimental_pipelining(
                   },
                 });
               },
-              (error: TRPCClientError<any>) => {
+              (error: unknown) => {
                 if (!done && own.attached === null) {
-                  fail(error);
+                  fail(pipelineFallback(error));
                 }
               },
             );
@@ -1215,4 +1243,45 @@ export function experimental_pipelining(
       },
     };
   };
+}
+
+/**
+ * What an operation for every item resolves to when it couldn't go in the
+ * request of what it reads: the engine asks for each of its runs by itself
+ */
+export const notRun = /* @__PURE__ */ Object.freeze({
+  '~pipeline': 'not-run',
+});
+
+/**
+ * The error of an operation whose input reads one that failed: it didn't
+ * fail for itself. Its cause is that one's error
+ */
+export function pipelineFallback(cause: unknown): TRPCClientError<any> {
+  if (isPipelineFallback(cause)) {
+    return cause as TRPCClientError<any>;
+  }
+  const error = new TRPCClientError<any>('An operation this one reads failed', {
+    cause: cause instanceof Error ? cause : undefined,
+  });
+  fallbacks.add(error);
+  return error;
+}
+
+/**
+ * The input of an operation as a link that doesn't pipeline sends it: with
+ * what it reads of other operations filled in, once they have their data.
+ *
+ * Experimental: it may change in a minor release.
+ * @see https://trpc.io/docs/client/vanilla/nested-queries#links
+ */
+export function experimental_inputOf(
+  op: Pick<Operation, 'context' | 'input'>,
+): Promise<unknown> {
+  const reads = readsOf(op);
+  return reads
+    ? reads
+        .resolve()
+        .catch((error: unknown) => Promise.reject(pipelineFallback(error)))
+    : Promise.resolve(op.input);
 }

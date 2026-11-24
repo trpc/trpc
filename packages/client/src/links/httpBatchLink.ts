@@ -21,7 +21,6 @@ import {
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { BatchPipelining } from './internals/pipeline';
-import { priorFailureOf, takeOperation } from './internals/pipelineContext';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 /**
@@ -229,9 +228,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
       });
     };
     return ({ op }) => {
-      // A call that reads another's data goes in its request, where it can
-      const routed = priorFailureOf(op) ? null : pipelining?.route(op, send);
-      return routed ?? takeOperation(op, send);
+      // A query that reads another's data goes in its request, where it can
+      return pipelining?.route(op, send) ?? send(op);
     };
   };
 }

@@ -18,6 +18,7 @@ import {
   createOperationPipeline,
   failed,
   isUnread,
+  notRun,
   outcomeOf,
   pipelineContext,
   readPipelinedRun,
@@ -224,7 +225,7 @@ function nothing() {
  * one's, as the caller should see it
  */
 function ownError(error: unknown) {
-  return isPipelineFallback(error) === 'blocked' &&
+  return isPipelineFallback(error) &&
     error instanceof Error &&
     error.cause !== undefined
     ? error.cause
@@ -855,6 +856,28 @@ export function experimental_load<
     return complete ? { input } : null;
   }
 
+  /**
+   * Whether a link that pipelines took an operation: one that reads it can go
+   * by saying what it reads, and only then. Any other link gets inputs that
+   * are filled in, so it costs nothing to a client that doesn't pipeline
+   */
+  function taken(pipeline: OperationPipeline) {
+    return pipeline.streams !== null;
+  }
+
+  /** Whether a link that pipelines took every operation a call reads */
+  function readsTaken(reads: PipelineCallReads<OperationPipeline>) {
+    return (
+      (!reads.each || taken(reads.each.from)) &&
+      reads.reads.every((read) => read.kind === 'item' || taken(read.from))
+    );
+  }
+
+  /** Whether a link that pipelines took any operation of the load */
+  function pipelined() {
+    return calls.some((call) => call.pipeline && taken(call.pipeline));
+  }
+
   /** A filled input, or a rejection that a link passes on as `blocked` */
   function inputFor(call: Call, items: Items) {
     return fill({ value: call.input, items, skip: null }).then((input) =>
@@ -901,11 +924,11 @@ export function experimental_load<
           }
           const outcome = await call.sent;
           if (!outcome.ok) {
-            const fallback = isPipelineFallback(outcome.error);
-            if (fallback === 'not-run') {
-              return { kind: 'spawn', spawn: spawn(call, items, null) };
-            }
             return { kind: 'error', error: ownError(outcome.error) };
+          }
+          if (outcome.data === notRun) {
+            // It couldn't go in the request of what it reads
+            return { kind: 'spawn', spawn: spawn(call, items, null) };
           }
           if (call.frame.length === 0) {
             return { kind: 'data', data: outcome.data };
@@ -924,7 +947,10 @@ export function experimental_load<
               ? { kind: 'error', error: run.error }
               : {
                   kind: 'spawn',
-                  spawn: spawn(call, items, { error: run.error, attempts: 1 }),
+                  spawn: spawn(call, items, {
+                    error: run.error,
+                    replayed: false,
+                  }),
                 };
           }
           // A run that reads one that failed, or one the server didn't make.
@@ -974,9 +1000,9 @@ export function experimental_load<
       call.type === 'infinite' && call.holes.some((hole) => !hole.to);
     const firstPage = (input: unknown) =>
       wholeInput ? firstPageInput(input, undefined) : input;
-    if (call.context) {
-      // A context of its own, which a link may route by: it goes alone, as
-      // it is, once all it reads is there
+    if (call.context || !pipelined()) {
+      // A context of its own, which a link may route by, or no link that
+      // pipelines: it goes alone, as it is, once all it reads is there
       const alone: Spawn = {
         pipeline: null,
         sent: settles(async (): Promise<Outcome<unknown>> => {
@@ -1031,7 +1057,6 @@ export function experimental_load<
               const known = knownInput(call, items);
               return known && { input: firstPage(known.input) };
             },
-            filled: null,
           })),
       ...(prior ? priorFailureContext(prior) : {}),
     };
@@ -1280,7 +1305,7 @@ export function experimental_load<
     }
     // One with a context of its own goes alone: a link may route by it
     const declared = call.context ? null : declare(call);
-    if (!declared) {
+    if (!declared || !readsTaken(declared.reads)) {
       continue;
     }
     const pipeline = createOperationPipeline();
@@ -1300,7 +1325,6 @@ export function experimental_load<
               ? () => sourcesReady(call)
               : () => inputFor(call, new Map()),
             known: () => knownInput(call, new Map()),
-            filled: null,
           }),
         }),
       ),
