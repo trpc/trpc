@@ -574,7 +574,7 @@ export type experimental_inferHandles<
 > = HandlesOf<
   experimental_WithWait<
     TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries,
-    never
+    []
   >
 >;
 
@@ -645,7 +645,7 @@ type LoadedEntry<TEntry, TWaited extends boolean> =
               : TEntry extends typeof skipToken | null
                 ? typeof skipToken
                 : TEntry extends TRPCLoadEntries
-                  ? experimental_WithWait<TEntry, never>
+                  ? experimental_WithWait<TEntry, []>
                   : TEntry;
 
 /**
@@ -666,15 +666,32 @@ type LoadedPerItem<TReturn, TItem> = TReturn extends null
       : { [TKey in keyof TReturn]: LoadedPerItem<TReturn[TKey], TItem> };
 
 /**
+ * Whether a `wait` list has a key: `true` if every list of its type has it,
+ * and `boolean` if one may not, such as a list of any length
+ */
+type WaitsFor<TWait extends readonly string[], TKey> = TWait extends unknown
+  ? TKey extends TWait[number]
+    ? number extends TWait['length']
+      ? boolean
+      : true
+    : false
+  : never;
+
+/**
+ * An entry as the load has it, waited for or not. For `boolean`, either:
+ * then its data may be there
+ */
+type LoadedAs<TEntry, TWaited extends boolean> = TWaited extends true
+  ? LoadedEntry<TEntry, true>
+  : LoadedEntry<TEntry, false>;
+
+/**
  * A load's entries as TanStack Query entries: each entry of a description,
  * from `experimental_query()` and the like, is a prefetch entry, and the
- * entry of each key in `TWait` an ensure entry
+ * entry of each key in the `wait` list an ensure entry
  */
-export type experimental_WithWait<TEntries, TWait extends string> = {
-  [TKey in keyof TEntries]: LoadedEntry<
-    TEntries[TKey],
-    TKey extends TWait ? true : false
-  >;
+export type experimental_WithWait<TEntries, TWait extends readonly string[]> = {
+  [TKey in keyof TEntries]: LoadedAs<TEntries[TKey], WaitsFor<TWait, TKey>>;
 };
 
 /** A key whose entry is of one query, which a load can wait for */
@@ -694,12 +711,13 @@ export type experimental_WaitableKey<TEntries> = {
  */
 export interface TRPCLoadOptions<
   TEntries,
-  TWait extends experimental_WaitableKey<TEntries>,
+  TWait extends readonly experimental_WaitableKey<TEntries>[],
 > {
   /**
    * The keys of the entries to wait for, as if each were an ensure entry: the
    * load resolves once they have data, `data` has it, and an entry that reads
-   * them with `experimental_dataOf()` gets a finished handle
+   * them with `experimental_dataOf()` gets a finished handle. A list whose
+   * keys aren't known, such as one of any length, has its data as optional
    */
-  wait?: readonly TWait[];
+  wait?: TWait;
 }

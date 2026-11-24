@@ -178,7 +178,7 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
 export function loadHandles<
   TFeatureFlags extends FeatureFlags,
   TEntries extends TRPCLoadEntries,
-  TWait extends experimental_WaitableKey<TEntries> = never,
+  const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
@@ -243,7 +243,7 @@ export function loadHandles<
 export function loadHandlesSettled<
   TFeatureFlags extends FeatureFlags,
   TEntries extends TRPCLoadEntries,
-  TWait extends experimental_WaitableKey<TEntries> = never,
+  const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   entries: TEntries,
@@ -312,7 +312,7 @@ function useHandles<
 >(
   trpc: DecorateRouterKeyable<TFeatureFlags>,
   given: TEntries,
-): TRPCLoadedHandles<experimental_WithWait<TEntries, never>>[0] {
+): TRPCLoadedHandles<experimental_WithWait<TEntries, []>>[0] {
   const root = readRoot(trpc, 'experimental_useHandles');
   const queryClient = queryClientOf(root);
   const entries = toTanStackEntries({ root, entries: given, wait: [] });

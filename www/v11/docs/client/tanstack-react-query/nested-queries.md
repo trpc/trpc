@@ -460,6 +460,7 @@ data.post.title;
 
 - **`data` has each entry you name**, typed, and the load rejects if one fails, as for an ensure entry. `loadHandlesSettled()` takes `wait` too, and has a result for each.
 - **It names keys of the object you pass**, of entries of one query: not a group, and not an `experimental_perItem()` entry. Another key is a type error.
+- **A list whose keys aren't known**, such as a `('post' | 'author')[]` variable, has its keys' data as optional in `data`: write the list inline to have it typed as there.
 - **An entry that reads a waited entry without a callback gets a finished handle**, as with `ensureEntry`. One built with a callback stays unfinished: the callback says not to wait.
 - **A fetch or ensure entry is waited for anyway.** Naming it changes nothing.
 

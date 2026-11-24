@@ -169,6 +169,43 @@ describe('a description of queries', () => {
     expect(data.post).toEqual({ slug: 'b', authorId: 'u1' });
   });
 
+  test('a `wait` list that may not have a key has its data as optional', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const wait: ('post' | 'author')[] = ['post'];
+
+    const [, data] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      { wait },
+    );
+    expect(data).toEqual({ post: { slug: 'a', authorId: 'u1' } });
+    expectTypeOf(data).toEqualTypeOf<{
+      post?: { slug: string; authorId: string };
+      author?: { id: string; teamId: string };
+    }>();
+
+    const either = Math.random() < 2 ? (['post'] as const) : [];
+    const [, some] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      { wait: either },
+    );
+    expectTypeOf(some).toEqualTypeOf<{
+      post?: { slug: string; authorId: string };
+    }>();
+
+    const [, fixed] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      { wait: ['post', 'author'] },
+    );
+    expectTypeOf(fixed).toEqualTypeOf<{
+      post: { slug: string; authorId: string };
+      author: { id: string; teamId: string };
+    }>();
+  });
+
   test('`wait` waits for the keys it names only, also when they share an entry', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
