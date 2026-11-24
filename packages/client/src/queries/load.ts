@@ -1147,8 +1147,14 @@ export function experimental_load<
         if (done) {
           return walk({ run: done, path: ref.path, items, as: 'read' }).value;
         }
+        // An infinite query's whole input, which the server can't write
+        // `cursor` and `direction` into, as for the operation made as the
+        // load starts: it waits for that input
+        const wholeInfinite = call.type === 'infinite' && to?.length === 0;
         const from =
-          to && !ref.path.some(isScope) ? requestOf(ref.call, items) : null;
+          to && !wholeInfinite && !ref.path.some(isScope)
+            ? requestOf(ref.call, items)
+            : null;
         const path = from && requestPath(ref.call, ref.path);
         if (from && path && to) {
           reads.push({ kind: 'whole', to, from, path });

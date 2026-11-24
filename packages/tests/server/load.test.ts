@@ -1526,8 +1526,14 @@ describe.each([
     expect(await res.ids).toEqual(['a']);
   });
 
-  test('`initialCursor` takes the place of the cursor of an input that is all read of another entry', async () => {
-    await using ctx = setup({ pipelining: true });
+  test.each([
+    { name: '', allowWholeValues: false },
+    { name: ', also where the server takes whole values', allowWholeValues: true },
+  ])('`initialCursor` takes the place of the cursor of an input that is all read of another entry$name', async (opts) => {
+    await using ctx = setup({
+      pipelining: true,
+      allowWholeValues: opts.allowWholeValues,
+    });
     using _quiet = quietWarnings();
     const c = ctx.client;
 
