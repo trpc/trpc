@@ -18,7 +18,7 @@ Run them from `v11/`.
 ## Rules
 
 - Every bug fix has a regression test that fails without the fix, and a `Regression check:` line in the PR naming it.
-- No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Port v11 fixes to `v12/`, following [`v12/AGENTS.md`](../v12/AGENTS.md).
+- No behaviour-changing defaults in v11: add an opt-in option or docs, and put the new default in v12. Don't port v11 changes to `v12/`: the `v12` branch merges `main` in itself ([`merge-main`](../.agents/skills/merge-main/SKILL.md)).
 - Internal (non-exported) parameters, properties and options are required: pass `null`, `undefined`, a literal or a symbol, whichever fits. Optionals are only for public APIs, normalised once at the boundary.
 - While you work on a PR, follow [`pr-agent-callout`](../.agents/skills/pr-agent-callout/SKILL.md): its body starts with a callout saying what you're doing, until you stop planning to push.
 - CodeRabbit usually reviews a PR within about 15 minutes of each push. Before you finish, wait for its review of your last push, then fix or answer its comments.

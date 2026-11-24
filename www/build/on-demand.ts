@@ -3,12 +3,14 @@
  * turns on experiments (`?flags=`, `src/flags.ts`), shows v12 on the home
  * page (`?version=v12`, `src/home-version.ts`, unless v12 is hidden),
  * searches (`/search?q=`, `src/pages.ts`) or holds a choice made on a
- * decisions page (`src/content/decision-search.ts`), and the pages' social
- * cards (`/og/*`, `src/og/serve.ts`). The build prerenders each page once,
- * without a query; every combination of flags is a different page, so the
- * host sends those requests to a function running the site's server build,
- * and its CDN caches each URL's response until the next deploy. Each page
- * is prerendered, then regenerated daily (`writePageRevalidation`), for the
+ * decisions page (`src/content/decision-search.ts`), the pages' social
+ * cards (`/og/*`, `src/og/serve.ts`), and the kitchen sink
+ * (`requestOnlyPaths`), which is never prerendered nor cached. The build
+ * prerenders each page once, without a query; every combination of flags is
+ * a different page, so the host sends those requests to a function running
+ * the site's server build, and its CDN caches each URL's response until the
+ * next deploy. Each page is prerendered, then regenerated daily
+ * (`writePageRevalidation`), for the
  * day it names its social card for. Everything else is the prerendered
  * file.
  */
@@ -18,7 +20,7 @@ import type { Plugin } from 'vite';
 import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import { experimentIds } from '../src/experiments.ts';
 import { searchPage, searchParam } from '../src/pages.ts';
-import { decisions, v12 } from '../src/site.ts';
+import { decisions, kitchenSinkPath, v12 } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 
 /** The function's name, and the path routes rewrite to. */
@@ -63,8 +65,63 @@ export const pathParam = '__pathname';
 export const pageCacheControl =
   'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800';
 
+/**
+ * What a response rendered for its request says: `requestOnlyPaths`' pages
+ * and endpoints, whose loaders and procedures run on every request.
+ */
+export const requestOnlyCacheControl = 'no-store';
+
+/**
+ * The paths, and everything under them, that are only rendered on request:
+ * the build doesn't prerender them, the host sends every request there to
+ * the function, and nothing caches the responses.
+ */
+export const requestOnlyPaths: ReadonlyArray<string> = [kitchenSinkPath];
+
 const escapeRegExp = (text: string) =>
   text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Matches `paths` and what's under them, dots and all (`/a/api/x.y`). */
+export const underPaths = (paths: ReadonlyArray<string>) =>
+  `^(?:${paths.map(escapeRegExp).join('|')})(?:/.*)?$`;
+
+/** Whether `path` is only rendered on request, so the build skips it. */
+export const isRequestOnly = (
+  path: string,
+  paths: ReadonlyArray<string> = requestOnlyPaths,
+) => new RegExp(underPaths(paths)).test(path.replace(/[?#].*$/, ''));
+
+/** What the prerender knows of a page it found (TanStack Start's `Page`). */
+export interface PrerenderPage {
+  readonly fromCrawl?: boolean | undefined;
+  readonly path: string;
+  sitemap?: { readonly exclude?: boolean | undefined } | undefined;
+}
+
+/**
+ * Whether the build prerenders `page` (`vite.config.ts`'s prerender
+ * `filter`). The pages it skips stay out of the sitemap.
+ */
+export function prerenderFilter(page: PrerenderPage) {
+  const prerendered =
+    // `/v12/docs` redirects to its first page (`build/vercel-output.ts`).
+    page.path !== v12.basePath &&
+    // An index route (`/blog/`) is found with its slash, which the
+    // host redirects away.
+    (page.path === '/' || !page.path.endsWith('/')) &&
+    // A query (`?flags=`, `?version=v12`) is rendered on request
+    // (`build/on-demand.ts`), not once per combination here.
+    !/[?#]/.test(page.path) &&
+    // The kitchen sink is rendered on every request, never here.
+    !isRequestOnly(page.path);
+  // Crawling (which checks that every link resolves) and route
+  // discovery add more than the pages listed above: anchors,
+  // markdown and redirects, which would otherwise join the sitemap.
+  if (page.fromCrawl || !prerendered) {
+    page.sitemap = { ...page.sitemap, exclude: true };
+  }
+  return prerendered;
+}
 
 /**
  * A `?flags=` value naming only experiments `ids`, in any order, its commas
@@ -85,6 +142,7 @@ const ogImagePaths = '^(/og/.+)$';
 /** Routes sending the flagged requests to the function, before the files. */
 export const onDemandRoutes = (
   ids: ReadonlyArray<string> = experimentIds,
+  requestOnly: ReadonlyArray<string> = requestOnlyPaths,
 ): ReadonlyArray<VercelRoute> => [
   // Without experiments, no `?flags=` turns anything on.
   ...(ids.length === 0
@@ -117,12 +175,18 @@ export const onDemandRoutes = (
     src: `^(${escapeRegExp(decisions.basePath)}(?:/[^.]*)?)$`,
   })),
   { dest: `/${onDemandFunction}?${pathParam}=$1`, src: ogImagePaths },
+  ...requestOnly.map((basePath) => ({
+    dest: `/${onDemandFunction}?${pathParam}=$1`,
+    src: `^(${escapeRegExp(basePath)}(?:/.*)?)$`,
+  })),
 ];
 
 /**
  * The function's entry: a Node.js handler that renders the requested path
  * with the server build's `fetch`, and lets the CDN cache it like a
- * prerendered page, or as long as the response says (a social card).
+ * prerendered page, or as long as the response says (a social card); never
+ * under `requestOnlyPaths`. A request's body (a tRPC batch or mutation) goes
+ * to the server build as it comes.
  */
 export const handlerSource = `import { Readable } from 'node:stream';
 import server from './server/server.js';
@@ -143,8 +207,13 @@ export default async function handler(req, res) {
       headers.append(name, one);
     }
   }
+  const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
   const response = await server.fetch(
-    new Request(url, { headers, method: req.method }),
+    new Request(url, {
+      headers,
+      method: req.method,
+      ...(hasBody ? { body: Readable.toWeb(req), duplex: 'half' } : {}),
+    }),
   );
   res.statusCode = response.status;
   for (const [name, value] of response.headers) {
@@ -152,7 +221,12 @@ export default async function handler(req, res) {
   }
   const cookies = response.headers.getSetCookie();
   if (cookies.length > 0) res.setHeader('set-cookie', cookies);
-  res.setHeader('cache-control', response.headers.get('cache-control') ?? ${JSON.stringify(pageCacheControl)});
+  res.setHeader(
+    'cache-control',
+    new RegExp(${JSON.stringify(underPaths(requestOnlyPaths))}).test(url.pathname)
+      ? ${JSON.stringify(requestOnlyCacheControl)}
+      : (response.headers.get('cache-control') ?? ${JSON.stringify(pageCacheControl)}),
+  );
   if (response.body === null || req.method === 'HEAD') {
     res.end();
     return;

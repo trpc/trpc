@@ -297,8 +297,8 @@ describe('unindexedPathProblems', () => {
     }
   });
 
-  it('is every path under /v12 until v12Indexable flips', () => {
-    expect(unindexedPaths).toEqual(['/v12']);
+  it('is every path under /v12 until v12Indexable flips, and the kitchen sink', () => {
+    expect(unindexedPaths).toEqual(['/v12', '/kitchen-sink']);
   });
 
   it('fails on trpc.io, unhidden, without the route', () => {

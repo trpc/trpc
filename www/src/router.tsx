@@ -20,6 +20,7 @@ import {
   type RenderedPath,
   renderedPathRewrite,
 } from './rendered-path.ts';
+import { reloadPage } from './reload-once.ts';
 import { routeTree } from './routeTree.gen.ts';
 import {
   type DehydratedRelease,
@@ -30,7 +31,7 @@ import {
 
 export function getRouter() {
   const router = createRouter({
-    ...errorOptions(() => window.location.reload()),
+    ...errorOptions(reloadPage),
     defaultNotFoundComponent: NotFound,
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.
@@ -52,7 +53,7 @@ export function getRouter() {
       hydrateCardDay(dehydrated);
       hydrateRelease(dehydrated);
       hydrateRenderedPath(dehydrated);
-      await hydratePages(dehydrated, () => window.location.reload());
+      await hydratePages(dehydrated, reloadPage);
     },
     rewrite: composeRewrites([renderedPathRewrite, firstDocRewrite]),
     routeTree,

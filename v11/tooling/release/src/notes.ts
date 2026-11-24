@@ -3,26 +3,35 @@
  * previous tag, under each public package their conventional-commit scope
  * names, then by their type.
  *
- * A pull request changes a package when its commit changes a file in the
- * package's directory other than Markdown: READMEs change with every
- * sponsor update. Pull requests that change no public package, like the
- * website, tooling or examples, aren't listed. A listed pull request goes
+ * A pull request is listed when its commit changes a public package's
+ * published contents, by the rule that decides whether there's a release at
+ * all (`releasableCommits` in `changes.ts`): every commit that starts a
+ * release is listed, and every listed one would start one. Pull requests
+ * that change no public package's tarball, like the website, tests, tooling,
+ * examples or READMEs, aren't. A listed pull request goes
  * under the packages its scope names, like `client` in `feat(client): a` or
  * both in `fix(server, client): a`, so a client feature that also touches
  * the server's types is only a client feature. Without a scope, or with one
  * that names no public package, like `deps`, it goes under each package it
- * changes. GitHub works out who contributed for the first time.
+ * changes, unless it's maintenance, like `chore(deps): a`: that's listed
+ * once, after the packages, since it says nothing about any one of them.
+ * An entry credits its pull request's author and everyone who pushed a
+ * commit to it, but not bots or AI agents. GitHub works out who contributed
+ * for the first time.
  */
 import { Effect } from 'effect';
+import { packagesAt, releasableCommits } from './changes.ts';
 import { git, output } from './command.ts';
-import type { PackageJson } from './version.ts';
-import { publishedVersions, type WorkspacePackage } from './workspace.ts';
+import { publishedVersions } from './workspace.ts';
 
-/** A commit on the released branch's first-parent history. */
+/**
+ * A commit on the released branch's first-parent history, with the public
+ * packages whose published contents it changes.
+ */
 export interface Change {
   readonly sha: string;
   readonly subject: string;
-  readonly files: ReadonlyArray<string>;
+  readonly packages: ReadonlyArray<string>;
 }
 
 /** A public package, in the order its section appears. */
@@ -38,6 +47,11 @@ export interface PullRequest {
   readonly url: string;
   /** `undefined` when the author's account is gone. */
   readonly author: string | undefined;
+  /**
+   * Logins of the authors of its commits, oldest first, with repeats. GitHub
+   * links no login to a bot's commits, or to a deleted account's.
+   */
+  readonly contributors: ReadonlyArray<string>;
 }
 
 /** What GitHub knows about the commits of a release. */
@@ -51,8 +65,13 @@ export interface NotesEntry {
   readonly title: string;
   /** The pull request, or the commit when there's none. */
   readonly url: string;
-  readonly author: string | undefined;
-  readonly packages: ReadonlyArray<string>;
+  /** Who it credits, without bots or AI agents. */
+  readonly authors: ReadonlyArray<string>;
+  /**
+   * The packages it's listed under, or `null` for maintenance whose scope
+   * names no package, listed once under `## Maintenance`.
+   */
+  readonly packages: ReadonlyArray<string> | null;
 }
 
 export interface NewContributor {
@@ -79,21 +98,6 @@ export function pullRequestNumber(subject: string): number | undefined {
  */
 export function isReleaseCommit(subject: string) {
   return /^(chore: release )?v\d+\.\d+\.\d+(-\S+)?$/.test(subject.trim());
-}
-
-/** The names of the packages `files` change, in `packages` order. */
-export function changedPackages(
-  files: ReadonlyArray<string>,
-  packages: ReadonlyArray<NotesPackage>,
-): ReadonlyArray<string> {
-  return packages
-    .filter(({ dir }) =>
-      files.some(
-        (file) =>
-          file.startsWith(`${dir}/`) && !file.toLowerCase().endsWith('.md'),
-      ),
-    )
-    .map(({ name }) => name);
 }
 
 /**
@@ -144,6 +148,18 @@ const sections = [
 type Section = (typeof sections)[number][0];
 
 /**
+ * Sections of changes to how the repo is built, tested and maintained, which
+ * are only worth listing under a package when their scope names it.
+ */
+const maintenance: ReadonlySet<Section> = new Set([
+  'build',
+  'ci',
+  'chore',
+  'style',
+  'test',
+]);
+
+/**
  * The section of a conventional-commit title: `!` before the colon is a
  * breaking change, and a type not in `sections`, or no type, is another
  * change.
@@ -161,10 +177,34 @@ export function noteSection(title: string): Section {
 }
 
 /**
+ * AI agents whose commits GitHub links to a user account rather than a bot:
+ * Claude (`noreply@anthropic.com`), Cursor (`cursoragent@cursor.com`) and
+ * Codex (`noreply@openai.com`). Other agents, like Copilot, are bots.
+ */
+const aiAgents: ReadonlySet<string> = new Set([
+  'claude',
+  'codex',
+  'cursoragent',
+]);
+
+/** `logins` once each, in order, without bots or AI agents. */
+function credited(
+  logins: ReadonlyArray<string | undefined>,
+): ReadonlyArray<string> {
+  const people = logins.filter(
+    (login): login is string =>
+      login !== undefined &&
+      !login.endsWith('[bot]') &&
+      !aiAgents.has(login.toLowerCase()),
+  );
+  return [...new Set(people)];
+}
+
+/**
  * The entries of the notes, oldest first: the changes that change a public
  * package, one per pull request, titled and credited the way GitHub has
  * them, under the packages their title's scope names, or else the packages
- * they change.
+ * they change, or else, for maintenance, under none.
  */
 export function notesEntries(opts: {
   readonly changes: ReadonlyArray<Change>;
@@ -174,7 +214,9 @@ export function notesEntries(opts: {
 }): ReadonlyArray<NotesEntry> {
   const entries = new Map<string, NotesEntry>();
   for (const change of opts.changes) {
-    const changed = changedPackages(change.files, opts.packages);
+    const changed = opts.packages
+      .map(({ name }) => name)
+      .filter((name) => change.packages.includes(name));
     if (changed.length === 0 || isReleaseCommit(change.subject)) {
       continue;
     }
@@ -183,28 +225,40 @@ export function notesEntries(opts: {
       number === undefined ? undefined : opts.github.pullRequests.get(number);
     const title = pr?.title ?? change.subject;
     const scoped = scopedPackages(title, opts.packages);
-    const packages = scoped.length > 0 ? scoped : changed;
+    const packages =
+      scoped.length > 0
+        ? scoped
+        : maintenance.has(noteSection(title))
+          ? null
+          : changed;
     const entry: NotesEntry =
       pr === undefined
         ? {
             title,
             url: `https://github.com/${opts.repo}/commit/${change.sha}`,
-            author: opts.github.commitAuthors.get(change.sha),
+            authors: credited([opts.github.commitAuthors.get(change.sha)]),
             packages,
           }
-        : { title, url: pr.url, author: pr.author, packages };
+        : {
+            title,
+            url: pr.url,
+            authors: credited([pr.author, ...pr.contributors]),
+            packages,
+          };
+    // Commits of one pull request share its title, so they're all
+    // maintenance or none are.
     const earlier = entries.get(entry.url);
+    const listed = earlier?.packages;
     entries.set(
       entry.url,
-      earlier === undefined
+      earlier === undefined || listed == null || packages === null
         ? entry
         : {
             ...earlier,
             packages: opts.packages
               .map(({ name }) => name)
               .filter(
-                (name) =>
-                  earlier.packages.includes(name) || packages.includes(name),
+                (name) => listed.includes(name) || packages.includes(name),
               ),
           },
     );
@@ -223,13 +277,21 @@ export function parseNewContributors(
   ].map(([, login = '', url = '']) => ({ login, url }));
 }
 
-const bullet = ({ title, url, author }: NotesEntry) =>
-  `* ${title}${author === undefined ? '' : ` by @${author}`} in ${url}`;
+/** `@a`, `@a and @b`, `@a, @b and @c`. */
+function mentions(logins: ReadonlyArray<string>) {
+  const all = logins.map((login) => `@${login}`);
+  const last = all.pop();
+  return all.length === 0 ? (last ?? '') : `${all.join(', ')} and ${last}`;
+}
+
+const bullet = ({ title, url, authors }: NotesEntry) =>
+  `* ${title}${authors.length === 0 ? '' : ` by ${mentions(authors)}`} in ${url}`;
 
 /**
  * The notes' Markdown: a `## <package>` for each package `entries` list, in
- * `packages` order, with a `### <type>` for each type; then the new
- * contributors whose first pull request is listed, and the full changelog.
+ * `packages` order, with a `### <type>` for each type; then `## Maintenance`
+ * the same way, the new contributors whose first pull request is listed,
+ * and the full changelog.
  */
 export function renderNotes(opts: {
   readonly entries: ReadonlyArray<NotesEntry>;
@@ -240,23 +302,32 @@ export function renderNotes(opts: {
   readonly tag: string;
 }): string {
   const blocks: Array<string> = [];
-  for (const { name } of opts.packages) {
-    const entries = opts.entries.filter(({ packages }) =>
-      packages.includes(name),
-    );
+  const group = (heading: string, entries: ReadonlyArray<NotesEntry>) => {
     if (entries.length === 0) {
-      continue;
+      return;
     }
-    blocks.push(`## ${name}`);
-    for (const [section, heading] of sections) {
+    blocks.push(`## ${heading}`);
+    for (const [section, sectionHeading] of sections) {
       const listed = entries.filter(
         ({ title }) => noteSection(title) === section,
       );
       if (listed.length > 0) {
-        blocks.push(`### ${heading}\n\n${listed.map(bullet).join('\n')}`);
+        blocks.push(
+          `### ${sectionHeading}\n\n${listed.map(bullet).join('\n')}`,
+        );
       }
     }
+  };
+  for (const { name } of opts.packages) {
+    group(
+      name,
+      opts.entries.filter(({ packages }) => packages?.includes(name)),
+    );
   }
+  group(
+    'Maintenance',
+    opts.entries.filter(({ packages }) => packages === null),
+  );
   if (blocks.length === 0) {
     blocks.push('No changes to the published packages.');
   }
@@ -282,74 +353,12 @@ export function renderNotes(opts: {
   return `${blocks.join('\n\n')}\n`;
 }
 
-/** The commits in `from..to` on `to`'s first-parent history, oldest first. */
-export const changesBetween = Effect.fn('changesBetween')(function* (
-  root: string,
-  from: string,
-  to: string,
-) {
-  const log = yield* git(
-    root,
-    'log',
-    '--first-parent',
-    '--diff-merges=first-parent',
-    '--no-renames',
-    '--name-only',
-    '--relative',
-    '--reverse',
-    '-z',
-    '--format=%x00%H%x00%s',
-    `${from}..${to}`,
-  );
-  // With -z, every field ends with a NUL and paths aren't quoted. Each commit
-  // starts with an empty field, which no path is, then its sha and subject; a
-  // newline comes before its first path.
-  const fields = log.split('\0');
-  const changes: Array<Change & { files: Array<string> }> = [];
-  for (let i = 0; i < fields.length; i++) {
-    const field = fields[i] ?? '';
-    const current = changes.at(-1);
-    if (field === '' && i + 2 < fields.length) {
-      changes.push({
-        sha: fields[i + 1] ?? '',
-        subject: fields[i + 2] ?? '',
-        files: [],
-      });
-      i += 2;
-    } else if (field !== '' && current !== undefined) {
-      current.files.push(
-        current.files.length === 0 ? field.replace(/^\n/, '') : field,
-      );
-    }
-  }
-  return changes;
-});
-
 /** The public packages at `rev`, each after the packages it depends on. */
 export const notesPackages = Effect.fn('notesPackages')(function* (
   root: string,
   rev: string,
 ) {
-  const packages: Array<WorkspacePackage> = [];
-  // Lists nothing when `rev` has no packages/ directory.
-  const listed = yield* git(
-    root,
-    'ls-tree',
-    '-z',
-    '--name-only',
-    rev,
-    'packages/',
-  );
-  for (const dir of listed.split('\0').filter((entry) => entry !== '')) {
-    const raw = yield* git(root, 'show', `${rev}:./${dir}/package.json`).pipe(
-      Effect.orElseSucceed(() => undefined),
-    );
-    const pkg =
-      raw === undefined ? undefined : (JSON.parse(raw) as PackageJson);
-    if (pkg?.name !== undefined) {
-      packages.push({ dir, name: pkg.name, pkg });
-    }
-  }
+  const packages = yield* packagesAt(root, rev);
   const dirs = new Map(packages.map(({ name, dir }) => [name, dir]));
   return [...publishedVersions(packages, '0.0.0').keys()].map(
     (name): NotesPackage => ({ name, dir: dirs.get(name) ?? '' }),
@@ -387,10 +396,13 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
     return { pullRequests: new Map(), commitAuthors: new Map() };
   }
   const author = 'author { __typename login }';
+  // A pull request with more than 100 commits credits its first 100's authors.
+  const commits =
+    'commits(first: 100) { nodes { commit { author { user { login } } } } }';
   const fields = [
     ...[...numbers].map(
       (number) =>
-        `pr${number}: issueOrPullRequest(number: ${number}) { ... on PullRequest { number title url ${author} } }`,
+        `pr${number}: issueOrPullRequest(number: ${number}) { ... on PullRequest { number title url ${author} ${commits} } }`,
     ),
     ...shas.map(
       (sha) =>
@@ -422,6 +434,11 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
           title: string;
           url: string;
           author: GraphQLAuthor | null;
+          commits: {
+            nodes: ReadonlyArray<{
+              commit: { author: { user: { login: string } | null } | null };
+            } | null>;
+          };
         }
       | null
       | undefined;
@@ -431,6 +448,10 @@ const gitHubInfo = Effect.fn('gitHubInfo')(function* (
         title: pr.title,
         url: pr.url,
         author: login(pr.author),
+        contributors: pr.commits.nodes.flatMap((node) => {
+          const user = node?.commit.author?.user?.login;
+          return user === undefined ? [] : [user];
+        }),
       });
     }
   }
@@ -491,7 +512,13 @@ export const releaseNotes = Effect.fn('releaseNotes')(function* (
     readonly repo?: string;
   },
 ) {
-  const to = opts.to ?? 'HEAD';
+  // One commit, so the packages and the commits are read from the same tree.
+  const to = yield* git(
+    root,
+    'rev-parse',
+    '--verify',
+    `${opts.to ?? 'HEAD'}^{commit}`,
+  );
   const repo =
     opts.repo ??
     (yield* output(root, 'gh', [
@@ -503,10 +530,9 @@ export const releaseNotes = Effect.fn('releaseNotes')(function* (
       '.nameWithOwner',
     ]));
   const packages = yield* notesPackages(root, to);
-  const changes = (yield* changesBetween(root, opts.previousTag, to)).filter(
-    ({ subject, files }) =>
-      !isReleaseCommit(subject) && changedPackages(files, packages).length > 0,
-  );
+  const changes = (yield* releasableCommits(root, opts.previousTag, to))
+    .filter(({ subject }) => !isReleaseCommit(subject))
+    .reverse();
   const github = yield* gitHubInfo(root, repo, changes);
   return renderNotes({
     entries: notesEntries({ changes, packages, github, repo }),

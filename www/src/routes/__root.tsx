@@ -10,9 +10,11 @@ import {
 import { type ReactNode, useEffect } from 'react';
 
 import { SiteFooter } from '~/components/site-footer.tsx';
+import { AnnouncementBar } from '~/components/announcement-bar.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
 import { ThemeProvider } from '~/components/theme-provider.tsx';
+import { announcementScript } from '~/announcement.ts';
 import {
   UnpublishedBanner,
   UnpublishedCopyWarning,
@@ -85,7 +87,11 @@ export const Route = createRootRoute({
         ? []
         : [{ content: 'noindex', name: 'robots' }]),
     ],
-    scripts: [{ children: themeScript }, { children: homeVersionScript }],
+    scripts: [
+      { children: themeScript },
+      { children: homeVersionScript },
+      { children: announcementScript },
+    ],
   }),
   component: RootComponent,
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
@@ -133,6 +139,7 @@ function RootDocument(props: { readonly children: ReactNode }) {
           >
             Skip to content
           </a>
+          <AnnouncementBar />
           <UnpublishedBanner />
           <SiteHeader />
           <div className="flex-1" id="content">

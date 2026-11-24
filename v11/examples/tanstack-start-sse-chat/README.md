@@ -19,7 +19,9 @@ This project includes 2 examples of the subscription pattern:
 1. Simple example of `whoIsTyping`
 2. A slightly more involved example of `livePosts`
 
-- Hooks for both cases (using `useSubscription`) can be found in [`/src/routes/channels/-components/hooks.ts`](./src/routes/channels/-components/hooks.ts)
+Both subscriptions cover every channel, so switching channels doesn't resubscribe. New posts are added to the channel's cached posts; a channel that isn't loaded yet gets them when it loads. Typing names are picked out per channel.
+
+- The channel page subscribes to both (with `useSubscription`) in [`/src/routes/channels/$channelId.tsx`](./src/routes/channels/$channelId.tsx); `useLivePosts` in [`/src/routes/channels/-components/hooks.ts`](./src/routes/channels/-components/hooks.ts) adds new posts to the query cache
 - The `EventEmitter` & `whoIsTyping` subscription route can be found in [`/src/server/routers/channel.ts`](./src/server/routers/channel.ts)
 - The more complex `post` subscription route can be found in [`/src/server/routers/post.ts`](./src/server/routers/post.ts)
 

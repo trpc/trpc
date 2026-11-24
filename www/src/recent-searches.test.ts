@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from '@effect/vitest';
+import { describe, expect, it, vi } from '@effect/vitest';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 
 import {
   parseRecent,
@@ -39,14 +40,16 @@ describe('withRecent', () => {
   });
 });
 
-describe('rememberRecent', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+/** `storage` as the global localStorage, until disposed. */
+function stubStorage(storage: Partial<Storage>) {
+  vi.stubGlobal('localStorage', storage);
+  return makeResource({}, () => vi.unstubAllGlobals());
+}
 
+describe('rememberRecent', () => {
   it("keeps each version's list apart", () => {
     const stored = new Map<string, string>();
-    vi.stubGlobal('localStorage', {
+    using _storage = stubStorage({
       getItem: (key: string) => stored.get(key) ?? null,
       removeItem: (key: string) => stored.delete(key),
       setItem: (key: string, value: string) => stored.set(key, value),
@@ -62,7 +65,7 @@ describe('rememberRecent', () => {
   });
 
   it('reads none where storage throws', () => {
-    vi.stubGlobal('localStorage', {
+    using _storage = stubStorage({
       getItem: () => {
         throw new Error('denied');
       },
@@ -74,7 +77,7 @@ describe('rememberRecent', () => {
     const denied = () => {
       throw new Error('denied');
     };
-    vi.stubGlobal('localStorage', {
+    using _storage = stubStorage({
       getItem: () => null,
       removeItem: denied,
       setItem: denied,

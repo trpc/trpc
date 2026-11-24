@@ -64,7 +64,7 @@ function DocsLinks(props: {
   const route = homeDocs[props.version].route;
   return linksOf[props.version].map((link) => (
     <Link
-      activeOptions={{ exact: true }}
+      activeOptions={{ exact: true, includeSearch: false }}
       activeProps={{ className: 'text-foreground' }}
       className={cn(navLink, 'from' in link && shownFrom[link.from])}
       disabled={props.disabled === true}

@@ -16,9 +16,12 @@
 
 > A tRPC wrapper around react-query.
 
+> [!WARNING]
+> `@trpc/react-query` is deprecated. It only gets bug fixes and will be removed in the next major version of tRPC. Use [`@trpc/tanstack-react-query`](https://trpc.io/docs/client/tanstack-react-query) instead. To move an existing project, follow the [migration guide](https://trpc.io/docs/client/tanstack-react-query/migrating).
+
 ## Documentation
 
-Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/react-query)
+Full documentation for `@trpc/react-query` can be found [here](https://trpc.io/docs/client/react)
 
 ## Installation
 

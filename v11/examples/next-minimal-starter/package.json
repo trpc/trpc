@@ -6,10 +6,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "oxlint src",
-    "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test",
-    "test-dev": "start-server-and-test dev 3000 test:e2e",
-    "test-start": "start-server-and-test start 3000 test:e2e"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
@@ -25,14 +22,12 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "4.3.5",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^1.12.0",
     "tailwindcss": "catalog:www",
     "typescript": "^5.9.2"
   },

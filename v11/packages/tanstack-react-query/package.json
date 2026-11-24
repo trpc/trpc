@@ -1,7 +1,7 @@
 {
   "name": "@trpc/tanstack-react-query",
   "type": "module",
-  "version": "11.25.2",
+  "version": "11.31.2",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -65,31 +65,30 @@
     "skills"
   ],
   "peerDependencies": {
-    "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "11.25.2",
-    "@trpc/server": "11.25.2",
+    "@tanstack/react-query": "^5.106.0",
+    "@trpc/client": "11.31.2",
+    "@trpc/server": "11.31.2",
     "react": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "0.5.6",
-    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/intent": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "^19.3.0",
-    "event-source-polyfill": "^1.0.31",
-    "konn": "^0.7.0",
+    "@types/react": "catalog:",
+    "event-source-polyfill": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "superjson": "^2.2.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "superjson": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "ws": "catalog:",
-    "zod": "^4.2.1"
+    "zod": "catalog:"
   },
   "publishConfig": {
     "access": "public"

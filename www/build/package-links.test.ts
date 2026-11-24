@@ -62,27 +62,32 @@ const servedPages = Effect.gen(function* () {
 });
 
 describe('v11/packages/*/src', () => {
-  it.effect('links only to v11 docs pages and headings that exist', () =>
-    Effect.gen(function* () {
-      const links = yield* packageLinks;
-      const pages = yield* servedPages;
-      const problems = links.flatMap(({ at, url }) => {
-        const match = canonical.exec(url);
-        if (!match?.[1]) {
-          return [`${at}: ${url} isn't https://trpc.io/docs/<page>`];
-        }
-        const [, pagePath, hash] = match;
-        const anchors = pages.get(pagePath.replace(/\/$/, '') || '/docs');
-        if (anchors === undefined) {
-          return [`${at}: ${url} isn't a v11 docs page`];
-        }
-        if (hash !== undefined && !anchors.has(hash)) {
-          return [`${at}: ${url} has no #${hash} heading`];
-        }
-        return [];
-      });
-      expect(links.length).toBeGreaterThan(0);
-      expect(problems).toEqual([]);
-    }).pipe(Effect.provide(NodeServices.layer)),
+  it.effect(
+    'links only to v11 docs pages and headings that exist',
+    () =>
+      Effect.gen(function* () {
+        const links = yield* packageLinks;
+        const pages = yield* servedPages;
+        const problems = links.flatMap(({ at, url }) => {
+          const match = canonical.exec(url);
+          if (!match?.[1]) {
+            return [`${at}: ${url} isn't https://trpc.io/docs/<page>`];
+          }
+          const [, pagePath, hash] = match;
+          const anchors = pages.get(pagePath.replace(/\/$/, '') || '/docs');
+          if (anchors === undefined) {
+            return [`${at}: ${url} isn't a v11 docs page`];
+          }
+          if (hash !== undefined && !anchors.has(hash)) {
+            return [`${at}: ${url} has no #${hash} heading`];
+          }
+          return [];
+        });
+        expect(links.length).toBeGreaterThan(0);
+        expect(problems).toEqual([]);
+      }).pipe(Effect.provide(NodeServices.layer)),
+    // Reads every v11 package's source and docs page: about 2 s alone, more
+    // than 5 s beside the site's other tests.
+    30_000,
   );
 });

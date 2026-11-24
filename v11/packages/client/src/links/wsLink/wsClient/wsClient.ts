@@ -9,6 +9,7 @@ import type {
   TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  isObject,
   run,
   sleep,
   transformResult,
@@ -30,6 +31,48 @@ import {
 import type { WebSocketConnectionOptions } from './wsConnection';
 import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
 
+function isRequestId(value: unknown) {
+  return (
+    value === null || typeof value === 'string' || typeof value === 'number'
+  );
+}
+
+/** A result's `type`; a missing one means `'data'`. */
+function isResultType(value: unknown) {
+  return (
+    value === undefined ||
+    value === 'data' ||
+    value === 'started' ||
+    value === 'stopped'
+  );
+}
+
+/**
+ * A `reconnect` request from the server, or a response: a string, number or
+ * `null` `id` and either a `result` object of a known `type` or an `error`.
+ * The output transformer may serialize an error to any value, so
+ * `transformResult` validates it.
+ */
+function isIncomingMessage(value: unknown): value is TRPCClientIncomingMessage {
+  if (!isObject(value)) return false;
+  if ('method' in value) return value['method'] === 'reconnect';
+  if (!isRequestId(value['id'])) return false;
+  const result = value['result'];
+  if (isObject(result)) return isResultType(result['type']);
+  return result === undefined && 'error' in value;
+}
+
+function decodeIncomingMessage(
+  encoder: Encoder,
+  data: string | ArrayBuffer | Uint8Array,
+) {
+  const message = encoder.decode(data);
+  if (!isIncomingMessage(message)) {
+    throw new TypeError('Expected a tRPC message');
+  }
+  return message;
+}
+
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
@@ -43,7 +86,9 @@ export class WsClient {
   >;
 
   private allowReconnect = false;
-  private requestManager = new RequestManager();
+  private requestManager = new RequestManager({
+    onIdle: () => this.startInactivityTimeout(),
+  });
   /**
    * The last id sent on the wire. Each request gets its own instead of its
    * `op.id`: a retry reuses the failed attempt's `op.id`, and the server's
@@ -60,12 +105,18 @@ export class WsClient {
   private activeConnection: WsConnection;
   private readonly reconnectRetryDelay: (attemptIndex: number) => number;
   private inactivityTimeout: ResettableTimeout;
+  /**
+   * Whether lazy mode may close the connection once it's idle: from the
+   * first `open` until `close()`.
+   */
+  private inactivityTimeoutEnabled = false;
   private readonly callbacks: Pick<
     WebSocketClientOptions,
     'onOpen' | 'onClose' | 'onError'
   >;
   private readonly lazyMode: boolean;
   private readonly encoder: Encoder;
+  private readonly closeOnPongTimeout = new WeakMap<WebSocket, () => void>();
 
   constructor(opts: WebSocketClientOptions) {
     this.encoder = opts.experimental_encoder ?? jsonEncoder;
@@ -81,13 +132,11 @@ export class WsClient {
       ...opts.lazy,
     };
 
-    // Set up inactivity timeout for lazy connections.
+    // Set up inactivity timeout for lazy connections. It only runs while no
+    // request or subscription is in flight; see `startInactivityTimeout()`.
     this.inactivityTimeout = new ResettableTimeout(() => {
-      if (
-        this.requestManager.hasOutgoingRequests() ||
-        this.requestManager.hasPendingRequests()
-      ) {
-        this.inactivityTimeout.reset();
+      if (this.requestManager.hasRequestsInFlight()) {
+        this.inactivityTimeout.stop();
         return;
       }
 
@@ -103,6 +152,7 @@ export class WsClient {
         ...opts.keepAlive,
       },
       encoder: this.encoder,
+      onPongTimeout: (ws) => this.closeOnPongTimeout.get(ws)?.(),
     };
     this.activeConnection = this.createConnection();
     this.reconnectRetryDelay = opts.retryDelayMs ?? exponentialBackoff;
@@ -121,6 +171,21 @@ export class WsClient {
     if (!this.lazyMode) {
       this.open().catch(() => null);
     }
+  }
+
+  /**
+   * Starts counting down to closing a lazy connection, if nothing is in
+   * flight. Called on `open` and whenever the last request or subscription
+   * ends, so the timer never has to poll.
+   */
+  private startInactivityTimeout() {
+    if (
+      !this.inactivityTimeoutEnabled ||
+      this.requestManager.hasRequestsInFlight()
+    ) {
+      return;
+    }
+    this.inactivityTimeout.start();
   }
 
   private createConnection() {
@@ -175,6 +240,7 @@ export class WsClient {
     this.allowReconnect = false;
     this.replacementError = null;
     this.retiredConnection = null;
+    this.inactivityTimeoutEnabled = false;
     this.inactivityTimeout.stop();
 
     const requestsToAwait: Promise<void>[] = [];
@@ -244,7 +310,13 @@ export class WsClient {
       const abort = this.batchSend(message, {
         ...observer,
         next(event) {
-          const transformed = transformResult(event, transformer.output);
+          let transformed: ReturnType<typeof transformResult>;
+          try {
+            transformed = transformResult(event, transformer.output);
+          } catch (cause) {
+            observer.error(TRPCClientError.from(cause as Error));
+            return;
+          }
 
           if (!transformed.ok) {
             observer.error(TRPCClientError.from(transformed.error));
@@ -331,7 +403,8 @@ export class WsClient {
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
    * instead of starting over at attempt 0. Cleared again when the socket
-   * receives a result, which proves the connection was accepted.
+   * receives a result, which proves the connection was accepted. Also set
+   * on a keepAlive pong timeout when the socket never received anything.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -628,7 +701,8 @@ export class WsClient {
     ws.addEventListener('open', () => {
       run(async () => {
         if (this.lazyMode) {
-          this.inactivityTimeout.start();
+          this.inactivityTimeoutEnabled = true;
+          this.startInactivityTimeout();
         }
 
         this.callbacks.onOpen?.();
@@ -654,15 +728,66 @@ export class WsClient {
       });
     });
 
+    // Set on the socket's `close` event, or earlier when the client gives up
+    // on the socket (a keepAlive pong timeout or an undecodable frame) without
+    // waiting for the closing handshake. The socket's later frames and events
+    // must not reach the requests resent by then.
+    let closed = false;
+    let answered = false;
+
+    /**
+     * Runs the socket's close handling once: `cause` fails its queries and
+     * mutations, and `event` goes to `onClose`.
+     */
+    const handleClose = (
+      cause: unknown,
+      event: CloseEvent | { code: number },
+    ) => {
+      if (closed) return;
+      closed = true;
+      handleCloseOrError(cause);
+      callUserCallback(() => this.callbacks.onClose?.(event));
+
+      if (
+        ws === this.activeConnection.ws &&
+        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
+      ) {
+        this.reconnect(
+          new TRPCWebSocketClosedError({
+            message: 'WebSocket closed',
+            cause,
+          }),
+        );
+      }
+    };
+    // What `close` reports when the closing handshake doesn't complete.
+    const abandonedEvent = { code: 1006 };
+
     const onMessage = ({ data }: MessageEvent) => {
+      if (closed) return;
+      answered = true;
       this.inactivityTimeout.reset();
 
       // Handle PING/PONG as text regardless of encoder
       if (['PING', 'PONG'].includes(data)) return;
 
-      const incomingMessage = this.encoder.decode(
-        data,
-      ) as TRPCClientIncomingMessage;
+      let incomingMessage: TRPCClientIncomingMessage;
+      try {
+        incomingMessage = decodeIncomingMessage(this.encoder, data);
+      } catch (cause) {
+        // The frame may have carried a response, and its request would wait
+        // forever, so this socket is treated as lost.
+        ws.close();
+        handleClose(
+          new TRPCWebSocketClosedError({
+            message: 'Received a message that could not be decoded',
+            cause,
+          }),
+          abandonedEvent,
+        );
+        // Rethrown asynchronously by `callUserCallback()` below.
+        throw cause;
+      }
       if ('method' in incomingMessage) {
         if (ws === this.activeConnection.ws) {
           this.handleIncomingRequest(incomingMessage);
@@ -695,24 +820,16 @@ export class WsClient {
       callUserCallback(() => onMessage(event));
     });
 
-    ws.addEventListener('close', (event) => {
-      handleCloseOrError(event);
-      callUserCallback(() => this.callbacks.onClose?.(event));
-
-      if (
-        ws === this.activeConnection.ws &&
-        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
-      ) {
-        this.reconnect(
-          new TRPCWebSocketClosedError({
-            message: 'WebSocket closed',
-            cause: event,
-          }),
-        );
-      }
+    ws.addEventListener('close', (event) => handleClose(event, event));
+    this.closeOnPongTimeout.set(ws, () => {
+      // A server that never answered, not even a ping, gets the same backoff
+      // as one that rejected the connection.
+      if (!answered) this.connectionRejected = true;
+      handleClose(abandonedEvent, abandonedEvent);
     });
 
     ws.addEventListener('error', (event) => {
+      if (closed) return;
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
 
@@ -817,7 +934,8 @@ export class WsClient {
    * @returns A function to abort the batched request.
    */
   private batchSend(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
-    this.inactivityTimeout.reset();
+    // Started again once the last request or subscription ends.
+    this.inactivityTimeout.stop();
     this.flushOutgoing(message, callbacks);
     return this.requestManager.register(message, callbacks);
   }

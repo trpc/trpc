@@ -2,7 +2,7 @@ import { TRPCClientError } from '../../../TRPCClientError';
 import { RequestManager } from './requestManager';
 
 test('settles the request lifecycle when its error observer throws', async () => {
-  const manager = new RequestManager();
+  const manager = new RequestManager({ onIdle: () => null });
   const observerError = new Error('Error observer failed');
   manager.register(
     { id: 1, method: 'query', params: { path: 'test', input: undefined } },

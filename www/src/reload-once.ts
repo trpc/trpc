@@ -6,6 +6,11 @@
  * (`components/error-page.tsx`).
  */
 
+/** Reloads the page: what the site passes to {@link reloadOnce}. */
+export function reloadPage() {
+  window.location.reload();
+}
+
 const reloadedKey = (key: string) => `trpc-docs:reloaded-for:${key}`;
 
 /**

@@ -19,8 +19,8 @@ import {
 } from '@shared/ui/components/message';
 import { Spinner } from '@shared/ui/components/spinner';
 import { Textarea } from '@shared/ui/components/textarea';
-import { useMutation } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
+import { useMutation, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import {
@@ -32,12 +32,13 @@ import {
 import * as React from 'react';
 import { useSession, useSignInHref } from '~/components/auth';
 import { useTRPC, type TRPC } from '~/lib/trpc';
-import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
+import type { PostType } from '~/server/db/schema';
+import type { useLivePosts } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
-function SubscriptionStatus(props: {
-  subscription: ReturnType<typeof useLivePosts>['subscription'];
-}) {
+type LivePostsSubscription = ReturnType<typeof useLivePosts>;
+
+function SubscriptionStatus(props: { subscription: LivePostsSubscription }) {
   const { subscription } = props;
   switch (subscription.status) {
     case 'idle':
@@ -82,13 +83,20 @@ export function Chat(
   props: Readonly<{
     posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
     title: React.ReactNode;
+    subscription: LivePostsSubscription;
+    whoIsTyping: string[];
   }>,
 ) {
   const channelId = props.posts.input.channelId;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(props.posts);
-  const currentlyTyping = useSubscription(
-    trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
+  const postsQuery = useSuspenseInfiniteQuery(
+    fromHandle(trpc, props.posts, {
+      getNextPageParam: (d) => d.nextCursor,
+      // `useLivePosts()` adds new posts to the cache, so there's no need to refetch
+      refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }),
   );
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -102,7 +110,7 @@ export function Chat(
           <HashIcon className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate">{props.title}</span>
         </h2>
-        <SubscriptionStatus subscription={livePosts.subscription} />
+        <SubscriptionStatus subscription={props.subscription} />
       </header>
       <div
         className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto"
@@ -112,18 +120,35 @@ export function Chat(
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-6">
           <div className="flex justify-center">
             <Button
+              // Load older posts when this scrolls into view. It runs again when
+              // a load finishes, so it keeps going while the button stays visible.
+              ref={(button) => {
+                if (
+                  !button ||
+                  postsQuery.fetchStatus !== 'idle' ||
+                  !postsQuery.hasNextPage
+                )
+                  return;
+                const observer = new IntersectionObserver(
+                  ([entry]) => {
+                    if (entry?.isIntersecting) void postsQuery.fetchNextPage();
+                  },
+                  { rootMargin: '200px' },
+                );
+                observer.observe(button);
+                return () => observer.disconnect();
+              }}
               variant="outline"
               size="sm"
               disabled={
-                livePosts.query.fetchStatus !== 'idle' ||
-                !livePosts.query.hasNextPage
+                postsQuery.fetchStatus !== 'idle' || !postsQuery.hasNextPage
               }
               onClick={() => {
-                void livePosts.query.fetchNextPage();
+                void postsQuery.fetchNextPage();
               }}
             >
               {run(() => {
-                switch (livePosts.query.fetchStatus) {
+                switch (postsQuery.fetchStatus) {
                   case 'fetching':
                     return (
                       <>
@@ -139,7 +164,7 @@ export function Chat(
                       </>
                     );
                   case 'idle':
-                    return livePosts.query.hasNextPage
+                    return postsQuery.hasNextPage
                       ? 'Load more'
                       : 'Fetched everything!';
                 }
@@ -147,48 +172,16 @@ export function Chat(
             </Button>
           </div>
 
-          {livePosts.messages?.map((item) => {
-            const isMe = item.name === session?.user?.name;
-
-            return (
-              <Message key={item.id} align={isMe ? 'end' : 'start'}>
-                <MessageAvatar>
-                  <Avatar>
-                    <AvatarImage
-                      src={`https://github.com/${item.name}.png`}
-                      alt=""
-                    />
-                    <AvatarFallback className="text-xs font-medium">
-                      {item.name.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </MessageAvatar>
-                <MessageContent>
-                  <Bubble variant={isMe ? 'default' : 'outline'}>
-                    <BubbleContent className="whitespace-pre-wrap">
-                      {item.text}
-                    </BubbleContent>
-                  </Bubble>
-                  <MessageFooter className="gap-1">
-                    <a
-                      href={`https://github.com/${item.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      {item.name}
-                    </a>
-                    ·
-                    <time dateTime={item.createdAt.toISOString()}>
-                      {isToday(item.createdAt)
-                        ? formatDistanceToNow(item.createdAt) + ' ago'
-                        : format(item.createdAt, 'MMM d, yyyy h:mm a')}
-                    </time>
-                  </MessageFooter>
-                </MessageContent>
-              </Message>
-            );
-          })}
+          {/* `pages[0]` is the newest page, so show the pages in reverse */}
+          {postsQuery.data.pages
+            .map((page, index) => (
+              <PostPage
+                key={index}
+                posts={page.items}
+                myName={session?.user?.name}
+              />
+            ))
+            .toReversed()}
         </div>
       </div>
 
@@ -216,9 +209,9 @@ export function Chat(
             </div>
           )}
           <p className="h-4 text-xs text-muted-foreground italic">
-            {currentlyTyping.data?.length
-              ? `${listWithAnd(currentlyTyping.data)} ${pluralize(
-                  currentlyTyping.data.length,
+            {props.whoIsTyping.length
+              ? `${listWithAnd(props.whoIsTyping)} ${pluralize(
+                  props.whoIsTyping.length,
                   'is',
                   'are',
                 )} typing...`
@@ -227,6 +220,61 @@ export function Chat(
         </div>
       </div>
     </main>
+  );
+}
+
+/**
+ * One page of posts. Unchanged pages keep their `posts` array, so React
+ * Compiler reuses their output when a new post lands on the newest page.
+ */
+function PostPage(
+  props: Readonly<{ posts: PostType[]; myName: string | null | undefined }>,
+) {
+  return (
+    <>
+      {props.posts.map((item) => {
+        const isMe = item.name === props.myName;
+
+        return (
+          <Message key={item.id} align={isMe ? 'end' : 'start'}>
+            <MessageAvatar>
+              <Avatar>
+                <AvatarImage
+                  src={`https://github.com/${item.name}.png`}
+                  alt=""
+                />
+                <AvatarFallback className="text-xs font-medium">
+                  {item.name.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </MessageAvatar>
+            <MessageContent>
+              <Bubble variant={isMe ? 'default' : 'outline'}>
+                <BubbleContent className="whitespace-pre-wrap">
+                  {item.text}
+                </BubbleContent>
+              </Bubble>
+              <MessageFooter className="gap-1">
+                <a
+                  href={`https://github.com/${item.name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {item.name}
+                </a>
+                ·
+                <time dateTime={item.createdAt.toISOString()}>
+                  {isToday(item.createdAt)
+                    ? formatDistanceToNow(item.createdAt) + ' ago'
+                    : format(item.createdAt, 'MMM d, yyyy h:mm a')}
+                </time>
+              </MessageFooter>
+            </MessageContent>
+          </Message>
+        );
+      })}
+    </>
   );
 }
 
@@ -263,12 +311,33 @@ function AddMessageForm(props: {
     });
   }
 
-  const isTypingMutation = useThrottledIsTypingMutation(channelId);
+  const { mutate: setIsTyping } = useMutation(
+    trpc.channel.isTyping.mutationOptions(),
+  );
+  const isTyping = React.useRef(false);
+  const isTypingTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
+  // Send whether we're typing as soon as it changes, and while it doesn't,
+  // again at most once a second so the server doesn't expire it
   React.useEffect(() => {
-    // update isTyping state
-    isTypingMutation(isFocused && message.trim().length > 0);
-  }, [isFocused, message, isTypingMutation]);
+    function send() {
+      if (isTypingTimeout.current) clearTimeout(isTypingTimeout.current);
+      isTypingTimeout.current = null;
+      setIsTyping({ typing: isTyping.current, channelId });
+    }
+
+    const nextIsTyping = isFocused && message.trim().length > 0;
+    const changed = nextIsTyping !== isTyping.current;
+    isTyping.current = nextIsTyping;
+    if (changed) {
+      send();
+      return;
+    }
+    if (isTypingTimeout.current) return;
+    isTypingTimeout.current = setTimeout(send, 1000);
+  }, [isFocused, message, channelId, setIsTyping]);
 
   return (
     <form

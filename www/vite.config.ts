@@ -12,8 +12,9 @@ import { decisionsContent } from './build/decisions-content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { kitchenSinkTypes } from './build/kitchen-sink-types.ts';
-import { bundledServer } from './build/on-demand.ts';
+import { bundledServer, prerenderFilter } from './build/on-demand.ts';
 import { ogCards } from './build/og-cards.ts';
+import { pageCards } from './build/page-cards.ts';
 import {
   sentryDefines,
   sentrySettings,
@@ -202,7 +203,16 @@ export default defineConfig({
       ...pages.map((page) => docCard(page, absoluteUrl(page.path))),
       ...copiedPages.flatMap((copy) =>
         copy.pages.map((page) =>
-          docCard(page, copyPageUrl(copy.version, page.slug)),
+          docCard(
+            // A page without a description shows its first paragraph, as
+            // Docusaurus did, rather than the site's tagline.
+            {
+              ...page,
+              description:
+                page.description === '' ? page.excerpt : page.description,
+            },
+            copyPageUrl(copy.version, page.slug),
+          ),
         ),
       ),
       docCard(
@@ -214,9 +224,7 @@ export default defineConfig({
         absoluteUrl('/blog'),
       ),
       sponsorCard,
-      ...[mediaPage, searchPage].map((page) =>
-        docCard(page, absoluteUrl(page.path)),
-      ),
+      ...pageCards.map((page) => docCard(page, absoluteUrl(page.path))),
       ...posts.map((post) => ({
         authors: post.authors,
         date: post.date,
@@ -276,24 +284,7 @@ export default defineConfig({
         crawlLinks: true,
         enabled: true,
         failOnError: true,
-        filter: (page) => {
-          const prerendered =
-            // `/v12/docs` redirects to its first page (`build/vercel-output.ts`).
-            page.path !== v12.basePath &&
-            // An index route (`/blog/`) is found with its slash, which the
-            // host redirects away.
-            (page.path === '/' || !page.path.endsWith('/')) &&
-            // A query (`?flags=`, `?version=v12`) is rendered on request
-            // (`build/on-demand.ts`), not once per combination here.
-            !/[?#]/.test(page.path);
-          // Crawling (which checks that every link resolves) and route
-          // discovery add more than the pages listed above: anchors,
-          // markdown and redirects, which would otherwise join the sitemap.
-          if (page.fromCrawl || !prerendered) {
-            page.sitemap = { ...page.sitemap, exclude: true };
-          }
-          return prerendered;
-        },
+        filter: prerenderFilter,
       },
       sitemap: { enabled: true, host: site.url },
     }),

@@ -8,21 +8,15 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-Handles help you avoid request waterfalls. When a component reads the route's params or search params and starts its own query, that query can only start once the component has rendered. A child it renders only after that query loads starts its own query later still. With handles, the loader reads the URL once, starts every query whose input comes from it up front, and passes each component a typed handle as a prop. A query that needs another query's result still waits for it: see [Dependent queries](#dependent-queries).
+Handles help you avoid request waterfalls. The loader, or server component, **reads the URL once**, starts every query the page needs, and passes each component a reference to its query as a prop.
 
-A **handle** is a small, serializable reference to a query: its key and input, but no data. You load it in a route loader, a server component or an event handler. The component reads the query from it, fully typed, without naming the procedure or repeating its input.
+- A **handle** is a query's key and input. It holds no data.
+- The component reads the query from it, fully typed, without naming the procedure or repeating its input.
+- The client reads exactly the query the server started. With plain `queryOptions`, an input that differs by a typo misses the prefetch and fetches again, silently.
 
 :::info
 The handle APIs are plain functions from `@trpc/tanstack-react-query/unstable-handles`. The `unstable-` in the path means they're new and may change, but you're safe to use them! [Read more](/docs/faq#unstable).
 :::
-
-Handles also fix a gap in the usual prefetch pattern. There, the server prefetches `trpc.post.byId.queryOptions({ id })`, and the client component repeats the same procedure and input:
-
-- If the inputs differ, the read misses the prefetched data and silently fetches again.
-- The client can read a different procedure from the one the server prefetched.
-- Nothing shows that a prefetch happened at all.
-
-With handles, the client reads exactly what the server started.
 
 ```twoslash include handles-router
 // @jsx: react-jsx
@@ -106,6 +100,11 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
+export const trpcStatic = createTRPCOptionsProxy({
+  ctx: {},
+  router: appRouter,
+  queryClient: getQueryClient,
+});
 export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
@@ -162,116 +161,161 @@ export function MoreByAuthor(props: { authorId: string }) {
 }
 ```
 
-Take a post page at `/posts/$id`. Its loader, or server component, reads `id` from the URL, lists the queries the page needs and loads them in one call:
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: loader.ts
-import { trpc } from '~/trpc/server';
-declare const id: string;
-// ---cut---
-import {
-  ensureEntry,
-  loadHandles,
-  prefetchInfiniteEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-
-const [handles] = await loadHandles(trpc, {
-  // 1. The post: the load waits for it
-  post: ensureEntry(trpc.post.byId, { id }),
-  // 2. Its comments: start at the same time, and stream in later
-  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
-});
+```twoslash include handles-start
+// @filename: lib/trpc.ts
+export { useTRPC, type TRPC } from '~/trpc/client';
+// @filename: routes/__root.tsx
+import { createRootRouteWithContext } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+export const Route = createRootRouteWithContext<{ trpc: TRPC }>()();
+// @filename: routeTree.gen.ts
+import { Route as rootRoute } from './routes/__root';
+import { Route as postRoute } from './routes/posts.$id';
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/posts/$id': {
+      id: '/posts/$id';
+      path: '/posts/$id';
+      fullPath: '/posts/$id';
+      preLoaderRoute: typeof postRoute;
+      parentRoute: typeof rootRoute;
+    };
+  }
+}
+const PostRoute = postRoute.update({
+  id: '/posts/$id',
+  path: '/posts/$id',
+  getParentRoute: () => rootRoute,
+} as any);
+export const routeTree = rootRoute.addChildren({ PostRoute });
+// @filename: router.tsx
+// `Route.useLoaderData()` is `any` unless a router is registered
+import { createRouter } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+import { routeTree } from './routeTree.gen';
+declare const trpc: TRPC;
+export const router = createRouter({ routeTree, context: { trpc } });
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
 ```
 
-The loader returns `handles`, or a server component passes them on as props. The page reads them without naming a procedure or repeating an input:
+## In short {#gist}
 
-```tsx twoslash
+Load the handles where the page starts, and read each one in a component, which never names the procedure or repeats its input:
+
+<div class="code-tabs" data-tabs="framework">
+<div data-tab="TanStack Start">
+
+```tsx twoslash title='src/routes/posts.$id.tsx'
 // @include: handles-router
 // @include: handles-trpc
 // @include: handles-components
-// @filename: post-page.tsx
-import type { inferInfiniteQueryHandle, inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
+// @include: handles-start
+// @filename: routes/posts.$id.tsx
 // ---cut---
+// ---collapse---
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense } from 'react';
-import { Comments } from '~/components/comments';
-import { MoreByAuthor } from '~/components/more-by-author';
-import { useTRPC } from '~/trpc/client';
+import { createFileRoute } from '@tanstack/react-router';
+import {
+  ensureEntry,
+  fromHandle,
+  loadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC } from '~/lib/trpc';
+// ---/collapse---
 
-export function PostPage(props: {
-  post: inferQueryHandle<TRPC['post']['byId']>;
-  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
-}) {
+export const Route = createFileRoute('/posts/$id')({
+  loader: async ({ context: { trpc }, params }) => {
+    const [handles] = await loadHandles(trpc, {
+//                          ^^^^^^^^^^^
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+//          ^^^^^^^^^^^
+    });
+    return handles;
+  },
+  component: PostPage,
+});
+
+function PostPage() {
+  const handles = Route.useLoaderData();
   const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
-
-  return (
-    <article>
-      <h1>{postQuery.data.title}</h1>
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={props.comments} />
-      </Suspense>
-      {/* 3. More by the author: needs the post's authorId */}
-      <Suspense fallback={<p>Loading more by this author…</p>}>
-        <MoreByAuthor authorId={postQuery.data.authorId} />
-      </Suspense>
-    </article>
-  );
+  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
+//                                   ^^^^^^^^^^
+  return <h1>{postQuery.data.title}</h1>;
 }
 ```
 
-More by the author needs the post's `authorId`, so the loader can't start it from the [URL](#url-as-input). `MoreByAuthor` reads it with `trpc.post.byAuthor.infiniteQueryOptions({ authorId })`, as it would without handles, and its request starts once the post has loaded. [Dependent queries](#dependent-queries) shows how to start it with the others.
+</div>
+<div data-tab="Next.js">
 
-Mutations don't change: use `useTRPC()`'s `mutationOptions`. To show a new comment, refresh the comments handle when the mutation succeeds:
+The page, a server component, loads the handles:
 
-```tsx twoslash
+```tsx twoslash title='app/posts/[id]/page.tsx'
 // @include: handles-router
 // @include: handles-trpc
-// @filename: add-comment.tsx
+// @include: handles-components
+// @filename: app/posts/[id]/post.tsx
+export { Post } from '~/components/post';
+// @filename: app/posts/[id]/page.tsx
 // ---cut---
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
+// ---collapse---
+import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { HydrateClient, trpc } from '~/trpc/server';
+import { Post } from './post';
+// ---/collapse---
 
-export function AddComment(props: {
-  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
-}) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const addComment = useMutation(
-    trpc.post.addComment.mutationOptions({
-      onSuccess: () =>
-        queryClient.invalidateQueries({
-          queryKey: props.comments.queryKey,
-          exact: true,
-        }),
-    }),
-  );
+export default async function PostPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
+  const [handles] = await loadHandles(trpc, {
+//                        ^^^^^^^^^^^
+    post: ensureEntry(trpc.post.byId, { id }),
+//        ^^^^^^^^^^^
+  });
   return (
-    <button
-      onClick={() =>
-        addComment.mutate({ postId: props.comments.input.postId, text: 'Nice!' })
-      }
-    >
-      Add a comment
-    </button>
+    <HydrateClient>
+      <Post post={handles.post} />
+    </HydrateClient>
   );
 }
 ```
 
-`{ queryKey: props.comments.queryKey, exact: true }` refreshes exactly the query the handle names. For the other filters, see [Invalidation](#invalidation-and-staleness).
+A client component, in its own file, reads one:
 
-The data lives in the cache, not the handle: see [Handles carry no data](#no-data). The cache fills through TanStack Query's dehydrate and hydrate, as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). In a server loader, return `dehydrate(queryClient)` with the handles, as in [React Router](#react-router-ssr).
+```tsx twoslash title='app/posts/[id]/post.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @filename: app/posts/[id]/post.tsx
+// ---cut---
+'use client';
 
-The components that read handles are the same everywhere: with or without server components, and whatever loaded the handle.
+// ---collapse---
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/trpc/client';
+// ---/collapse---
+
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+//                                  ^^^^^^^^^^^^^^^^
+  const trpc = useTRPC();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+//                                   ^^^^^^^^^^
+  return <h1>{postQuery.data.title}</h1>;
+}
+```
+
+</div>
+</div>
+
+- The handle carries the procedure and its input, typed.
+- The data reaches the browser's cache through TanStack Query's dehydrate and hydrate: see [Frameworks](#frameworks).
+- Mutations don't change. To refetch a handle's query after one, invalidate `{ queryKey: handle.queryKey, exact: true }`.
 
 ## Loading handles {#starting-a-query}
 
-A loader lists its queries as **entries**, and `loadHandles(trpc, entries)` starts them all at once, then returns a handle for each:
+`loadHandles(trpc, entries)` starts every entry, then resolves to `[handles, data]`:
 
 ```ts twoslash
 // @include: handles-router
@@ -301,106 +345,19 @@ data.post;
 data.comments;
 ```
 
-- Building an entry starts nothing. The load starts every entry before it waits for any, so the order of the entries doesn't matter, and you can't make one wait for another by accident.
-- It resolves to `[handles, data]`: a handle for every entry, by its key, and the data of the entries it waited for. Return `handles` from the loader, or pass them to components as props.
-- Reading a prefetch entry's `data` is a type error, not a silent `undefined`. Components read it from the handle.
-- It rejects as soon as an entry it waits for fails, with an error that names the entry. Handle it where you load, for example to show a not-found page: see [Errors](#errors-ensure).
+- Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
+- `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
+- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+
+#### Using the data in a loader {#loader-data}
+
+`data` has the data of the entries the load waited for. Use it for the page title, a redirect or a not-found check. Return `handles`, not `data`, so the data doesn't cross to the browser twice.
+
+#### Waiting for some, streaming others {#combining-both}
+
+List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [dependent queries](#dependent-queries).
 
 Each entry chooses whether the page waits for its query:
-
-- **Don't wait** with `prefetchEntry`. The page renders at once, and the data streams in later.
-- **Wait** with `ensureEntry`. The page renders once the data is ready.
-
-`fetchEntry` is a stricter form of waiting, for code that needs fresh data. See [Waiting for fresh data](#fetch).
-
-### Without waiting: `prefetchEntry` {#prefetch}
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-// ---cut---
-const [handles] = await loadHandles(trpc, {
-  post: prefetchEntry(trpc.post.byId, { id }),
-});
-```
-
-- The load doesn't wait for it. Unless the cache has fresh data, the request runs in the background.
-- The component that reads the handle can render before the data arrives. If the cache has data, it shows that. If not, `useSuspenseQuery` suspends: wrap it in `<Suspense>` to show a fallback in its place. `useQuery` renders with `status: 'pending'`, which with server rendering can cause a hydration mismatch: see [Reading with `useQuery`](#use-query).
-
-  ```tsx twoslash
-  // @include: handles-router
-  // @include: handles-trpc
-  // @include: handles-components
-  // @filename: snippet.tsx
-  import { Suspense } from 'react';
-  import { Post } from '~/components/post';
-  import { trpc } from '~/trpc/server';
-  import { loadHandles, prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
-  declare const id: string;
-  const [handles] = await loadHandles(trpc, {
-    post: prefetchEntry(trpc.post.byId, { id }),
-  });
-  // ---cut---
-  <Suspense fallback={<p>Loading post…</p>}>
-    <Post post={handles.post} />
-  </Suspense>
-  ```
-
-  Without a boundary of your own, React shows the fallback of the nearest boundary above it, which may cover the whole page.
-
-- It never makes the load reject. If the request fails, the component that reads the handle gets the error: see [Errors with prefetch entries](#errors-prefetch).
-- Its data isn't in `data`: the query may not have any yet. Reading `data.post` is a type error.
-
-Use it for data the page can show a placeholder for: slow queries, content below the fold, secondary panels.
-
-### Waiting: `ensureEntry` {#ensure}
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, ensureEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-// ---cut---
-const [handles, data] = await loadHandles(trpc, {
-  post: ensureEntry(trpc.post.byId, { id }),
-});
-```
-
-- The load waits until the cache has data for the query, so the data is ready before anything renders. If the cache had no data and the request fails, the load rejects.
-- If the cache already has data, even stale, the load resolves at once with it. Stale data is refetched in the background, and a failed refetch doesn't make the load reject.
-- `data.post` has the data. See [Using the data in a loader](#loader-data).
-- The component that reads the handle finds the data in the cache and renders it at once, with `useSuspenseQuery` or `useQuery`. It still needs a loading state for when the cache loses the data: see [When the cache loses the data](#cache-loses-data).
-
-Use it for data the page can't render without, or data you need before rendering: the page title, a not-found check, a redirect.
-
-### Waiting for fresh data: `fetchEntry` {#fetch}
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, fetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-// ---cut---
-const [handles, data] = await loadHandles(trpc, {
-  post: fetchEntry(trpc.post.byId, { id }),
-});
-```
-
-- It works like `ensureEntry`, with one difference: if the cache has stale data, it refetches and waits for the new data, like `queryClient.fetchQuery`.
-- Use it when the loader reads the data and needs it fresh, for example a loader that redirects based on the post.
-- In a browser loader, prefer `ensureEntry`. With stale data, an ensure entry renders the page at once and updates it when the refetch lands. A fetch entry holds up the navigation until the refetch is done.
-- TanStack Router hides this difference on a page it has visited: by default, it shows the page with its last loader data and reruns the loader in the background. To wait there too, as the demo below does, set the router's `defaultStaleReloadMode`, or a loader's [`staleReloadMode`](https://tanstack.com/router/latest/docs/guide/data-loading#choosing-background-vs-blocking-stale-reloads), to `'blocking'`.
-- In server components, the two behave the same: the request's `QueryClient` starts empty, so both wait for the request.
-
-### Which to use {#which-to-use}
 
 |                        | `prefetchEntry`                   | `ensureEntry`                                 | `fetchEntry`          |
 | ---------------------- | --------------------------------- | --------------------------------------------- | --------------------- |
@@ -413,9 +370,63 @@ const [handles, data] = await loadHandles(trpc, {
 ```demo starting-queries
 ```
 
-### TanStack Query equivalents {#tanstack-equivalents}
+Load handles where the code can wait:
 
-Each entry is one TanStack Query call with the procedure's `queryOptions` or `infiniteQueryOptions`. The load makes every call, then waits for the ones that aren't prefetches:
+| Your app                       | Where                      | Proxy                                   |
+| ------------------------------ | -------------------------- | --------------------------------------- |
+| TanStack Start, TanStack Router | Route loaders             | The proxy in your router context        |
+| Next.js App Router             | Server components          | The server proxy from `trpc/server.tsx` |
+| A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
+
+#### Conditional queries {#conditional-queries}
+
+Put TanStack Query's `skipToken` in place of an entry to start nothing for it. Here, a post page loads its comments only when the URL opens the comments tab, `/posts/1?tab=comments`:
+
+```tsx twoslash
+// @include: handles-router
+// @include: handles-trpc
+// @filename: routes/post.tsx
+import { createRootRouteWithContext, createRoute } from '@tanstack/react-router';
+import type { TRPC } from '~/trpc/client';
+const rootRoute = createRootRouteWithContext<{ trpc: TRPC }>()();
+// ---cut---
+import { skipToken } from '@tanstack/react-query';
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { z } from 'zod';
+
+export const postRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/posts/$id',
+  validateSearch: z.object({
+    tab: z.enum(['post', 'comments']).default('post'),
+  }),
+  loaderDeps: ({ search }) => ({ tab: search.tab }),
+  loader: async ({ context: { trpc }, params: { id }, deps }) => {
+    const [handles] = await loadHandles(trpc, {
+      post: ensureEntry(trpc.post.byId, { id }),
+      comments:
+        deps.tab === 'comments'
+          ? prefetchInfiniteEntry(trpc.post.comments, { postId: id })
+          : skipToken,
+    });
+    handles.comments;
+    //      ^?
+    return handles;
+  },
+});
+```
+
+- Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
+- It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
+- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Dependent queries](#dependent-queries).
+
+#### TanStack Query equivalents {#tanstack-equivalents}
+
+Each entry is one TanStack Query call:
 
 | tRPC                                                                 | TanStack Query                                                                                                                                                           |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -427,66 +438,64 @@ Each entry is one TanStack Query call with the procedure's `queryOptions` or `in
 
 The `queryClient` is the one the proxy was created with. The entry names follow the TanStack Query method each one calls.
 
-### Waiting for some, streaming others {#combining-both}
+Options:
 
-A page can wait for some queries and stream others. List them all in one load:
+- `input` is optional when the procedure's is: `prefetchEntry(trpc.viewer)`.
+- `opts` takes `staleTime`, `gcTime`, `retry`, `retryDelay`, `meta` and `trpc` request options. They apply to the load's request; readers use the options passed to `fromHandle`.
 
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-// ---cut---
-const [handles] = await loadHandles(trpc, {
-  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
-  post: ensureEntry(trpc.post.byId, { id }),
-});
-```
+### `prefetchEntry`: don't wait {#prefetch}
 
-Here the post is ready when the page renders, and the comments stream in behind their own loading state. Both requests start together, whatever order you list them in.
+- The page renders at once, and the data streams in.
+- The reader shows cached data, or suspends. Give it its own `<Suspense>`, or the nearest boundary above shows its fallback, which may be the whole page.
+- It never makes the load reject. The reader gets the error: see [Errors](#errors).
+- Use it for slow queries, content below the fold and side panels.
 
-Avoid awaiting one load and then starting another: the second load's requests wait for every entry the first one waited for. Use a second load only when its input comes from the first one's data: see [Dependent queries](#waterfall-in-a-loader).
+### `ensureEntry`: wait {#ensure}
 
-### Options {#start-options}
+- The load waits until the cache has data, so the reader renders it at once.
+- With cached data, even stale, it resolves at once and refetches in the background.
+- It rejects only if the cache had no data and the request fails.
+- Use it for data the page can't render without, or needs before rendering.
 
-- `input` is optional when the procedure's input is optional, so `prefetchEntry(trpc.viewer)` works.
-- `opts` takes `staleTime`, `gcTime`, `retry`, `retryDelay`, `meta`, and `trpc` request options such as `context`. They apply to the load's request. Readers use the options you pass to `fromHandle`.
-- Infinite entries also take `initialCursor`, and `pages` with `getNextPageParam`: see [Infinite queries](#infinite-queries).
+### `fetchEntry`: wait for fresh data {#fetch}
 
-### Where to load handles {#where-to-start}
-
-| Your app                                       | Load handles in                                  | With                                    |
-| ---------------------------------------------- | ------------------------------------------------ | --------------------------------------- |
-| Next.js App Router                             | Server components                                | The server proxy from `trpc/server.tsx` |
-| TanStack Start, TanStack Router                | Route loaders                                    | The proxy in your router context        |
-| React Router                                   | `loader` or `clientLoader`                       | See [React Router](#react-router)       |
-| No loaders or server components, such as a SPA | Event handlers, such as a link's hover           | `useTRPC()`                             |
-
-- `loadHandles` and the entries take any tRPC options proxy: one from `createTRPCOptionsProxy`, or `useTRPC()`. Type a router context with `TRPCOptionsProxy<AppRouter>`.
-- `loadHandles` takes the root proxy, `trpc`, and one load can take entries from any procedure.
-- Load handles where the code can wait: a loader, a server component, or an event handler, such as preloading a page on hover. Don't call `loadHandles` during render: every render starts its entries again, and a render can't wait for them. A component that renders before anything loaded its query reads it directly, with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+- Like `ensureEntry`, but with stale data it waits for the refetch.
+- Use it when the loader reads the data and needs it fresh, such as for a redirect.
+- In a browser loader, prefer `ensureEntry`: a fetch entry holds up the navigation until the refetch is done.
+- TanStack Router shows a visited page with its last loader data while the loader reruns. To wait, set `defaultStaleReloadMode`, or a loader's [`staleReloadMode`](https://tanstack.com/router/latest/docs/guide/data-loading#choosing-background-vs-blocking-stale-reloads), to `'blocking'`.
+- In server components, ensure and fetch behave the same: the request's `QueryClient` starts empty.
 
 ## Start every query from the URL {#url-as-input}
 
-A loader or server component runs before anything renders, and all it has is the URL: the route's params, its search params, and on the server, the session. If every query a page needs takes its input from those, every request starts the moment the navigation does. No component has to render first to find out what to fetch.
+A loader runs before anything renders, and all it has is the URL: params, search params and, on the server, the session. If every input comes from those, every request starts with the navigation.
 
-- **Path params** name what the page is about: `/posts/$slug`.
-- **Search params** hold everything else that changes what a query fetches: filters, sort, page. Keep them out of component state. A loader can't see component state, so the query would start only after render, the back button wouldn't restore the view, and a shared link would open the default one.
+- **Path params** name the thing: `/posts/$slug`.
+- **Search params** hold filters, sort and page. Keep them out of component state: a loader can't see it, the back button doesn't restore it, and a shared link loses it.
 
 ```demo url-input
 /posts?sort=top&page=2  →  prefetchEntry(trpc.post.list, { sort: 'top', page: 2 })
 ```
 
+With handles, they all start together. Without, each starts once the component above it renders:
+
+```
+With handles      Without
+|-> post.byId     |-> post.byId
+|-> post.comments   |-> post.comments
+|-> post.byAuthor     |-> post.byAuthor
+```
+
+```demo waterfalls
+```
+
 ### If the URL isn't enough, reshape the procedure {#reshape-procedures}
 
-If a page can't start a query from the URL alone, change the procedure, not the page. A procedure that takes an id you only learn from another query forces a waterfall on every page that calls it. Two fixes:
+A procedure that takes an id from another query forces a waterfall on every page that calls it. Fix the procedure, not the page:
 
-- **Take what the URL has.** Accept the slug or route param, and look up the id on the server.
-- **Return the joined data.** Return the post with its author, not an author id for the client to look up.
+- **Take what the URL has.** Accept the slug and look up the id on the server.
+- **Return the joined data.** Return the post with its author, not an author id.
 
-The server sits next to the database, so the extra lookup costs a query there, not another round trip from the browser.
+The server sits next to the database, so the lookup costs a query there, not a round trip from the browser.
 
 ```twoslash include url-db
 // @filename: db.ts
@@ -574,39 +583,7 @@ export const queryClient = new QueryClient();
 export const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient });
 ```
 
-**Before:** the page is `/posts/$slug`, but the comments and the author need ids that only the post has:
-
-```ts twoslash title='server/routers/_app.ts'
-// @include: url-db
-// @filename: before-router.ts
-// ---cut---
-import { z } from 'zod';
-import { db } from './db';
-import { t } from './trpc';
-
-export const appRouter = t.router({
-  post: t.router({
-    bySlug: t.procedure
-      .input(z.object({ slug: z.string() }))
-      .query(({ input }) => db.post.bySlug(input.slug)),
-    comments: t.procedure
-      .input(
-        z.object({ postId: z.string(), cursor: z.number().nullish() }),
-      )
-      .query(({ input }) =>
-        db.comment.list({
-          postId: input.postId,
-          cursor: input.cursor ?? null,
-        }),
-      ),
-  }),
-  author: t.router({
-    byId: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => db.author.byId(input.id)),
-  }),
-});
-```
+**Before:** the comments and the author need ids that only the post has.
 
 ```ts twoslash title='The loader for /posts/$slug'
 // @include: url-db
@@ -636,7 +613,7 @@ post.comments           |-------|
 author.byId             |-------|
 ```
 
-**After:** `post.comments` takes the slug, and `post.bySlug` returns the post with its author:
+**After:** `post.comments` takes the slug, and `post.bySlug` returns the author:
 
 ```ts twoslash title='server/routers/_app.ts'
 // @include: url-db
@@ -693,11 +670,9 @@ post.bySlug     |-------|
 post.comments   |-------|
 ```
 
-The page is ready after one round trip instead of two, and the loader no longer reads the post to start the other queries.
-
 ## Reading a handle {#reading-a-handle}
 
-`fromHandle(trpc, handle, opts?)` returns the same options as `trpc.<path>.queryOptions(input, opts)` for the handle's procedure and input, or `trpc.<path>.infiniteQueryOptions(input, opts)` for an infinite handle. Pass them to any TanStack Query hook or `QueryClient` method:
+`fromHandle(trpc, handle, opts?)` returns `trpc.<path>.queryOptions(handle.input, opts)`, or `infiniteQueryOptions` for an infinite handle. Pass it to any TanStack Query hook:
 
 ```tsx twoslash
 // @include: handles-router
@@ -722,133 +697,52 @@ const [aQuery, bQuery] = useSuspenseQueries({
 });
 ```
 
-- `opts` takes everything `queryOptions` takes, such as `select`, `staleTime`, `refetchInterval` and `trpc`.
-- `fromHandle` takes any level of the proxy: `fromHandle(trpc, handle)` and `fromHandle(trpc.post, handle)` behave the same.
-- Reads use the same query key as `trpc.<path>.queryOptions(input)`, so old and new code share cache entries.
-- `handle.queryKey` is the cache entry's key. For a typed `queryClient.getQueryData`, pass `fromHandle(trpc, handle).queryKey`. The handle's own key isn't tagged with its data type, so the handle stays serializable everywhere, including TanStack Router's `beforeLoad`.
-- `handle.input` is the typed input the query was started with, so a component doesn't need it as a separate prop. Infinite handles leave out `cursor` and `direction`.
+- Only `loadHandles` makes handles. A hand-written object doesn't type-check, and `fromHandle` throws on it.
+- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`.
+- Reads share cache entries with `trpc.<path>.queryOptions(input)`.
+- `handle.queryKey` carries no data type, so the handle stays serializable. For a typed key, use `fromHandle(trpc, handle).queryKey` or `trpc.post.byId.queryKey(handle.input)`.
 
-### Typing props {#typing-props}
+#### Typing props {#typing-props}
 
-Export your proxy type once, then type props with `inferQueryHandle`:
+Type props with `inferQueryHandle<TRPC['post']['byId']>`, or `inferInfiniteQueryHandle` for an infinite handle. Export `type TRPC = TRPCOptionsProxy<AppRouter>` from `trpc/client.tsx` once.
 
-```tsx twoslash title='trpc/client.tsx'
-// @include: handles-router
-// @filename: trpc/client.tsx
-import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/router';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
-// ---cut---
-export type TRPC = TRPCOptionsProxy<AppRouter>;
+#### Reading with `useQuery` {#use-query}
+
+With `useQuery`, no `Suspense` boundary is needed:
+
+- It renders `status: 'pending'` until the data arrives, and `'success'` at once after an ensure or fetch entry.
+- With server rendering, read a prefetch entry's handle with `useSuspenseQuery`. Otherwise the server can render the loading state while the browser has the data, a hydration mismatch ([TanStack/query#9399](https://github.com/TanStack/query/issues/9399)).
+
+To change the input in the component, for a search term the URL can't hold, call the procedure and start from the handle's input:
+
+```tsx
+const [term, setTerm] = useState(props.comments.input.term);
+const commentsQuery = useSuspenseInfiniteQuery(
+  trpc.post.comments.infiniteQueryOptions(
+    { ...props.comments.input, term: useDeferredValue(term) },
+    { getNextPageParam: (last) => last.nextCursor },
+  ),
+);
 ```
 
-```tsx twoslash title='app/posts/[id]/post.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @filename: app/posts/[id]/post.tsx
-// ---cut---
-'use client';
+- While the input matches the handle's, it reads the loader's cache entry.
+- Render `<Comments key={postId} … />`, so a new post resets the term.
+- For sort and filters, use a [search param](#url-as-input) instead.
 
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
+## When the cache loses the data {#cache-loses-data}
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
-  const trpc = useTRPC();
-  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
-  return <h1>{postQuery.data.title}</h1>;
-}
-```
+A handle carries no data, and the cache can lose it even after an ensure entry:
 
-A handle can only come from `loadHandles`. A raw input, an entry, or an object with the right `queryKey` and `input` written by hand, doesn't type-check. In tests, load one over a seeded cache: see [Testing components that take handles](#testing). At runtime, `fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
+- `resetQueries()` clears it and refetches at once.
+- `removeQueries()` and `clear()`, such as on logout, drop it. The reader loads it again when it next renders.
+- After `gcTime` unused, TanStack Query drops it.
+- `invalidateQueries()` keeps it and refetches in the background, so nothing shows a loading state.
 
-`inferQueryHandle` accepts a handle from any entry: they all have the same type.
-
-### Reading with `useQuery` {#use-query}
-
-You don't need `useSuspenseQuery` or a `Suspense` boundary to read a handle. `useQuery` works with every handle, as for any query. Switch on its `status` to show each state:
-
-```tsx twoslash title='app/posts/[id]/post.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @filename: app/posts/[id]/post.tsx
-// ---cut---
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
-
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
-  const trpc = useTRPC();
-  const postQuery = useQuery(fromHandle(trpc, props.post));
-  switch (postQuery.status) {
-    case 'pending':
-      return <p>Loading post…</p>;
-    case 'error':
-      return <p>Couldn't load the post: {postQuery.error.message}</p>;
-    case 'success':
-      return <h1>{postQuery.data.title}</h1>;
-  }
-}
-```
-
-- `useQuery` doesn't suspend. Until the data arrives, it renders with `status: 'pending'`.
-- After an ensure or fetch entry, the cache has the data, so the first render has `status: 'success'`.
-- With server rendering, read a prefetch entry's handle with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch ([TanStack/query#9399](https://github.com/TanStack/query/issues/9399)). For a component on `useQuery`, wait for the data instead, with an ensure entry.
-
-## Handles carry no data {#no-data}
-
-A handle is only the query's key and input, whichever entry made it. The data lives in the cache, so the reader decides how to wait for it:
-
-- `useSuspenseQuery` types `data` as defined. The component suspends until the cache has the data.
-- `useQuery` types `data` as possibly `undefined`, as for any query. Switch on `status` to narrow it.
-
-### When the cache loses the data {#cache-loses-data}
-
-Waiting for a query with an ensure or fetch entry puts its data in the cache before the reader renders. The cache can still lose that data later, and the reader then has to load it again:
-
-- `queryClient.resetQueries()` clears the data and refetches the queries on screen at once. A `useSuspenseQuery` reader suspends and shows the nearest `Suspense` fallback. A `useQuery` reader renders with `status: 'pending'`.
-- `queryClient.removeQueries()` and `queryClient.clear()`, for example on logout, drop the query from the cache. A reader on screen keeps its data until it renders again. Then it loads the query as above.
-- TanStack Query also drops a query no component has used for its `gcTime`. A reader that mounts after that loads it again.
-- `queryClient.invalidateQueries()` keeps the data and refetches in the background, so the reader shows no loading state.
-
-So give every reader a loading state, even when the page waited for its data: put a `useSuspenseQuery` reader under a `Suspense` boundary, or handle `'pending'` in a `useQuery` reader. Without a boundary of its own, a reader that suspends shows the fallback of the nearest boundary above it, which may cover the whole page.
-
-The reader loads the query again with a new request. A handle doesn't bring back the data the loader started with.
-
-This is how readers behave with the default options. Some options change it: with `initialData`, `resetQueries()` puts that data back, and with `enabled: false`, a reader that lost its data stays `pending` and starts no request.
-
-### Using the data in a loader {#loader-data}
-
-To use the data where you load it, for example to set the page title or redirect, read it from the load's `data`. It has the data of every ensure and fetch entry, by the entry's key:
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-declare function notFound(): never;
-// ---cut---
-const [handles, data] = await loadHandles(trpc, {
-  comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
-  post: ensureEntry(trpc.post.byId, { id }),
-});
-if (!data.post.title) notFound();
-//        ^?
-```
-
-- `data` has no key for prefetch entries, since their query may have no data yet.
-- The data is the same object the cache holds. Return `handles`, not `data`, so it doesn't cross to the browser twice.
-- Don't build other queries' inputs from it. Start them from the URL instead, as in [Start every query from the URL](#url-as-input). Otherwise, see [Dependent queries](#dependent-queries).
+So give every reader a loading state: a `Suspense` boundary, or a `'pending'` case.
 
 ## Infinite queries {#infinite-queries}
 
-The post page's comments and more by its author are lists, so they're infinite queries. For procedures with a `cursor` input, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
+For procedures with a `cursor` input, use `prefetchInfiniteEntry`, `ensureInfiniteEntry` and `fetchInfiniteEntry`. They load one page, or more with `pages`:
 
 ```ts twoslash
 // @include: handles-router
@@ -869,164 +763,23 @@ data.comments.pages;
 //            ^?
 ```
 
-`pages` applies when the cache has no pages for the query. If it already has some, an ensure entry resolves with those, and if a request for the query is already in flight, the entry joins it and gets the pages that request loads. Two entries for the same query share one cache entry, so list each query once.
+- `pages` is how many pages the load fetches, also when it refetches stale pages: the cache then keeps only that many. To refetch every page the reader loaded, leave it out.
+- Functions can't cross to the client, so pass `getNextPageParam` again when you read:
 
-Functions can't cross to the client, so pass `getNextPageParam` when you read an infinite handle:
+  ```ts
+  fromHandle(trpc, props.comments, { getNextPageParam: (last) => last.nextCursor })
+  ```
 
-```tsx twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: comments.tsx
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC, type TRPC } from '~/trpc/client';
-declare const props: {
-  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
-};
-const trpc = useTRPC();
-// ---cut---
-const commentsQuery = useSuspenseInfiniteQuery(
-  fromHandle(trpc, props.comments, {
-    getNextPageParam: (last) => last.nextCursor,
-  }),
-);
-```
+- Also pass it to entries in loaders that run in the browser. Refetching stale pages needs it from page two on.
+- Type props with `inferInfiniteQueryHandle`.
 
-Type the prop with `inferInfiniteQueryHandle<TRPC['post']['comments']>`.
+## Dependent queries {#dependent-queries}
 
-In the browser, a loader can run again while the cache holds every page the user loaded. If that data is stale, the entry refetches all of those pages, which needs `getNextPageParam` from page two on. Pass the reader's `getNextPageParam` to entries in loaders that run in the browser:
+A query whose input comes from another query's result is a waterfall. Each step costs a round trip. First try to [reshape the procedure](#reshape-procedures). If you can't, there are two ways, and both pay the round trip.
 
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import { trpc } from '~/trpc/server';
-import { loadHandles, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-declare const id: string;
-// ---cut---
-const [handles] = await loadHandles(trpc, {
-  comments: prefetchInfiniteEntry(
-    trpc.post.comments,
-    { postId: id, limit: 20 },
-    { getNextPageParam: (last) => last.nextCursor },
-  ),
-});
-```
+#### In a loader {#waterfall-in-a-loader}
 
-## Changing a handle's input {#switching-input}
-
-A handle names one input. When the user changes a list's sort or filter, put it in a [search param](#url-as-input): the loader then starts the new query and passes a new handle. Change the input in the component only when the URL can't hold it, such as a term the user is typing.
-
-Say the post page's comments can be searched, and the loader starts them with an empty term: `{ postId: id, term: '' }`. To read another input, call the procedure directly, starting from the handle's input:
-
-```tsx twoslash title='comments.tsx'
-// @jsx: react-jsx
-// @filename: server.ts
-import { initTRPC } from '@trpc/server';
-import { QueryClient } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import { z } from 'zod';
-const t = initTRPC.create();
-const appRouter = t.router({
-  post: t.router({
-    comments: t.procedure
-      .input(
-        z.object({
-          postId: z.string(),
-          term: z.string(),
-          cursor: z.number().nullish(),
-        }),
-      )
-      .query(() => ({
-        items: [] as { id: string; text: string }[],
-        nextCursor: null as number | null,
-      })),
-  }),
-});
-export const trpc = createTRPCOptionsProxy({
-  router: appRouter,
-  ctx: {},
-  queryClient: new QueryClient(),
-});
-// @filename: comments.tsx
-import React from 'react';
-import { trpc as serverTRPC } from './server';
-const useTRPC = () => serverTRPC;
-// ---cut---
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
-import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import { useDeferredValue, useState } from 'react';
-
-export function Comments(props: {
-  comments: inferInfiniteQueryHandle<typeof serverTRPC.post.comments>;
-}) {
-  const trpc = useTRPC();
-  // Start from the loader's input, so the first render reads the query it started
-  const [term, setTerm] = useState(props.comments.input.term);
-  const deferredTerm = useDeferredValue(term);
-  const commentsQuery = useSuspenseInfiniteQuery(
-    trpc.post.comments.infiniteQueryOptions(
-      { ...props.comments.input, term: deferredTerm },
-      { getNextPageParam: (last) => last.nextCursor },
-    ),
-  );
-  return (
-    <>
-      <label>
-        Search comments
-        <input value={term} onChange={(event) => setTerm(event.target.value)} />
-      </label>
-      <p>{commentsQuery.data.pages[0]?.items.length} comments</p>
-    </>
-  );
-}
-```
-
-- While the input matches the handle's, `infiniteQueryOptions` returns the same query key, so the first render reads the loader's cache entry instead of fetching again. For a query handle, use `trpc.x.queryOptions({ ...handle.input, term })` the same way.
-- A new term's query starts when the component renders with it, so its first page waits for that render. `useDeferredValue` keeps the previous results on screen while it loads.
-- Render `<Comments key={postId} … />`, so moving to another post resets the term to the new handle's.
-
-## Request waterfalls {#waterfalls}
-
-A request waterfall, the problem handles exist to avoid, is a request that can't start until another one has finished. Each level costs a full round trip, and on a slow connection a round trip can take hundreds of milliseconds, so removing waterfalls is often the best way to speed up a page.
-
-With handles, queries start in loaders and server components, where everything a page needs is known from the URL, so they start together:
-
-```
-1. |-> post.byId
-1. |-> post.comments
-1. |-> post.moreByAuthor
-```
-
-instead of one after the other, as each component renders and finds out what it needs:
-
-```
-1. |-> post.byId
-2.   |-> post.comments
-3.     |-> post.byAuthor
-```
-
-The demo runs one blog both ways. Watch the network panel:
-
-```demo waterfalls
-```
-
-To keep it that way:
-
-- Load handles in loaders and server components, not in render.
-- List every query in one load. See [Waiting for some, streaming others](#combining-both).
-- Make the URL the input, so the loader can start every query. See [Start every query from the URL](#url-as-input).
-
-### Dependent queries {#dependent-queries}
-
-A query whose input comes from another query's result is a waterfall by construction. Most pages don't need one: put the input in the route, or [reshape the procedure](#reshape-procedures) so the page can start it from the URL. For example, `trpc.post.moreByAuthor({ postId })` instead of `trpc.post.byId` and then `trpc.post.byAuthor({ authorId })`.
-
-When the data really can't be reshaped, for example a third-party API you don't control, there are two explicit ways. Both pay the extra round trip.
-
-#### In a loader or server component {#waterfall-in-a-loader}
-
-Load the first query, then build the second load's entries from its `data`:
+Load the first query, then build the second load from its `data`:
 
 ```ts twoslash
 // @include: handles-router
@@ -1048,11 +801,9 @@ const [second] = await loadHandles(trpc, {
 const handles = { ...first, ...second };
 ```
 
-The page waits for the post, and more by its author starts only after it.
-
 #### In a component {#waterfall-in-a-component}
 
-When an input is only known at render time, such as an id from a parent query's result, read the query in the component that gets the input, as `MoreByAuthor` does in the post page at the top:
+Read it in the component that gets the input:
 
 ```tsx twoslash
 // @include: handles-router
@@ -1074,352 +825,71 @@ const postsQuery = useSuspenseInfiniteQuery(
 }
 ```
 
-- The query starts when `MoreByAuthor` renders, an extra round trip after its parent's data arrives.
-- In the Next.js App Router, load the dependent query in the server component instead, as in the [loader example](#waterfall-in-a-loader).
-- In TanStack Router, `beforeLoad` can wait for the first query before the loader runs. It's an escape hatch, for when the dependent data must be there before the page renders: see [TanStack Start › Handles in `beforeLoad`](/docs/client/tanstack-react-query/tanstack-start#before-load).
+- In TanStack Router, `beforeLoad` can wait for the first query before the loader runs: see [TanStack Start](/docs/client/tanstack-react-query/tanstack-start#before-load).
 
-## React Router {#react-router}
+## Frameworks {#frameworks}
 
-React Router loads data in one of two places, and handles fit each a little differently. Route components pass handles from `loaderData` to the same client components as everywhere else.
+Each framework loads the handles where the page starts and passes them to the components that read them. Set tRPC up with the framework's guide first.
 
-### Client-only apps {#react-router-client}
+<div class="code-tabs" data-tabs="framework">
+<div data-tab="TanStack Start">
 
-In [SPA Mode](https://reactrouter.com/how-to/spa) (`ssr: false`) with `clientLoader`, or in [Data Mode](https://reactrouter.com/start/modes#data) with `createBrowserRouter`, loaders run in the browser. Create the tab's `QueryClient` and proxy in a module, so loaders can import them, and provide the same client to your app:
+#### On a page {#tanstack-start}
 
-```twoslash include rr-types
-// @filename: react-router.d.ts
-import 'react-router';
+After the [TanStack Start setup](/docs/client/tanstack-react-query/tanstack-start), the route's loader loads the handles and its component passes them on:
 
-declare module 'react-router' {
-  interface Register {
-    pages: { '/': { params: {} }; '/posts/:id': { params: { id: string } } };
-    routeFiles: {
-      'root.tsx': { id: 'root'; page: '/' | '/posts/:id' };
-      'routes/post.tsx': { id: 'routes/post'; page: '/posts/:id' };
-    };
-  }
-}
-
-// @filename: app/routes/+types/post.ts
-import type { GetAnnotations, GetInfo } from 'react-router/internal';
-
-type Module = typeof import('../post');
-type Info = GetInfo<{ file: 'routes/post.tsx'; module: Module }>;
-type Annotations = GetAnnotations<
-  Info & { module: Module; matches: [{ id: 'routes/post'; module: Module }] }
->;
-
-export namespace Route {
-  export type LoaderArgs = Annotations['LoaderArgs'];
-  export type ClientLoaderArgs = Annotations['ClientLoaderArgs'];
-  export type ComponentProps = Annotations['ComponentProps'];
-}
-```
-
-```twoslash include rr-root-types
-// @filename: app/+types/root.ts
-import type { GetAnnotations, GetInfo } from 'react-router/internal';
-
-type Module = typeof import('../root');
-type Info = GetInfo<{ file: 'root.tsx'; module: Module }>;
-type Annotations = GetAnnotations<
-  Info & { module: Module; matches: [{ id: 'root'; module: Module }] }
->;
-
-export namespace Route {
-  export type MiddlewareFunction = Annotations['MiddlewareFunction'];
-}
-```
-
-```twoslash include rr-ssr-trpc
-// @filename: app/trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-
-export function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { staleTime: 30 * 1000 } },
-  });
-}
-
-// @filename: app/trpc/server.ts
-import type { QueryClient } from '@tanstack/react-query';
+```tsx twoslash title='src/routes/posts.$id.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @include: handles-start
+// @filename: routes/posts.$id.tsx
+// ---cut---
+// ---collapse---
+import { createFileRoute } from '@tanstack/react-router';
 import {
-  createTRPCOptionsProxy,
-  type TRPCOptionsProxy,
-} from '@trpc/tanstack-react-query';
-import { createContext } from 'react-router';
-import { appRouter, type AppRouter } from '~/server/router';
-import { makeQueryClient } from './query-client';
-
-export const trpcContext = createContext<{
-  queryClient: QueryClient;
-  trpc: TRPCOptionsProxy<AppRouter>;
-}>();
-
-export function createServerTRPC() {
-  const queryClient = makeQueryClient();
-  const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient });
-  return { queryClient, trpc };
-}
-```
-
-```ts twoslash title='app/trpc.ts'
-// @include: handles-router
-// @filename: app/trpc.ts
-// ---cut---
-import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/router';
-
-// Only in a client-only app: with server rendering, every request would share it
-export const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000 } },
-});
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [httpBatchLink({ url: '/api/trpc' })],
-});
-export const trpc = createTRPCOptionsProxy({ client: trpcClient, queryClient });
-```
-
-```tsx twoslash title='app/routes/post.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @include: rr-types
-// @filename: app/trpc.ts
-import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/router';
-
-export const queryClient = new QueryClient();
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [httpBatchLink({ url: '/api/trpc' })],
-});
-export const trpc = createTRPCOptionsProxy({ client: trpcClient, queryClient });
-// @filename: app/routes/post.tsx
-// ---cut---
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { Post } from '~/components/post';
-import { trpc } from '~/trpc';
-import type { Route } from './+types/post';
-import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
+// ---/collapse---
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const [handles] = await loadHandles(trpc, {
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id, limit: 20 }),
-    post: ensureEntry(trpc.post.byId, { id: params.id }),
-  });
-  return handles;
-}
-
-export default function PostPage({ loaderData }: Route.ComponentProps) {
-  return (
-    <>
-      <Post post={loaderData.post} />
-      <Suspense key={loaderData.post.input.id} fallback={<p>Loading comments…</p>}>
-        <Comments comments={loaderData.comments} />
-      </Suspense>
-    </>
-  );
-}
-```
-
-In Data Mode, the same function is a route object's `loader`, and the component reads it with `useLoaderData`:
-
-```tsx twoslash title='app/router.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @filename: app/trpc.ts
-import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '~/server/router';
-
-export const queryClient = new QueryClient();
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [httpBatchLink({ url: '/api/trpc' })],
+export const Route = createFileRoute('/posts/$id')({
+  loader: async ({ context: { trpc }, params }) => {
+    const [handles] = await loadHandles(trpc, {
+//                          ^^^^^^^^^^^
+      post: ensureEntry(trpc.post.byId, { id: params.id }),
+//          ^^^^^^^^^^^
+      comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id }),
+//              ^^^^^^^^^^^^^^^^^^^^^
+    });
+    return handles;
+  },
+  component: PostPage,
 });
-export const trpc = createTRPCOptionsProxy({ client: trpcClient, queryClient });
-// @filename: app/router.tsx
-// ---cut---
-import { Suspense } from 'react';
-import { createBrowserRouter, useLoaderData, type LoaderFunctionArgs } from 'react-router';
-import { Comments } from '~/components/comments';
-import { Post } from '~/components/post';
-import { trpc } from '~/trpc';
-import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-
-async function postLoader({ params }: LoaderFunctionArgs) {
-  const id = params.id!;
-  const [handles] = await loadHandles(trpc, {
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id, limit: 20 }),
-    post: ensureEntry(trpc.post.byId, { id }),
-  });
-  return handles;
-}
 
 function PostPage() {
-  const { comments, post } = useLoaderData<typeof postLoader>();
+  const handles = Route.useLoaderData();
   return (
     <>
-      <Post post={post} />
-      <Suspense key={post.input.id} fallback={<p>Loading comments…</p>}>
-        <Comments comments={comments} />
+      <Post post={handles.post} />
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
       </Suspense>
     </>
   );
 }
-
-export const router = createBrowserRouter([
-  { path: '/posts/:id', loader: postLoader, Component: PostPage },
-]);
 ```
 
-- There is nothing to hydrate: the loader starts queries in the same `QueryClient` the components read.
-- The ensure entry waits on the first visit only. Coming back shows the cached post at once and refetches it in the background if it's stale.
-- Key `Suspense` boundaries by the route's input. React Router renders the next page in a transition, and a transition waits for a boundary that's already showing content instead of showing its fallback. Without the key, navigating from one post to another waits for the comments.
+</div>
+<div data-tab="Next.js">
 
-### Server rendering {#react-router-ssr}
+#### On a page {#nextjs-app-router}
 
-In [Framework Mode](https://reactrouter.com/start/modes#framework) with server rendering, `loader` runs on the server, for the first page load and for every navigation after it. Create a query client and proxy per request in a root [middleware](https://reactrouter.com/how-to/middleware). Loaders return `dehydrate(queryClient)` with their handles, and the route component wraps its children in TanStack Query's `HydrationBoundary`, as with any TanStack Query loader:
-
-```ts twoslash title='app/trpc/server.ts'
-// @include: handles-router
-// @filename: app/trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export const makeQueryClient = () => new QueryClient();
-// @filename: app/trpc/server.ts
-// ---cut---
-import type { QueryClient } from '@tanstack/react-query';
-import {
-  createTRPCOptionsProxy,
-  type TRPCOptionsProxy,
-} from '@trpc/tanstack-react-query';
-import { createContext } from 'react-router';
-import { appRouter, type AppRouter } from '~/server/router';
-import { makeQueryClient } from './query-client';
-
-export const trpcContext = createContext<{
-  queryClient: QueryClient;
-  trpc: TRPCOptionsProxy<AppRouter>;
-}>();
-
-export function createServerTRPC() {
-  const queryClient = makeQueryClient();
-  const trpc = createTRPCOptionsProxy({ router: appRouter, ctx: {}, queryClient });
-  return { queryClient, trpc };
-}
-```
-
-```tsx twoslash title='app/root.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: rr-root-types
-// @include: rr-ssr-trpc
-// @filename: app/root.tsx
-// ---cut---
-import { QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient } from '@trpc/client';
-import { useState } from 'react';
-import { Outlet } from 'react-router';
-import type { AppRouter } from '~/server/router';
-import { TRPCProvider } from '~/trpc/client';
-import type { Route } from './+types/root';
-import { makeQueryClient } from './trpc/query-client';
-import { createServerTRPC, trpcContext } from './trpc/server';
-
-export const middleware: Route.MiddlewareFunction[] = [
-  ({ context }) => {
-    context.set(trpcContext, createServerTRPC());
-  },
-];
-
-export default function App() {
-  const [queryClient] = useState(makeQueryClient);
-  const [trpcClient] = useState(() => createTRPCClient<AppRouter>({ links: [/* ... */] }));
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <Outlet />
-      </TRPCProvider>
-    </QueryClientProvider>
-  );
-}
-```
-
-```tsx twoslash title='app/routes/post.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @include: rr-types
-// @include: rr-ssr-trpc
-// @filename: app/routes/post.tsx
-// ---cut---
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { loadHandles, ensureEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense } from 'react';
-import { Comments } from '~/components/comments';
-import { Post } from '~/components/post';
-import { trpcContext } from '../trpc/server';
-import type { Route } from './+types/post';
-
-export async function loader({ params, context }: Route.LoaderArgs) {
-  const { queryClient, trpc } = context.get(trpcContext);
-  const [handles] = await loadHandles(trpc, {
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: params.id, limit: 20 }),
-    post: ensureEntry(trpc.post.byId, { id: params.id }),
-  });
-  return { dehydratedState: dehydrate(queryClient), ...handles };
-}
-
-export default function PostPage({ loaderData }: Route.ComponentProps) {
-  return (
-    <HydrationBoundary state={loaderData.dehydratedState}>
-      <Post post={loaderData.post} />
-      <Suspense key={loaderData.post.input.id} fallback={<p>Loading comments…</p>}>
-        <Comments comments={loaderData.comments} />
-      </Suspense>
-    </HydrationBoundary>
-  );
-}
-```
-
-- `makeQueryClient` is the query client factory from the [server components guide](/docs/client/tanstack-react-query/server-components#3-create-a-query-client-factory): it dehydrates pending queries and runs your transformer's `serialize` and `deserialize`.
-- React Router [streams promises in loader data](https://reactrouter.com/how-to/suspense), so the comments' pending query crosses as a promise inside `dehydratedState`. The page's HTML doesn't wait for it, and the browser doesn't fetch it again.
-- `dehydrate(queryClient)` sends everything the request's client holds. Nested routes share it, so a query another loader started can be sent twice. Filter with `dehydrate`'s `shouldDehydrateQuery` if that matters.
-- Nested routes share the request's proxy, since the middleware runs once per request. A query that two loaders start is requested once.
-- In a `loader`, an ensure entry waits like a fetch entry, since the request's `QueryClient` starts empty. Use a prefetch entry for queries the page can stream.
-
-## Next.js App Router {#nextjs-app-router}
-
-This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup). The query client factory, `getQueryClient` and the server proxy in `trpc/server.tsx` stay as they are. Add `export type TRPC = TRPCOptionsProxy<AppRouter>` to `trpc/client.tsx`, and in `trpc/server.tsx`, replace the setup's `HydrateClient` with one from `unstable_createHydrateClient`:
-
-```tsx twoslash title='trpc/server.tsx'
-// @include: handles-router
-// @filename: trpc/query-client.ts
-import { QueryClient } from '@tanstack/react-query';
-export const makeQueryClient = () => new QueryClient();
-// @filename: trpc/server.tsx
-import { cache } from 'react';
-import { makeQueryClient } from './query-client';
-export const getQueryClient = cache(makeQueryClient);
-// ---cut---
-import { unstable_createHydrateClient } from '@trpc/tanstack-react-query';
-
-// ... `getQueryClient` and the `trpc` proxy as before
-
-export const HydrateClient = unstable_createHydrateClient(getQueryClient);
-```
-
-The client components are the same either way: they read the handle with `useSuspenseQuery` or `useQuery`, as in [Typing props](#typing-props).
-
-### `HydrateClient` {#hydrate-client}
-
-`HydrateClient` sends the queries the request has started so far to the browser, including pending ones, which stream in as they settle. Render one in each server component that starts queries for client components:
+After the [Next.js App Router setup](/docs/client/nextjs/app-router-setup), export `HydrateClient = unstable_createHydrateClient(getQueryClient)` from `trpc/server.tsx`. The page, a server component, loads the handles and passes them to client components:
 
 ```tsx twoslash title='app/posts/[id]/page.tsx'
 // @include: handles-router
@@ -1431,157 +901,125 @@ export { Comments } from '~/components/comments';
 export { Post } from '~/components/post';
 // @filename: app/posts/[id]/page.tsx
 // ---cut---
+// ---collapse---
+import {
+  ensureEntry,
+  loadHandles,
+  prefetchInfiniteEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { HydrateClient, trpc } from '~/trpc/server';
 import { Comments } from './comments';
 import { Post } from './post';
-import { loadHandles, prefetchEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
+// ---/collapse---
 
 export default async function PostPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const [{ post }] = await loadHandles(trpc, {
-    post: prefetchEntry(trpc.post.byId, { id }),
-  });
-  return (
-    <HydrateClient>
-      <Suspense fallback={<p>Loading post…</p>}>
-        <Post post={post} />
-      </Suspense>
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <CommentsSection id={id} />
-      </Suspense>
-    </HydrateClient>
-  );
-}
-
-async function CommentsSection(props: { id: string }) {
-  const [{ comments }] = await loadHandles(trpc, {
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: props.id, limit: 20 }),
-  });
-  return (
-    <HydrateClient>
-      <Comments comments={comments} />
-    </HydrateClient>
-  );
-}
-```
-
-- A query an earlier `HydrateClient` sent in the same request isn't sent again, so nesting them is fine. The outer one renders before `CommentsSection` starts its query, so each sends only its own.
-- A query is sent again when the server has newer data for it, for example after a fetch entry refetched it.
-- It keeps your query client's `dehydrate` options: `shouldDehydrateQuery`, `serializeData` and the rest.
-- It works only in server components. `@trpc/tanstack-react-query` resolves to its server build through the `react-server` [export condition](https://nodejs.org/api/packages.html#conditional-exports), which Next.js and other RSC bundlers set for server components. Rendered anywhere else, it throws.
-- It works for queries started with `queryClient.prefetchQuery(trpc.x.queryOptions(input))` too, not only handles.
-
-### Streaming with prefetch entries {#nextjs-prefetch}
-
-The page sends its HTML at once. Each `Suspense` boundary shows its fallback, then the data streams in:
-
-```tsx twoslash title='app/posts/[id]/page.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @filename: app/posts/[id]/comments.tsx
-export { Comments } from '~/components/comments';
-// @filename: app/posts/[id]/post.tsx
-export { Post } from '~/components/post';
-// @filename: app/posts/[id]/page.tsx
-// ---cut---
-import { Suspense } from 'react';
-import { HydrateClient, trpc } from '~/trpc/server';
-import { Comments } from './comments';
-import { Post } from './post';
-import { loadHandles, prefetchEntry, prefetchInfiniteEntry } from '@trpc/tanstack-react-query/unstable-handles';
-
-export default async function PostPage(props: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await props.params;
-  const [{ post, comments }] = await loadHandles(trpc, {
-    post: prefetchEntry(trpc.post.byId, { id }),
-    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id, limit: 20 }),
-  });
-
-  return (
-    <HydrateClient>
-      <Suspense fallback={<p>Loading post…</p>}>
-        <Post post={post} />
-      </Suspense>
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={comments} />
-      </Suspense>
-    </HydrateClient>
-  );
-}
-```
-
-- Give each handle its own `Suspense` boundary, so one slow query doesn't hold back the rest.
-- If the post doesn't exist, the `Post` component throws, and the nearest `error.tsx` shows the error.
-
-### Waiting with ensure entries {#nextjs-ensure}
-
-The page waits for the post before it renders. Use this when the page can't render without the data, or when you need it on the server, for example to call `notFound()`:
-
-```tsx twoslash title='app/posts/[id]/page.tsx'
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @filename: app/posts/[id]/comments.tsx
-export { Comments } from '~/components/comments';
-// @filename: app/posts/[id]/post.tsx
-export { Post } from '~/components/post';
-// @filename: app/posts/[id]/page.tsx
-// ---cut---
-import {
-  ensureEntry,
-  isTRPCEntryError,
-  loadHandles,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import { notFound } from 'next/navigation';
-import { HydrateClient, trpc } from '~/trpc/server';
-import { Post } from './post';
-
-export default async function PostPage(props: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await props.params;
-  const [{ post }] = await loadHandles(trpc, {
+  const [handles] = await loadHandles(trpc, {
+//                        ^^^^^^^^^^^
     post: ensureEntry(trpc.post.byId, { id }),
-  }).catch((cause) => {
-    if (isTRPCEntryError(cause, trpc.post.byId) && cause.code === 'NOT_FOUND') {
-      notFound();
-    }
-    throw cause;
+//        ^^^^^^^^^^^
+    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: id }),
+//            ^^^^^^^^^^^^^^^^^^^^^
   });
-
   return (
     <HydrateClient>
-      <Post post={post} />
+      <Post post={handles.post} />
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
+      </Suspense>
     </HydrateClient>
   );
 }
 ```
 
-- The data is in the cache before `Post` renders, so it shows the post at once. If the cache loses the post later, `Post` suspends and shows the nearest `loading.tsx` or `Suspense` fallback: see [When the cache loses the data](#cache-loses-data).
-- To use the data on the server, read it from the cache: see [Using the data in a loader](#loader-data).
+```tsx twoslash title='app/posts/[id]/post.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @filename: app/posts/[id]/post.tsx
+// ---cut---
+'use client';
 
-To wait for some queries and stream others on the same page, see [Waiting for some, streaming others](#combining-both).
+// ---collapse---
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { fromHandle, type inferQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/trpc/client';
+// ---/collapse---
 
-### Handle inputs {#nextjs-handle-inputs}
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+//                                  ^^^^^^^^^^^^^^^^
+  const trpc = useTRPC();
+  const postQuery = useSuspenseQuery(fromHandle(trpc, props.post));
+//                                   ^^^^^^^^^^
+  return <h1>{postQuery.data.title}</h1>;
+}
+```
 
-Handle inputs cross to the client inside the handle, through React's own serialization, not your tRPC data transformer. This isn't new: dehydrated query keys already cross the same way. Keep inputs to plain JSON values and `Date`s. React can send a `Map`, `Set` or `BigInt` too, but TanStack Query hashes query keys with `JSON.stringify`: a `BigInt` input throws, and two different `Map` or `Set` inputs share one cache entry.
+#### `HydrateClient` {#hydrate-client}
+
+- It sends the request's queries to the browser, pending ones too, which stream in as they settle.
+- It sends each query once per request, so a nested server component can load more handles and render its own. A query is sent again only when the server has newer data.
+- It works only in server components, and for queries you start with `queryClient.query` too.
+- Handle inputs cross through React's serialization, not your transformer. Keep them to JSON values and `Date`s.
+- For a 404, use an ensure entry and call `notFound()`: see [Errors](#errors).
+
+#### Metadata, static and ISR pages {#nextjs-static}
+
+- `generateMetadata` gets the page's query client. Fetch there, and the page's ensure entry reuses the data.
+- A page whose tRPC context reads `headers()` renders on every request. `loadHandles` lets Next.js see that, so the build marks the page dynamic.
+- To prerender the page and revalidate it, load it with a proxy whose context reads no request data, `trpcStatic` from [Static and ISR pages](/docs/client/nextjs/static-pages#static-pages):
+
+```tsx twoslash title='app/posts/[id]/page.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: app/posts/[id]/post.tsx
+export { Post } from '~/components/post';
+// @filename: app/posts/[id]/page.tsx
+// ---cut---
+// ---collapse---
+import { ensureEntry, loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { getQueryClient, HydrateClient, trpcStatic } from '~/trpc/server';
+import { Post } from './post';
+// ---/collapse---
+
+type Props = { params: Promise<{ id: string }> };
+
+export const revalidate = 60;
+
+export function generateStaticParams() {
+  return [{ id: '1' }];
+}
+
+export async function generateMetadata(props: Props) {
+  const { id } = await props.params;
+  const post = await getQueryClient().query(
+    trpcStatic.post.byId.queryOptions({ id }),
+  );
+  return { title: post.title };
+}
+
+export default async function PostPage(props: Props) {
+  const { id } = await props.params;
+  const [handles] = await loadHandles(trpcStatic, {
+    post: ensureEntry(trpcStatic.post.byId, { id }),
+  });
+  return (
+    <HydrateClient>
+      <Post post={handles.post} />
+    </HydrateClient>
+  );
+}
+```
+
+</div>
+</div>
 
 ## Errors {#errors}
 
-### With ensure and fetch entries {#errors-ensure}
+#### With ensure and fetch entries {#errors-ensure}
 
-When a request the load waits for fails, `loadHandles` rejects with a `TRPCEntryError` that says which entry it was. That's any fetch entry's request, and an ensure entry's when the cache had no data:
-
-- `error.key`: the entry's key, such as `'post'`.
-- `error.path`: the procedure, such as `'post.byId'`.
-- `error.code`: the tRPC error code, such as `'NOT_FOUND'`.
-- `error.cause`: the request's error. That's a `TRPCError` on the server proxy, and a `TRPCClientError` on a client-backed proxy, such as one in a TanStack Start loader.
-
-`isTRPCEntryError(error, trpc.post.byId)` checks that the failed entry was for that procedure, and types `error.cause` with its errors. In the post page at the top, only the post is awaited, so only the post can make the load reject. If the page waits for the comments too, chain `.catch` to check which one failed, so a missing post gets a 404:
+When an entry the load waits for fails, `loadHandles` rejects with a `TRPCEntryError`. `isTRPCEntryError(error, trpc.post.byId)` checks which procedure failed and types `error.cause`:
 
 ```ts twoslash
 // @include: handles-router
@@ -1616,12 +1054,13 @@ async function loader(id: string) {
 }
 ```
 
-- The load rejects as soon as one entry fails, without waiting for the others. If several fail, you get the first to fail.
-- Errors that don't come from the request, such as a cancelled query, reject as they are.
+- `error.key` is the entry's key, `error.path` the procedure, `error.code` the tRPC code.
+- The load rejects on the first failure, without waiting for the others.
+- An error with a `digest`, such as the one Next.js's `headers()` throws in a static render, is rethrown as it is, also by `loadHandlesSettled`, so Next.js still sees it. A procedure's errors arrive as a `TRPCError`, as with `queryClient.query`.
 
-### Errors as values {#errors-as-values}
+#### Errors as values {#errors-as-values}
 
-`loadHandlesSettled` takes the same entries, but never rejects because an entry failed. It waits for every fetch and ensure entry to settle, then resolves to `[handles, results]`. Each of those entries has `{ status: 'success', data }` or `{ status: 'error', error }` on `results`, with a `TRPCEntryError`:
+`loadHandlesSettled` never rejects for a failed entry. It returns each waited-for entry's result as a value:
 
 ```ts twoslash
 // @include: handles-router
@@ -1651,117 +1090,25 @@ results.post.data.title;
 //           ^?
 ```
 
-- It waits for every fetch and ensure entry, even after one has failed, so you see all their failures, not just the first.
-- `results` has no key for prefetch entries, as `data` hasn't with `loadHandles`.
-- `handles` has a handle for every entry, failed or not. A component that reads a failed one gets the error, as with a [prefetch entry](#errors-prefetch).
-- A cancelled query still rejects, as with `loadHandles`: the load was called off, so there's no result to give.
+#### With prefetch entries {#errors-prefetch}
 
-### With prefetch entries {#errors-prefetch}
+A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
 
-A prefetch entry never makes the load reject. The component that reads the handle gets the error instead: `useQuery` returns it as `status: 'error'`, unless you pass `throwOnError`, and `useSuspenseQuery` throws it to the nearest error boundary unless it has cached data to show. It gets the query's own error, not a `TRPCEntryError`: the boundary already knows which handle it wraps.
+## Invalidation {#invalidation-and-staleness}
 
-```tsx twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @include: handles-components
-// @filename: react-error-boundary.d.ts
-declare module 'react-error-boundary' {
-  export function ErrorBoundary(props: {
-    fallbackRender: (props: { error: unknown }) => React.ReactNode;
-    children: React.ReactNode;
-  }): React.ReactNode;
-}
-// @filename: post-comments.tsx
-import type { inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-// ---cut---
-import { isTRPCClientError } from '@trpc/client';
-import { Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import { Comments } from '~/components/comments';
-import type { AppRouter } from '~/server/router';
+Handles use normal tRPC query keys. Pass any of these to `invalidateQueries`:
 
-function CommentsError(props: { error: unknown }) {
-  if (isTRPCClientError<AppRouter>(props.error)) {
-    return <p>Couldn't load the comments ({props.error.data?.code}).</p>;
-  }
-  throw props.error;
-}
+- `{ queryKey: handle.queryKey, exact: true }`: the handle's own query. Without `exact`, it also matches inputs that extend the handle's.
+- `trpc.post.pathFilter()`: every query under `post`.
+- `trpc.post.byId.queryFilter(input)`, or `infiniteQueryFilter` for an infinite handle.
 
-export function PostComments(props: {
-  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
-}) {
-  return (
-    <ErrorBoundary fallbackRender={CommentsError}>
-      <Suspense fallback={<p>Loading comments…</p>}>
-        <Comments comments={props.comments} />
-      </Suspense>
-    </ErrorBoundary>
-  );
-}
-```
+To update data in place, use `queryClient.setQueryData(trpc.post.byId.queryKey(handle.input), …)`.
 
-In the browser, that's a `TRPCClientError`:
+Hydrated data keeps the server's fetch time. Set a `staleTime` above 0, as the setup guides do, or the client refetches right after hydration.
 
-- If the query failed before it was dehydrated, it isn't sent. The browser fetches it again and gets a `TRPCClientError`.
-- If it was dehydrated while pending and failed later, TanStack Query passes a redacted error to the browser. A handle read then refetches the query once, even with `retry: false`, so error boundaries get a `TRPCClientError` with `data.code`. A query that always fails costs one extra request.
+## Testing {#testing}
 
-To log or report these errors in one place, whichever component reads the handle, use the `onError` callback of your `QueryClient`'s [`QueryCache`](https://tanstack.com/query/latest/docs/reference/QueryCache).
-
-## Invalidation and staleness {#invalidation-and-staleness}
-
-Handle reads use normal tRPC query keys, so invalidation doesn't change. Pass any of these to `queryClient.invalidateQueries`:
-
-- `{ queryKey: handle.queryKey }` matches the handle's own query, plain or infinite.
-- `trpc.post.pathFilter()` matches every query under `post`, plain and infinite.
-- `trpc.post.byId.queryFilter(input)` matches a query handle. An infinite handle's key has `type: 'infinite'`, so `queryFilter` misses it: use `trpc.post.comments.infiniteQueryFilter(input)`.
-
-To update a handle's data in place, build its key from the procedure and `handle.input`: `trpc.post.byId.queryKey(handle.input)`, or `infiniteQueryKey` for an infinite handle. `setQueryData` then checks the data's type. `handle.queryKey` is a plain array, so that the handle serializes, and carries no data type.
-
-```ts twoslash
-// @include: handles-router
-// @include: handles-trpc
-// @filename: snippet.ts
-import type { QueryClient } from '@tanstack/react-query';
-import type {
-  inferInfiniteQueryHandle,
-  inferQueryHandle,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-declare const trpc: TRPC;
-declare const queryClient: QueryClient;
-declare const handles: {
-  post: inferQueryHandle<TRPC['post']['byId']>;
-  comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
-};
-// ---cut---
-queryClient.setQueryData(trpc.post.byId.queryKey(handles.post.input), (post) =>
-  post ? { ...post, title: 'Renamed' } : post,
-);
-queryClient.setQueryData(
-  trpc.post.comments.infiniteQueryKey(handles.comments.input),
-  (comments) =>
-    comments && {
-      ...comments,
-      pages: comments.pages.slice(0, 1),
-      pageParams: comments.pageParams.slice(0, 1),
-    },
-);
-```
-
-`fromHandle` keeps TanStack Query's refetch defaults. Hydrated data keeps the server's fetch time, so set a `staleTime` above 0 in your query client, as the setup guides do, or the client refetches right after hydration. To change it for one read, pass `staleTime` to `fromHandle`.
-
-## What a handle guarantees {#what-a-handle-guarantees}
-
-- **Types:** only `loadHandles` creates handles. The key, procedure, input and kind (query or infinite) always agree, and output, `select` and error types flow to the read.
-- **Runtime:** `fromHandle` checks the handle's shape and `keyPrefix`. `loadHandles` rejects an entry built with a proxy for another `QueryClient`.
-- **Development:** if a handle's query runs during server rendering, its data never reached that `QueryClient`. tRPC logs a warning once per query. The warning is off in production.
-
-Handles aren't signed. A handle names a query the browser could call anyway, and every refetch runs input validation and auth on the server again. Put permission checks in your procedures.
-
-## Testing components that take handles {#testing}
-
-Handles can't be written by hand, so create them in the test with a proxy over a test `QueryClient`. Seed the cache with fixture data, then load the handle with a prefetch entry, which leaves fresh data alone. The reader finds the fixture without calling the procedure:
+Load handles over a test `QueryClient`, seeded with fixture data:
 
 ```tsx twoslash title='post.test.tsx'
 // @jsx: react-jsx
@@ -1799,21 +1146,27 @@ const [{ post }] = await loadHandles(trpc, {
 });
 ```
 
-- Render the component under a `QueryClientProvider` and `TRPCProvider` with the same `queryClient`. The component reads the fixture from the cache.
-- Leave out `setQueryData` to run the real procedure, or use a client with [`localLink`](/docs/client/links/localLink) instead of `router` to test through your links.
-- For a loading state, leave out `setQueryData` and use a procedure that never resolves: the reader suspends.
-
-## Where handles don't work {#where-handles-dont-work}
-
-- **Server functions and server actions:** they run with a `QueryClient` that never hydrates the page. Return data from them, not handles.
-- **URLs and storage:** a handle in the URL or `localStorage` gains nothing over the input itself.
+- Render the component under `QueryClientProvider` and `TRPCProvider` with the same `queryClient`.
+- Leave out `setQueryData` to run the real procedure.
 
 ## FAQ {#faq}
 
-### Why functions instead of methods on `trpc`? {#why-functions}
+#### Are handles safe to send to the browser? {#handles-safe}
 
-The methods on `trpc`, such as `queryOptions`, `queryKey` and `pathFilter`, return plain TanStack Query options, keys or filters. Handles are tRPC helpers built on top of them, so they're separate functions from `@trpc/tanstack-react-query/unstable-handles` that take a procedure: `ensureEntry(trpc.post.byId, { id })`. Apps that don't use handles don't load their code. Each entry is one TanStack Query call: see [TanStack Query equivalents](#tanstack-equivalents).
+Yes. A handle names a query the browser could call anyway, and every refetch runs validation and auth on the server again.
 
-### Why one load call instead of a call per query? {#why-one-load}
+A handle does carry its input to the browser, as hydrated query keys already do. Only use inputs you'd show the client.
 
-So a loader can't create a waterfall by the order of its lines. With a call per query, awaiting the post before starting the comments makes the comments wait for the post, and nothing warns you. A load starts every entry before it waits for any, whatever order you list them in. It also gives you the typed data of the entries it waited for, so a loader can check it without reading the cache. The cost is one load call and one entry, even for a loader that loads a single query.
+#### Where don't handles work? {#where-handles-dont-work}
+
+- **Server functions and server actions:** their `QueryClient` never hydrates the page, so return data instead.
+- **Outside hydration:** a reader rendered on the server outside `HydrateClient` or `HydrationBoundary` fetches its query again. In development, tRPC warns once per query.
+- **URLs and storage:** a handle there gains nothing over its input.
+
+#### Why functions, not methods on `trpc`? {#why-functions}
+
+Methods on `trpc` return plain TanStack Query options. Handles are helpers on top, and apps that don't use them don't load their code.
+
+#### Why one load call, not one per query? {#why-one-load}
+
+So a loader can't make a waterfall by the order of its lines.

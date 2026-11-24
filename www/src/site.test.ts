@@ -10,6 +10,6 @@ describe('v12Indexable', () => {
   });
 
   it('keeps everything under /v12 out of search until it flips', () => {
-    expect(unindexedPaths).toEqual(v12Indexable ? [] : ['/v12']);
+    expect(unindexedPaths.includes('/v12')).toBe(!v12Indexable);
   });
 });

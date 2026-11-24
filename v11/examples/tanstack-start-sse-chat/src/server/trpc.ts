@@ -52,10 +52,8 @@ export const publicProcedure = t.procedure.use(
     const res = opts.next(opts);
 
     if (process.env.NODE_ENV === 'development') {
-      const randomNumber = (min: number, max: number) =>
-        Math.floor(Math.random() * (max - min + 1)) + min;
-
-      const delay = randomNumber(300, 1_000);
+      // 300 to 1000 ms
+      const delay = 300 + Math.floor(Math.random() * 701);
       console.debug(
         'ℹ️ doing artificial delay of',
         delay,

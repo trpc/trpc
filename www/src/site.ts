@@ -77,10 +77,19 @@ export const decisions = { basePath: '/v12/decisions' } as const;
 // oxlint-disable-next-line typescript/no-inferrable-types -- as `false`, TypeScript calls the code for `true` unreachable.
 export const v12Indexable: boolean = false;
 
-/** The paths no search engine may index, on any host (`v12Indexable`). */
+/**
+ * The kitchen sink's showcases (`src/routes/kitchen-sink`), rendered on
+ * request (`build/on-demand.ts`) and indexed nowhere.
+ */
+export const kitchenSinkPath = '/kitchen-sink';
+
+/**
+ * The paths no search engine may index, on any host: the kitchen sink, and
+ * `/v12` until `v12Indexable`.
+ */
 export const unindexedPaths: ReadonlyArray<string> = v12Indexable
-  ? []
-  : ['/v12'];
+  ? [kitchenSinkPath]
+  : ['/v12', kitchenSinkPath];
 
 /** The paths served only to whoever has a link (`build/hidden-paths.ts`). */
 export const hiddenPaths: ReadonlyArray<string> = [

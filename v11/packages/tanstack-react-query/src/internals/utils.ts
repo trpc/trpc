@@ -1,4 +1,10 @@
-import { skipToken, type QueryClient } from '@tanstack/react-query';
+import {
+  skipToken,
+  experimental_streamedQuery as streamedQuery,
+  type QueryClient,
+  type QueryFunctionContext,
+  type QueryKey,
+} from '@tanstack/react-query';
 import {
   isFunction,
   isObject,
@@ -80,35 +86,38 @@ export function getClientArgs<TOptions, TFeatureFlags extends FeatureFlags>(
 }
 
 /**
+ * Streams a procedure's async iterable into the query with TanStack Query's
+ * `streamedQuery`, which stops writing to the cache once the fetch is
+ * cancelled or replaced by a refetch.
  * @internal
  */
-export async function buildQueryFromAsyncIterable<
-  TQueryKey extends TRPCQueryKey<any>,
->(
-  asyncIterable: AsyncIterable<unknown>,
-  queryClient: QueryClient,
-  queryKey: TQueryKey,
-) {
-  const queryCache = queryClient.getQueryCache();
-
-  const query = queryCache.build(queryClient, {
-    queryKey,
-  });
-
-  query.setState({
-    data: [],
-    status: 'success',
-  });
-
-  const aggregate: unknown[] = [];
-  for await (const value of asyncIterable) {
-    aggregate.push(value);
-
-    query.setState({
-      data: [...aggregate],
-    });
+export async function streamIntoQuery(opts: {
+  iterable: AsyncIterable<unknown>;
+  context: QueryFunctionContext<QueryKey>;
+  queryClient: QueryClient;
+  /** Aborts the request, for a stream that isn't read to the end. */
+  abortController: AbortController;
+}) {
+  // a context built by hand can lack `client`; a real one is passed as is, as
+  // spreading it would read `signal` and make unmounting cancel the query
+  const context = opts.context.client
+    ? opts.context
+    : { ...opts.context, client: opts.queryClient };
+  let finished = false;
+  const { iterable } = opts;
+  async function* readToEnd() {
+    yield* iterable;
+    finished = true;
   }
-  return aggregate;
+  try {
+    return await streamedQuery<unknown>({ streamFn: readToEnd })(context);
+  } finally {
+    // `streamedQuery` stops reading, or never starts, once the fetch is
+    // cancelled: abort the request so the server stops streaming too
+    if (!finished) {
+      opts.abortController.abort();
+    }
+  }
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   onDemandRoutes,
   pageCacheControl,
   pathParam,
+  requestOnlyCacheControl,
   writeOnDemandFunction,
 } from './on-demand.ts';
 import { v12 } from '../src/site.ts';
@@ -128,8 +129,10 @@ describe('writeOnDemandFunction', () => {
         path.join(root, 'dist/server/server.js'),
         [
           'export default {',
-          '  fetch: (request) =>',
-          '    new URL(request.url).pathname === "/og/fresh.png"',
+          '  fetch: async (request) =>',
+          '    new URL(request.url).pathname.startsWith("/kitchen-sink/")',
+          '      ? new Response(`${request.method} ${await request.text()}`, { headers: { "cache-control": "public, s-maxage=600" } })',
+          '      : new URL(request.url).pathname === "/og/fresh.png"',
           '      ? new Response("png", { headers: { "cache-control": "public, s-maxage=600" } })',
           '      : new Response(`${request.method} ${request.url} ${request.headers.get("accept")}`, {',
           '          headers: [["content-type", "text/html"], ["set-cookie", "a=1"], ["set-cookie", "b=2"]],',
@@ -190,6 +193,17 @@ describe('writeOnDemandFunction', () => {
       );
       expect(fresh.response.headers.get('cache-control')).toBe(
         'public, s-maxage=600',
+      );
+
+      // A request's body reaches the server build, and the kitchen sink is
+      // never cached, whatever it says.
+      const posted = yield* fetchText(
+        `/${onDemandFunction}?${pathParam}=/kitchen-sink/handles/api/post.byId`,
+        { body: '{"0":{"id":"1"}}', method: 'POST' },
+      );
+      expect(posted.body).toBe('POST {"0":{"id":"1"}}');
+      expect(posted.response.headers.get('cache-control')).toBe(
+        requestOnlyCacheControl,
       );
 
       const head = yield* fetchText('/', { method: 'HEAD' });

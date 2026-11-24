@@ -38,6 +38,10 @@ export function nextAppDirCaller<TContext, TMeta>(
       normalizeFormData?: boolean;
       /**
        * Called when a procedure throws.
+       * `input` is the value the procedure received, so `FormData` is
+       * already normalized to an object when `normalizeFormData` is on.
+       * If that conversion fails, the procedure doesn't run and `input` is
+       * the original `FormData`.
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
     } & CreateContextCallback<TContext, () => MaybePromise<TContext>>
@@ -65,13 +69,13 @@ export function nextAppDirCaller<TContext, TMeta>(
       throw error;
     });
 
-    const handleError = (cause: unknown) => {
+    const handleError = (input: unknown) => (cause: unknown) => {
       const error = getTRPCErrorFromUnknown(cause);
 
       config.onError?.({
         ctx,
         error,
-        input: opts.args[0],
+        input,
         path,
         type: opts._def.type,
       });
@@ -90,7 +94,17 @@ export function nextAppDirCaller<TContext, TMeta>(
          */
         let input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
         if (normalizeFormData && input instanceof FormData) {
-          input = formDataToObject(input);
+          try {
+            input = formDataToObject(input);
+          } catch (cause) {
+            return handleError(input)(
+              new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to convert FormData to an object',
+                cause,
+              }),
+            );
+          }
         }
 
         return await opts
@@ -99,7 +113,9 @@ export function nextAppDirCaller<TContext, TMeta>(
             ctx,
             getRawInput: async () => input,
             path,
-            input,
+            // the input validators build `input` from `getRawInput()`;
+            // seeding it would merge unvalidated keys into their result
+            input: undefined,
             signal: undefined,
             batchIndex: 0,
           })
@@ -107,7 +123,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             if (data instanceof TRPCRedirectError) throw data;
             return data;
           })
-          .catch(handleError);
+          .catch(handleError(input));
       }
       case 'query': {
         const input = opts.args[0];
@@ -117,7 +133,9 @@ export function nextAppDirCaller<TContext, TMeta>(
             ctx,
             getRawInput: async () => input,
             path,
-            input,
+            // the input validators build `input` from `getRawInput()`;
+            // seeding it would merge unvalidated keys into their result
+            input: undefined,
             signal: undefined,
             batchIndex: 0,
           })
@@ -125,7 +143,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             if (data instanceof TRPCRedirectError) throw data;
             return data;
           })
-          .catch(handleError);
+          .catch(handleError(input));
       }
       case 'subscription':
       default: {

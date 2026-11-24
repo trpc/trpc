@@ -3,16 +3,9 @@ import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
-let factory: ReturnType<typeof createAppRouter>;
-beforeEach(() => {
-  factory = createAppRouter();
-});
-afterEach(async () => {
-  await factory.close();
-});
-
 describe('setQueryData()', () => {
   test('without & without callback', async () => {
+    await using factory = createAppRouter();
     const { trpc, client, App } = factory;
     function MyComponent() {
       const utils = trpc.useUtils();

@@ -1,6 +1,8 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQueryClient,
+  useSuspenseQuery,
+  useSuspenseInfiniteQuery,
+} from '@tanstack/react-query';
 import { useTRPC } from './suspenseDestructuring.trpc';
 
 export function Component() {
@@ -8,7 +10,6 @@ export function Component() {
   const channelId = '1';
 
   const query = useSuspenseQuery(trpc.post.list.queryOptions());
-
   const data = query.data;
 
   const [a, b] = [1, 2];

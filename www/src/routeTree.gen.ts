@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as KitchenSinkRouteRouteImport } from './routes/kitchen-sink/route'
 import { Route as MediaRouteImport } from './routes/media'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SponsorRouteImport } from './routes/sponsor'
@@ -20,14 +21,18 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
 import { Route as DocsV10RouteImport } from './routes/docs_.v10'
 import { Route as DocsV9RouteImport } from './routes/docs_.v9'
+import { Route as KitchenSinkIndexRouteImport } from './routes/kitchen-sink/index'
+import { Route as KitchenSinkHandlesRouteRouteImport } from './routes/kitchen-sink/handles/route'
 import { Route as OgSplatRouteImport } from './routes/og.$'
 import { Route as V12DocsRouteImport } from './routes/v12.docs'
 import { Route as DocsV10SplatRouteImport } from './routes/docs_.v10.$'
 import { Route as DocsV9SplatRouteImport } from './routes/docs_.v9.$'
+import { Route as KitchenSinkHandlesIndexRouteImport } from './routes/kitchen-sink/handles/index'
 import { Route as V12DecisionsIndexRouteImport } from './routes/v12.decisions.index'
 import { Route as V12DecisionsSlugRouteImport } from './routes/v12.decisions.$slug'
 import { Route as V12DocsIndexRouteImport } from './routes/v12.docs.index'
 import { Route as V12DocsSplatRouteImport } from './routes/v12.docs.$'
+import { Route as KitchenSinkHandlesApiSplatRouteImport } from './routes/kitchen-sink/handles/api.$'
 import { Route as V12DecisionsOpenSlugRouteImport } from './routes/v12.decisions.open.$slug'
 
 const IndexRoute = IndexRouteImport.update({
@@ -43,6 +48,11 @@ const R404Route = R404RouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KitchenSinkRouteRoute = KitchenSinkRouteRouteImport.update({
+  id: '/kitchen-sink',
+  path: '/kitchen-sink',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MediaRoute = MediaRouteImport.update({
@@ -85,6 +95,16 @@ const DocsV9Route = DocsV9RouteImport.update({
   path: '/docs/v9',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KitchenSinkIndexRoute = KitchenSinkIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KitchenSinkRouteRoute,
+} as any)
+const KitchenSinkHandlesRouteRoute = KitchenSinkHandlesRouteRouteImport.update({
+  id: '/handles',
+  path: '/handles',
+  getParentRoute: () => KitchenSinkRouteRoute,
+} as any)
 const OgSplatRoute = OgSplatRouteImport.update({
   id: '/og/$',
   path: '/og/$',
@@ -104,6 +124,11 @@ const DocsV9SplatRoute = DocsV9SplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => DocsV9Route,
+} as any)
+const KitchenSinkHandlesIndexRoute = KitchenSinkHandlesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => KitchenSinkHandlesRouteRoute,
 } as any)
 const V12DecisionsIndexRoute = V12DecisionsIndexRouteImport.update({
   id: '/v12/decisions/',
@@ -125,6 +150,12 @@ const V12DocsSplatRoute = V12DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => V12DocsRoute,
 } as any)
+const KitchenSinkHandlesApiSplatRoute =
+  KitchenSinkHandlesApiSplatRouteImport.update({
+    id: '/api/$',
+    path: '/api/$',
+    getParentRoute: () => KitchenSinkHandlesRouteRoute,
+  } as any)
 const V12DecisionsOpenSlugRoute = V12DecisionsOpenSlugRouteImport.update({
   id: '/v12/decisions/open/$slug',
   path: '/v12/decisions/open/$slug',
@@ -133,11 +164,13 @@ const V12DecisionsOpenSlugRoute = V12DecisionsOpenSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/kitchen-sink': typeof KitchenSinkRouteRouteWithChildren
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
   '/media': typeof MediaRoute
   '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
+  '/kitchen-sink/handles': typeof KitchenSinkHandlesRouteRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs/v10': typeof DocsV10RouteWithChildren
@@ -145,12 +178,15 @@ export interface FileRoutesByFullPath {
   '/og/$': typeof OgSplatRoute
   '/v12/docs': typeof V12DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
+  '/kitchen-sink/': typeof KitchenSinkIndexRoute
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
   '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
   '/v12/docs/$': typeof V12DocsSplatRoute
+  '/kitchen-sink/handles/': typeof KitchenSinkHandlesIndexRoute
   '/v12/decisions/': typeof V12DecisionsIndexRoute
   '/v12/docs/': typeof V12DocsIndexRoute
+  '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
   '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesByTo {
@@ -166,22 +202,27 @@ export interface FileRoutesByTo {
   '/docs/v9': typeof DocsV9RouteWithChildren
   '/og/$': typeof OgSplatRoute
   '/blog': typeof BlogIndexRoute
+  '/kitchen-sink': typeof KitchenSinkIndexRoute
   '/docs/v10/$': typeof DocsV10SplatRoute
   '/docs/v9/$': typeof DocsV9SplatRoute
   '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
   '/v12/docs/$': typeof V12DocsSplatRoute
+  '/kitchen-sink/handles': typeof KitchenSinkHandlesIndexRoute
   '/v12/decisions': typeof V12DecisionsIndexRoute
   '/v12/docs': typeof V12DocsIndexRoute
+  '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
   '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/kitchen-sink': typeof KitchenSinkRouteRouteWithChildren
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
   '/media': typeof MediaRoute
   '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
+  '/kitchen-sink/handles': typeof KitchenSinkHandlesRouteRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs_/v10': typeof DocsV10RouteWithChildren
@@ -189,23 +230,28 @@ export interface FileRoutesById {
   '/og/$': typeof OgSplatRoute
   '/v12/docs': typeof V12DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
+  '/kitchen-sink/': typeof KitchenSinkIndexRoute
   '/docs_/v10/$': typeof DocsV10SplatRoute
   '/docs_/v9/$': typeof DocsV9SplatRoute
   '/v12/decisions/$slug': typeof V12DecisionsSlugRoute
   '/v12/docs/$': typeof V12DocsSplatRoute
+  '/kitchen-sink/handles/': typeof KitchenSinkHandlesIndexRoute
   '/v12/decisions/': typeof V12DecisionsIndexRoute
   '/v12/docs/': typeof V12DocsIndexRoute
+  '/kitchen-sink/handles/api/$': typeof KitchenSinkHandlesApiSplatRoute
   '/v12/decisions/open/$slug': typeof V12DecisionsOpenSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/kitchen-sink'
     | '/404'
     | '/docs'
     | '/media'
     | '/search'
     | '/sponsor'
+    | '/kitchen-sink/handles'
     | '/blog/$slug'
     | '/docs/$'
     | '/docs/v10'
@@ -213,12 +259,15 @@ export interface FileRouteTypes {
     | '/og/$'
     | '/v12/docs'
     | '/blog/'
+    | '/kitchen-sink/'
     | '/docs/v10/$'
     | '/docs/v9/$'
     | '/v12/decisions/$slug'
     | '/v12/docs/$'
+    | '/kitchen-sink/handles/'
     | '/v12/decisions/'
     | '/v12/docs/'
+    | '/kitchen-sink/handles/api/$'
     | '/v12/decisions/open/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -234,21 +283,26 @@ export interface FileRouteTypes {
     | '/docs/v9'
     | '/og/$'
     | '/blog'
+    | '/kitchen-sink'
     | '/docs/v10/$'
     | '/docs/v9/$'
     | '/v12/decisions/$slug'
     | '/v12/docs/$'
+    | '/kitchen-sink/handles'
     | '/v12/decisions'
     | '/v12/docs'
+    | '/kitchen-sink/handles/api/$'
     | '/v12/decisions/open/$slug'
   id:
     | '__root__'
     | '/'
+    | '/kitchen-sink'
     | '/404'
     | '/docs'
     | '/media'
     | '/search'
     | '/sponsor'
+    | '/kitchen-sink/handles'
     | '/blog/$slug'
     | '/docs/$'
     | '/docs_/v10'
@@ -256,17 +310,21 @@ export interface FileRouteTypes {
     | '/og/$'
     | '/v12/docs'
     | '/blog/'
+    | '/kitchen-sink/'
     | '/docs_/v10/$'
     | '/docs_/v9/$'
     | '/v12/decisions/$slug'
     | '/v12/docs/$'
+    | '/kitchen-sink/handles/'
     | '/v12/decisions/'
     | '/v12/docs/'
+    | '/kitchen-sink/handles/api/$'
     | '/v12/decisions/open/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  KitchenSinkRouteRoute: typeof KitchenSinkRouteRouteWithChildren
   R404Route: typeof R404Route
   DocsRoute: typeof DocsRouteWithChildren
   MediaRoute: typeof MediaRoute
@@ -304,6 +362,13 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kitchen-sink': {
+      id: '/kitchen-sink'
+      path: '/kitchen-sink'
+      fullPath: '/kitchen-sink'
+      preLoaderRoute: typeof KitchenSinkRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/media': {
@@ -362,6 +427,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsV9RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kitchen-sink/': {
+      id: '/kitchen-sink/'
+      path: '/'
+      fullPath: '/kitchen-sink/'
+      preLoaderRoute: typeof KitchenSinkIndexRouteImport
+      parentRoute: typeof KitchenSinkRouteRoute
+    }
+    '/kitchen-sink/handles': {
+      id: '/kitchen-sink/handles'
+      path: '/handles'
+      fullPath: '/kitchen-sink/handles'
+      preLoaderRoute: typeof KitchenSinkHandlesRouteRouteImport
+      parentRoute: typeof KitchenSinkRouteRoute
+    }
     '/og/$': {
       id: '/og/$'
       path: '/og/$'
@@ -389,6 +468,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/docs/v9/$'
       preLoaderRoute: typeof DocsV9SplatRouteImport
       parentRoute: typeof DocsV9Route
+    }
+    '/kitchen-sink/handles/': {
+      id: '/kitchen-sink/handles/'
+      path: '/'
+      fullPath: '/kitchen-sink/handles/'
+      preLoaderRoute: typeof KitchenSinkHandlesIndexRouteImport
+      parentRoute: typeof KitchenSinkHandlesRouteRoute
     }
     '/v12/decisions/': {
       id: '/v12/decisions/'
@@ -418,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V12DocsSplatRouteImport
       parentRoute: typeof V12DocsRoute
     }
+    '/kitchen-sink/handles/api/$': {
+      id: '/kitchen-sink/handles/api/$'
+      path: '/api/$'
+      fullPath: '/kitchen-sink/handles/api/$'
+      preLoaderRoute: typeof KitchenSinkHandlesApiSplatRouteImport
+      parentRoute: typeof KitchenSinkHandlesRouteRoute
+    }
     '/v12/decisions/open/$slug': {
       id: '/v12/decisions/open/$slug'
       path: '/v12/decisions/open/$slug'
@@ -427,6 +520,35 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface KitchenSinkHandlesRouteRouteChildren {
+  KitchenSinkHandlesIndexRoute: typeof KitchenSinkHandlesIndexRoute
+  KitchenSinkHandlesApiSplatRoute: typeof KitchenSinkHandlesApiSplatRoute
+}
+
+const KitchenSinkHandlesRouteRouteChildren: KitchenSinkHandlesRouteRouteChildren =
+  {
+    KitchenSinkHandlesIndexRoute: KitchenSinkHandlesIndexRoute,
+    KitchenSinkHandlesApiSplatRoute: KitchenSinkHandlesApiSplatRoute,
+  }
+
+const KitchenSinkHandlesRouteRouteWithChildren =
+  KitchenSinkHandlesRouteRoute._addFileChildren(
+    KitchenSinkHandlesRouteRouteChildren,
+  )
+
+interface KitchenSinkRouteRouteChildren {
+  KitchenSinkHandlesRouteRoute: typeof KitchenSinkHandlesRouteRouteWithChildren
+  KitchenSinkIndexRoute: typeof KitchenSinkIndexRoute
+}
+
+const KitchenSinkRouteRouteChildren: KitchenSinkRouteRouteChildren = {
+  KitchenSinkHandlesRouteRoute: KitchenSinkHandlesRouteRouteWithChildren,
+  KitchenSinkIndexRoute: KitchenSinkIndexRoute,
+}
+
+const KitchenSinkRouteRouteWithChildren =
+  KitchenSinkRouteRoute._addFileChildren(KitchenSinkRouteRouteChildren)
 
 interface DocsRouteChildren {
   DocsSplatRoute: typeof DocsSplatRoute
@@ -475,6 +597,7 @@ const V12DocsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  KitchenSinkRouteRoute: KitchenSinkRouteRouteWithChildren,
   R404Route: R404Route,
   DocsRoute: DocsRouteWithChildren,
   MediaRoute: MediaRoute,

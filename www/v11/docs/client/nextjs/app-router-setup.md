@@ -20,11 +20,14 @@ skill:
     fetchRequestHandler (GET + POST exports), a per-request QueryClient that
     dehydrates pending queries, TRPCProvider and useTRPC() in client
     components, createTRPCOptionsProxy with prefetch and
-    HydrateClient/HydrationBoundary in server components, useSuspenseQuery for
-    Suspense, createCaller or fetchQuery for data on the server, and
-    tRPC-powered Server Actions.
+    HydrateClient (unstable_createHydrateClient) in server components,
+    useSuspenseQuery for Suspense, createCaller or queryClient.query for data on the
+    server, data shared between generateMetadata and the page, static and ISR
+    pages with a context that reads no request data, and tRPC-powered Server
+    Actions.
   references:
     - client/nextjs/server-actions
+    - client/nextjs/static-pages
 ---
 
 :::note
@@ -195,6 +198,12 @@ export function makeQueryClient() {
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === 'pending',
+        shouldRedactErrors: (error) => {
+          // Next.js detects dynamic pages by catching the errors we throw, so
+          // we must not redact them here. Next.js redacts with a better digest
+          // of its own.
+          return false;
+        },
       },
       hydrate: {
         // deserializeData: superjson.deserialize,
@@ -210,6 +219,10 @@ We're setting a few default options here:
 - `shouldDehydrateQuery`: This is a function that determines whether a query should be dehydrated or not. Since the RSC transport protocol
   supports hydrating promises over the network, we extend the `defaultShouldDehydrateQuery` function to also include queries that are
   still pending. This will allow us to start prefetching in a server component high up the tree, then consuming that promise in a client component further down.
+- `shouldRedactErrors`: Next.js detects dynamic rendering by looking for the `digest` on an error thrown during the render. Because
+  `shouldDehydrateQuery` also dehydrates queries that are still pending, a query that is pending during the build can reject afterwards,
+  and its error gets dehydrated and redacted before Next.js sees the `digest`. The build then fails. Returning `false` here keeps the
+  `digest` intact so Next.js can still recognise the error.
 - `serializeData` and `deserializeData` (optional): If you set up a [data transformer](../../server/data-transformers.md) in the previous step, set this option
   to make sure the data is serialized correctly when hydrating the query client over the server-client boundary.
 
@@ -363,9 +376,11 @@ export type AppRouter = typeof appRouter;
 // @filename: server.tsx
 // ---cut---
 import 'server-only'; // <-- ensure this file cannot be imported from the client
-
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { noop } from '@tanstack/react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+} from '@trpc/tanstack-react-query';
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query';
 import { headers } from 'next/headers';
 import { cache } from 'react';
@@ -391,23 +406,17 @@ export const trpc = createTRPCOptionsProxy({
 //   queryClient: getQueryClient,
 // });
 
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-  return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+// Sends the request's queries to client components, pending ones too
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
 ) {
   const queryClient = getQueryClient();
   if (queryOptions.queryKey[1]?.type === 'infinite') {
-    void queryClient.prefetchInfiniteQuery(queryOptions as any);
+    void queryClient.infiniteQuery(queryOptions as any).catch(noop);
   } else {
-    void queryClient.prefetchQuery(queryOptions);
+    void queryClient.query(queryOptions).catch(noop);
   }
 }
 
@@ -450,8 +459,12 @@ import type { AppRouter } from './routers/_app';
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: trpc/server.tsx
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { createTRPCOptionsProxy, type TRPCQueryOptions } from '@trpc/tanstack-react-query';
+import {
+  createTRPCOptionsProxy,
+  unstable_createHydrateClient,
+  type TRPCQueryOptions,
+} from '@trpc/tanstack-react-query';
+import { noop } from '@tanstack/react-query';
 import { cache } from 'react';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
@@ -461,22 +474,16 @@ export const trpc = createTRPCOptionsProxy({
   router: appRouter,
   queryClient: getQueryClient,
 });
-export function HydrateClient(props: { children: React.ReactNode }) {
-  return (
-    <HydrationBoundary state={dehydrate(getQueryClient())}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
+export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
-  void getQueryClient().prefetchQuery(queryOptions);
+  void getQueryClient().query(queryOptions).catch(noop);
 }
 export const caller = appRouter.createCaller({});
 ```
 
 #### Prefetching in a Server Component
 
-`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, like the one below, wait for the data instead: `await getQueryClient().prefetchQuery(…)`.
+`prefetch` starts the query without awaiting it, and `HydrateClient` sends it to the client still pending, so Next.js streams the result in when it resolves. Read a prefetch you don't `await` with `useSuspenseQuery` ([Leveraging Suspense](#leveraging-suspense)): with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, like the one below, wait for the data instead: `await getQueryClient().query(…).catch(noop)`.
 
 ```tsx twoslash title='app/page.tsx'
 // @include: app-router
@@ -487,11 +494,12 @@ export function ClientGreeting() {
 
 // @filename: app/page.tsx
 // ---cut---
+import { noop } from '@tanstack/react-query';
 import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  await getQueryClient().prefetchQuery(trpc.hello.queryOptions({ text: 'world' }));
+  await getQueryClient().query(trpc.hello.queryOptions({ text: 'world' })).catch(noop);
 
   return (
     <HydrateClient>
@@ -600,7 +608,7 @@ export default async function Home() {
 
 If you **really** need to use the data both on the server as well as inside client components and understand the tradeoffs explained in the
 [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
-guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
+guide, you can await `queryClient.query` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
 ```tsx twoslash title='app/page.tsx'
 // @include: app-router
@@ -616,7 +624,7 @@ import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();
-  const greeting = await queryClient.fetchQuery(trpc.hello.queryOptions({ text: 'world' }));
+  const greeting = await queryClient.query(trpc.hello.queryOptions({ text: 'world' }));
 
   // Do something with greeting on the server
 
@@ -640,5 +648,6 @@ export default async function Home() {
 ## Next steps
 
 - Learn about [Server Actions](/docs/client/nextjs/server-actions) for defining tRPC-powered server actions
+- Share data with `generateMetadata`, and keep pages static or ISR, in [Static pages and metadata](/docs/client/nextjs/static-pages)
 - Learn about [queries, mutations and invalidation](/docs/client/tanstack-react-query/usage) in client components
 - Explore [server-side calls](/docs/server/server-side-calls) for more advanced server-side patterns

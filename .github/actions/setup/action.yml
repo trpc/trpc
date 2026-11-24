@@ -1,6 +1,10 @@
 name: setup
 description: Installs the repository's one pnpm workspace (v11/, v12/ and www/) with the root's pnpm and Node
 inputs:
+  example:
+    description: Install only this v11 example (a directory in `v11/examples/`), v11's packages and the roots, not the whole workspace
+    required: false
+    default: ''
   node-version:
     description: A Node version to use instead of the root's `.nvmrc`
     required: false
@@ -22,9 +26,18 @@ runs:
         cache: pnpm
         cache-dependency-path: pnpm-lock.yaml
     - if: inputs.install == 'true'
-      run: pnpm install --frozen-lockfile
+      run: |
+        if [ -n "$EXAMPLE" ]; then
+          # Named outright: `--filter ./v11/examples/x...` follows neither the `npm:@trpc/*` aliases to
+          # the packages nor `@shared/ui`. `/**` takes subprojects such as minimal-react's client.
+          pnpm install --frozen-lockfile --workspace-root --filter ./v11 --filter './v11/packages/*' \
+            --filter ./tooling/ui --filter "./v11/examples/$EXAMPLE" --filter "./v11/examples/$EXAMPLE/**"
+        else
+          pnpm install --frozen-lockfile
+        fi
       shell: bash
       env:
+        EXAMPLE: ${{ inputs.example }}
         # `playwright@1.28.1` (via `konn`) downloads browsers on install; the
         # e2e tests and the site's checks use the runner's Chrome.
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'

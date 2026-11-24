@@ -58,7 +58,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
-import { dehydrate, useQuery } from '@tanstack/react-query';
+import { dehydrate, noop, useQuery } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type {
   GetStaticPaths,
@@ -82,7 +82,7 @@ export async function getStaticProps(
     queryClient,
   });
 
-  await queryClient.prefetchQuery(trpc.post.byId.queryOptions({ id }));
+  await queryClient.query(trpc.post.byId.queryOptions({ id })).catch(noop);
 
   return {
     props: {

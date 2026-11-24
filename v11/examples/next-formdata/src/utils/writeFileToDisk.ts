@@ -3,10 +3,9 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 
 export async function writeFileToDisk(file: File) {
-  const rootDir = __dirname + '/../../../../..';
-
   const nonce = Date.now();
-  const fileDir = path.resolve(`${rootDir}/public/uploads/${nonce}`);
+  // `next dev` and `next start` run in the project root
+  const fileDir = path.resolve(`${process.cwd()}/public/uploads/${nonce}`);
 
   if (!fs.existsSync(fileDir)) {
     fs.mkdirSync(fileDir, { recursive: true });

@@ -3,27 +3,26 @@ import { waitError } from '@trpc/server/__tests__/waitError';
 import { dataLoader } from '@trpc/client/internals/dataLoader';
 
 describe('basic', () => {
-  const fetchFn = vi.fn();
-  const validateFn = vi.fn();
-  const loader = dataLoader<number, number>({
-    validate: () => {
-      validateFn();
-      return true;
-    },
-    fetch: (keys) => {
-      fetchFn(keys);
-      return new Promise((resolve) => {
-        resolve(keys.map((v) => v + 1));
-      });
-    },
-  });
-
-  beforeEach(() => {
-    fetchFn.mockClear();
-    validateFn.mockClear();
-  });
+  function setup() {
+    const fetchFn = vi.fn();
+    const validateFn = vi.fn();
+    const loader = dataLoader<number, number>({
+      validate: () => {
+        validateFn();
+        return true;
+      },
+      fetch: (keys) => {
+        fetchFn(keys);
+        return new Promise((resolve) => {
+          resolve(keys.map((v) => v + 1));
+        });
+      },
+    });
+    return { fetchFn, validateFn, loader };
+  }
 
   test('no time between calls', async () => {
+    const { fetchFn, validateFn, loader } = setup();
     const $result = await Promise.all([loader.load(1), loader.load(2)]);
     expect($result).toEqual([2, 3]);
     expect(validateFn.mock.calls.length).toMatchInlineSnapshot(`2`);
@@ -33,6 +32,7 @@ describe('basic', () => {
 
   test('time between calls', async () => {
     using fakeTimers = fakeTimersResource();
+    const { fetchFn, validateFn, loader } = setup();
     const res1 = loader.load(3);
     await fakeTimers.advanceTimersByTimeAsync(0);
 
@@ -92,28 +92,27 @@ describe('validation', () => {
     expect(fetch).toHaveBeenCalledExactlyOnceWith([1]);
   });
 
-  const validateFn = vi.fn();
-  const fetchFn = vi.fn();
-  const loader = dataLoader<number, number>({
-    validate: (keys) => {
-      validateFn(keys);
-      const sum = keys.reduce((acc, key) => acc + key, 0);
-      return sum < 10;
-    },
-    fetch: (keys) => {
-      fetchFn(keys);
-      return new Promise((resolve) => {
-        resolve(keys.map((v) => v + 1));
-      });
-    },
-  });
-
-  beforeEach(() => {
-    fetchFn.mockClear();
-    validateFn.mockClear();
-  });
+  function setup() {
+    const validateFn = vi.fn();
+    const fetchFn = vi.fn();
+    const loader = dataLoader<number, number>({
+      validate: (keys) => {
+        validateFn(keys);
+        const sum = keys.reduce((acc, key) => acc + key, 0);
+        return sum < 10;
+      },
+      fetch: (keys) => {
+        fetchFn(keys);
+        return new Promise((resolve) => {
+          resolve(keys.map((v) => v + 1));
+        });
+      },
+    });
+    return { validateFn, fetchFn, loader };
+  }
 
   test('1', async () => {
+    const { validateFn, loader } = setup();
     const $result = await Promise.all([
       loader.load(1),
       loader.load(9),
@@ -124,6 +123,7 @@ describe('validation', () => {
   });
 
   test('2', async () => {
+    const { validateFn, fetchFn, loader } = setup();
     const $result = await Promise.all([
       loader.load(2),
       loader.load(9),
@@ -147,6 +147,7 @@ describe('validation', () => {
   });
 
   test('too large', async () => {
+    const { loader } = setup();
     const $result = await waitError(loader.load(13));
     expect($result).toMatchInlineSnapshot(
       `[Error: Input is too big for a single dispatch]`,

@@ -7,7 +7,6 @@ import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
 import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
-import { konn } from 'konn';
 import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import superjson from 'superjson';
@@ -25,24 +24,18 @@ export const transformer: CombinedDataTransformer = {
   },
 };
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create({
-      transformer,
-    });
-    const appRouter = t.router({
-      foo: t.procedure.query(() => 'bar' as const),
-    });
-    const opts = testServerAndClientResource(appRouter);
-
-    return opts;
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+function setup() {
+  const t = initTRPC.create({
+    transformer,
+  });
+  const appRouter = t.router({
+    foo: t.procedure.query(() => 'bar' as const),
+  });
+  return testServerAndClientResource(appRouter);
+}
 
 test('withTRPC - SSR', async () => {
+  await using ctx = setup();
   // @ts-ignore
   const { window } = global;
 

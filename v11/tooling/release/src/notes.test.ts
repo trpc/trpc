@@ -3,8 +3,6 @@ import { Effect, FileSystem, Path } from 'effect';
 import { describe, expect, it } from 'vitest';
 import { git } from './command.ts';
 import {
-  changedPackages,
-  changesBetween,
   noteSection,
   notesPackages,
   notesEntries,
@@ -38,13 +36,14 @@ const pr = (number: number, title: string, author = 'KATT'): PullRequest => ({
   title,
   url: prUrl(number),
   author,
+  contributors: [],
 });
 
 const change = (
   sha: string,
   subject: string,
-  files: ReadonlyArray<string>,
-): Change => ({ sha, subject, files });
+  changed: ReadonlyArray<string>,
+): Change => ({ sha, subject, packages: changed });
 
 const github = (
   prs: ReadonlyArray<PullRequest>,
@@ -81,34 +80,6 @@ describe('pullRequestNumber', () => {
     ).toBe(7867);
     expect(pullRequestNumber('  Merge pull request #7 from a/b')).toBe(7);
     expect(pullRequestNumber('Merge branch main into feature')).toBeUndefined();
-  });
-});
-
-describe('changedPackages', () => {
-  it('counts files in a package directory other than Markdown', () => {
-    expect(
-      changedPackages(
-        [
-          'packages/client/src/links/wsLink.ts',
-          'packages/server/README.md',
-          'packages/server/NOTES.MD',
-          'packages/react-query/docs/skills/a.md',
-          'packages/tests/server/a.test.ts',
-          'www/docs/a.md',
-          'packages/serverless/src/index.ts',
-        ],
-        packages,
-      ),
-    ).toEqual(['@trpc/client']);
-  });
-
-  it('lists the packages in the given order', () => {
-    expect(
-      changedPackages(
-        ['packages/react-query/src/a.ts', 'packages/server/package.json'],
-        packages,
-      ),
-    ).toEqual(['@trpc/server', '@trpc/react-query']);
   });
 });
 
@@ -176,18 +147,12 @@ describe('renderNotes', () => {
     expect(
       notes(
         [
-          change('a1', 'fix(server): a (#1)', ['packages/server/src/a.ts']),
-          change('a2', 'feat(www): sponsors (#2)', [
-            'www/src/sponsors.tsx',
-            'packages/server/README.md',
-            'packages/client/README.md',
-          ]),
-          change('a3', 'feat(client): b (#3)', ['packages/client/src/b.ts']),
-          change('a4', 'perf(server): c (#4)', ['packages/server/src/c.ts']),
-          change('a5', 'chore: bump the examples (#5)', [
-            'examples/next/package.json',
-          ]),
-          change('a6', 'fix(client): d (#6)', ['packages/client/src/d.ts']),
+          change('a1', 'fix(server): a (#1)', ['@trpc/server']),
+          change('a2', 'feat(www): sponsors (#2)', []),
+          change('a3', 'feat(client): b (#3)', ['@trpc/client']),
+          change('a4', 'perf(server): c (#4)', ['@trpc/server']),
+          change('a5', 'chore: bump the examples (#5)', []),
+          change('a6', 'fix(client): d (#6)', ['@trpc/client']),
         ],
         github([
           pr(1, 'fix(server): a'),
@@ -226,13 +191,11 @@ describe('renderNotes', () => {
     const rendered = notes(
       [
         change('a1', 'feat(client): async iterable subscribe (#1)', [
-          'packages/client/src/a.ts',
-          'packages/server/src/a.ts',
-          'packages/tanstack-react-query/src/a.ts',
+          '@trpc/server',
+          '@trpc/client',
+          '@trpc/tanstack-react-query',
         ]),
-        change('a2', 'fix(server,react-query): b (#2)', [
-          'packages/server/src/b.ts',
-        ]),
+        change('a2', 'fix(server,react-query): b (#2)', ['@trpc/server']),
       ],
       github([
         pr(1, 'feat(client): async iterable subscribe'),
@@ -251,7 +214,7 @@ describe('renderNotes', () => {
   it("goes by GitHub's title over the commit's", () => {
     expect(
       notes(
-        [change('a1', 'fix: a (#1)', ['packages/server/src/a.ts'])],
+        [change('a1', 'fix: a (#1)', ['@trpc/server'])],
         github([pr(1, 'fix(client): a')]),
       ).match(/^## .*$/gm),
     ).toEqual(['## @trpc/client']);
@@ -261,13 +224,8 @@ describe('renderNotes', () => {
     expect(
       notes(
         [
-          change('a1', 'docs(server): a (#1)', [
-            'packages/server/README.md',
-            'www/docs/server.md',
-          ]),
-          change('a2', 'chore(client): bump the examples (#2)', [
-            'examples/next/package.json',
-          ]),
+          change('a1', 'docs(server): a (#1)', []),
+          change('a2', 'chore(client): bump the examples (#2)', []),
         ],
         github([
           pr(1, 'docs(server): a'),
@@ -280,13 +238,8 @@ describe('renderNotes', () => {
   it('lists a pull request whose scope names no package under each package it changes', () => {
     const rendered = notes(
       [
-        change('a1', 'fix: shared (#1)', [
-          'packages/client/src/a.ts',
-          'packages/react-query/src/a.ts',
-        ]),
-        change('a2', 'fix(deps): bump zod (#2)', [
-          'packages/server/package.json',
-        ]),
+        change('a1', 'fix: shared (#1)', ['@trpc/client', '@trpc/react-query']),
+        change('a2', 'fix(deps): bump zod (#2)', ['@trpc/server']),
       ],
       github([pr(1, 'fix: shared'), pr(2, 'fix(deps): bump zod')]),
     );
@@ -302,15 +255,65 @@ describe('renderNotes', () => {
     expect(rendered.match(/^## .*$/gm)).toHaveLength(3);
   });
 
+  it('lists maintenance whose scope names no package once, after the packages', () => {
+    // v11.26.0 and v11.27.0 listed a chore(deps) under every package.
+    const rendered = notes(
+      [
+        change('a1', 'chore(deps): shared versions in the catalog (#1)', [
+          '@trpc/server',
+          '@trpc/client',
+          '@trpc/react-query',
+        ]),
+        change('a2', 'fix(client): a (#2)', ['@trpc/client']),
+        change('a3', 'ci: b (#3)', ['@trpc/server']),
+        change('a4', 'chore(client): c (#4)', ['@trpc/client']),
+        change('a5', 'chore(deps)!: drop node 18 (#5)', ['@trpc/server']),
+      ],
+      github([
+        pr(1, 'chore(deps): shared versions in the catalog'),
+        pr(2, 'fix(client): a'),
+        pr(3, 'ci: b'),
+        pr(4, 'chore(client): c'),
+        pr(5, 'chore(deps)!: drop node 18'),
+      ]),
+    );
+    expect(rendered).toBe(`## @trpc/server
+
+### Breaking Changes
+
+* chore(deps)!: drop node 18 by @KATT in ${prUrl(5)}
+
+## @trpc/client
+
+### Fixes
+
+* fix(client): a by @KATT in ${prUrl(2)}
+
+### Chores
+
+* chore(client): c by @KATT in ${prUrl(4)}
+
+## Maintenance
+
+### CI
+
+* ci: b by @KATT in ${prUrl(3)}
+
+### Chores
+
+* chore(deps): shared versions in the catalog by @KATT in ${prUrl(1)}
+
+**Full Changelog**: https://github.com/trpc/trpc/compare/v11.24.0...v11.24.1
+`);
+  });
+
   it('puts breaking changes first and unconventional titles last', () => {
     expect(
       notes(
         [
-          change('a1', 'Tidy things (#1)', ['packages/server/src/a.ts']),
-          change('a2', 'fix(server): a (#2)', ['packages/server/src/a.ts']),
-          change('a3', 'feat(server)!: drop node 18 (#3)', [
-            'packages/server/src/a.ts',
-          ]),
+          change('a1', 'Tidy things (#1)', ['@trpc/server']),
+          change('a2', 'fix(server): a (#2)', ['@trpc/server']),
+          change('a3', 'feat(server)!: drop node 18 (#3)', ['@trpc/server']),
         ],
         github([
           pr(1, 'Tidy things'),
@@ -330,15 +333,9 @@ describe('renderNotes', () => {
     expect(
       notes(
         [
-          change('a1', 'fix(client): old title (#1)', [
-            'packages/client/src/a.ts',
-          ]),
-          change('a2', 'fix(client): pushed directly', [
-            'packages/client/src/b.ts',
-          ]),
-          change('a3', 'fix(client): a ghost (#3)', [
-            'packages/client/src/c.ts',
-          ]),
+          change('a1', 'fix(client): old title (#1)', ['@trpc/client']),
+          change('a2', 'fix(client): pushed directly', ['@trpc/client']),
+          change('a3', 'fix(client): a ghost (#3)', ['@trpc/client']),
         ],
         github(
           [
@@ -357,11 +354,52 @@ describe('renderNotes', () => {
     );
   });
 
+  it('credits the people who pushed to a pull request, but not bots or AI agents', () => {
+    // v11.28.3 credited only the author of #8047, not Nick-Lucas who pushed to it.
+    expect(
+      notes(
+        [
+          change('a1', 'fix(client): a (#1)', ['@trpc/client']),
+          change('a2', 'fix(client): b (#2)', ['@trpc/client']),
+          change('a3', 'fix(client): c (#3)', ['@trpc/client']),
+          change('a4', 'fix(client): pushed directly', ['@trpc/client']),
+        ],
+        github(
+          [
+            {
+              ...pr(1, 'fix(client): a'),
+              contributors: [
+                'KATT',
+                'autofix-ci[bot]',
+                'Nick-Lucas',
+                'Claude',
+                'cursoragent',
+                'codex',
+                'Nick-Lucas',
+                'someone',
+              ],
+            },
+            {
+              ...pr(2, 'fix(client): b', 'renovate[bot]'),
+              contributors: ['KATT'],
+            },
+            { ...pr(3, 'fix(client): c', 'claude'), contributors: [] },
+          ],
+          { a4: 'claude' },
+        ),
+      ),
+    ).toContain(
+      [
+        `* fix(client): a by @KATT, @Nick-Lucas and @someone in ${prUrl(1)}`,
+        `* fix(client): b by @KATT in ${prUrl(2)}`,
+        `* fix(client): c in ${prUrl(3)}`,
+        `* fix(client): pushed directly in https://github.com/trpc/trpc/commit/a4`,
+      ].join('\n'),
+    );
+  });
+
   it('skips release commits', () => {
-    const bump = [
-      'packages/server/package.json',
-      'packages/client/package.json',
-    ];
+    const bump = ['@trpc/server', '@trpc/client'];
     expect(
       notes(
         [
@@ -377,8 +415,8 @@ describe('renderNotes', () => {
   it('merges commits of the same pull request', () => {
     const rendered = notes(
       [
-        change('a1', 'fix: a (#1)', ['packages/client/src/a.ts']),
-        change('a2', 'fix: a (#1)', ['packages/server/src/a.ts']),
+        change('a1', 'fix: a (#1)', ['@trpc/client']),
+        change('a2', 'fix: a (#1)', ['@trpc/server']),
       ],
       github([pr(1, 'fix: a')]),
     );
@@ -392,8 +430,8 @@ describe('renderNotes', () => {
     expect(
       notes(
         [
-          change('a1', 'fix(server): a (#1)', ['packages/server/src/a.ts']),
-          change('a2', 'fix(www): b (#2)', ['www/src/b.tsx']),
+          change('a1', 'fix(server): a (#1)', ['@trpc/server']),
+          change('a2', 'fix(www): b (#2)', []),
         ],
         github([
           pr(1, 'fix(server): a', 'newbie'),
@@ -412,7 +450,7 @@ describe('renderNotes', () => {
   it('says so when no package changed', () => {
     expect(
       notes(
-        [change('a1', 'feat(www): a (#1)', ['www/src/a.tsx'])],
+        [change('a1', 'feat(www): a (#1)', [])],
         github([pr(1, 'feat(www): a')]),
       ),
     ).toBe(
@@ -437,92 +475,6 @@ describe('parseNewContributors', () => {
       { login: 'b-c', url: 'https://github.com/trpc/trpc/pull/2' },
     ]);
   });
-});
-
-describe('changesBetween', () => {
-  it('lists first-parent commits with their files, oldest first', () =>
-    Effect.runPromise(
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        const root = yield* fs.makeTempDirectoryScoped();
-        const commit = (message: string, files: ReadonlyArray<string>) =>
-          Effect.gen(function* () {
-            for (const file of files) {
-              yield* fs.makeDirectory(path.dirname(path.join(root, file)), {
-                recursive: true,
-              });
-              yield* fs.writeFileString(path.join(root, file), message);
-            }
-            yield* git(root, 'add', '--all');
-            yield* git(
-              root,
-              '-c',
-              'user.name=Test',
-              '-c',
-              'user.email=test@example.com',
-              '-c',
-              'commit.gpgsign=false',
-              'commit',
-              '--quiet',
-              '--allow-empty',
-              '--message',
-              message,
-            );
-            return yield* git(root, 'rev-parse', 'HEAD');
-          });
-        yield* git(root, 'init', '--quiet', '--initial-branch', 'main');
-        yield* commit('initial', ['packages/server/src/a.ts']);
-        yield* git(root, 'tag', '--no-sign', 'v1.0.0');
-        const a = yield* commit('fix(server): a (#1)', [
-          'packages/server/src/a.ts',
-          'packages/server/README.md',
-        ]);
-        const b = yield* commit('feat(www): b (#2)', ['www/b.tsx']);
-        const c = yield* commit('chore: empty', []);
-        yield* git(root, 'checkout', '--quiet', '-b', 'feature');
-        yield* commit('feat(server): feature', [
-          'packages/server/src/feature.ts',
-          'packages/server/src/café.ts',
-          'packages/server/src/a\x1eb.ts',
-        ]);
-        yield* git(root, 'checkout', '--quiet', 'main');
-        yield* git(
-          root,
-          '-c',
-          'user.name=Test',
-          '-c',
-          'user.email=test@example.com',
-          'merge',
-          '--quiet',
-          '--no-ff',
-          '--message',
-          'Merge pull request #3 from someone/feature',
-          'feature',
-        );
-        const d = yield* git(root, 'rev-parse', 'HEAD');
-
-        expect(yield* changesBetween(root, 'v1.0.0', 'HEAD')).toEqual([
-          {
-            sha: a,
-            subject: 'fix(server): a (#1)',
-            files: ['packages/server/README.md', 'packages/server/src/a.ts'],
-          },
-          { sha: b, subject: 'feat(www): b (#2)', files: ['www/b.tsx'] },
-          { sha: c, subject: 'chore: empty', files: [] },
-          {
-            sha: d,
-            subject: 'Merge pull request #3 from someone/feature',
-            files: [
-              'packages/server/src/a\x1eb.ts',
-              'packages/server/src/café.ts',
-              'packages/server/src/feature.ts',
-            ],
-          },
-        ]);
-        expect(yield* changesBetween(root, 'HEAD', 'HEAD')).toEqual([]);
-      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-    ));
 });
 
 describe('notesPackages', () => {

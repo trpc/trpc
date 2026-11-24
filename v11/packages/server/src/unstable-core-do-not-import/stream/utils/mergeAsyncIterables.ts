@@ -60,7 +60,11 @@ interface MergedAsyncIterables<TYield> extends AsyncIterable<
   void,
   unknown
 > {
-  add(iterable: AsyncIterable<TYield>): void;
+  /**
+   * @returns `false` if the merge has already stopped, so the iterable won't be
+   * started
+   */
+  add(iterable: AsyncIterable<TYield>): boolean;
 }
 
 /**
@@ -130,14 +134,13 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
       switch (state) {
         case 'idle':
           iterables.push(iterable);
-          break;
+          return true;
         case 'pending':
           initIterable(iterable);
-          break;
-        case 'done': {
-          // shouldn't happen
-          break;
-        }
+          return true;
+        case 'done':
+          // the merge was stopped, such as by the stream being cancelled
+          return false;
       }
     },
     async *[Symbol.asyncIterator]() {
@@ -173,21 +176,20 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
         initIterable(iterables.shift()!);
       }
 
+      // Declared outside the loops and cleared after use: while this awaits,
+      // V8 keeps a `const` from the loop body's last iteration alive, and
+      // with it the last value yielded.
+      let entry: (typeof buffer)[number] | null = null;
       while (iterators.size > 0) {
         await flushSignal.promise;
 
         while (buffer.length > 0) {
           // oxlint-disable-next-line typescript/no-non-null-assertion
-          const [iterator, result] = buffer.shift()!;
-
-          switch (result.status) {
-            case 'yield':
-              yield result.value;
-              iterator.pull();
-              break;
-            case 'error':
-              throw result.error;
-          }
+          entry = buffer.shift()!;
+          if (entry[1].status === 'error') throw entry[1].error;
+          yield entry[1].value;
+          entry[0].pull();
+          entry = null;
         }
         flushSignal = createDeferred();
       }
