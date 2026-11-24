@@ -538,6 +538,7 @@ A query that fails can be retried by itself. Put [`retryLink`](/docs/client/link
 // ---cut---
 import {
   createTRPCClient,
+  experimental_isPipelineFallback,
   experimental_pipelining,
   httpBatchStreamLink,
   retryLink,
@@ -548,7 +549,10 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     retryLink({
       retry: (opts) =>
-        opts.error.data?.code === 'INTERNAL_SERVER_ERROR' && opts.attempts < 3,
+        // A query that never ran because one it reads failed
+        !experimental_isPipelineFallback(opts.error) &&
+        opts.error.data?.code === 'INTERNAL_SERVER_ERROR' &&
+        opts.attempts < 3,
       retryDelayMs: (attempt) => attempt * 500,
     }),
     httpBatchStreamLink({
@@ -569,6 +573,7 @@ POST /author.byId,post.list               ← its retry, with what reads it
 - **`retryLink` sees each query**, so its `retry` decides for each one, with that query's error and attempts.
 - **A retry has the input the first attempt ran with.** The server filled in the author's `id` in the first request; the retry sends `{ id: 'dee' }` as a query of its own, and the queries that read it go in its request.
 - **A query that couldn't run because one it reads failed isn't retried itself.** It waits for that query, and goes in the request of its next attempt.
+- **Once that query's retries give up**, the queries that read it reject with its error, and `retry` is asked about them too. `experimental_isPipelineFallback(opts.error)` is `true` for them: return `false`, or each waits `retryDelayMs` for nothing before it rejects. Without pipelining there are no such errors, so a `retry` without this check works as it always has.
 - **A request that fails as a whole, such as on a network error**, is retried as one request: the post's next attempt has the author's query and the team's posts in it again.
 - **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.
 - **Without a link that retries, a failure is final.** The query rejects, and so do the queries that read it, with its error. Nothing is sent again.

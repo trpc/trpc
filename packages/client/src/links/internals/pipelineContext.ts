@@ -135,7 +135,16 @@ export function priorFailureOf(
 /** The errors that `pipelineFallback()` made */
 export const fallbacks = /* @__PURE__ */ new WeakSet<object>();
 
-/** Whether `pipelineFallback()` made an error */
+/**
+ * Whether an error only means that a query this one reads failed, so this
+ * one never ran. Only a load with pipelining makes one. A retry of it can't
+ * do better than the query it reads did, so `retryLink`'s `retry` can skip
+ * it:
+ *
+ * ```ts
+ * retry: (opts) => !experimental_isPipelineFallback(opts.error) && opts.attempts < 3
+ * ```
+ */
 export function isPipelineFallback(error: unknown): boolean {
   return isObject(error) && fallbacks.has(error);
 }

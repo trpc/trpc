@@ -7,6 +7,7 @@ import {
   experimental_query as query,
   experimental_settle,
   experimental_inputOf,
+  experimental_isPipelineFallback,
   httpBatchLink,
   httpBatchStreamLink,
   httpLink,
@@ -86,7 +87,12 @@ describe.each([
                 retryLink({
                   retry: (retryOpts) => {
                     retried(retryOpts.op.path, retryOpts.attempts);
-                    return retryOpts.attempts < (opts.attempts ?? 0);
+                    // As the docs say: a query that never ran because one it
+                    // reads failed for good isn't retried
+                    return (
+                      !experimental_isPipelineFallback(retryOpts.error) &&
+                      retryOpts.attempts < (opts.attempts ?? 0)
+                    );
                   },
                   retryDelayMs: () => opts.retryDelayMs,
                 }),
@@ -251,6 +257,14 @@ describe.each([
     });
     // c never ran: the server sent its error in its place
     expect(ctx.runs.has('a++')).toBe(false);
+    // c's error says it never ran, so `retry` skips it, and it isn't sent
+    // again, nor does it wait for a delay
+    expect(ctx.retried.mock.calls).toEqual([
+      ['b', 1],
+      ['b', 2],
+      ['c', 1],
+    ]);
+    expect(ctx.ops).toEqual(['a', 'b', 'c', 'b']);
   });
 
   test('without a link that retries, a failure is final, and nothing is sent again', async () => {

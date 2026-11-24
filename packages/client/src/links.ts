@@ -14,6 +14,7 @@ export {
   experimental_inputOf,
   experimental_pipelining,
 } from './links/internals/pipeline';
+export { isPipelineFallback as experimental_isPipelineFallback } from './links/internals/pipelineContext';
 export type {
   experimental_Pipelining,
   experimental_PipeliningLinkOptions,
