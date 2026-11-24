@@ -2,7 +2,12 @@ import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
-import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isAsyncIterable,
+  isObject,
+  isPromise,
+  jsonlStreamConsumer,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import {
@@ -42,6 +47,22 @@ export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
 type BatchStreamOperation = Operation & {
   releaseSignal: () => void;
 };
+
+/**
+ * Whether a result still has something to stream: an async iterable, or an
+ * object holding a promise or an iterable. The same test the server makes
+ * before it refuses a stream in a non-streaming request.
+ */
+function isDataStream(v: unknown): boolean {
+  if (!isObject(v)) {
+    return false;
+  }
+  if (isAsyncIterable(v)) {
+    return true;
+  }
+  const values = Object.values(v);
+  return values.some(isPromise) || values.some(isAsyncIterable);
+}
 
 /**
  * A terminating link that batches calls like `httpBatchLink`, but streams each
@@ -233,6 +254,10 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               );
               return;
             } else if ('result' in res.json) {
+              // An op with nothing left to stream must not hold the batch open.
+              if (!isDataStream(res.json.result.data)) {
+                ac.abort();
+              }
               observer.next({
                 context: res.meta,
                 result: res.json.result,
