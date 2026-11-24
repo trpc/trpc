@@ -708,15 +708,35 @@ type LoadedPerItem<
           >;
         };
 
+/** Whether a type is one string, not a union of them */
+type IsOneKey<TKey, TAll = TKey> = TKey extends unknown
+  ? [TAll] extends [TKey]
+    ? true
+    : false
+  : never;
+
+/**
+ * The keys a fixed `wait` list has for sure: each place's that can be only
+ * that key. A place of `'post' | 'author'` may be either
+ */
+type SureKeys<TWait extends readonly string[]> = {
+  [TIndex in keyof TWait]: [IsOneKey<TWait[TIndex]>] extends [true]
+    ? TWait[TIndex]
+    : never;
+}[number];
+
 /**
  * Whether a `wait` list has a key: `true` if every list of its type has it,
- * and `boolean` if one may not, such as a list of any length
+ * and `boolean` if one may not, such as a list of any length or one with a
+ * place that may be another key
  */
 type WaitsFor<TWait extends readonly string[], TKey> = TWait extends unknown
   ? TKey extends TWait[number]
     ? number extends TWait['length']
       ? boolean
-      : true
+      : TKey extends SureKeys<TWait>
+        ? true
+        : boolean
     : false
   : never;
 

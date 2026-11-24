@@ -204,6 +204,29 @@ describe('a description of queries', () => {
       post: { slug: string; authorId: string };
       author: { id: string; teamId: string };
     }>();
+
+    // A place of a fixed list that may be either key has neither surely
+    const oneOf: ['post' | 'author'] = ['post'];
+    const [, oneOfData] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      { wait: oneOf },
+    );
+    expect(oneOfData).toEqual({ post: { slug: 'a', authorId: 'u1' } });
+    expectTypeOf(oneOfData).toEqualTypeOf<{
+      post?: { slug: string; authorId: string };
+      author?: { id: string; teamId: string };
+    }>();
+
+    const [, both] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      { wait: ['post', Math.random() < 2 ? 'post' : 'author'] },
+    );
+    expectTypeOf(both).toEqualTypeOf<{
+      post: { slug: string; authorId: string };
+      author?: { id: string; teamId: string };
+    }>();
   });
 
   test('`wait` waits for the keys it names only, also when they share an entry', async () => {
