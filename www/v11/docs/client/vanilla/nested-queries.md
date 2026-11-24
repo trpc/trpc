@@ -495,14 +495,83 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 
 ### What your links see {#links}
 
-Your links see the post's query, and nothing else. The author's query isn't an operation of its own: the server runs it in the post's request, and its result comes back in that response.
+Each query is an operation of its own, and goes through your links. The batch link with `experimental_pipelining` then puts the author's query in the post's request, and the server runs it there.
 
-- **No link gets a query with a blank in its input.** A link that shares the requests of identical queries, or one that reads `op.input`, works as before.
-- **[`loggerLink`](/docs/client/links/loggerLink) names what went with the post**, on both of its lines: `>> query #1 post.bySlug (+ author.byId, post.list)`. It logs the post when its request goes, which is when those are known.
-- **The post's context says what went with it too**: `op.context['~pipeline'].calls` has the path of each.
-- **The author's first load has no log line of its own, and a failure of it doesn't pass through your links.** The query still gets the error. A retry or a later refetch is an ordinary request, which they see.
+- **A query that reads another's data has blanks in its input** where those values go, until the server fills them in: the author's `op.input` is `{ id: undefined }`. A link that reads `op.input`, such as one that shares the requests of identical queries, sees the blank.
+- **[`loggerLink`](/docs/client/links/loggerLink) logs every query**, and names what went with the post on its line: `>> query #1 post.bySlug (+ author.byId, post.list)`.
+- **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
+- **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
 - **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't make one query's input from the other's data.
+
+A terminating link of your own that doesn't pipeline gets the input with what it reads filled in from `experimental_inputOf(op)`, once those queries have their data. The links of `@trpc/client` do this already.
+
+```ts twoslash title='my-link.ts'
+// @include: dq-router
+// @filename: my-link.ts
+declare function send(path: string, input: unknown): Promise<unknown>;
+// ---cut---
+import { experimental_inputOf, type TRPCLink } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
+import type { AppRouter } from '~/server/router';
+
+export const myLink: TRPCLink<AppRouter> = () => ({ op }) =>
+  observable((observer) => {
+    experimental_inputOf(op)
+      .then((input) => send(op.path, input))
+      .then((data) => {
+        observer.next({ result: { type: 'data', data } });
+        observer.complete();
+      })
+      .catch((error) => observer.error(error));
+  });
+```
+
+### Retries {#retries}
+
+A query that fails can be retried by itself. Put [`retryLink`](/docs/client/links/retryLink) before the batch link:
+
+```ts twoslash title='client.ts'
+// @include: dq-router
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchStreamLink,
+  retryLink,
+} from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    retryLink({
+      retry: (opts) =>
+        opts.error.data?.code === 'INTERNAL_SERVER_ERROR' && opts.attempts < 3,
+      retryDelayMs: (attempt) => attempt * 500,
+    }),
+    httpBatchStreamLink({
+      url: 'http://localhost:3000',
+      experimental_pipelining: experimental_pipelining(),
+    }),
+  ],
+});
+```
+
+If the author's query fails, the next request has the author's query and the team's posts, which read it. The post isn't asked for again.
+
+```http
+POST /post.bySlug,author.byId,post.list   ← the author fails; the team's posts can't run
+POST /author.byId,post.list               ← its retry, with what reads it
+```
+
+- **`retryLink` sees each query**, so its `retry` decides for each one, with that query's error and attempts.
+- **A query that couldn't run because one it reads failed isn't retried itself.** It waits for that query, and goes in the request of its next attempt.
+- **A request that fails as a whole, such as on a network error**, is retried as one request: the post's next attempt has the author's query and the team's posts in it again.
+- **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.
+- **Without a link that retries, a failure is final.** The query rejects, and so do the queries that read it, with its error. Nothing is sent again.
+
+[See it in the kitchen sink](/kitchen-sink/retries): queries fail on purpose, and a log shows each request and each attempt.
 
 ### When it isn't one request {#fallback}
 
@@ -511,7 +580,7 @@ A query that reads another's data then waits for that data, fills in its input i
 - **The query it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **It doesn't fit in the request** of the query it reads, within `maxURLLength` and `maxItems`.
 - **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, is more than `maxDepth` calls deep in its chain, 3 by default, or would make the request more than `maxRuns` calls, 100 by default.
-- **The request failed as a whole**, such as on a network error. If a link sends it again, the query asks by itself.
+- **The request failed as a whole**, such as on a network error, and no link sends it again. With a link that [retries](#retries), the query goes in the request of the next attempt.
 - **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
 

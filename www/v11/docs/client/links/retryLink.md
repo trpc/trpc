@@ -15,6 +15,10 @@ order: 39
 If you use `@trpc/react-query` you will generally **not** need this link as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
 :::
 
+:::info
+With [nested queries in one request](/docs/client/vanilla/nested-queries#retries), each query of an `experimental_load()` goes through the links by itself. `retryLink` retries only the query that failed, and the queries that read it go in its retry's request.
+:::
+
 ## Usage
 
 You can import and add the `retryLink` to the `links` array when creating your tRPC client. This link can be placed before or after other links in your setup, depending on your requirements.
