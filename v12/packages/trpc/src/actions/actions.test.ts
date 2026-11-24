@@ -170,6 +170,27 @@ test('defined errors are typed; unexpected ones are masked unless exposed', asyn
   expect(seen).toContain('db password is hunter2');
 });
 
+test('a FormData that fails to convert is an unexpected error, masked and seen by onError', async () => {
+  const seen: unknown[] = [];
+  const action = experimental_createAction(t, {
+    ctx: { user: 'ada' },
+    exposeUnexpectedErrors: false,
+    onError: (opts) => seen.push(opts.error.cause, opts.input),
+  });
+  class UnreadableForm extends FormData {
+    override entries(): never {
+      throw new Error('the form is unreadable');
+    }
+  }
+  const form = new UnreadableForm();
+
+  expect((await action(createPost)(form)).error).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error',
+  });
+  expect(seen).toEqual([new Error('the form is unreadable'), form]);
+});
+
 test('a runtime whose layer fails to build is an unexpected error, masked and seen by onError', async () => {
   const seen: unknown[] = [];
   let builds = 0;

@@ -95,7 +95,10 @@ export interface CreateActionBaseOptions<
    * @default NODE_ENV is 'development' or 'test'
    */
   exposeUnexpectedErrors?: boolean;
-  /** Called with every error, before masking. */
+  /**
+   * Called with every error, before masking. `input` is the converted
+   * `FormData`, or the `FormData` itself when converting it failed.
+   */
   onError?: (opts: { error: AnyTrpcError; input: unknown }) => void;
 }
 
@@ -295,13 +298,15 @@ function makeFactory<TMode extends ActionResultMode>(
   return (procedure: AnyProcedure) =>
     async (...args: unknown[]): Promise<unknown> => {
       const raw = args.length > 1 ? args[1] : args[0];
-      const input =
-        raw instanceof FormData ? fromFormData(procedure, raw) : raw;
+      // The FormData itself until it converts, so `onError` sees it if it can't.
+      let input = raw;
       const ctx = typeof opts.ctx === 'function' ? await opts.ctx() : opts.ctx;
       const exit = await Effect.runPromiseExit(
-        Effect.flatMap(
-          Effect.zip(services, interruptSignal()),
-          ([context, interrupt]) =>
+        Effect.sync(() => {
+          if (raw instanceof FormData) input = fromFormData(procedure, raw);
+        }).pipe(
+          Effect.andThen(Effect.zip(services, interruptSignal())),
+          Effect.flatMap(([context, interrupt]) =>
             interrupt.abortOnInterrupt(
               Effect.provideContext(
                 callProcedure({
@@ -314,6 +319,7 @@ function makeFactory<TMode extends ActionResultMode>(
                 context,
               ),
             ),
+          ),
         ),
       );
       if (Exit.isSuccess(exit)) {
