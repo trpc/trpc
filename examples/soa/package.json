@@ -7,7 +7,7 @@
     "start:server-a": "tsx server-a",
     "start:server-b": "tsx server-b",
     "start:client": "tsx client",
-    "test-dev": "start-test 'start:server-a' '2021' 'start:server-b' '2022' 'start:client'",
+    "test-dev": "start-test 'start:server-a' tcp:2021 'start:server-b' tcp:2022 'start:client'",
     "start": "pnpm test-dev"
   },
   "devDependencies": {
@@ -15,7 +15,7 @@
     "@trpc/server": "npm:@trpc/server",
     "@types/node": "^24.19.2",
     "npm-run-all2": "catalog:",
-    "start-server-and-test": "^1.12.0",
+    "start-server-and-test": "catalog:",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "wait-port": "^1.1.0"
