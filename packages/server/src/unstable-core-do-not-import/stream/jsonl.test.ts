@@ -1165,6 +1165,7 @@ test('calls onSettled once every streamed part under a head key has closed', asy
         await end.promise;
       })(),
     }),
+    2: 'plain',
   };
   const settled: string[] = [];
   const [head] = await jsonlStreamConsumer<typeof data>({
@@ -1172,17 +1173,18 @@ test('calls onSettled once every streamed part under a head key has closed', asy
     abortController: new AbortController(),
     onSettled: (opts) => settled.push(opts.key),
   });
+  expect(head[2]).toBe('plain');
   const [zero, one] = await Promise.all([head[0], head[1]]);
-  expect(settled).toEqual([]);
+  expect(settled).toEqual(['2']);
 
   late.resolve(42);
   expect(await zero.deferred).toBe(42);
-  await vi.waitFor(() => expect(settled).toEqual(['0']));
+  await vi.waitFor(() => expect(settled).toEqual(['2', '0']));
 
   for await (const item of one.iterable) {
     expect(item).toBe(1);
     break;
   }
-  await vi.waitFor(() => expect(settled).toEqual(['0', '1']));
+  await vi.waitFor(() => expect(settled).toEqual(['2', '0', '1']));
   end.resolve();
 });

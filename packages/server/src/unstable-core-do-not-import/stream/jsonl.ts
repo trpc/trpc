@@ -488,6 +488,8 @@ function createStreamsManager(opts: {
   >();
   /** The head key each decoded chunk is under */
   const headKeys = new Map<ChunkIndex, string>();
+  /** How many chunks under each head key are still open */
+  const openCounts = new Map<string, number>();
   const settledKeys = new Set<string>();
 
   /**
@@ -498,15 +500,14 @@ function createStreamsManager(opts: {
   }
 
   /**
-   * Checks if every chunk under a head key has closed
+   * Reports a head key as settled, once, when none of its chunks is open
    */
-  function isSettled(key: string) {
-    for (const [chunkId, headKey] of headKeys) {
-      if (headKey === key && !controllerMap.get(chunkId)?.closed) {
-        return false;
-      }
+  function settleIfIdle(key: string) {
+    if (openCounts.get(key) || settledKeys.has(key)) {
+      return;
     }
-    return true;
+    settledKeys.add(key);
+    opts.onSettled?.({ key });
   }
 
   /**
@@ -528,9 +529,9 @@ function createStreamsManager(opts: {
         clear();
 
         const key = headKeys.get(chunkId);
-        if (key !== undefined && !settledKeys.has(key) && isSettled(key)) {
-          settledKeys.add(key);
-          opts.onSettled?.({ key });
+        if (key !== undefined) {
+          openCounts.set(key, (openCounts.get(key) ?? 1) - 1);
+          settleIfIdle(key);
         }
         if (isEmpty()) {
           opts.abortController.abort();
@@ -621,13 +622,20 @@ function createStreamsManager(opts: {
    * and nothing is left to stream.
    */
   function getOrCreateUnder(chunkId: ChunkIndex, key: string) {
-    headKeys.set(chunkId, key);
-    return getOrCreate(chunkId);
+    const c = getOrCreate(chunkId);
+    if (!headKeys.has(chunkId)) {
+      headKeys.set(chunkId, key);
+      if (!c.closed) {
+        openCounts.set(key, (openCounts.get(key) ?? 0) + 1);
+      }
+    }
+    return c;
   }
 
   return {
     getOrCreate,
     getOrCreateUnder,
+    settleIfIdle,
     cancelAll,
     closeAll,
   };
@@ -774,6 +782,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
             for (const [key, value] of Object.entries(chunkOrHead)) {
               const parsed = decode(value as any, key);
               head[key] = parsed;
+              // A plain entry has no chunk to close, so it settles now
+              streamManager.settleIfIdle(key);
             }
             headDeferred.resolve(head as THead);
             headDeferred = null;
