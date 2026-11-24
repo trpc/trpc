@@ -53,7 +53,15 @@ export function experimental_parseBracketNotation(
           Number(segment) <= container.length
             ? Number(segment)
             : container.length;
-        if (last || container[index] === undefined) container[index] = make();
+        const existing = container[index];
+        if (
+          last ||
+          existing === undefined ||
+          typeof existing === 'string' ||
+          existing instanceof Blob
+        ) {
+          container[index] = make();
+        }
         if (last) break;
         container = container[index] as Tree;
       } else {

@@ -675,6 +675,16 @@ test('bracket notation round-trips', () => {
   ).toEqual({});
 });
 
+test('a nested key under an array leaf replaces the leaf, as under an object key', () => {
+  expect(
+    experimental_parseBracketNotation(
+      new URLSearchParams(
+        'user=ada&user[name]=bob&items[0]=x&items[0][id]=1&tags[]=a&tags[0][]=b',
+      ),
+    ),
+  ).toEqual({ user: { name: 'bob' }, items: [{ id: '1' }], tags: [['b']] });
+});
+
 test('bracket notation keys named like built-in methods are plain fields', () => {
   expect(
     experimental_parseBracketNotation(
