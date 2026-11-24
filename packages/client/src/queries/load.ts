@@ -133,8 +133,8 @@ interface Call {
   scopes: Scope[];
   /** Its own context, which a link may route by: then it goes alone */
   context: OperationContext | null;
-  /** Of an infinite query: the cursor of its first page */
-  firstCursor: unknown;
+  /** Of an infinite query: the `initialCursor` of its options */
+  initialCursor: unknown;
   /**
    * The pipeline of the operation made for it as the load starts, which the
    * operations that read it name: `null` if it has none, and each run asks
@@ -607,8 +607,9 @@ export function experimental_load<
   const scopesOfList = new Map<EntryDataRef, Scope[]>();
 
   /**
-   * A path in an entry's data, as the engine reads it. Of an infinite query,
-   * which loads its first page, every page is that page
+   * A path to the items of a list in an entry's data, as the engine reads it.
+   * Of an infinite query, which loads its first page, every page is that
+   * page: a list of pages is a list of the one
    */
   function segmentsOf(call: Call, path: PipelinePath): (string | null)[] {
     const segments = [...path];
@@ -659,10 +660,15 @@ export function experimental_load<
     return scopes;
   }
 
-  /** An `experimental_dataOf()` value as a place in a call's data */
+  /**
+   * An `experimental_dataOf()` value as a place in a call's data. A value
+   * read of an item has the path to its list's items in it; any other keeps
+   * every page of an infinite query, as `.map()` over them reads a value for
+   * each
+   */
   function refOf(read: EntryDataRef): Ref {
     const call = callFor(read.entry);
-    const segments = segmentsOf(call, read.path);
+    const segments = read.itemOf ? segmentsOf(call, read.path) : read.path;
     // The `null`s of an item's list are its items; any other is every item
     const itemScopes = read.itemOf ? scopesOf(read.itemOf) : [];
     const own = itemScopes.slice(call.scopes.length);
@@ -749,9 +755,6 @@ export function experimental_load<
         return undefined;
       },
     });
-    const inputCursor = isPlainObject(state.input)
-      ? state.input['cursor']
-      : undefined;
     const call: Call = {
       type: state.type,
       path: state.path.join('.'),
@@ -760,9 +763,7 @@ export function experimental_load<
       holes,
       scopes: scopesOfReads(refs),
       context: state.context,
-      firstCursor:
-        state.initialCursor ??
-        (entryDataRefOf(inputCursor) ? undefined : inputCursor),
+      initialCursor: state.initialCursor,
       pipeline: null,
       frame: [],
       sent: null,
@@ -902,6 +903,17 @@ export function experimental_load<
     ).then((ready) => (ready.ok ? undefined : Promise.reject(ready.error)));
   }
 
+  /**
+   * An infinite query's first page's input, once what it reads is filled in:
+   * a whole input read of another call has its `cursor` and `direction` only
+   * then
+   */
+  function firstPage(call: Call, input: unknown) {
+    return call.type === 'infinite' && call.holes.some((hole) => !hole.to)
+      ? firstPageInput(input, call.initialCursor)
+      : input;
+  }
+
   /** The key of a run: the indexes of its items */
   function keyOf(call: Call, items: Items) {
     return call.scopes.map((scope) => items.get(scope)).join();
@@ -996,10 +1008,6 @@ export function experimental_load<
     if (made) {
       return made;
     }
-    const wholeInput =
-      call.type === 'infinite' && call.holes.some((hole) => !hole.to);
-    const firstPage = (input: unknown) =>
-      wholeInput ? firstPageInput(input, undefined) : input;
     if (call.context || !pipelined()) {
       // A context of its own, which a link may route by, or no link that
       // pipelines: it goes alone, as it is, once all it reads is there
@@ -1011,7 +1019,7 @@ export function experimental_load<
             ? outcomeOf(
                 untyped.query(
                   call.path,
-                  firstPage(filled.data),
+                  firstPage(call, filled.data),
                   request(call, undefined),
                 ),
               )
@@ -1052,10 +1060,11 @@ export function experimental_load<
             // A read it can't put in a request: it goes once all is there
             reads: { each: null, reads: complete ? reads : [] },
             perItem: false,
-            resolve: () => inputFor(call, items).then(firstPage),
+            resolve: () =>
+              inputFor(call, items).then((input) => firstPage(call, input)),
             known: () => {
               const known = knownInput(call, items);
-              return known && { input: firstPage(known.input) };
+              return known && { input: firstPage(call, known.input) };
             },
           })),
       ...(prior ? priorFailureContext(prior) : {}),
@@ -1063,7 +1072,11 @@ export function experimental_load<
     const result: Spawn = {
       pipeline,
       sent: outcomeOf(
-        untyped.query(call.path, firstPage(known), request(call, context)),
+        untyped.query(
+          call.path,
+          firstPage(call, known),
+          request(call, context),
+        ),
       ),
     };
     call.spawns.set(key, result);
@@ -1086,11 +1099,20 @@ export function experimental_load<
         if (!outcome.ok) {
           return failed(ownError(outcome.error));
         }
-        // An infinite query's data, as TanStack Query has it: its pages
-        const data =
-          call.type === 'infinite'
-            ? { pages: [outcome.data], pageParams: [call.firstCursor] }
-            : outcome.data;
+        let data = outcome.data;
+        if (call.type === 'infinite') {
+          // As TanStack Query has it: its pages, and the cursor of each, as
+          // it was sent. The data a cursor read is there, as the page is
+          const input =
+            call.holes.length === 0
+              ? { ok: true as const, data: call.input }
+              : await fill({ value: call.input, items, skip: null });
+          const sent = input.ok ? firstPage(call, input.data) : undefined;
+          data = {
+            pages: [outcome.data],
+            pageParams: [isPlainObject(sent) ? sent['cursor'] : undefined],
+          };
+        }
         const snapshot = snapshotOf(call, data);
         call.done.set(key, snapshot);
         return { ok: true, data: snapshot };

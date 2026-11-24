@@ -1377,6 +1377,60 @@ describe.each([
     ).toThrow('must return the item or a part of it');
   });
 
+  test("`.map()` over an infinite query's `pages` reads a value for every loaded page", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const feed = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      ids: query(c.ids, {
+        ids: dataOf(feed).pages.map((page) => page.items[0]!.slug),
+      }),
+    });
+
+    expect(await res.ids).toEqual(['a']);
+  });
+
+  test('`initialCursor` takes the place of the cursor of an input that is all read of another entry', async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
+      feed: infiniteQuery(
+        c.post.feed,
+        dataOf(first).pages[0]! as { cursor?: number },
+        { initialCursor: 1 },
+      ),
+    });
+
+    expect(await res.feed).toMatchObject({
+      pages: [{ items: posts.slice(1, 3) }],
+      pageParams: [1],
+    });
+  });
+
+  test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      next: infiniteQuery(c.post.feed, {
+        cursor: dataOf(first).pages[0]!.nextCursor,
+      }),
+    });
+
+    expect(await res.next).toMatchObject({
+      pages: [{ items: posts.slice(2) }],
+      pageParams: [2],
+    });
+  });
+
 });
 
 describe('httpBatchStreamLink', () => {
