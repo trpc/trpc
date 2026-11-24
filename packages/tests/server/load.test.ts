@@ -1416,6 +1416,28 @@ describe.each([
     }
   });
 
+  test('an input with a cycle is refused as its entry is made, and one object in two places is not a cycle', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const cyclic: { id: string; self?: unknown } = { id: 'ada' };
+    cyclic.self = cyclic;
+
+    expect(() => query(c.author.byId, cyclic)).toThrow('has a cycle');
+    expect(() => query(c.author.byId, { id: 'ada', list: [cyclic] })).toThrow(
+      'has a cycle',
+    );
+    const shared = { at: 'x' };
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      author: query(c.author.byId, {
+        id: dataOf(post).authorId,
+        a: shared,
+        b: shared,
+      } as { id: string }),
+    });
+    expect(await res.author).toMatchObject({ id: 'ada' });
+  });
+
   test('a nested `.map()` is refused as the description is built', async () => {
     await using ctx = setup({ pipelining: true });
     const c = ctx.client;

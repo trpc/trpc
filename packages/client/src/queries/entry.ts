@@ -380,35 +380,41 @@ export interface experimental_InfiniteQueryEntryOptions<
 /**
  * A copy of an input as it is now, with its `experimental_dataOf()` values
  * in it: a later change to the object doesn't change the query, and a getter
- * in it runs once. Inputs are plain objects, arrays and primitives
+ * in it runs once. Inputs are plain objects, arrays and primitives. `within`
+ * has the objects and arrays it is in: one in itself is a cycle, which the
+ * engine can't walk, so it throws
  */
-function copyInput(value: unknown): unknown {
-  if (entryDataRefOf(value)) {
+function copyInput(value: unknown, within: readonly object[]): unknown {
+  if (entryDataRefOf(value) || typeof value !== 'object' || value === null) {
     return value;
   }
+  if (within.includes(value)) {
+    throw new TypeError(
+      'An entry\'s input has a cycle: an object or an array is inside itself. Pass one without, or query it without `experimental_load()`',
+    );
+  }
+  const inside = [...within, value];
   if (Array.isArray(value)) {
     // Each hole stays one
     const copy = new Array<unknown>(value.length);
     value.forEach((item, index) => {
-      copy[index] = copyInput(item);
+      copy[index] = copyInput(item, inside);
     });
     return copy;
   }
-  if (typeof value === 'object' && value !== null) {
-    const proto = Object.getPrototypeOf(value);
-    if (proto === Object.prototype || proto === null) {
-      const copy: Record<string, unknown> = {};
-      for (const key of Object.keys(value)) {
-        // As an own key, also `__proto__`
-        Object.defineProperty(copy, key, {
-          value: copyInput((value as Record<string, unknown>)[key]),
-          enumerable: true,
-          writable: true,
-          configurable: true,
-        });
-      }
-      return copy;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Object.prototype || proto === null) {
+    const copy: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      // As an own key, also `__proto__`
+      Object.defineProperty(copy, key, {
+        value: copyInput((value as Record<string, unknown>)[key], inside),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
+    return copy;
   }
   return value;
 }
@@ -423,7 +429,7 @@ function queryEntry(opts: {
   getNextPageParam: ((lastPage: any) => unknown) | null;
 }) {
   const path = procedurePathOf(opts.procedure, opts.fn);
-  const input = copyInput(opts.input);
+  const input = copyInput(opts.input, []);
   const cursorFromOptions =
     opts.type === 'infinite' && opts.initialCursor != null;
   const refs = readInputRefs({
