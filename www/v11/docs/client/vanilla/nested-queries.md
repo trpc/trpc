@@ -556,7 +556,7 @@ POST /author.byId,post.list               ← its retry, with what reads it
 - **A retry has the input the first attempt ran with.** The server filled in the author's `id` in the first request; the retry sends `{ id: 'dee' }` as a query of its own, and the queries that read it go in its request.
 - **A query that couldn't run because one it reads failed isn't retried itself.** It waits for that query, and goes in the request of its next attempt.
 - **Once that query's retries give up**, the queries that read it reject with its error, and `retry` is asked about them too. `experimental_isPipelineFallback(opts.error)` is `true` for them: return `false`, or each waits `retryDelayMs` for nothing before it rejects. Without pipelining there are no such errors, so a `retry` without this check works as it always has.
-- **A request that fails as a whole, such as on a network error**, is retried as one request: the post's next attempt has the author's query and the team's posts in it again.
+- **A request that fails as a whole, such as on a network error**, is retried as one request when `retry` returns `true` for the post's error: its next attempt has the author's query and the team's posts in it again. The `retry` above returns `false` for a network error, which has no `data.code`.
 - **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.
 - **Without a link that retries, a failure is final.** The query rejects, and so do the queries that read it, with its error. Nothing is sent again.
 
@@ -696,7 +696,7 @@ The lists at one level of a list of lists count together against it, even when n
 
 #### How they add up {#limits-together}
 
-At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
+At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps what the server fills in to 100,000, whatever the other limits are. It doesn't count the input the client sends with a call that runs once.
 
 `maxRuns` caps how many times a request runs a procedure, and [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) caps how many calls it has, and those runs too, if it is lower. The other limits cap how much each run carries.
 
