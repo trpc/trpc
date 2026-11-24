@@ -3,13 +3,10 @@ import type {
   PipelineCallReads,
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  abortSignalsAnyPonyfill,
-  hasOwn,
-  isObject,
-} from '@trpc/server/unstable-core-do-not-import';
+import { hasOwn, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from '../createTRPCClient';
 import { getUntypedClient } from '../createTRPCClient';
+import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from '../internals/types';
 import type {
@@ -246,6 +243,14 @@ function isDev() {
 
 function nothing() {
   // For a promise that nothing may read
+}
+
+/** Once every level and run of a call for every item has arrived */
+async function runsArrived(runs: PipelinedRuns): Promise<void> {
+  const node = await runs;
+  if ('items' in node) {
+    await Promise.all(Object.values(node.items).map(runsArrived));
+  }
 }
 
 /**
@@ -935,24 +940,41 @@ export function experimental_load<
     input: unknown;
     pipeline: OperationPipeline;
     context: OperationContext;
+    /** Whether it runs for every item: its runs arrive after its result */
+    perItem: boolean;
   }) {
     const abort = new AbortController();
+    // `AbortSignal.any()` where there is one. Else the caller's signal has a
+    // listener until the operation needs its signal no more: once all of its
+    // result has arrived
+    const signal =
+      opts?.signal && typeof AbortSignal.any !== 'function'
+        ? raceAbortSignalsWithCleanup(opts.signal, abort.signal)
+        : {
+            signal: opts?.signal
+              ? AbortSignal.any([opts.signal, abort.signal])
+              : abort.signal,
+            cleanup: nothing,
+          };
     const sent = outcomeOf(
       untyped.query(send.call.path, send.input, {
-        // `AbortSignal.any()` where there is one: the caller's signal keeps
-        // no listener for each operation
-        signal: opts?.signal
-          ? abortSignalsAnyPonyfill([opts.signal, abort.signal])
-          : abort.signal,
+        signal: signal.signal,
         context: { ...opts?.context, ...send.call.context, ...send.context },
       }),
     );
-    if (taken(send.pipeline)) {
-      return sent;
+    if (!taken(send.pipeline)) {
+      abort.abort();
+      signal.cleanup();
+      send.call.alone = true;
+      return null;
     }
-    abort.abort();
-    send.call.alone = true;
-    return null;
+    void sent.then(async (outcome) => {
+      if (send.perItem && outcome.ok && outcome.data !== notRun) {
+        await runsArrived(outcome.data as PipelinedRuns);
+      }
+      signal.cleanup();
+    });
+    return sent;
   }
 
   /** Whether a link that pipelines took any operation of the load */
@@ -1146,6 +1168,7 @@ export function experimental_load<
             call,
             input,
             pipeline,
+            perItem: false,
             context: {
               ...context,
               ...readsContext({
@@ -1445,6 +1468,7 @@ export function experimental_load<
       call,
       input: call.blanked,
       pipeline,
+      perItem,
       context: {
         ...pipelineContext(pipeline),
         ...readsContext({
