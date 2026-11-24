@@ -282,9 +282,10 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
 }
 
 /**
- * A copy of data: of its plain objects and arrays. Inputs and data are plain
- * objects, arrays and primitives. `copies` has the copy of each object copied
- * so far, so a cycle, or an object in two places, is one copy
+ * A copy of data: of its plain objects and arrays, and of the `Date`s, `Map`s
+ * and `Set`s a transformer such as superjson makes. Anything else is kept as
+ * it is. `copies` has the copy of each object copied so far, so a cycle, or
+ * an object in two places, is one copy
  */
 function copyData(value: unknown, copies: Map<object, unknown>): unknown {
   if (typeof value !== 'object' || value === null) {
@@ -292,6 +293,25 @@ function copyData(value: unknown, copies: Map<object, unknown>): unknown {
   }
   if (copies.has(value)) {
     return copies.get(value);
+  }
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+  if (value instanceof Map) {
+    const copy = new Map<unknown, unknown>();
+    copies.set(value, copy);
+    for (const [key, item] of value) {
+      copy.set(copyData(key, copies), copyData(item, copies));
+    }
+    return copy;
+  }
+  if (value instanceof Set) {
+    const copy = new Set<unknown>();
+    copies.set(value, copy);
+    for (const item of value) {
+      copy.add(copyData(item, copies));
+    }
+    return copy;
   }
   if (Array.isArray(value)) {
     // Each hole stays one

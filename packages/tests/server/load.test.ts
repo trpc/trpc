@@ -1433,6 +1433,42 @@ describe.each([
 
 });
 
+test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {
+  const t = initTRPC.create({ transformer: superjson });
+  const gate = createDeferred();
+  const appRouter = t.router({
+    at: t.procedure.query(() => ({ at: new Date(1000) })),
+    slow: t.procedure.query(async () => {
+      await gate.promise;
+      return 'slow';
+    }),
+    echo: t.procedure
+      .input(z.object({ at: z.date(), after: z.string() }))
+      .query((opts) => opts.input.at.getTime()),
+  });
+  await using ctx = testServerAndClientResource(appRouter, {
+    client: (clientOpts) => ({
+      links: [httpLink({ url: clientOpts.httpUrl, transformer: superjson })],
+    }),
+  });
+  using _release = makeResource({}, () => gate.resolve());
+  const c = ctx.client;
+
+  const at = query(c.at);
+  const res = experimental_load(c, {
+    at,
+    // Asks once `slow` has arrived, after the change below
+    echo: query(c.echo, {
+      at: dataOf(at).at,
+      after: dataOf(query(c.slow)),
+    }),
+  });
+  (await res.at).at.setTime(0);
+  gate.resolve();
+
+  expect(await res.echo).toBe(1000);
+});
+
 describe('httpBatchStreamLink', () => {
   /**
    * What a promise resolves to, bounded: if it waited for a query a test
