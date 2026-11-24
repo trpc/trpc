@@ -2,6 +2,8 @@ import type { QueryFunctionContext } from '@tanstack/react-query';
 import { skipToken } from '@tanstack/react-query';
 import type { PipelinedCall } from '@trpc/client/unstable-internals';
 import { readPipelinedRun } from '@trpc/client/unstable-internals';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
+import { streamIntoQuery } from '../internals/utils';
 import type { EntryQueryOptions } from './entry';
 import type { Outcome } from './outcome';
 import { failed, ok } from './outcome';
@@ -166,7 +168,16 @@ export function withPipelinedResult(opts: {
       const outcome = await pipelined;
       switch (outcome.kind) {
         case 'data':
-          return outcome.data;
+          // A procedure that yields: collected into a list, as the query's
+          // own request would. Nothing to abort: the request is its source's
+          return isAsyncIterable(outcome.data)
+            ? streamIntoQuery({
+                iterable: outcome.data,
+                context,
+                queryClient: context.client,
+                abortController: new AbortController(),
+              })
+            : outcome.data;
         case 'error':
           throw outcome.error;
         case 'notRun':

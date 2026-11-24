@@ -181,6 +181,14 @@ const createAppRouter = () => {
         calls('author.byId', opts.input);
         return { id: opts.input.id, name: 'KATT', teamId: 'team1' };
       }),
+      /** An author's posts one at a time, which a query collects into a list */
+      streamedPosts: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query(async function* (opts) {
+          calls('author.streamedPosts', opts.input);
+          yield { slug: `${opts.input.id}-a` };
+          yield { slug: `${opts.input.id}-b` };
+        }),
       /** An author, with the number of the run that answered */
       held: t.procedure
         .input(z.object({ id: z.string() }))
@@ -5300,6 +5308,37 @@ describe.each([
         trpc.post.byAuthor.infiniteQueryKey({ authorId: 'u1' }),
       ),
     ).toEqual(data.more);
+  });
+});
+
+describe('pipelining with a streaming link', () => {
+  test("an entry whose procedure yields, in its source's request, has the list its query collects", async () => {
+    await using resource = pipeliningCtx({
+      link: httpBatchStreamLink,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      posts: ensureEntry(trpc.author.streamedPosts, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+
+    const list = [{ slug: 'u1-a' }, { slug: 'u1-b' }];
+    expect(data.posts).toEqual(list);
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.streamedPosts.queryKey({ id: 'u1' }),
+      ),
+    ).toEqual(list);
+    // In the post's request
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 });
 
