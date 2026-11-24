@@ -6,6 +6,7 @@ import type {
 import { hasOwn, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from '../createTRPCClient';
 import { getUntypedClient } from '../createTRPCClient';
+import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from '../internals/types';
 import type {
@@ -63,11 +64,26 @@ export interface experimental_LoadEntries {
     | null;
 }
 
+declare const loadedList: unique symbol;
+
+/**
+ * The promise of the list of an entry per item, as `experimental_load()`
+ * gives it: of an array of what each item loads to. Its type tells it from
+ * the promise of a query's data, whose promises `experimental_settle()`
+ * leaves as they are
+ *
+ * Experimental: it may change in a minor release.
+ */
+export type experimental_LoadedList<TItem> = Promise<TItem[]> & {
+  /** Type-only: never present at runtime */
+  readonly [loadedList]: true;
+};
+
 /** What an entry of a description loads to */
 type LoadedValue<TValue> = TValue extends null
   ? null
   : TValue extends experimental_PerItemEntry<infer TReturn, any>
-    ? Promise<LoadedValue<TReturn>[]>
+    ? experimental_LoadedList<LoadedValue<TReturn>>
     : TValue extends experimental_DataEntry
       ? Promise<experimental_DataOfEntry<TValue>>
       : { [K in keyof TValue]: LoadedValue<TValue[K]> };
@@ -86,18 +102,19 @@ export type experimental_Loaded<TEntries> = {
 };
 
 /**
- * What `experimental_load()` returns, with every promise awaited
+ * What `experimental_load()` returns, with every promise of it awaited: the
+ * promises in a query's data, as a streaming link gives them, stay promises
  *
  * Experimental: it may change in a minor release.
  */
 export type experimental_Settled<TLoaded> =
-  TLoaded extends Promise<infer TValue>
-    ? experimental_Settled<TValue>
-    : TLoaded extends readonly unknown[]
-      ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
-      : TLoaded extends Record<string, unknown>
-        ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
-        : TLoaded;
+  TLoaded extends experimental_LoadedList<infer TItem>
+    ? experimental_Settled<TItem>[]
+    : TLoaded extends Promise<infer TValue>
+      ? TValue
+      : TLoaded extends null
+        ? null
+        : { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> };
 
 /** A list's item, in a path: the item a run is for */
 interface Scope {
@@ -131,10 +148,18 @@ interface Call {
   holes: Hole[];
   /** The lists it runs for, outer first: it runs once for each item */
   scopes: Scope[];
-  /** Its own context, which a link may route by: then it goes alone */
+  /**
+   * Its own context, which a link may route by: then it isn't pipelined, and
+   * goes once what it reads is there
+   */
   context: OperationContext | null;
-  /** Of an infinite query: the cursor of its first page */
-  firstCursor: unknown;
+  /**
+   * Whether it isn't pipelined: it has a context of its own, or a link that
+   * doesn't pipeline took an operation of it
+   */
+  alone: boolean;
+  /** Of an infinite query: the `initialCursor` of its options */
+  initialCursor: unknown;
   /**
    * The pipeline of the operation made for it as the load starts, which the
    * operations that read it name: `null` if it has none, and each run asks
@@ -220,6 +245,14 @@ function nothing() {
   // For a promise that nothing may read
 }
 
+/** Once every level and run of a call for every item has arrived */
+async function runsArrived(runs: PipelinedRuns): Promise<void> {
+  const node = await runs;
+  if ('items' in node) {
+    await Promise.all(Object.values(node.items).map(runsArrived));
+  }
+}
+
 /**
  * The error of an operation that failed because one it reads did: that
  * one's, as the caller should see it
@@ -282,9 +315,10 @@ function setOwn(record: Record<string, unknown>, key: string, value: unknown) {
 }
 
 /**
- * A copy of data: of its plain objects and arrays. Inputs and data are plain
- * objects, arrays and primitives. `copies` has the copy of each object copied
- * so far, so a cycle, or an object in two places, is one copy
+ * A copy of data: of its plain objects and arrays, and of the `Date`s, `Map`s
+ * and `Set`s a transformer such as superjson makes. Anything else is kept as
+ * it is. `copies` has the copy of each object copied so far, so a cycle, or
+ * an object in two places, is one copy
  */
 function copyData(value: unknown, copies: Map<object, unknown>): unknown {
   if (typeof value !== 'object' || value === null) {
@@ -292,6 +326,25 @@ function copyData(value: unknown, copies: Map<object, unknown>): unknown {
   }
   if (copies.has(value)) {
     return copies.get(value);
+  }
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+  if (value instanceof Map) {
+    const copy = new Map<unknown, unknown>();
+    copies.set(value, copy);
+    for (const [key, item] of value) {
+      copy.set(copyData(key, copies), copyData(item, copies));
+    }
+    return copy;
+  }
+  if (value instanceof Set) {
+    const copy = new Set<unknown>();
+    copies.set(value, copy);
+    for (const item of value) {
+      copy.add(copyData(item, copies));
+    }
+    return copy;
   }
   if (Array.isArray(value)) {
     // Each hole stays one
@@ -607,8 +660,9 @@ export function experimental_load<
   const scopesOfList = new Map<EntryDataRef, Scope[]>();
 
   /**
-   * A path in an entry's data, as the engine reads it. Of an infinite query,
-   * which loads its first page, every page is that page
+   * A path to the items of a list in an entry's data, as the engine reads it.
+   * Of an infinite query, which loads its first page, every page is that
+   * page: a list of pages is a list of the one
    */
   function segmentsOf(call: Call, path: PipelinePath): (string | null)[] {
     const segments = [...path];
@@ -659,10 +713,15 @@ export function experimental_load<
     return scopes;
   }
 
-  /** An `experimental_dataOf()` value as a place in a call's data */
+  /**
+   * An `experimental_dataOf()` value as a place in a call's data. A value
+   * read of an item has the path to its list's items in it; any other keeps
+   * every page of an infinite query, as `.map()` over them reads a value for
+   * each
+   */
   function refOf(read: EntryDataRef): Ref {
     const call = callFor(read.entry);
-    const segments = segmentsOf(call, read.path);
+    const segments = read.itemOf ? segmentsOf(call, read.path) : read.path;
     // The `null`s of an item's list are its items; any other is every item
     const itemScopes = read.itemOf ? scopesOf(read.itemOf) : [];
     const own = itemScopes.slice(call.scopes.length);
@@ -749,9 +808,6 @@ export function experimental_load<
         return undefined;
       },
     });
-    const inputCursor = isPlainObject(state.input)
-      ? state.input['cursor']
-      : undefined;
     const call: Call = {
       type: state.type,
       path: state.path.join('.'),
@@ -760,9 +816,8 @@ export function experimental_load<
       holes,
       scopes: scopesOfReads(refs),
       context: state.context,
-      firstCursor:
-        state.initialCursor ??
-        (entryDataRefOf(inputCursor) ? undefined : inputCursor),
+      alone: state.context !== null,
+      initialCursor: state.initialCursor,
       pipeline: null,
       frame: [],
       sent: null,
@@ -873,6 +928,55 @@ export function experimental_load<
     );
   }
 
+  /**
+   * Sends a call's operation whose context says what it reads, which only a
+   * link that pipelines can send: any other would send its input with blanks.
+   * A link takes an operation as it is sent, so one that a link that doesn't
+   * pipeline took, such as through a `splitLink`, is aborted before it goes.
+   * Then the call is alone, and `null` is returned
+   */
+  function sendReading(send: {
+    call: Call;
+    input: unknown;
+    pipeline: OperationPipeline;
+    context: OperationContext;
+    /** Whether it runs for every item: its runs arrive after its result */
+    perItem: boolean;
+  }) {
+    const abort = new AbortController();
+    // `AbortSignal.any()` where there is one. Else the caller's signal has a
+    // listener until the operation needs its signal no more: once all of its
+    // result has arrived
+    const signal =
+      opts?.signal && typeof AbortSignal.any !== 'function'
+        ? raceAbortSignalsWithCleanup(opts.signal, abort.signal)
+        : {
+            signal: opts?.signal
+              ? AbortSignal.any([opts.signal, abort.signal])
+              : abort.signal,
+            cleanup: nothing,
+          };
+    const sent = outcomeOf(
+      untyped.query(send.call.path, send.input, {
+        signal: signal.signal,
+        context: { ...opts?.context, ...send.call.context, ...send.context },
+      }),
+    );
+    if (!taken(send.pipeline)) {
+      abort.abort();
+      signal.cleanup();
+      send.call.alone = true;
+      return null;
+    }
+    void sent.then(async (outcome) => {
+      if (send.perItem && outcome.ok && outcome.data !== notRun) {
+        await runsArrived(outcome.data as PipelinedRuns);
+      }
+      signal.cleanup();
+    });
+    return sent;
+  }
+
   /** Whether a link that pipelines took any operation of the load */
   function pipelined() {
     return calls.some((call) => call.pipeline && taken(call.pipeline));
@@ -900,6 +1004,17 @@ export function experimental_load<
         .filter((source) => source.scopes.length === 0)
         .map((source) => runOf(source, new Map())),
     ).then((ready) => (ready.ok ? undefined : Promise.reject(ready.error)));
+  }
+
+  /**
+   * An infinite query's first page's input, once what it reads is filled in:
+   * a whole input read of another call has its `cursor` and `direction` only
+   * then
+   */
+  function firstPage(call: Call, input: unknown) {
+    return call.type === 'infinite' && call.holes.some((hole) => !hole.to)
+      ? firstPageInput(input, call.initialCursor)
+      : input;
   }
 
   /** The key of a run: the indexes of its items */
@@ -996,13 +1111,10 @@ export function experimental_load<
     if (made) {
       return made;
     }
-    const wholeInput =
-      call.type === 'infinite' && call.holes.some((hole) => !hole.to);
-    const firstPage = (input: unknown) =>
-      wholeInput ? firstPageInput(input, undefined) : input;
-    if (call.context || !pipelined()) {
-      // A context of its own, which a link may route by, or no link that
-      // pipelines: it goes alone, as it is, once all it reads is there
+    if (call.alone || !pipelined()) {
+      // A context of its own, which a link may route by, a link that doesn't
+      // pipeline, or none that does: it goes alone, as it is, once all it
+      // reads is there
       const alone: Spawn = {
         pipeline: null,
         sent: settles(async (): Promise<Outcome<unknown>> => {
@@ -1011,7 +1123,7 @@ export function experimental_load<
             ? outcomeOf(
                 untyped.query(
                   call.path,
-                  firstPage(filled.data),
+                  firstPage(call, filled.data),
                   request(call, undefined),
                 ),
               )
@@ -1046,26 +1158,37 @@ export function experimental_load<
     });
     const context: OperationContext = {
       ...pipelineContext(pipeline),
-      ...(complete && reads.length === 0
-        ? {}
-        : readsContext({
-            // A read it can't put in a request: it goes once all is there
-            reads: { each: null, reads: complete ? reads : [] },
-            perItem: false,
-            resolve: () => inputFor(call, items).then(firstPage),
-            known: () => {
-              const known = knownInput(call, items);
-              return known && { input: firstPage(known.input) };
-            },
-          })),
       ...(prior ? priorFailureContext(prior) : {}),
     };
-    const result: Spawn = {
-      pipeline,
-      sent: outcomeOf(
-        untyped.query(call.path, firstPage(known), request(call, context)),
-      ),
-    };
+    const input = firstPage(call, known);
+    const sent =
+      complete && reads.length === 0
+        ? outcomeOf(untyped.query(call.path, input, request(call, context)))
+        : sendReading({
+            call,
+            input,
+            pipeline,
+            perItem: false,
+            context: {
+              ...context,
+              ...readsContext({
+                // A read it can't put in a request: it goes once all is there
+                reads: { each: null, reads: complete ? reads : [] },
+                perItem: false,
+                resolve: () =>
+                  inputFor(call, items).then((it) => firstPage(call, it)),
+                known: () => {
+                  const known = knownInput(call, items);
+                  return known && { input: firstPage(call, known.input) };
+                },
+              }),
+            },
+          });
+    if (!sent) {
+      // A link that doesn't pipeline took it: it goes alone
+      return spawn(call, items, prior);
+    }
+    const result: Spawn = { pipeline, sent };
     call.spawns.set(key, result);
     return result;
   }
@@ -1086,11 +1209,40 @@ export function experimental_load<
         if (!outcome.ok) {
           return failed(ownError(outcome.error));
         }
-        // An infinite query's data, as TanStack Query has it: its pages
-        const data =
-          call.type === 'infinite'
-            ? { pages: [outcome.data], pageParams: [call.firstCursor] }
-            : outcome.data;
+        let data = outcome.data;
+        if (call.type === 'infinite') {
+          // As TanStack Query has it: its pages, and the cursor of each, as
+          // it was sent. Only the cursor is filled in, so a literal one is
+          // as it is. One read of data the client couldn't read is unknown,
+          // though the server filled it in: the run fails with that error
+          const whole = standInOf(call.input) !== null;
+          const wholeRead = whole && call.initialCursor == null;
+          const cursor = await fill({
+            value: whole
+              ? wholeRead
+                ? call.input
+                : call.initialCursor
+              : isPlainObject(call.input)
+                ? call.input['cursor']
+                : undefined,
+            items,
+            skip: null,
+          });
+          if (!cursor.ok) {
+            return failed(ownError(cursor.error));
+          }
+          const sent = wholeRead ? firstPage(call, cursor.data) : null;
+          data = {
+            pages: [outcome.data],
+            pageParams: [
+              wholeRead
+                ? isPlainObject(sent)
+                  ? sent['cursor']
+                  : undefined
+                : cursor.data,
+            ],
+          };
+        }
         const snapshot = snapshotOf(call, data);
         call.done.set(key, snapshot);
         return { ok: true, data: snapshot };
@@ -1303,8 +1455,8 @@ export function experimental_load<
       );
       continue;
     }
-    // One with a context of its own goes alone: a link may route by it
-    const declared = call.context ? null : declare(call);
+    // One with a context of its own isn't pipelined: a link may route by it
+    const declared = call.alone ? null : declare(call);
     if (!declared || !readsTaken(declared.reads)) {
       continue;
     }
@@ -1312,23 +1464,28 @@ export function experimental_load<
     call.pipeline = pipeline;
     call.frame = declared.frame;
     const perItem = declared.frame.length > 0;
-    call.sent = outcomeOf(
-      untyped.query(
-        call.path,
-        call.blanked,
-        request(call, {
-          ...pipelineContext(pipeline),
-          ...readsContext({
-            reads: declared.reads,
-            perItem,
-            resolve: perItem
-              ? () => sourcesReady(call)
-              : () => inputFor(call, new Map()),
-            known: () => knownInput(call, new Map()),
-          }),
+    call.sent = sendReading({
+      call,
+      input: call.blanked,
+      pipeline,
+      perItem,
+      context: {
+        ...pipelineContext(pipeline),
+        ...readsContext({
+          reads: declared.reads,
+          perItem,
+          resolve: perItem
+            ? () => sourcesReady(call)
+            : () => inputFor(call, new Map()),
+          known: () => knownInput(call, new Map()),
         }),
-      ),
-    );
+      },
+    });
+    if (!call.sent) {
+      // Its runs ask by themselves, and what reads it doesn't name it
+      call.pipeline = null;
+      call.frame = [];
+    }
   }
   // The data of each call that runs once, as soon as it arrives: what a
   // retry of a query that read it sends

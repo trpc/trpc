@@ -6,6 +6,18 @@ import type { Plan } from '../-trpc.ts';
 
 const commenters = ['ada', 'bob', 'cy'] as const;
 
+/**
+ * A number input's value as an integer within its bounds: the input's `min`
+ * and `max` don't keep a typed value to them, and the server refuses one
+ * outside its own
+ */
+function bounded(value: string, bounds: { min: number; max: number }) {
+  return Math.min(
+    bounds.max,
+    Math.max(bounds.min, Math.trunc(Number(value) || 0)),
+  );
+}
+
 function Times(props: {
   readonly label: string;
   readonly onChange: (times: number) => void;
@@ -21,7 +33,9 @@ function Times(props: {
         id={id}
         max={5}
         min={0}
-        onChange={(event) => props.onChange(Number(event.target.value) || 0)}
+        onChange={(event) =>
+          props.onChange(bounded(event.target.value, { min: 0, max: 5 }))
+        }
         type="number"
         value={props.value}
       />
@@ -117,7 +131,10 @@ export function Controls(props: {
                 onChange={(event) =>
                   set({
                     retry: {
-                      attempts: Number(event.target.value) || 1,
+                      attempts: bounded(event.target.value, {
+                        min: 1,
+                        max: 6,
+                      }),
                       delayMs: plan.retry?.delayMs ?? 0,
                     },
                   })
@@ -136,7 +153,10 @@ export function Controls(props: {
                   set({
                     retry: {
                       attempts: plan.retry?.attempts ?? 1,
-                      delayMs: Number(event.target.value) || 0,
+                      delayMs: bounded(event.target.value, {
+                        min: 0,
+                        max: 3000,
+                      }),
                     },
                   })
                 }

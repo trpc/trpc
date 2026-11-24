@@ -285,7 +285,7 @@ const res = experimental_load(client, {
 const rows = await res.rows;
 //    ^?
 ```
-- **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself.
+- **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself. The callback returns the item or a part of it: a `.map()` inside it, for a list of lists, throws.
 - **`experimental_settle()` awaits every promise**, and rejects if one does.
 - **With `httpBatchLink`, it works too.** The promises in a request resolve together, with its whole response. One that asks by itself resolves with its own response, later. In development, the client warns once.
 - **What isn't one request asks by itself**, once the data it reads is there, as in [When it isn't one request](#fallback). The result has the same shape.
@@ -503,29 +503,27 @@ Each query is an operation of its own, and goes through your links. The batch li
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
 - **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
-- **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't make one query's input from the other's data.
+- **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, it isn't put in the post's request: it goes by itself through its own link, with its input filled in, once the post's data is there.
 
-A terminating link of your own that doesn't pipeline gets the input with what it reads filled in from `experimental_inputOf(op)`, once those queries have their data. The links of `@trpc/client` do this already.
+A link that doesn't pipeline never sends a blank. The load aborts the author's operation with `op.signal` as such a link takes it, and sends the query again with its input filled in, once the post's data is there. A terminating link of your own should stop when `op.signal` aborts, as the links of `@trpc/client` do. A link that wants the filled-in input sooner, such as one that logs it, gets it from `experimental_inputOf(op)`, once those queries have their data:
 
-```ts twoslash title='my-link.ts'
+```ts twoslash title='input-logger-link.ts'
 // @include: dq-router
-// @filename: my-link.ts
-declare function send(path: string, input: unknown): Promise<unknown>;
+// @filename: input-logger-link.ts
 // ---cut---
 import { experimental_inputOf, type TRPCLink } from '@trpc/client';
-import { observable } from '@trpc/server/observable';
 import type { AppRouter } from '~/server/router';
 
-export const myLink: TRPCLink<AppRouter> = () => ({ op }) =>
-  observable((observer) => {
-    experimental_inputOf(op)
-      .then((input) => send(op.path, input))
-      .then((data) => {
-        observer.next({ result: { type: 'data', data } });
-        observer.complete();
-      })
-      .catch((error) => observer.error(error));
-  });
+export const inputLoggerLink: TRPCLink<AppRouter> =
+  () =>
+  ({ op, next }) => {
+    experimental_inputOf(op).then(
+      (input) => console.log(op.path, input),
+      // A query it reads failed: it doesn't run
+      () => {},
+    );
+    return next(op);
+  };
 ```
 
 ### Retries {#retries}
@@ -574,7 +572,7 @@ POST /author.byId,post.list               ← its retry, with what reads it
 - **A retry has the input the first attempt ran with.** The server filled in the author's `id` in the first request; the retry sends `{ id: 'dee' }` as a query of its own, and the queries that read it go in its request.
 - **A query that couldn't run because one it reads failed isn't retried itself.** It waits for that query, and goes in the request of its next attempt.
 - **Once that query's retries give up**, the queries that read it reject with its error, and `retry` is asked about them too. `experimental_isPipelineFallback(opts.error)` is `true` for them: return `false`, or each waits `retryDelayMs` for nothing before it rejects. Without pipelining there are no such errors, so a `retry` without this check works as it always has.
-- **A request that fails as a whole, such as on a network error**, is retried as one request: the post's next attempt has the author's query and the team's posts in it again.
+- **A request that fails as a whole, such as on a network error**, is retried as one request when `retry` returns `true` for the post's error: its next attempt has the author's query and the team's posts in it again. The `retry` above returns `false` for a network error, which has no `data.code`.
 - **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.
 - **Without a link that retries, a failure is final.** The query rejects, and so do the queries that read it, with its error. Nothing is sent again.
 
@@ -716,7 +714,7 @@ The lists at one level of a list of lists count together against it, even when n
 
 #### How they add up {#limits-together}
 
-At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps the request to 100,000, whatever the other limits are.
+At most, a call for every item fills in, for every run, as many values as `maxReadsPerCall` allows, each as long as `maxValueLength` allows, plus the rest of its input. That is runs × reads × value length, plus the input copied into every run. With a `maxBatchSize` of 50 and the defaults, it is 50 × 16 × 1,024 characters, over 800,000. `maxFillSize` keeps what the server fills in to 100,000, whatever the other limits are. It doesn't count the input the client sends with a call that runs once.
 
 `maxRuns` caps how many times a request runs a procedure, and [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) caps how many calls it has, and those runs too, if it is lower. The other limits cap how much each run carries.
 

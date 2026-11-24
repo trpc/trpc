@@ -11,6 +11,8 @@ import {
   experimental_settle,
   httpBatchLink,
   httpBatchStreamLink,
+  httpLink,
+  splitLink,
 } from '@trpc/client';
 import type {
   experimental_PipeliningLinkOptions,
@@ -22,6 +24,7 @@ import type {
 } from '@trpc/client';
 import type { AnyRouter, TRPCDefaultErrorShape } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import { tap } from '@trpc/server/observable';
 import {
   createDeferred,
   isObject,
@@ -1329,9 +1332,9 @@ describe.each([
     // A `.flatMap()` value is only a list of an entry per item
     expect(() =>
       query(c.ids, {
-        ids: dataOf(query(c.post.pages)).pages.flatMap((page) =>
-          page.items.map((it) => it.authorId),
-        ),
+        ids: dataOf(query(c.post.pages)).pages.flatMap(
+          (page) => page.items,
+        ) as never,
       }),
     ).toThrow('can only be the list of `experimental_perItem()`');
     // A value is passed on, not computed with
@@ -1361,6 +1364,323 @@ describe.each([
       Object.getOwnPropertyDescriptor(settled, '__proto__')!.value,
     ).toEqual({ id: 'ada', teamId: 'team-ada' });
   });
+
+  test.each([
+    { name: 'with', any: true },
+    { name: 'without', any: false },
+  ])(
+    "the caller's signal aborts a query that reads another, and keeps no listener once the load is done, $name `AbortSignal.any()`",
+    async (opts) => {
+      await using ctx = setup({ pipelining: true });
+      const c = ctx.client;
+      const any = Object.getOwnPropertyDescriptor(AbortSignal, 'any')!;
+      using _any = makeResource({}, () => {
+        Object.defineProperty(AbortSignal, 'any', any);
+      });
+      if (!opts.any) {
+        // As in a runtime without it
+        Object.defineProperty(AbortSignal, 'any', { ...any, value: undefined });
+      }
+      const listening = new Set<unknown>();
+      const watched = (signal: AbortSignal) => {
+        const add = signal.addEventListener.bind(signal);
+        const remove = signal.removeEventListener.bind(signal);
+        signal.addEventListener = (type: string, listener: any, opts?: any) => {
+          listening.add(listener);
+          add(type, listener, opts);
+        };
+        signal.removeEventListener = (type: string, listener: any) => {
+          listening.delete(listener);
+          remove(type, listener);
+        };
+        return signal;
+      };
+
+      {
+        const post = query(c.post.bySlug, { slug: 'a' });
+        const list = query(c.post.list, { limit: 2 });
+        const signal = watched(new AbortController().signal);
+        await experimental_settle(
+          experimental_load(
+            c,
+            {
+              post,
+              author: query(c.author.byId, { id: dataOf(post).authorId }),
+              // A call for every item, whose runs arrive after its result
+              authors: perItem(dataOf(list).items, (it) =>
+                query(c.author.byId, { id: it.authorId }),
+              ),
+            },
+            { signal },
+          ),
+        );
+        await vi.waitFor(() => expect(listening.size).toBe(0));
+      }
+      {
+        const gate = createDeferred();
+        ctx.gates.set('ada', gate.promise);
+        using _release = makeResource({}, () => gate.resolve());
+        const abort = new AbortController();
+        const post = query(c.post.bySlug, { slug: 'a' });
+        const res = experimental_load(
+          c,
+          { post, author: query(c.author.byId, { id: dataOf(post).authorId }) },
+          { signal: abort.signal },
+        );
+        res.post.catch(() => null);
+        // The author's query runs on the server, and waits for its gate
+        await vi.waitFor(() =>
+          expect(ctx.calls).toHaveBeenCalledWith('author', 'ada'),
+        );
+        abort.abort();
+
+        await expect(res.author).rejects.toThrow();
+      }
+    },
+  );
+
+  test('an input with a cycle is refused as its entry is made, and one object in two places is not a cycle', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const cyclic: { id: string; self?: unknown } = { id: 'ada' };
+    cyclic.self = cyclic;
+
+    expect(() => query(c.author.byId, cyclic)).toThrow('has a cycle');
+    expect(() =>
+      query(c.author.byId, { id: 'ada', list: [cyclic] } as { id: string }),
+    ).toThrow('has a cycle');
+    const shared = { at: 'x' };
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      author: query(c.author.byId, {
+        id: dataOf(post).authorId,
+        a: shared,
+        b: shared,
+      } as { id: string }),
+    });
+    expect(await res.author).toMatchObject({ id: 'ada' });
+  });
+
+  test("a query in the request of what it reads has that request's response in its result's context, as one by itself has its own", async () => {
+    const { appRouter } = createRouter();
+    const contexts = new Map<string, unknown>();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          () => (linkOpts) =>
+            linkOpts.next(linkOpts.op).pipe(
+              tap({
+                next: (envelope) =>
+                  contexts.set(linkOpts.op.path, envelope.context),
+              }),
+            ),
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    await experimental_settle(
+      experimental_load(c, {
+        post,
+        author: query(c.author.byId, { id: dataOf(post).authorId }),
+      }),
+    );
+
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(contexts.get('author.byId')).toEqual(contexts.get('post.bySlug'));
+    expect(contexts.get('author.byId')).toHaveProperty('response');
+  });
+
+  test('a nested `.map()` is refused as the description is built', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const pages = query(c.post.pages);
+
+    expect(() =>
+      dataOf(pages).pages.map((page) => page.items.map((it) => it.slug)),
+    ).toThrow('must return the item or a part of it');
+    expect(() =>
+      dataOf(pages).pages.flatMap((page) => page.items.map((it) => it.slug)),
+    ).toThrow('must return the item or a part of it');
+  });
+
+  test("`.map()` over an infinite query's `pages` reads a value for every loaded page", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const feed = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      ids: query(c.ids, {
+        ids: dataOf(feed).pages.map((page) => page.items[0]!.slug),
+      }),
+    });
+
+    expect(await res.ids).toEqual(['a']);
+  });
+
+  test('`initialCursor` takes the place of the cursor of an input that is all read of another entry', async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
+      feed: infiniteQuery(
+        c.post.feed,
+        dataOf(first).pages[0]! as { cursor?: number },
+        { initialCursor: 1 },
+      ),
+    });
+
+    expect(await res.feed).toMatchObject({
+      pages: [{ items: posts.slice(1, 3) }],
+      pageParams: [1],
+    });
+  });
+
+  test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = infiniteQuery(c.post.feed, {});
+    const res = experimental_load(c, {
+      next: infiniteQuery(c.post.feed, {
+        cursor: dataOf(first).pages[0]!.nextCursor,
+      }),
+    });
+
+    expect(await res.next).toMatchObject({
+      pages: [{ items: posts.slice(2) }],
+      pageParams: [2],
+    });
+  });
+
+  test('an entry with a context of its own is batched as any query is: it is only not pipelined', async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const res = experimental_load(c, {
+      post: query(c.post.bySlug, { slug: 'a' }),
+      author: query(
+        c.author.byId,
+        { id: 'ada' },
+        { context: { route: 'elsewhere' } },
+      ),
+    });
+
+    await experimental_settle(res);
+    expect(requestsOf(ctx).map((it) => [it.path, it.batch])).toEqual([
+      ['/post.bySlug,author.byId', '1'],
+    ]);
+  });
+});
+
+describe('a `splitLink` that sends a query and one that reads it to different links', () => {
+  function setupSplit(opts: { dependent: 'pipelining' | 'httpLink' }) {
+    const { appRouter } = createRouter();
+    return testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          splitLink({
+            condition: (op) => op.path === 'author.byId',
+            true:
+              opts.dependent === 'httpLink'
+                ? httpLink({ url: clientOpts.httpUrl })
+                : httpBatchStreamLink({
+                    url: clientOpts.httpUrl,
+                    experimental_pipelining: experimental_pipelining(),
+                  }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+  }
+
+  function pathsOf(ctx: ReturnType<typeof setupSplit>) {
+    return ctx.onRequestSpy.mock.calls.map(
+      ([req]) => new URL(req.url!, 'http://localhost').pathname,
+    );
+  }
+
+  test('one that reads it goes by itself through its own link, when both pipeline', async () => {
+    await using ctx = setupSplit({ dependent: 'pipelining' });
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      post,
+      author: query(c.author.byId, { id: dataOf(post).authorId }),
+    });
+
+    expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+
+  test("one that reads it gets its input filled in, through a link that doesn't pipeline", async () => {
+    await using ctx = setupSplit({ dependent: 'httpLink' });
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      post,
+      author: query(c.author.byId, { id: dataOf(post).authorId }),
+    });
+
+    expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+});
+
+test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {
+  const t = initTRPC.create({ transformer: superjson });
+  const gate = createDeferred();
+  const appRouter = t.router({
+    at: t.procedure.query(() => ({ at: new Date(1000) })),
+    slow: t.procedure.query(async () => {
+      await gate.promise;
+      return 'slow';
+    }),
+    echo: t.procedure
+      .input(z.object({ at: z.date(), after: z.string() }))
+      .query((opts) => opts.input.at.getTime()),
+  });
+  await using ctx = testServerAndClientResource(appRouter, {
+    client: (clientOpts) => ({
+      links: [httpLink({ url: clientOpts.httpUrl, transformer: superjson })],
+    }),
+  });
+  using _release = makeResource({}, () => gate.resolve());
+  const c = ctx.client;
+
+  const at = query(c.at);
+  const res = experimental_load(c, {
+    at,
+    // Asks once `slow` has arrived, after the change below
+    echo: query(c.echo, {
+      at: dataOf(at).at,
+      after: dataOf(query(c.slow)),
+    }),
+  });
+  (await res.at).at.setTime(0);
+  gate.resolve();
+
+  expect(await res.echo).toBe(1000);
 });
 
 describe('httpBatchStreamLink', () => {
@@ -1789,6 +2109,53 @@ describe('httpBatchLink, without streaming', () => {
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
+  test("an infinite query whose cursor read data the link can't deserialize rejects with that error, and one with a literal cursor keeps it", async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({ transformer: identity });
+    const appRouter = t.router({
+      first: t.procedure.query(() => ({ next: 2, unreadable: true })),
+      feed: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+            direction: z.enum(['forward', 'backward']).optional(),
+            filter: z.number().optional(),
+          }),
+        )
+        .query((opts) => ({ at: opts.input.cursor ?? 0 })),
+    });
+    await using ctx = setupBatch(appRouter, {
+      ...identity,
+      deserialize: (value: unknown) => {
+        if (isObject(value) && value['unreadable'] === true) {
+          throw new Error('cannot read the first page');
+        }
+        return value;
+      },
+    });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = query(c.first);
+    const res = experimental_load(c, {
+      read: infiniteQuery(c.feed, { cursor: dataOf(first).next }),
+      literal: infiniteQuery(c.feed, { cursor: 1, filter: dataOf(first).next }),
+    });
+
+    // The server filled in the cursor, but the client never knew it
+    await expect(res.read).rejects.toThrow(
+      'Unable to transform response from server',
+    );
+    expect(await res.literal).toEqual({
+      pages: [{ at: 1 }],
+      pageParams: [1],
+    });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
   /** A procedure the server serializes once to fill in a read, then fails to serialize for the response */
   function serializedOnce<TValue>(value: TValue) {
     let serialized = 0;
@@ -1966,7 +2333,7 @@ describe('types', () => {
           ),
         }).author,
       ).toEqualTypeOf<Promise<Author>>();
-      expectTypeOf(res.authors).toEqualTypeOf<Promise<Promise<Author>[]>>();
+      expectTypeOf(res.authors).resolves.toEqualTypeOf<Promise<Author>[]>();
       expectTypeOf(res.group.team).toEqualTypeOf<Promise<Team>>();
       expectTypeOf(res.list).resolves.toEqualTypeOf<{
         items: Post[];
@@ -2008,6 +2375,22 @@ describe('types', () => {
     });
   });
 
+  test('`experimental_settle()` leaves a promise in the data of a query as it is, as it does at runtime', () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      deferred: t.procedure.query(() => ({ later: Promise.resolve('ada') })),
+    });
+    const deferred = {} as TRPCClient<typeof router>;
+    check(() => {
+      const settled = experimental_settle(
+        experimental_load(deferred, { it: query(deferred.deferred) }),
+      );
+      expectTypeOf(settled).resolves.toEqualTypeOf<{
+        it: { later: Promise<string> };
+      }>();
+    });
+  });
+
   test('errors', () => {
     check(() => {
       // @ts-expect-error - a mutation is no query
@@ -2025,6 +2408,10 @@ describe('types', () => {
       perItem(dataOf(list).items, (it) =>
         // @ts-expect-error - an item is a post
         query(client.author.byId, { id: it.missing }),
+      );
+      dataOf(post, (it) =>
+        // @ts-expect-error - the callback returns a query's entry
+        dataOf(post, () => query(client.author.byId, { id: it.authorId })),
       );
     });
   });

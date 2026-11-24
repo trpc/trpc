@@ -167,7 +167,10 @@ describe('settlePipelinedCall', () => {
   test('a call with data ran, whatever its sources did', () => {
     const ran: PipelinedCallSettled = {
       status: 'ran',
-      outcome: { ok: true, data: { kind: 'once', data: 1 } },
+      outcome: {
+        ok: true,
+        data: { kind: 'once', data: 1, meta: { response: {} as never } },
+      },
     };
     expect(
       settlePipelinedCall({
@@ -281,7 +284,10 @@ describe('a pipelined call', () => {
     });
     expect(await sibling.settled).toEqual({
       status: 'ran',
-      outcome: { ok: true, data: { kind: 'once', data: 'Team' } },
+      outcome: {
+        ok: true,
+        data: { kind: 'once', data: 'Team', meta: expect.anything() },
+      },
     });
   });
 

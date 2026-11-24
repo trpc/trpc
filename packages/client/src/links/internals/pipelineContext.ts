@@ -22,7 +22,8 @@ function isOperationPipeline(value: unknown): value is OperationPipeline {
     typeof value['open'] === 'boolean' &&
     Array.isArray(value['calls']) &&
     value['sent'] instanceof Promise &&
-    typeof value['settleSent'] === 'function'
+    typeof value['settleSent'] === 'function' &&
+    value['onOpen'] instanceof Set
   );
 }
 
@@ -38,8 +39,9 @@ export function pipelineOf(
  * What an operation's input reads of other operations' data: the operation
  * made by `experimental_load()` for a query that reads another. Its `input`
  * has `undefined` where a read goes. A link that pipelines puts it in the
- * request of what it reads; any other link that sends it gets its input from
- * `experimental_inputOf()`.
+ * request of what it reads. Any other link that takes it gets it aborted at
+ * once, and the query again with its input filled in. Its input, filled in,
+ * is what `experimental_inputOf()` gives.
  * @internal
  */
 export interface OperationReads {

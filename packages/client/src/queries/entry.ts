@@ -350,8 +350,11 @@ type QueryArgs<TProcedure, TOpts> =
  */
 export interface experimental_QueryEntryOptions {
   /**
-   * The context of the query's requests. An entry with a context of its own
-   * loads in a request of its own: a link may route by it
+   * The context of the query's operation. An entry with a context of its
+   * own isn't pipelined, as a link may route by it: no other query goes in
+   * its request as a call, nor it in another's, and what it reads of another
+   * entry is filled in before it is sent. A batch link still batches it with
+   * other queries, as it does any query
    */
   context?: OperationContext;
 }
@@ -377,35 +380,41 @@ export interface experimental_InfiniteQueryEntryOptions<
 /**
  * A copy of an input as it is now, with its `experimental_dataOf()` values
  * in it: a later change to the object doesn't change the query, and a getter
- * in it runs once. Inputs are plain objects, arrays and primitives
+ * in it runs once. Inputs are plain objects, arrays and primitives. `within`
+ * has the objects and arrays it is in: one in itself is a cycle, which the
+ * engine can't walk, so it throws
  */
-function copyInput(value: unknown): unknown {
-  if (entryDataRefOf(value)) {
+function copyInput(value: unknown, within: readonly object[]): unknown {
+  if (entryDataRefOf(value) || typeof value !== 'object' || value === null) {
     return value;
   }
+  if (within.includes(value)) {
+    throw new TypeError(
+      "An entry's input has a cycle: an object or an array is inside itself. Pass one without, or query it without `experimental_load()`",
+    );
+  }
+  const inside = [...within, value];
   if (Array.isArray(value)) {
     // Each hole stays one
     const copy = new Array<unknown>(value.length);
     value.forEach((item, index) => {
-      copy[index] = copyInput(item);
+      copy[index] = copyInput(item, inside);
     });
     return copy;
   }
-  if (typeof value === 'object' && value !== null) {
-    const proto = Object.getPrototypeOf(value);
-    if (proto === Object.prototype || proto === null) {
-      const copy: Record<string, unknown> = {};
-      for (const key of Object.keys(value)) {
-        // As an own key, also `__proto__`
-        Object.defineProperty(copy, key, {
-          value: copyInput((value as Record<string, unknown>)[key]),
-          enumerable: true,
-          writable: true,
-          configurable: true,
-        });
-      }
-      return copy;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === Object.prototype || proto === null) {
+    const copy: Record<string, unknown> = {};
+    for (const key of Object.keys(value)) {
+      // As an own key, also `__proto__`
+      Object.defineProperty(copy, key, {
+        value: copyInput((value as Record<string, unknown>)[key], inside),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
+    return copy;
   }
   return value;
 }
@@ -420,7 +429,7 @@ function queryEntry(opts: {
   getNextPageParam: ((lastPage: any) => unknown) | null;
 }) {
   const path = procedurePathOf(opts.procedure, opts.fn);
-  const input = copyInput(opts.input);
+  const input = copyInput(opts.input, []);
   const cursorFromOptions =
     opts.type === 'infinite' && opts.initialCursor != null;
   const refs = readInputRefs({
@@ -537,7 +546,8 @@ export function experimental_dataOf<TEntry extends experimental_DataEntry>(
 ): experimental_DataOfEntry<TEntry>;
 export function experimental_dataOf<
   TEntry extends experimental_DataEntry,
-  TInner extends experimental_DataEntry,
+  // A query's entry: not one `experimental_dataOf()` built with a callback
+  TInner extends QueryDataEntry<any>,
 >(
   entry: TEntry,
   entryFrom: (data: experimental_DataOfEntry<TEntry>) => TInner,

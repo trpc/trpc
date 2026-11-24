@@ -123,6 +123,12 @@ export interface OperationPipeline {
    */
   streams: boolean | null;
   /**
+   * The link that took it this attempt, if one that pipelines did. An
+   * operation that reads it goes in its request only through the same link:
+   * a `splitLink` may send the two to different ones
+   */
+  link: object | null;
+  /**
    * The calls added to the operation's request, with `pipeCall()`. They stay
    * here once the request has gone, for a link that logs the context.
    */
@@ -196,11 +202,21 @@ export type PipelinedRun =
 export type PipelinedRuns = Settles<PipelinedRunsNode>;
 
 /** A call's data, decoded once by the link */
-export type PipelinedData =
-  /** A call that ran once */
-  | { kind: 'once'; data: unknown }
-  /** A call that ran for every item: see `readPipelinedRun()` */
-  | { kind: 'each'; runs: PipelinedRuns };
+export type PipelinedData = {
+  /** The response of the request it was in, as a batch link has it */
+  meta: HTTPResult['meta'];
+} & (
+  | {
+      /** A call that ran once */
+      kind: 'once';
+      data: unknown;
+    }
+  | {
+      /** A call that ran for every item: see `readPipelinedRun()` */
+      kind: 'each';
+      runs: PipelinedRuns;
+    }
+);
 
 /**
  * Where a call is. It goes from `waiting` to `sent` or `not-run`, and from
@@ -272,6 +288,7 @@ export function createOperationPipeline(): OperationPipeline {
     open: false,
     limits: pipelineLimitDefaults,
     streams: null,
+    link: null,
     calls: [],
     sent: sent.promise,
     settleSent: sent.resolve,
@@ -511,13 +528,16 @@ type RoutedEnvelope = OperationResultEnvelope<unknown, TRPCClientError<any>>;
 /**
  * What an operation reads, by what gets the data of each operation in this
  * attempt: its request, or the call a link put it in. `null` if one of them
- * has neither open now
+ * has neither open now, or another link than `link` took it
  */
 function sourcesNow(
   reads: OperationReads['reads'],
+  link: object,
 ): PipelineCallReads<PipelineSource> | null {
   const sourceOf = (pipeline: OperationPipeline): PipelineSource | null =>
-    pipeline.attached ?? (pipeline.open ? pipeline : null);
+    pipeline.link !== link
+      ? null
+      : (pipeline.attached ?? (pipeline.open ? pipeline : null));
   const each = reads.each && {
     from: sourceOf(reads.each.from),
     path: reads.each.path,
@@ -854,6 +874,7 @@ function decodeCall(
         ok: true,
         data: {
           kind: 'each',
+          meta: sent.meta,
           runs: decodeRuns(
             sent.json,
             link.streams
@@ -869,7 +890,7 @@ function decodeCall(
       status: 'ran',
       outcome: {
         ok: true,
-        data: { kind: 'once', data: readResult(link, sent) },
+        data: { kind: 'once', data: readResult(link, sent), meta: sent.meta },
       },
     };
   } catch (error) {
@@ -1113,6 +1134,7 @@ export function experimental_pipelining(
           pipeline.open = true;
           pipeline.limits = limits;
           pipeline.streams = link.streams;
+          pipeline.link = link;
           // Each attempt has its own: an operation sent again sends its calls
           // anew, and a link that logs it waits for those
           const sent = createDeferred<readonly string[]>();
@@ -1126,6 +1148,14 @@ export function experimental_pipelining(
         }
       },
       route(op, send) {
+        const own = pipelineOf(op);
+        if (own && op.type === 'query') {
+          // A link that pipelines has it, as it is sent: what reads it can
+          // say what it reads
+          own.limits = limits;
+          own.streams = link.streams;
+          own.link = link;
+        }
         const failure = priorFailureOf(op);
         if (failure && !failure.replayed) {
           // A run's failure in the request of its list: its first attempt,
@@ -1138,13 +1168,9 @@ export function experimental_pipelining(
           );
         }
         const reads = readsOf(op);
-        const own = pipelineOf(op);
         if (!reads || !own || op.type !== 'query') {
           return null;
         }
-        // A link that pipelines has it: what reads it can say what it reads
-        own.limits = limits;
-        own.streams = link.streams;
         return observable<RoutedEnvelope, TRPCClientError<any>>((observer) => {
           let done = false;
           let alone: Unsubscribable | null = null;
@@ -1166,7 +1192,7 @@ export function experimental_pipelining(
           const unsubscribed = new AbortController();
           /** Into the open request of what it reads, as a call */
           const attach = () => {
-            const sources = sourcesNow(reads.reads);
+            const sources = sourcesNow(reads.reads, link);
             const call =
               sources &&
               pipeCall({ path: op.path, input: op.input, reads: sources });
@@ -1213,6 +1239,8 @@ export function experimental_pipelining(
               const data = settled.outcome.data;
               done = true;
               observer.next({
+                // As a batch link gives an operation's
+                context: data.meta,
                 result: {
                   type: 'data',
                   data: data.kind === 'once' ? data.data : data.runs,
@@ -1448,8 +1476,10 @@ export function pipelineFallback(cause: unknown): TRPCClientError<any> {
 }
 
 /**
- * The input of an operation as a link that doesn't pipeline sends it: with
- * what it reads of other operations filled in, once they have their data.
+ * The input of an operation with what it reads of other operations filled
+ * in, once they have their data: for a link that logs it, say. A link that
+ * doesn't pipeline never sends a blank: `experimental_load()` aborts such an
+ * operation as the link takes it, and sends the query again, filled in.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#links

@@ -67,6 +67,12 @@ test('a pipelined load is one request, with one author query for every post', as
   const teams = await Promise.allSettled(posts.map((post) => post.team));
 
   expect(server.sent).toEqual(['post.list,author.byId,team.byId']);
-  expect(authors.some((author) => author.status === 'fulfilled')).toBe(true);
-  expect(teams.some((team) => team.status === 'fulfilled')).toBe(true);
+  // Every author and team arrives, the last ones too
+  expect(posts).toHaveLength(8);
+  expect(authors.map((author) => author.status)).toEqual(
+    posts.map(() => 'fulfilled'),
+  );
+  expect(teams.map((team) => team.status)).toEqual(
+    posts.map(() => 'fulfilled'),
+  );
 });

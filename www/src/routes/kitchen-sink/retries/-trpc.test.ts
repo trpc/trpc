@@ -171,3 +171,18 @@ test('once the retries give up, the query and what reads it fail with its error'
   expect(sent).toEqual([all, 'team.byId']);
   expect(settled.team).toBe('team:core failed on purpose, run 2');
 });
+
+test('a request whose fetch rejects ends in the log', async () => {
+  const log = createLog();
+  const res = loadRetries({
+    fetch: () => Promise.reject(new TypeError('Failed to fetch')),
+    log,
+    plan: { ...none, retry: null },
+    session: `test-${++sessions}`,
+    signal: new AbortController().signal,
+  });
+
+  await expect(res.post).rejects.toThrow('Failed to fetch');
+  expect(log.get().requests).toHaveLength(1);
+  expect(log.get().requests[0]!.doneMs).not.toBeNull();
+});
