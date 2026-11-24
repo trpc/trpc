@@ -1431,6 +1431,25 @@ describe.each([
     });
   });
 
+  test('an entry with a context of its own is batched as any query is: it is only not pipelined', async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const res = experimental_load(c, {
+      post: query(c.post.bySlug, { slug: 'a' }),
+      author: query(
+        c.author.byId,
+        { id: 'ada' },
+        { context: { route: 'elsewhere' } },
+      ),
+    });
+
+    await experimental_settle(res);
+    expect(requestsOf(ctx).map((it) => [it.path, it.batch])).toEqual([
+      ['/post.bySlug,author.byId', '1'],
+    ]);
+  });
 });
 
 test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {

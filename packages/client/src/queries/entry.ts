@@ -350,8 +350,11 @@ type QueryArgs<TProcedure, TOpts> =
  */
 export interface experimental_QueryEntryOptions {
   /**
-   * The context of the query's requests. An entry with a context of its own
-   * loads in a request of its own: a link may route by it
+   * The context of the query's operation. An entry with a context of its
+   * own isn't pipelined, as a link may route by it: no other query goes in
+   * its request as a call, nor it in another's, and what it reads of another
+   * entry is filled in before it is sent. A batch link still batches it with
+   * other queries, as it does any query
    */
   context?: OperationContext;
 }

@@ -131,7 +131,10 @@ interface Call {
   holes: Hole[];
   /** The lists it runs for, outer first: it runs once for each item */
   scopes: Scope[];
-  /** Its own context, which a link may route by: then it goes alone */
+  /**
+   * Its own context, which a link may route by: then it isn't pipelined, and
+   * goes once what it reads is there
+   */
   context: OperationContext | null;
   /** Of an infinite query: the `initialCursor` of its options */
   initialCursor: unknown;
@@ -1345,7 +1348,7 @@ export function experimental_load<
       );
       continue;
     }
-    // One with a context of its own goes alone: a link may route by it
+    // One with a context of its own isn't pipelined: a link may route by it
     const declared = call.context ? null : declare(call);
     if (!declared || !readsTaken(declared.reads)) {
       continue;
