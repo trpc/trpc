@@ -732,7 +732,11 @@ export class WsClient {
 
     ws.addEventListener('open', () => {
       run(async () => {
-        if (this.lazyMode) {
+        // A socket from a reconnect that `close()` abandoned changes neither
+        // the state nor the inactivity timeout.
+        const isLive =
+          ws === this.activeConnection.ws || ws === this.nextConnection?.ws;
+        if (this.lazyMode && isLive) {
           this.inactivityTimeoutEnabled = true;
           this.startInactivityTimeout();
         }
@@ -742,6 +746,7 @@ export class WsClient {
         // A socket opened to replace one that's still open changes nothing
         // the subscribers can see until `handOff()` puts it in use.
         if (
+          !isLive ||
           this.connectionState.get().state === 'pending' ||
           (ws !== this.activeConnection.ws && this.activeConnection.isOpen())
         ) {

@@ -186,7 +186,7 @@ test('a socket from a reconnect abandoned by close() does not clear a later reje
     return {};
   });
   // the second socket is the retried query's reconnect: it waits for its URL
-  let releaseUrl = () => {};
+  let releaseUrl!: () => void;
   const abandonedUrl = new Promise<void>((resolve) => {
     releaseUrl = resolve;
   });
@@ -196,7 +196,7 @@ test('a socket from a reconnect abandoned by close() does not clear a later reje
     if (urlCalls === 2) await abandonedUrl;
     return ctx.wssUrl;
   };
-  await using ctx = setup({ createContext, delayMs: 10, closeMs: 200, url });
+  await using ctx = setup({ createContext, delayMs: 300, closeMs: 200, url });
 
   const abortController = new AbortController();
   ctx.client.greeting
@@ -215,13 +215,15 @@ test('a socket from a reconnect abandoned by close() does not clear a later reje
     ctx.client.greeting.query(undefined, { context: { retry: false } }),
   ).rejects.toThrow();
   isRejecting = false;
-  // the abandoned reconnect's socket opens now
+  const query = ctx.client.greeting.query();
+  // the abandoned reconnect's socket opens while the query waits out the backoff
   releaseUrl();
   await vi.waitFor(() => {
     expect(createContext).toHaveBeenCalledTimes(3);
   });
+  expect(ctx.wsClient.connectionState.get().state).toBe('connecting');
 
-  expect(await ctx.client.greeting.query()).toBe('hello');
+  expect(await query).toBe('hello');
   // the rejection before it still delays the next connection
   expect(ctx.attemptIndexes()).toEqual([1, 1]);
 });
