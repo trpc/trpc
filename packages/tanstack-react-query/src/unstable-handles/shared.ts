@@ -199,7 +199,12 @@ export function toTanStackEntries(opts: {
         '`loadHandles()` loads an entry per item of a list in another entry, not of a list in an item: load the inner list with `experimental_load()`',
       );
     }
-    if (queryEntryStateOf(returned) || fromDataStateOf(returned)) {
+    if (fromDataStateOf(returned)) {
+      throw new Error(
+        '`loadHandles()` loads a query per item, not an entry built from the data of another with `experimental_dataOf(entry, (data) => entry)`: load it with `experimental_load()`',
+      );
+    }
+    if (queryEntryStateOf(returned)) {
       if (queryEntryStateOf(returned)?.type === 'infinite') {
         throw new Error(
           '`loadHandles()` loads a query per item, not an infinite query',

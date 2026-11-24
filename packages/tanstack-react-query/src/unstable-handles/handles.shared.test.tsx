@@ -301,6 +301,30 @@ describe('a description of queries', () => {
     ).rejects.toThrow(/not of a list in an item/);
   });
 
+  test('an entry per item built from the data of another loads with the client only', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const posts = experimental_query(trpc.post.list, {});
+    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
+
+    const loading = loadHandles(trpc, {
+      posts,
+      post,
+      authors: experimental_perItem(experimental_dataOf(posts).items, () =>
+        experimental_dataOf(post, (it) =>
+          experimental_query(trpc.author.byId, { id: it.authorId }),
+        ),
+      ),
+    });
+    expectTypeOf<Awaited<typeof loading>[0]['authors']>().toBeNever();
+    await expect(loading).rejects.toThrow(
+      /not an entry built from the data of another/,
+    );
+    expect(resource.calls).not.toHaveBeenCalledWith('author.byId', {
+      id: expect.anything(),
+    });
+  });
+
   test('an infinite query of a description is an infinite entry, with its `getNextPageParam`', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;

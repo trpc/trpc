@@ -646,17 +646,20 @@ type LoadedEntry<TEntry, TWaited extends boolean> =
 
 /**
  * An entry per item as the load has it: what the callback returned for an
- * item, as an entry per item of each entry in it, in a group of the same keys
+ * item, as an entry per item of each entry in it, in a group of the same keys.
+ * An entry built from the data of another loads with `experimental_load()`
+ * only
  */
 type LoadedPerItem<TReturn, TItem> = TReturn extends null
   ? typeof skipToken
-  : TReturn extends
-        | experimental_QueryEntry<any, any>
-        | experimental_InfiniteQueryEntry<any, any>
-        | AnyTRPCEntry
-        | experimental_FromDataEntry<any, any>
-    ? experimental_PerItemEntry<LoadedEntry<TReturn, false>, TItem>
-    : { [TKey in keyof TReturn]: LoadedPerItem<TReturn[TKey], TItem> };
+  : TReturn extends experimental_FromDataEntry<any, any>
+    ? never
+    : TReturn extends
+          | experimental_QueryEntry<any, any>
+          | experimental_InfiniteQueryEntry<any, any>
+          | AnyTRPCEntry
+      ? experimental_PerItemEntry<LoadedEntry<TReturn, false>, TItem>
+      : { [TKey in keyof TReturn]: LoadedPerItem<TReturn[TKey], TItem> };
 
 /**
  * A load's entries as TanStack Query entries: each entry of a description,

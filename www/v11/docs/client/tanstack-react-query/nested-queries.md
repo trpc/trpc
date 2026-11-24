@@ -543,7 +543,7 @@ And without TanStack Query, pass the client: `experimental_load(client, postQuer
 - **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data.
 - **The request is the same**, whichever loads it.
 - **`null` skips an entry**, as `skipToken` does: its handle is `undefined`.
-- **An `experimental_perItem()` that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. Each reads the item and the load's entries only: an entry per item of a list in an item, and an entry in the object that reads another one, load with `experimental_load()` only.
+- **An `experimental_perItem()` that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. Each reads the item and the load's entries only: an entry per item of a list in an item, an entry in the object that reads another one, and an entry built with `experimental_dataOf(entry, (data) => entry)`, load with `experimental_load()` only.
 
 ## A query for every item {#entry-per-item}
 
