@@ -34,6 +34,8 @@ export interface Shapes {
   nothing: never;
   pair: [string, number, undefined];
   short: [string, number?];
+  rest: [string, ...number[]];
+  leading: [...string[], number];
   onClick: () => void;
   greet(name: string): string;
   [Symbol.iterator]?: () => Iterator<number>;

@@ -226,6 +226,19 @@ test('types document as JSON.stringify sends them (21)', async () => {
         minItems: 1,
         maxItems: 2,
       },
+      // A rest element repeats, so there's no `maxItems`.
+      rest: {
+        type: 'array',
+        prefixItems: [{ type: 'string' }],
+        items: { type: 'number' },
+        minItems: 1,
+      },
+      // JSON Schema can't place elements after a rest one, so any may repeat.
+      leading: {
+        type: 'array',
+        items: { anyOf: [{ type: 'string' }, { type: 'number' }] },
+        minItems: 1,
+      },
       file: binary,
       upload: binary,
       tags: { type: 'object' },
@@ -284,6 +297,8 @@ test('types document as JSON.stringify sends them (21)', async () => {
       'nothing',
       'pair',
       'short',
+      'rest',
+      'leading',
       'file',
       'upload',
       'tags',

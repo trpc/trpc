@@ -202,11 +202,25 @@ class TypeToSchema {
       // `[string, number?]`'s `?` is in the flags, not the type: a required
       // `number | undefined` must still be sent.
       const flags = (type as TupleTypeReference).getTarget().elementFlags;
+      const minItems = flags.filter(
+        (flag) => flag & ElementFlags.Required,
+      ).length;
+      const rest = flags.findIndex((flag) => flag & ElementFlags.Variable);
+      if (rest === -1)
+        return {
+          type: 'array',
+          prefixItems: items,
+          minItems,
+          maxItems: items.length,
+        };
+      // A rest element repeats. JSON Schema can't place elements after it,
+      // so from there on any of them may come, in any order.
+      const repeated = items.slice(rest);
       return {
         type: 'array',
-        prefixItems: items,
-        minItems: flags.filter((flag) => flag & ElementFlags.Required).length,
-        maxItems: items.length,
+        ...(rest > 0 ? { prefixItems: items.slice(0, rest) } : {}),
+        items: repeated.length === 1 ? repeated[0] : { anyOf: repeated },
+        minItems,
       };
     }
     const properties = checker.getPropertiesOfType(type);
