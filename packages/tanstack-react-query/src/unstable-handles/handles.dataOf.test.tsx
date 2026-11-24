@@ -6329,6 +6329,49 @@ describe('experimental_useHandles', () => {
     });
   });
 
+  test('a `trpc.context` whose cycle goes back to another object is another load', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const seen: unknown[] = [];
+    function Card(props: { context: Record<string, unknown> }) {
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context: props.context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    /** `route.next.next` is `route` */
+    const toRoute = () => {
+      const route: Record<string, unknown> = {};
+      route['next'] = { next: route };
+      return { route };
+    };
+    /** `route.next.next` is `route.next` */
+    const toNext = () => {
+      const next: Record<string, unknown> = {};
+      next['next'] = next;
+      return { route: { next } };
+    };
+    resource.renderApp(
+      <>
+        <Card context={toRoute()} />
+        <Card context={toNext()} />
+        <Card context={toRoute()} />
+      </>,
+    );
+    // A link can route by where it goes back to
+    expect(seen[1]).not.toBe(seen[0]);
+    expect(seen[2]).toBe(seen[0]);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test('a `trpc.context` whose nested object differs only in a symbol key is another load', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

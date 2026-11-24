@@ -400,8 +400,10 @@ function describeValue(
   if (value === null) {
     return ['value', null];
   }
-  if (within.includes(value)) {
-    return ['circular'];
+  // By the object it goes back to: a link can route by which one that is
+  const back = within.indexOf(value);
+  if (back !== -1) {
+    return ['circular', back];
   }
   const inside = [...within, value];
   if (value instanceof Date) {
