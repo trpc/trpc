@@ -82,7 +82,17 @@ export const topLevelDeclarations = (
         : statement;
     if (!inner) continue;
     const doc = docOf(sourceCode, statement);
-    for (const [name, declaration] of declared(inner)) {
+    const named = declared(inner);
+    // `export default function () {}` is only known as `default`.
+    if (
+      named.length === 0 &&
+      statement.type === 'ExportDefaultDeclaration' &&
+      (inner.type === 'FunctionDeclaration' ||
+        inner.type === 'ClassDeclaration')
+    ) {
+      named.push(['default', inner]);
+    }
+    for (const [name, declaration] of named) {
       const existing = result.get(name);
       if (existing) {
         // Overloads share the first signature's JSDoc.
@@ -129,6 +139,7 @@ interface LooseNode {
   params?: LooseNode[];
   extendsType?: LooseNode;
   checkType?: LooseNode;
+  expressions?: LooseNode[];
   trueType?: LooseNode;
   falseType?: LooseNode;
 }
@@ -161,7 +172,6 @@ const RETURNED_THROUGH = new Set([
   'SpreadElement',
   'ConditionalExpression',
   'LogicalExpression',
-  'SequenceExpression',
   'ParenthesizedExpression',
   'AwaitExpression',
   'TSSatisfiesExpression',
@@ -293,7 +303,23 @@ export const typeReferences = (node: ESTree.Node): TypeReference[] => {
       case 'TSAsExpression':
       case 'TSTypeAssertion':
         if (returned) {
-          visit(n.typeAnnotation, returned, scope);
+          // `x as const` keeps `x`'s type, only narrower.
+          visit(
+            leftmost(n.typeAnnotation?.typeName) === 'const'
+              ? n.expression
+              : n.typeAnnotation,
+            returned,
+            scope,
+          );
+          return;
+        }
+        break;
+      // `(a, b)` has `b`'s type.
+      case 'SequenceExpression':
+        if (returned) {
+          const expressions = n.expressions ?? [];
+          visit(expressions.slice(0, -1), false, scope);
+          visit(expressions.at(-1), true, scope);
           return;
         }
         break;

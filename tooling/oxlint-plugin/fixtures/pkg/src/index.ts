@@ -2,6 +2,7 @@ import api from './api';
 
 export { reached, type Reached } from './reached';
 export * as ns from './ns';
+export * from './starred';
 export { api };
 export { default as API } from './defaultApi';
 

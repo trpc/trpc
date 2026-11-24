@@ -43,6 +43,10 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
     '/** @internal */\nexport interface Opts { a: string | undefined }',
     '/** @internal */\nexport function f(a: string | undefined) {}',
     'interface Worker { run(retries: number | undefined): void }',
+    'function run(opts: { retry: number | undefined }[]) {}',
+    // What a public function returns is public.
+    'class Scratch { retry?: number }\nexport function make() { return new Scratch(); }',
+    'class Result { retry?: number }\nexport function f() { return { result: new Result() } as const; }',
     'function f(opts: { a: string } | undefined) {}',
     'function f(opts: { a: string } & { b: number }) {}',
     // Named types aren't followed, even in a union.
@@ -134,6 +138,19 @@ tester.run('no-internal-optional', plugin.rules['no-internal-optional']!, {
       code: '/** @internal */\nexport function reached(a?: string) {}',
       filename: join(import.meta.dirname, 'fixtures/pkg/src/reached.ts'),
       errors: [{ message: optional('a') }],
+    },
+    {
+      code: 'function run(opts: { retry?: number }[]) {}',
+      errors: [{ message: option('retry') }],
+    },
+    {
+      code: 'const run: (retry?: number) => void = () => {};',
+      errors: [{ message: optional('retry') }],
+    },
+    // `(a, b)` returns `b`, so `a` isn't exposed.
+    {
+      code: 'class Scratch { retry?: number }\nexport function count() { return (new Scratch(), 0); }',
+      errors: [{ message: option('retry') }],
     },
     // A type only an internal declaration uses is internal.
     {

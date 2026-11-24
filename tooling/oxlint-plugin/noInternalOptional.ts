@@ -86,6 +86,8 @@ export const noInternalOptional = defineRule({
         type.type === 'TSConstructorType'
       ) {
         checkParams(type.params);
+      } else if (type.type === 'TSArrayType') {
+        checkType(type.elementType);
       }
     };
     const checkInlineType = (param: {
@@ -131,6 +133,9 @@ export const noInternalOptional = defineRule({
           checkParams(declaration.params);
           break;
         case 'VariableDeclarator': {
+          // `const f: (a?: T) => void = ...` declares what callers see.
+          if (declaration.id.type === 'Identifier')
+            checkInlineType(declaration.id);
           const init = declaration.init;
           if (
             init?.type === 'ArrowFunctionExpression' ||

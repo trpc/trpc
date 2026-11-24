@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { parseSync } from 'oxc-parser';
 
 /**
@@ -21,11 +21,13 @@ export const releaseTags = (doc: string): ReleaseTag[] =>
  * `internal.ts` and `unstable-internals.ts` are for tRPC itself.
  */
 export const internalDirectory = (file: string): string | null => {
-  const parts = file.split(/[\\/]/);
+  // Only the path inside the package: a checkout under `internal/` isn't.
+  const root = packageRoot(file) ?? dirname(file);
+  const parts = relative(root, file).split(/[\\/]/);
   const index = parts.findIndex((part) =>
     /(^|[-_])internals?($|[-_.])/.test(part),
   );
-  return index === -1 ? null : parts.slice(0, index + 1).join('/');
+  return index === -1 ? null : join(root, ...parts.slice(0, index + 1));
 };
 
 /**
@@ -297,20 +299,31 @@ const parse = (file: string): ParsedFile | null => {
   return result;
 };
 
+/**
+ * The names wanted from a module: all of them (an entry point, `export * as
+ * ns`), all but `default` (`export *`), or some.
+ */
+type Selection = 'all' | 'named' | ReadonlySet<string>;
+
 /** Collects, by file, the names each declares that entry points reach. */
 const reacher = () => {
   const byFile = new Map<string, Set<string>>();
   const seen = new Set<string>();
-  const collect = (file: string, names: ReadonlySet<string> | '*') => {
-    const key = `${file}\0${names === '*' ? '*' : [...names].join(',')}`;
+  const collect = (file: string, names: Selection) => {
+    const key = `${file}\0${typeof names === 'string' ? names : [...names].join(',')}`;
     if (seen.has(key)) return;
     seen.add(key);
     const info = parse(file);
     if (!info) return;
-    const wants = (name: string) => names === '*' || names.has(name);
+    const wants = (name: string) =>
+      names === 'all'
+        ? true
+        : names === 'named'
+          ? name !== 'default'
+          : names.has(name);
     const own = byFile.get(file) ?? new Set<string>();
     byFile.set(file, own);
-    const follow = (from: string, picked: ReadonlySet<string> | '*') => {
+    const follow = (from: string, picked: Selection) => {
       const target = resolveImport(file, from);
       if (target !== undefined) collect(target, picked);
     };
@@ -330,9 +343,14 @@ const reacher = () => {
     }
     for (const [from, picked] of byFrom) follow(from, picked);
     for (const [alias, from] of info.namespaces) {
-      if (wants(alias)) follow(from, '*');
+      if (wants(alias)) follow(from, 'all');
     }
-    for (const star of info.stars) follow(star, names);
+    // `export *` never re-exports `default`.
+    const starred: Selection =
+      typeof names === 'string'
+        ? 'named'
+        : new Set([...names].filter((name) => name !== 'default'));
+    for (const star of info.stars) follow(star, starred);
   };
   return { byFile, collect };
 };
@@ -356,7 +374,7 @@ export const publicNames = (file: string): ReadonlySet<string> => {
       for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
         if (isUnversioned(subpath)) continue;
         const source = entrySource(root, target);
-        if (source !== undefined) reach.collect(source, '*');
+        if (source !== undefined) reach.collect(source, 'all');
       }
     }
     byFile = reach.byFile;

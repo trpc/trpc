@@ -11,7 +11,7 @@ export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
 /**
  * A tracked event as the client gets it.
- * @internal
+ * @public
  */
 export interface TrackedData<TData> {
   /**
@@ -74,7 +74,7 @@ export function tracked<TData>(
 
 /**
  * The type a client gets for an event, unwrapping `tracked()` events.
- * @internal
+ * @public
  */
 export type inferTrackedOutput<TData> =
   TData extends TrackedEnvelope<infer $Data> ? TrackedData<$Data> : TData;

@@ -36,6 +36,11 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       code: '/** @internal */\nexport function f(a: string): void;\nexport function f(a: number): void;\nexport function f(a: unknown) {}',
       filename: otherFile,
     },
+    // A checkout under a folder named `internal` isn't internals.
+    {
+      code: '/** @public */\nexport const x = 1;',
+      filename: join(import.meta.dirname, 'fixtures/internal/pkg/src/index.ts'),
+    },
     { code: '/** @internal */\nexport const x = 1;', filename: internalsFile },
     {
       code: '/** @internal */\nexport const x = 1;',
@@ -76,6 +81,31 @@ tester.run('release-tag', plugin.rules['release-tag']!, {
       output:
         '/** @public */\nexport default function API(): number { return 1; }',
       errors: [{ message: missing('API') }],
+    },
+    // `export *` reaches named exports, not `default`.
+    {
+      code: 'export const viaStar = 1;',
+      filename: join(src, 'starred.ts'),
+      output: '/** @public */\nexport const viaStar = 1;',
+      errors: [{ message: missing('viaStar') }],
+    },
+    {
+      code: 'export default function hidden(): number { return 1; }',
+      filename: join(src, 'starred.ts'),
+      output:
+        '/** @internal */\nexport default function hidden(): number { return 1; }',
+      errors: [{ message: missing('hidden') }],
+    },
+    {
+      code: 'export default function () {}',
+      filename: otherFile,
+      output: '/** @internal */\nexport default function () {}',
+      errors: [{ message: missing('default') }],
+    },
+    {
+      code: '/** @public */\nexport default function () {}',
+      filename: internalsFile,
+      errors: [{ message: inInternals('default', 'internals/') }],
     },
     // Text that looks like an export in the entry point isn't one.
     {
