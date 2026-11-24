@@ -31,6 +31,7 @@ import {
   isAbortError,
   isAsyncIterable,
   isObject,
+  isPlainObject,
   isPromise,
   isTrackedEnvelope,
   makeResource,
@@ -546,7 +547,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       const type = msg.method;
 
       if (lastEventId !== undefined) {
-        if (isObject(input)) {
+        if (isPlainObject(input)) {
           input = {
             ...input,
             lastEventId: lastEventId,

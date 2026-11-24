@@ -35,6 +35,13 @@ export function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
+/**
+ * Check that value is a plain object, not an array, a `Date`, a `Map`, a class
+ * instance, etc.
+ * @internal
+ */
+export { isPlainObject } from '../vendor/is-plain-object';
+
 type AnyFn = ((...args: any[]) => unknown) & Record<keyof any, unknown>;
 export function isFunction(fn: unknown): fn is AnyFn {
   return typeof fn === 'function';
