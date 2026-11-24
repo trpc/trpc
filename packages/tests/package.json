@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tests",
-  "version": "11.30.4",
+  "version": "11.31.0",
   "private": true,
   "scripts": {
     "lint": "oxlint .",
