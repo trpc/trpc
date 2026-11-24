@@ -731,10 +731,18 @@ describe('experimental_dataOf().map()', () => {
     expect(() =>
       experimental_dataOf(post).tags.map((tag) => ({ id: tag.id })),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_perItem()\`]`,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`, and not what a \`.map()\` inside it returned. To load an entry for every item, use \`experimental_perItem()\`]`,
     );
     expect(() =>
       experimental_dataOf(post).tags.map(() => experimental_dataOf(post).id),
+    ).toThrow(/must return the item or a part of it/);
+    // A list per item, as `groups.map((g) => g.members.map(...))`, is not
+    // one input per item: it is refused as the description is built
+    const groups = ensureEntry(trpc.group.list);
+    expect(() =>
+      experimental_dataOf(groups).groups.map((group) =>
+        group.members.map((id) => id),
+      ),
     ).toThrow(/must return the item or a part of it/);
     expect(() =>
       experimental_dataOf(post).tags.filter((tag) => tag.id === 't1'),
