@@ -67,8 +67,11 @@ describe.each([
     const { appRouter, runs } = createRouter();
     /** What each attempt of an operation is, as the links after `retryLink` see it */
     const ops: string[] = [];
+    /** The input of each attempt, as the links after `retryLink` see it */
+    const inputs: unknown[] = [];
     const record: TRPCLink<AnyRouter> = () => (linkOpts) => {
       ops.push(linkOpts.op.path);
+      inputs.push(linkOpts.op.input);
       return linkOpts.next(linkOpts.op);
     };
     const retried = vi.fn();
@@ -108,7 +111,7 @@ describe.each([
       ctx.onRequestSpy.mock.calls.map(
         ([req]) => new URL(req.url!, 'http://localhost').pathname,
       );
-    return Object.assign(ctx, { runs, ops, retried, requests });
+    return Object.assign(ctx, { runs, ops, inputs, retried, requests });
   }
 
   /** a → b → c, where b fails `failTimes` times */
@@ -170,6 +173,29 @@ describe.each([
         ['a++', 1],
       ]),
     );
+  });
+
+  test('a retry of a query the server filled in goes with that input, as an operation like any other', async () => {
+    await using ctx = setup({
+      attempts: 3,
+      retryDelayMs: 0,
+      failFirstFetch: false,
+    });
+
+    await experimental_settle(
+      experimental_load(ctx.client, chain(ctx.client, { b: 1 })),
+    );
+
+    expect(ctx.ops).toEqual(['a', 'b', 'c', 'b']);
+    // The first attempt went with a blank the server filled in; the retry
+    // has the input that attempt ran with
+    expect(ctx.inputs).toEqual([
+      { key: 'a' },
+      { key: undefined, failTimes: 1 },
+      { key: undefined },
+      { key: 'a+', failTimes: 1 },
+    ]);
+    expect(ctx.requests()).toEqual(['/a,b,c', '/b,c']);
   });
 
   test('with a delay between attempts, the queries that read a retried query wait for it, and go in its request', async () => {

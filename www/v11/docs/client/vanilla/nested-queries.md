@@ -498,6 +498,7 @@ Its response has the runs of a call for every item in `items`, by the item's ind
 Each query is an operation of its own, and goes through your links. The batch link with `experimental_pipelining` then puts the author's query in the post's request, and the server runs it there.
 
 - **A query that reads another's data has blanks in its input** where those values go, until the server fills them in: the author's `op.input` is `{ id: undefined }`. A link that reads `op.input`, such as one that shares the requests of identical queries, sees the blank.
+- **Once it ran, its input is known**: `loggerLink` logs its result with the input the server filled in, `{ id: 'dee' }`, and [a retry](#retries) of it is an operation like any other, with that input.
 - **[`loggerLink`](/docs/client/links/loggerLink) logs every query**, and names what went with the post on its line: `>> query #1 post.bySlug (+ author.byId, post.list)`.
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
 - **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
@@ -566,6 +567,7 @@ POST /author.byId,post.list               ← its retry, with what reads it
 ```
 
 - **`retryLink` sees each query**, so its `retry` decides for each one, with that query's error and attempts.
+- **A retry has the input the first attempt ran with.** The server filled in the author's `id` in the first request; the retry sends `{ id: 'dee' }` as a query of its own, and the queries that read it go in its request.
 - **A query that couldn't run because one it reads failed isn't retried itself.** It waits for that query, and goes in the request of its next attempt.
 - **A request that fails as a whole, such as on a network error**, is retried as one request: the post's next attempt has the author's query and the team's posts in it again.
 - **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.

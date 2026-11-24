@@ -62,6 +62,18 @@ export interface OperationReads {
    * `isPipelineFallback()` marks if one of them fails
    */
   resolve: () => Promise<unknown>;
+  /**
+   * Its input with every read filled in, if the client has all that data
+   * now. `null` if not
+   */
+  known: () => { input: unknown } | null;
+  /**
+   * Its input as the server filled it in, once an attempt of it ran in the
+   * request of what it reads: a retry of it is then an operation like any
+   * other, with that input, and the operations that read it go in its
+   * request. `null` until then
+   */
+  filled: { input: unknown } | null;
 }
 
 const readsKey = '~reads';
@@ -85,6 +97,18 @@ export function withoutReads<TOp extends Pick<Operation, 'context'>>(
 ): TOp {
   const { [readsKey]: _reads, ...context } = op.context;
   return { ...op, context };
+}
+
+/**
+ * The operation as a retry sends it: with its input as the server filled it
+ * in, if an attempt of it ran, and nothing more to read. As it is if not
+ * @internal
+ */
+export function withFilledInput<
+  TOp extends Pick<Operation, 'context' | 'input'>,
+>(op: TOp): TOp {
+  const filled = readsOf(op)?.filled;
+  return filled ? { ...withoutReads(op), input: filled.input } : op;
 }
 
 /**

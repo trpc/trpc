@@ -11,7 +11,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
-import { pipelineOf } from './internals/pipelineContext';
+import { pipelineOf, readsOf } from './internals/pipelineContext';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
 type ConsoleEsque = {
@@ -288,10 +288,13 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
           logUp();
           const elapsedMs = Date.now() - requestStartTime;
 
+          // The input as the server filled it in, if it read other queries
+          const filled = readsOf(op)?.filled;
           if (enabled({ ...op, direction: 'down', result })) {
             logger(
               {
                 ...op,
+                ...(filled ? { input: filled.input } : {}),
                 direction: 'down',
                 elapsedMs,
                 result,

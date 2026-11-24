@@ -8,6 +8,7 @@ import { TRPCClientError } from '../TRPCClientError';
 import {
   isPipelineFallback,
   priorFailureOf,
+  withFilledInput,
   withoutPriorFailure,
 } from './internals/pipelineContext';
 import type { Operation, TRPCLink } from './types';
@@ -90,7 +91,10 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
         }
 
         function opWithLastEventId() {
-          const op = baseOp;
+          // A query whose input the server filled in, in the request of what
+          // it read: a retry sends it with that input, in a request of its own
+          // that the queries reading it go in
+          const op = currentAttempt > 1 ? withFilledInput(baseOp) : baseOp;
           if (!lastEventId) {
             return op;
           }

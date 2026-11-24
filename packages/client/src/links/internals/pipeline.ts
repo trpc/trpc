@@ -514,6 +514,27 @@ function sourcesNow(
   };
 }
 
+/** An operation's input, if the client has what it reads within a moment */
+function knownSoon(reads: OperationReads) {
+  const known = reads.known();
+  if (known) {
+    return Promise.resolve(known);
+  }
+  return new Promise<{ input: unknown } | null>((resolve) => {
+    const timer = setTimeout(() => resolve(null));
+    reads.resolve().then(
+      (input) => {
+        clearTimeout(timer);
+        resolve({ input });
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
+
 /** The operations an operation reads */
 function pipelinesRead(reads: OperationReads['reads']) {
   return new Set([
@@ -1031,12 +1052,20 @@ export function experimental_pipelining(
             for (const listener of Array.from(own.onOpen)) {
               listener();
             }
-            void call.settled.then((settled) => {
+            void call.settled.then(async (settled) => {
               if (done || own.attached !== call) {
                 return;
               }
               if (settled.status === 'not-run') {
                 wait();
+                return;
+              }
+              // It ran, so the data it read is there: its input, for the
+              // links that log it and for a retry of it. The client may not
+              // have read all of that data yet, so it waits a moment for it,
+              // and no more: a slow call it reads doesn't hold its result
+              reads.filled = reads.perItem ? null : await knownSoon(reads);
+              if (done || own.attached !== call) {
                 return;
               }
               if (!settled.outcome.ok) {
@@ -1061,6 +1090,11 @@ export function experimental_pipelining(
            */
           const wait = () => {
             own.attached = null;
+            // An attempt of what it reads may have opened its request
+            // already: a retry goes as soon as its first attempt fails
+            if (attach()) {
+              return;
+            }
             for (const pipeline of pipelinesRead(reads.reads)) {
               const listener = () => {
                 if (!done && own.attached === null) {

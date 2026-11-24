@@ -836,6 +836,25 @@ export function experimental_load<
     return { reads: { each, reads }, frame };
   }
 
+  /** An input with what it reads filled in, if every run it reads has data now */
+  function knownInput(call: Call, items: Items) {
+    let complete = true;
+    const input = mapInput({
+      value: call.input,
+      to: [],
+      onRead: (read) => {
+        const ref = read as Ref;
+        const done = ref.call.done.get(keyOf(ref.call, items));
+        if (!done) {
+          complete = false;
+          return undefined;
+        }
+        return walk({ run: done, path: ref.path, items, as: 'read' }).value;
+      },
+    });
+    return complete ? { input } : null;
+  }
+
   /** A filled input, or a rejection that a link passes on as `blocked` */
   function inputFor(call: Call, items: Items) {
     return fill({ value: call.input, items, skip: null }).then((input) =>
@@ -1008,6 +1027,11 @@ export function experimental_load<
             reads: { each: null, reads: complete ? reads : [] },
             perItem: false,
             resolve: () => inputFor(call, items).then(firstPage),
+            known: () => {
+              const known = knownInput(call, items);
+              return known && { input: firstPage(known.input) };
+            },
+            filled: null,
           })),
       ...(prior ? priorFailureContext(prior) : {}),
     };
@@ -1275,10 +1299,19 @@ export function experimental_load<
             resolve: perItem
               ? () => sourcesReady(call)
               : () => inputFor(call, new Map()),
+            known: () => knownInput(call, new Map()),
+            filled: null,
           }),
         }),
       ),
     );
+  }
+  // The data of each call that runs once, as soon as it arrives: what a
+  // retry of a query that read it sends
+  for (const call of calls) {
+    if (call.sent && call.scopes.length === 0) {
+      void runOf(call, new Map());
+    }
   }
   if (
     isDev() &&
