@@ -3,10 +3,13 @@ import type {
   PipelineCallReads,
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
-import { hasOwn, isObject } from '@trpc/server/unstable-core-do-not-import';
+import {
+  abortSignalsAnyPonyfill,
+  hasOwn,
+  isObject,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from '../createTRPCClient';
 import { getUntypedClient } from '../createTRPCClient';
-import { raceAbortSignals } from '../internals/signals';
 import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from '../internals/types';
 import type {
@@ -920,7 +923,11 @@ export function experimental_load<
     const abort = new AbortController();
     const sent = outcomeOf(
       untyped.query(send.call.path, send.input, {
-        signal: raceAbortSignals(opts?.signal, abort.signal),
+        // `AbortSignal.any()` where there is one: the caller's signal keeps
+        // no listener for each operation
+        signal: opts?.signal
+          ? abortSignalsAnyPonyfill([opts.signal, abort.signal])
+          : abort.signal,
         context: { ...opts?.context, ...send.call.context, ...send.context },
       }),
     );

@@ -1364,6 +1364,58 @@ describe.each([
     ).toEqual({ id: 'ada', teamId: 'team-ada' });
   });
 
+  test("the caller's signal aborts a query that reads another, and keeps no listener once the load is done", async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const listening = new Set<unknown>();
+    const watched = (signal: AbortSignal) => {
+      const add = signal.addEventListener.bind(signal);
+      const remove = signal.removeEventListener.bind(signal);
+      signal.addEventListener = (type: string, listener: any, opts?: any) => {
+        listening.add(listener);
+        add(type, listener, opts);
+      };
+      signal.removeEventListener = (type: string, listener: any) => {
+        listening.delete(listener);
+        remove(type, listener);
+      };
+      return signal;
+    };
+
+    {
+      const post = query(c.post.bySlug, { slug: 'a' });
+      const signal = watched(new AbortController().signal);
+      await experimental_settle(
+        experimental_load(
+          c,
+          { post, author: query(c.author.byId, { id: dataOf(post).authorId }) },
+          { signal },
+        ),
+      );
+      await vi.waitFor(() => expect(listening.size).toBe(0));
+    }
+    {
+      const gate = createDeferred();
+      ctx.gates.set('ada', gate.promise);
+      using _release = makeResource({}, () => gate.resolve());
+      const abort = new AbortController();
+      const post = query(c.post.bySlug, { slug: 'a' });
+      const res = experimental_load(
+        c,
+        { post, author: query(c.author.byId, { id: dataOf(post).authorId }) },
+        { signal: abort.signal },
+      );
+      res.post.catch(() => null);
+      // The author's query runs on the server, and waits for its gate
+      await vi.waitFor(() =>
+        expect(ctx.calls).toHaveBeenCalledWith('author', 'ada'),
+      );
+      abort.abort();
+
+      await expect(res.author).rejects.toThrow();
+    }
+  });
+
   test('a nested `.map()` is refused as the description is built', async () => {
     await using ctx = setup({ pipelining: true });
     const c = ctx.client;
