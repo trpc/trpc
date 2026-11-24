@@ -1,7 +1,10 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { Operation, TRPCLink } from '@trpc/client';
 import {
+  experimental_dataOf,
+  experimental_load,
   experimental_pipelining,
+  experimental_query,
   getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
@@ -1513,6 +1516,62 @@ describe('httpBatchStreamLink, when an operation fails', () => {
     await expect(author.result).rejects.toMatchObject({
       data: { code: 'PRECONDITION_FAILED' },
     });
+  });
+});
+
+describe('httpBatchStreamLink, a call that has all of its result', () => {
+  test('lets go of the request: a streamed query cancelled in the same batch stops on the server', async () => {
+    const t = initTRPC.create();
+    // Set in a callback, so TypeScript can't narrow it from its first value
+    let tickSignal = null as AbortSignal | null;
+    const appRouter = t.router({
+      post: t.procedure.query(() => ({ authorId: 'ada' })),
+      author: t.procedure
+        .input(z.object({ id: z.string() }))
+        .query((opts) => ({ id: opts.input.id })),
+      ticks: t.procedure.query(async function* (opts) {
+        tickSignal = opts.signal ?? null;
+        for (let i = 0; ; i++) {
+          yield i;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+    const streamed = new AbortController();
+    const post = experimental_query(c.post);
+    const res = experimental_load(c, {
+      post,
+      author: experimental_query(c.author, {
+        id: experimental_dataOf(post).authorId,
+      }),
+    });
+    const ticks = c.ticks.query(undefined, { signal: streamed.signal });
+
+    expect(await res.author).toEqual({ id: 'ada' });
+    const seen: number[] = [];
+    await expect(async () => {
+      for await (const tick of await ticks) {
+        seen.push(tick);
+        if (tick === 2) streamed.abort();
+        if (tick === 10) break;
+      }
+    }).rejects.toThrow();
+    expect(seen).toEqual([0, 1, 2]);
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    // The server must see the cancellation and stop the procedure
+    await vi.waitFor(() => expect(tickSignal?.aborted).toBe(true));
   });
 });
 

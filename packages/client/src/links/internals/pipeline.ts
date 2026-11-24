@@ -1011,17 +1011,24 @@ const sentOps = /* @__PURE__ */ new WeakMap<PipelinedCall, object>();
 
 /**
  * A call as an operation for a link to send. Its signal keeps the request,
- * and a streamed response, going until the call has its result
+ * and a streamed response, going until the call has all of its result
  */
 function sentOp(
   call: PipelinedCall,
-  /** The operation it is for, if one */
-  op: Operation | null,
-  /** Aborts once nothing wants its result anymore */
-  unsubscribed: AbortSignal | null,
+  opts: {
+    /** The operation it is for, if one */
+    op: Operation | null;
+    /** Aborts once nothing wants its result anymore */
+    unsubscribed: AbortSignal | null;
+    /** A streamed result is all there once the link calls `settle()` */
+    streams: boolean;
+  },
 ) {
+  const { op, unsubscribed } = opts;
   const settled = new AbortController();
-  void call.settled.then(() => settled.abort());
+  if (!opts.streams) {
+    void call.settled.then(() => settled.abort());
+  }
   return {
     id: -1,
     type: 'query',
@@ -1033,6 +1040,7 @@ function sentOp(
     releaseSignal() {
       // Its signal is its own
     },
+    settle: () => settled.abort(),
   };
 }
 
@@ -1165,7 +1173,14 @@ export function experimental_pipelining(
             if (!call) {
               return false;
             }
-            sentOps.set(call, sentOp(call, op, unsubscribed.signal));
+            sentOps.set(
+              call,
+              sentOp(call, {
+                op,
+                unsubscribed: unsubscribed.signal,
+                streams: link.streams,
+              }),
+            );
             own.attached = call;
             stopListening();
             // The operations that read it, and wait for an attempt of it
@@ -1261,8 +1276,12 @@ export function experimental_pipelining(
             wait();
           }
           return () => {
+            // A call that settled keeps its request until all of its result
+            // is there: its runs may still stream
+            if (!done) {
+              unsubscribed.abort();
+            }
             done = true;
-            unsubscribed.abort();
             stopListening();
             alone?.unsubscribe();
           };
@@ -1355,7 +1374,13 @@ export function experimental_pipelining(
             [
               ...ops,
               ...taken.calls.map(
-                (call) => sentOps.get(call) ?? sentOp(call, null, null),
+                (call) =>
+                  sentOps.get(call) ??
+                  sentOp(call, {
+                    op: null,
+                    unsubscribed: null,
+                    streams: link.streams,
+                  }),
               ),
             ] as typeof ops,
             taken.request,
