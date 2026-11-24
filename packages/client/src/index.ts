@@ -40,6 +40,7 @@ export {
   experimental_settle,
   type experimental_LoadEntries,
   type experimental_Loaded,
+  type experimental_LoadedList,
   type experimental_Settled,
 } from './queries/load';
 

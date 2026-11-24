@@ -67,11 +67,26 @@ export interface experimental_LoadEntries {
     | null;
 }
 
+declare const loadedList: unique symbol;
+
+/**
+ * The promise of the list of an entry per item, as `experimental_load()`
+ * gives it: of an array of what each item loads to. Its type tells it from
+ * the promise of a query's data, whose promises `experimental_settle()`
+ * leaves as they are
+ *
+ * Experimental: it may change in a minor release.
+ */
+export type experimental_LoadedList<TItem> = Promise<TItem[]> & {
+  /** Type-only: never present at runtime */
+  readonly [loadedList]: true;
+};
+
 /** What an entry of a description loads to */
 type LoadedValue<TValue> = TValue extends null
   ? null
   : TValue extends experimental_PerItemEntry<infer TReturn, any>
-    ? Promise<LoadedValue<TReturn>[]>
+    ? experimental_LoadedList<LoadedValue<TReturn>>
     : TValue extends experimental_DataEntry
       ? Promise<experimental_DataOfEntry<TValue>>
       : { [K in keyof TValue]: LoadedValue<TValue[K]> };
@@ -90,18 +105,19 @@ export type experimental_Loaded<TEntries> = {
 };
 
 /**
- * What `experimental_load()` returns, with every promise awaited
+ * What `experimental_load()` returns, with every promise of it awaited: the
+ * promises in a query's data, as a streaming link gives them, stay promises
  *
  * Experimental: it may change in a minor release.
  */
 export type experimental_Settled<TLoaded> =
-  TLoaded extends Promise<infer TValue>
-    ? experimental_Settled<TValue>
-    : TLoaded extends readonly unknown[]
-      ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
-      : TLoaded extends Record<string, unknown>
-        ? { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> }
-        : TLoaded;
+  TLoaded extends experimental_LoadedList<infer TItem>
+    ? experimental_Settled<TItem>[]
+    : TLoaded extends Promise<infer TValue>
+      ? TValue
+      : TLoaded extends null
+        ? null
+        : { [K in keyof TLoaded]: experimental_Settled<TLoaded[K]> };
 
 /** A list's item, in a path: the item a run is for */
 interface Scope {

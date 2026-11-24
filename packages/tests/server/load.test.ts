@@ -2226,7 +2226,7 @@ describe('types', () => {
           ),
         }).author,
       ).toEqualTypeOf<Promise<Author>>();
-      expectTypeOf(res.authors).toEqualTypeOf<Promise<Promise<Author>[]>>();
+      expectTypeOf(res.authors).resolves.toEqualTypeOf<Promise<Author>[]>();
       expectTypeOf(res.group.team).toEqualTypeOf<Promise<Team>>();
       expectTypeOf(res.list).resolves.toEqualTypeOf<{
         items: Post[];
@@ -2264,6 +2264,22 @@ describe('types', () => {
         pair: [string, number];
         names: readonly string[];
         pairs: [string, number][];
+      }>();
+    });
+  });
+
+  test('`experimental_settle()` leaves a promise in the data of a query as it is, as it does at runtime', () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      deferred: t.procedure.query(() => ({ later: Promise.resolve('ada') })),
+    });
+    const deferred = {} as TRPCClient<typeof router>;
+    check(() => {
+      const settled = experimental_settle(
+        experimental_load(deferred, { it: query(deferred.deferred) }),
+      );
+      expectTypeOf(settled).resolves.toEqualTypeOf<{
+        it: { later: Promise<string> };
       }>();
     });
   });
