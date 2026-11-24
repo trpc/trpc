@@ -1420,6 +1420,8 @@ describe.each([
         const gate = createDeferred();
         ctx.gates.set('ada', gate.promise);
         using _release = makeResource({}, () => gate.resolve());
+        // Only this load's calls: the first one's author ran already
+        ctx.calls.mockClear();
         const abort = new AbortController();
         const post = query(c.post.bySlug, { slug: 'a' });
         const res = experimental_load(
@@ -1526,25 +1528,70 @@ describe.each([
     expect(await res.ids).toEqual(['a']);
   });
 
-  test('`initialCursor` takes the place of the cursor of an input that is all read of another entry', async () => {
-    await using ctx = setup({ pipelining: true });
+  test.each([
+    { name: '', allowWholeValues: false },
+    {
+      name: ', also where the server takes whole values',
+      allowWholeValues: true,
+    },
+  ])(
+    '`initialCursor` takes the place of the cursor of an input that is all read of another entry$name',
+    async (opts) => {
+      await using ctx = setup({
+        pipelining: true,
+        allowWholeValues: opts.allowWholeValues,
+      });
+      using _quiet = quietWarnings();
+      const c = ctx.client;
+
+      const first = infiniteQuery(c.post.feed, {});
+      const res = experimental_load(c, {
+        // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
+        feed: infiniteQuery(
+          c.post.feed,
+          dataOf(first).pages[0]! as { cursor?: number },
+          { initialCursor: 1 },
+        ),
+      });
+
+      expect(await res.feed).toMatchObject({
+        pages: [{ items: posts.slice(1, 3) }],
+        pageParams: [1],
+      });
+    },
+  );
+
+  test("an entry per item of an infinite query's `pages` has a row for the first page, and rejects if the query fails", async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      feed: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+            fail: z.boolean().optional(),
+          }),
+        )
+        .query((opts) => {
+          if (opts.input.fail) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'no feed' });
+          }
+          return { at: opts.input.cursor ?? 0 };
+        }),
+      other: t.procedure.query(() => 'other'),
+    });
+    await using ctx = setupRouter(appRouter);
     using _quiet = quietWarnings();
     const c = ctx.client;
 
-    const first = infiniteQuery(c.post.feed, {});
+    const ok = infiniteQuery(c.feed, { fail: false });
+    const failing = infiniteQuery(c.feed, { fail: true });
     const res = experimental_load(c, {
-      // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
-      feed: infiniteQuery(
-        c.post.feed,
-        dataOf(first).pages[0]! as { cursor?: number },
-        { initialCursor: 1 },
-      ),
+      ok: perItem(dataOf(ok).pages, () => query(c.other)),
+      failing: perItem(dataOf(failing).pages, () => query(c.other)),
     });
 
-    expect(await res.feed).toMatchObject({
-      pages: [{ items: posts.slice(1, 3) }],
-      pageParams: [1],
-    });
+    expect(await experimental_settle(res.ok)).toEqual(['other']);
+    await expect(res.failing).rejects.toThrow('no feed');
   });
 
   test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
@@ -1645,6 +1692,32 @@ describe('a `splitLink` that sends a query and one that reads it to different li
     expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
     expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
   });
+});
+
+test('a query that asks by itself reads a `Date` in two places of the data as one `Date`', async () => {
+  const t = initTRPC.create({ transformer: superjson });
+  const appRouter = t.router({
+    source: t.procedure.query(() => {
+      const key = new Date(1000);
+      return { key, values: new Map([[key, 'ok']]) };
+    }),
+    lookup: t.procedure
+      .input((value) => value as { key: Date; values: Map<Date, string> })
+      .query((opts) => opts.input.values.get(opts.input.key) ?? 'missing'),
+  });
+  await using ctx = testServerAndClientResource(appRouter, {
+    client: (clientOpts) => ({
+      links: [httpLink({ url: clientOpts.httpUrl, transformer: superjson })],
+    }),
+  });
+  const c = ctx.client;
+
+  const source = query(c.source);
+  const res = experimental_load(c, {
+    lookup: query(c.lookup, dataOf(source)),
+  });
+
+  expect(await res.lookup).toBe('ok');
 });
 
 test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {

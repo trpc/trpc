@@ -451,4 +451,39 @@ describe('a link that does not pipeline', () => {
 
     expect(inputs).toEqual([{ key: 'a' }, { key: 'a+' }]);
   });
+
+  test('`experimental_inputOf()` of the operation of a query for every item is `undefined`: its runs have inputs of their own', async () => {
+    const { appRouter } = createRouter();
+    const inputs: unknown[] = [];
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          () => (linkOpts) => {
+            void experimental_inputOf(linkOpts.op).then((input) =>
+              inputs.push(input),
+            );
+            return linkOpts.next(linkOpts.op);
+          },
+          httpBatchStreamLink({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    const list = query(ctx.client.a, { key: 'list' });
+
+    const res = await experimental_settle(
+      experimental_load(ctx.client, {
+        list,
+        rows: perItem(dataOf(list).items, (item) =>
+          query(ctx.client.b, { key: item }),
+        ),
+      }),
+    );
+
+    expect(res.rows.map((row) => row.key)).toEqual(['x', 'y', 'z']);
+    expect(inputs).toEqual([{ key: 'list' }, undefined]);
+  });
 });

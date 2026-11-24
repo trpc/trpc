@@ -1481,6 +1481,10 @@ export function pipelineFallback(cause: unknown): TRPCClientError<any> {
  * doesn't pipeline never sends a blank: `experimental_load()` aborts such an
  * operation as the link takes it, and sends the query again, filled in.
  *
+ * The operation of a query for every item stands for a run per item, each
+ * with an input of its own: for it, this resolves to `undefined`, once the
+ * data its runs read is there.
+ *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#links
  */

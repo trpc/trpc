@@ -887,7 +887,11 @@ export class WsClient {
     let completed = true;
     if ('result' in message && request.message.method === 'subscription') {
       if (message.result.type === 'data') {
-        request.message.params.lastEventId = message.result.id;
+        // An event without an id keeps the last tracked id, so a reconnect
+        // still resumes after it, as with `httpSubscriptionLink`.
+        if (message.result.id !== undefined) {
+          request.message.params.lastEventId = message.result.id;
+        }
       } else if (message.result.type === 'started') {
         this.started.add(request.message);
       }
