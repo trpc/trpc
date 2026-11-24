@@ -806,7 +806,7 @@ describe.each([
         open: false,
         calls: [],
         sent: Promise.resolve([]),
-        settleSent: () => {},
+        settleSent: () => undefined,
       },
     },
   ])(

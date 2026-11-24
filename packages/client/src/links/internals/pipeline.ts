@@ -202,15 +202,21 @@ export type PipelinedRun =
 export type PipelinedRuns = Settles<PipelinedRunsNode>;
 
 /** A call's data, decoded once by the link */
-export type PipelinedData = (
-  | /** A call that ran once */
-  { kind: 'once'; data: unknown }
-  /** A call that ran for every item: see `readPipelinedRun()` */
-  | { kind: 'each'; runs: PipelinedRuns }
-) & {
+export type PipelinedData = {
   /** The response of the request it was in, as a batch link has it */
   meta: HTTPResult['meta'];
-};
+} & (
+  | {
+      /** A call that ran once */
+      kind: 'once';
+      data: unknown;
+    }
+  | {
+      /** A call that ran for every item: see `readPipelinedRun()` */
+      kind: 'each';
+      runs: PipelinedRuns;
+    }
+);
 
 /**
  * Where a call is. It goes from `waiting` to `sent` or `not-run`, and from

@@ -36,12 +36,13 @@ async function renderControls(onChange: (plan: Plan) => void) {
 
 /** Types a value into a number input, as React hears it */
 async function type(input: HTMLInputElement, value: string) {
-  const setValue = Object.getOwnPropertyDescriptor(
+  // The setter of the prototype: React tracks the value an input sets
+  const descriptor = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
     'value',
-  )?.set;
+  );
   await act(async () => {
-    setValue?.call(input, value);
+    descriptor?.set?.call(input, value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }

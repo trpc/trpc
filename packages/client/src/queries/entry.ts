@@ -390,7 +390,7 @@ function copyInput(value: unknown, within: readonly object[]): unknown {
   }
   if (within.includes(value)) {
     throw new TypeError(
-      'An entry\'s input has a cycle: an object or an array is inside itself. Pass one without, or query it without `experimental_load()`',
+      "An entry's input has a cycle: an object or an array is inside itself. Pass one without, or query it without `experimental_load()`",
     );
   }
   const inside = [...within, value];
