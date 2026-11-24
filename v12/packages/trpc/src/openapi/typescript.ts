@@ -20,12 +20,14 @@
  */
 import {
   API,
+  ElementFlags,
   SignatureKind,
   SymbolFlags,
   TypeFlags,
   type Checker,
   type Snapshot,
   type Symbol as TsSymbol,
+  type TupleTypeReference,
   type Type,
   type TypeReference,
 } from 'typescript/sync';
@@ -197,10 +199,13 @@ class TypeToSchema {
       const items = checker
         .getTypeArguments(type as TypeReference)
         .map((t) => this.convert(t) ?? { type: 'null' });
+      // `[string, number?]`'s `?` is in the flags, not the type: a required
+      // `number | undefined` must still be sent.
+      const flags = (type as TupleTypeReference).getTarget().elementFlags;
       return {
         type: 'array',
         prefixItems: items,
-        minItems: items.length,
+        minItems: flags.filter((flag) => flag & ElementFlags.Required).length,
         maxItems: items.length,
       };
     }

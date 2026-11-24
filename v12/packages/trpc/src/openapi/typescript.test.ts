@@ -219,6 +219,13 @@ test('types document as JSON.stringify sends them (21)', async () => {
         minItems: 3,
         maxItems: 3,
       },
+      // An optional element may be left out.
+      short: {
+        type: 'array',
+        prefixItems: [{ type: 'string' }, { type: 'number' }],
+        minItems: 1,
+        maxItems: 2,
+      },
       file: binary,
       upload: binary,
       tags: { type: 'object' },
@@ -276,6 +283,7 @@ test('types document as JSON.stringify sends them (21)', async () => {
       'loose',
       'nothing',
       'pair',
+      'short',
       'file',
       'upload',
       'tags',

@@ -33,6 +33,7 @@ export interface Shapes {
   loose: any;
   nothing: never;
   pair: [string, number, undefined];
+  short: [string, number?];
   onClick: () => void;
   greet(name: string): string;
   [Symbol.iterator]?: () => Iterator<number>;
