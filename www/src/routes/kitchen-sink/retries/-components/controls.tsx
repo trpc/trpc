@@ -38,7 +38,7 @@ export function Controls(props: {
 }) {
   const { plan } = props;
   const set = (change: Partial<Plan>) => props.onChange({ ...plan, ...change });
-  const ids = { commenter: useId(), noRetry: useId() };
+  const ids = { commenter: useId(), noRetry: useId(), stream: useId() };
   return (
     <div className="grid gap-3 rounded-xl bg-card p-3 shadow-sm ring-1 ring-foreground/10">
       <div className="flex flex-wrap gap-x-5 gap-y-2">
@@ -148,6 +148,19 @@ export function Controls(props: {
             </label>
           </>
         ) : null}
+        <label
+          className="flex items-center gap-2"
+          htmlFor={ids.stream}
+          title="Chrome's Network tab shows no body for a streamed response"
+        >
+          <input
+            checked={plan.stream}
+            id={ids.stream}
+            onChange={(event) => set({ stream: event.target.checked })}
+            type="checkbox"
+          />
+          Stream (<code className="font-mono">httpBatchStreamLink</code>)
+        </label>
         <Button className="ml-auto" onClick={props.onLoad} size="sm">
           <RotateCw />
           Load

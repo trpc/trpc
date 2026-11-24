@@ -12,7 +12,9 @@ import {
   experimental_perItem,
   experimental_pipelining,
   experimental_query,
+  httpBatchLink,
   httpBatchStreamLink,
+  loggerLink,
   retryLink,
 } from '@trpc/client';
 import type { TRPCLink } from '@trpc/client';
@@ -36,6 +38,12 @@ export interface Plan {
     readonly delayMs: number;
   } | null;
   readonly team: number;
+  /**
+   * Whether responses stream, with `httpBatchStreamLink`: each query shows
+   * as soon as it has its data. Chrome's Network tab shows no body for a
+   * streamed response; `httpBatchLink` sends one JSON body it can show
+   */
+  readonly stream: boolean;
 }
 
 /** The `fetch` a client sends its requests with */
@@ -239,9 +247,12 @@ export function loadRetries(opts: {
             }),
           ]
         : []),
-      // Only for the log: it sees each attempt of each query
+      // The standard logger, after `retryLink`: the browser's console has
+      // each attempt of each query, and its result
+      loggerLink(),
+      // Only for the page's log: it sees each attempt of each query
       attemptsLink(opts.log),
-      httpBatchStreamLink({
+      (plan.stream ? httpBatchStreamLink : httpBatchLink)({
         experimental_pipelining: experimental_pipelining(),
         fetch: async (url, init) => {
           const end = opts.log.request(

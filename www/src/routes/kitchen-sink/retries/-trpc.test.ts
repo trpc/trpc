@@ -1,5 +1,6 @@
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { appRouter } from './-server/router.ts';
 import {
@@ -40,6 +41,7 @@ const none: Plan = {
   commenter: null,
   post: 0,
   retry: { attempts: 3, delayMs: 0 },
+  stream: true,
   team: 0,
 };
 
@@ -105,6 +107,36 @@ test('a failing author is retried in one request with its team, and the post is 
     [1, 'error'],
     [2, 'ok'],
   ]);
+});
+
+test('without streaming, a failing author is retried the same way, and the console logs each attempt', async () => {
+  const lines: unknown[][] = [];
+  using _console = makeResource(
+    {},
+    (() => {
+      const log = vi.spyOn(console, 'log').mockImplementation((...args) => {
+        lines.push(args);
+      });
+      const error = vi.spyOn(console, 'error').mockImplementation((...args) => {
+        lines.push(args);
+      });
+      return () => {
+        log.mockRestore();
+        error.mockRestore();
+      };
+    })(),
+  );
+  const { sent, settled } = await load({ ...none, author: 1, stream: false });
+
+  expect(sent).toEqual([all, 'author.byId,team.byId']);
+  expect(settled).toMatchObject({ author: 2, post: 1, team: 1 });
+  // `loggerLink`: the author's two attempts, out and back
+  const author = lines.filter((line) =>
+    line.some(
+      (part) => typeof part === 'string' && part.includes('author.byId'),
+    ),
+  );
+  expect(author.length).toBeGreaterThanOrEqual(4);
 });
 
 test("a failing commenter is retried by itself, with that commenter's avatar", async () => {

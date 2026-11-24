@@ -31,6 +31,7 @@ const firstPlan: Plan = {
   commenter: { id: 'bob', times: 1 },
   post: 0,
   retry: { attempts: 3, delayMs: 300 },
+  stream: true,
   team: 0,
 };
 
@@ -99,6 +100,13 @@ function RetriesPage() {
           Then tick <em>No retryLink</em> and load again: the author and the
           team fail with the author's error, and nothing is sent again. Or set a
           query to fail more times than there are attempts.
+        </p>
+        <p>
+          Open the browser's console: <code>loggerLink</code>, after{' '}
+          <code>retryLink</code>, logs each attempt of each query and its
+          result. Chrome's Network tab shows no body for a streamed response:
+          untick <em>Stream</em> to send each request with{' '}
+          <code>httpBatchLink</code>, whose JSON body it shows.
         </p>
       </SeeItYourself>
       <Controls
