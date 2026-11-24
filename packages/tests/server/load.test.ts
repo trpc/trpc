@@ -29,6 +29,7 @@ import {
   isObject,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
+import { tap } from '@trpc/server/observable';
 import superjson from 'superjson';
 import { z } from 'zod';
 
@@ -1436,6 +1437,43 @@ describe.each([
       } as { id: string }),
     });
     expect(await res.author).toMatchObject({ id: 'ada' });
+  });
+
+  test("a query in the request of what it reads has that request's response in its result's context, as one by itself has its own", async () => {
+    const { appRouter } = createRouter();
+    const contexts = new Map<string, unknown>();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          () => (linkOpts) =>
+            linkOpts.next(linkOpts.op).pipe(
+              tap({
+                next: (envelope) =>
+                  contexts.set(linkOpts.op.path, envelope.context),
+              }),
+            ),
+          scenario.link({
+            url: clientOpts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    await experimental_settle(
+      experimental_load(c, {
+        post,
+        author: query(c.author.byId, { id: dataOf(post).authorId }),
+      }),
+    );
+
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+    expect(contexts.get('author.byId')).toEqual(contexts.get('post.bySlug'));
+    expect(contexts.get('author.byId')).toHaveProperty('response');
   });
 
   test('a nested `.map()` is refused as the description is built', async () => {

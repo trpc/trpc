@@ -202,11 +202,15 @@ export type PipelinedRun =
 export type PipelinedRuns = Settles<PipelinedRunsNode>;
 
 /** A call's data, decoded once by the link */
-export type PipelinedData =
-  /** A call that ran once */
-  | { kind: 'once'; data: unknown }
+export type PipelinedData = (
+  | /** A call that ran once */
+  { kind: 'once'; data: unknown }
   /** A call that ran for every item: see `readPipelinedRun()` */
-  | { kind: 'each'; runs: PipelinedRuns };
+  | { kind: 'each'; runs: PipelinedRuns }
+) & {
+  /** The response of the request it was in, as a batch link has it */
+  meta: HTTPResult['meta'];
+};
 
 /**
  * Where a call is. It goes from `waiting` to `sent` or `not-run`, and from
@@ -864,6 +868,7 @@ function decodeCall(
         ok: true,
         data: {
           kind: 'each',
+          meta: sent.meta,
           runs: decodeRuns(
             sent.json,
             link.streams
@@ -879,7 +884,7 @@ function decodeCall(
       status: 'ran',
       outcome: {
         ok: true,
-        data: { kind: 'once', data: readResult(link, sent) },
+        data: { kind: 'once', data: readResult(link, sent), meta: sent.meta },
       },
     };
   } catch (error) {
@@ -1228,6 +1233,8 @@ export function experimental_pipelining(
               const data = settled.outcome.data;
               done = true;
               observer.next({
+                // As a batch link gives an operation's
+                context: data.meta,
                 result: {
                   type: 'data',
                   data: data.kind === 'once' ? data.data : data.runs,
