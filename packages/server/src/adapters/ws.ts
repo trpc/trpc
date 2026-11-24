@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import type { RawData, WebSocket, WebSocketServer } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -97,77 +97,126 @@ function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
 }
 
 /**
+ * The members of a connected client that the WebSocket adapter reads, so a
+ * server that is not `ws` can be served without a cast. A `ws` `WebSocket`
+ * satisfies them.
+ * @public
+ */
+export interface WSClient {
+  /** The ready state, compared against `OPEN` (1). */
+  readyState: number;
+  on(
+    event: 'message',
+    listener: (data: RawData, isBinary: boolean) => void,
+  ): unknown;
+  on(event: 'close' | 'error', listener: (cause?: unknown) => void): unknown;
+  once(event: 'close', listener: () => void): unknown;
+  send(data: string | Uint8Array): void;
+  close(code?: number, reason?: string): void;
+  terminate(): void;
+}
+
+/**
+ * The members of a server that the WebSocket adapter reads: connection
+ * listeners and the connected clients. A `ws` `WebSocketServer` satisfies
+ * them.
+ * @public
+ */
+export interface WSServer<TClient extends WSClient = WSClient> {
+  clients: ReadonlySet<TClient>;
+  on(
+    event: 'connection',
+    listener: (client: TClient, request: IncomingMessage) => void,
+  ): unknown;
+}
+
+type InferWSServerClient<TServer extends WSServer<WSClient>> =
+  TServer['clients'] extends ReadonlySet<infer TClient extends WSClient>
+    ? TClient
+    : never;
+
+/**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
  * as `req`, the socket as `res`, and `info`. It's called once per
  * connection.
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  * @public
  */
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  WsWebSocket
->;
+export type CreateWSSContextFnOptions<TClient extends WSClient = WebSocket> =
+  NodeHTTPCreateContextFnOptions<IncomingMessage, TClient>;
 
 /**
  * The `createContext` function the WebSocket adapter takes.
  * @public
  */
-export type CreateWSSContextFn<TRouter extends AnyRouter> = (
-  opts: CreateWSSContextFnOptions,
+export type CreateWSSContextFn<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = (
+  opts: CreateWSSContextFnOptions<TClient>,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 /** The options of `getWSConnectionHandler`. */
-export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
-  BaseHandlerOptions<TRouter, IncomingMessage> &
-    CreateContextCallback<
-      inferRouterContext<TRouter>,
-      CreateWSSContextFn<TRouter>
-    >;
+export type WSConnectionHandlerOptions<
+  TRouter extends AnyRouter,
+  TClient extends WSClient = WebSocket,
+> = BaseHandlerOptions<TRouter, IncomingMessage> &
+  CreateContextCallback<
+    inferRouterContext<TRouter>,
+    CreateWSSContextFn<TRouter, TClient>
+  >;
 
 /**
  * The options of `applyWSSHandler`.
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> =
-  WSConnectionHandlerOptions<TRouter> & {
-    /** The `ws` server to serve the router on. */
-    wss: WebSocketServer;
-    /** Only connections whose URL starts with this are served. */
-    prefix?: string;
+type WSConnectionOptionsForServer<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient>,
+> = WSConnectionHandlerOptions<TRouter, InferWSServerClient<TServer>>;
+
+export type WSSHandlerOptions<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+> = WSConnectionOptionsForServer<TRouter, TServer> & {
+  /** The WebSocket server to serve the router on. */
+  wss: TServer;
+  /** Only connections whose URL starts with this are served. */
+  prefix?: string;
+  /**
+   * Sends pings to each client and closes connections that stop
+   * answering.
+   */
+  keepAlive?: {
     /**
-     * Sends pings to each client and closes connections that stop
-     * answering.
-     */
-    keepAlive?: {
-      /**
-       * Whether to send pings.
-       * @default false
-       */
-      enabled: boolean;
-      /**
-       * How long a connection can be quiet before a ping, in milliseconds.
-       * @default 30_000
-       */
-      pingMs?: number;
-      /**
-       * How long to wait for a pong before closing the connection, in
-       * milliseconds.
-       * @default 5_000
-       */
-      pongWaitMs?: number;
-    };
-    /**
-     * Stops answering clients' pings. Meant for tests.
+     * Whether to send pings.
      * @default false
      */
-    dangerouslyDisablePong?: boolean;
+    enabled: boolean;
     /**
-     * Encodes and decodes messages, for formats other than JSON.
-     * Experimental: it may change in any release.
-     * @default jsonEncoder
+     * How long a connection can be quiet before a ping, in milliseconds.
+     * @default 30_000
      */
-    experimental_encoder?: Encoder;
+    pingMs?: number;
+    /**
+     * How long to wait for a pong before closing the connection, in
+     * milliseconds.
+     * @default 5_000
+     */
+    pongWaitMs?: number;
   };
+  /**
+   * Stops answering clients' pings. Meant for tests.
+   * @default false
+   */
+  dangerouslyDisablePong?: boolean;
+  /**
+   * Encodes and decodes messages, for formats other than JSON.
+   * Experimental: it may change in any release.
+   * @default jsonEncoder
+   */
+  experimental_encoder?: Encoder;
+};
 
 /**
  * `iterator.next()` for a subscription loop that races it against the
@@ -199,14 +248,26 @@ function nextUnlessStopped<TValue, TReturn>(
  * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
  * uses it; call it to attach tRPC to your own WebSocket server.
  */
+export function getWSConnectionHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+>(
+  opts: WSSHandlerOptions<TRouter, TServer>,
+): (client: InferWSServerClient<TServer>, req: IncomingMessage) => void;
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-) {
+  opts: WSSHandlerOptions<TRouter, WSServer>,
+): (client: WSClient, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
+): (client: WebSocket, req: IncomingMessage) => void;
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WSServer<any>>,
+): (client: WSClient, req: IncomingMessage) => void {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: WsWebSocket, req: IncomingMessage) => {
+  return (client: WSClient, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -907,7 +968,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  * message comes within `pongWaitMs`.
  */
 export function handleKeepAlive(
-  client: WsWebSocket,
+  client: WSClient,
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
@@ -944,6 +1005,11 @@ export function handleKeepAlive(
   schedulePing();
 }
 
+export interface WSSHandler {
+  /** Tells every connected client to reconnect. */
+  broadcastReconnectNotification: () => void;
+}
+
 /**
  * Serves a router on a `ws` WebSocket server. Returns
  * `broadcastReconnectNotification()`, which tells every client to
@@ -959,12 +1025,23 @@ export function handleKeepAlive(
  * ```
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
  */
+export function applyWSSHandler<
+  TRouter extends AnyRouter,
+  TServer extends WSServer<WSClient> = WebSocketServer,
+>(opts: WSSHandlerOptions<TRouter, TServer>): WSSHandler;
 export function applyWSSHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
-) {
+  opts: WSSHandlerOptions<TRouter, WSServer>,
+): WSSHandler;
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter, WebSocketServer>,
+): WSSHandler;
+export function applyWSSHandler(
+  opts: WSSHandlerOptions<AnyRouter, WSServer<any>>,
+): WSSHandler {
   const encoder = opts.experimental_encoder ?? jsonEncoder;
   const onConnection = getWSConnectionHandler(opts);
-  opts.wss.on('connection', (client, req) => {
+  const wss: WSServer<WSClient> = opts.wss;
+  wss.on('connection', (client: WSClient, req: IncomingMessage) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
@@ -974,18 +1051,45 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
   return {
     broadcastReconnectNotification: () => {
-      const response: TRPCReconnectNotification = {
-        id: null,
-        method: 'reconnect',
-      };
-      const data = encoder.encode(response);
-      for (const client of opts.wss.clients) {
-        if (client.readyState === WEBSOCKET_OPEN) {
-          client.send(data);
-        }
-      }
+      broadcastReconnectNotification(wss, { experimental_encoder: encoder });
     },
   };
+}
+
+/**
+ * Tells every open client of a WebSocket server to reconnect, for example
+ * before a deploy. Use it where you have the server but not the handler
+ * `applyWSSHandler` returns, such as `fastify.websocketServer` with the
+ * Fastify adapter. Every open client gets the message, including ones that
+ * tRPC doesn't serve.
+ * @example
+ * ```ts
+ * broadcastReconnectNotification(fastify.websocketServer);
+ * await fastify.close();
+ * ```
+ * @see https://trpc.io/docs/server/adapters/fastify#telling-clients-to-reconnect
+ */
+export function broadcastReconnectNotification(
+  wss: Pick<WSServer, 'clients'>,
+  opts?: {
+    /**
+     * The encoder the server was set up with, if not JSON.
+     * @default jsonEncoder
+     */
+    experimental_encoder?: Encoder;
+  },
+): void {
+  const encoder = opts?.experimental_encoder ?? jsonEncoder;
+  const response: TRPCReconnectNotification = {
+    id: null,
+    method: 'reconnect',
+  };
+  const data = encoder.encode(response);
+  for (const client of wss.clients) {
+    if (client.readyState === WEBSOCKET_OPEN) {
+      client.send(data);
+    }
+  }
 }
 
 export type { Encoder } from './wsEncoder';

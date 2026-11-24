@@ -299,6 +299,28 @@ server.register(fastifyTRPCPlugin, {
 
 You can now subscribe to the `randomNumber` topic and should receive a random number every second 🚀.
 
+### Telling clients to reconnect
+
+Before you shut the server down, `broadcastReconnectNotification` tells every connected client to reconnect, so clients resume their subscriptions on the next server instead of losing them. Pass it `server.websocketServer`, which `@fastify/websocket` adds, and the same `experimental_encoder` as the plugin if you set one:
+
+```ts twoslash title='server.ts'
+// @types: node
+// @filename: server.ts
+import ws from '@fastify/websocket';
+import fastify from 'fastify';
+const server = fastify();
+server.register(ws);
+// ---cut---
+import { broadcastReconnectNotification } from '@trpc/server/adapters/ws';
+
+process.on('SIGTERM', async () => {
+  broadcastReconnectNotification(server.websocketServer);
+  await server.close();
+});
+```
+
+It sends to every open WebSocket on the server, including routes that tRPC doesn't serve.
+
 ## Fastify plugin options
 
 | name        | type                                               | optional | default   | description                                                    |

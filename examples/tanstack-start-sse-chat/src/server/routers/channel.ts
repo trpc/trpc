@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
-import type { PubSubEvent } from '~/server/pubsub';
 import { listen, publish } from '~/server/pubsub';
 import { authedProcedure, publicProcedure } from '~/server/trpc';
 
@@ -21,11 +20,11 @@ class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
 }
 
 export interface MyEvents {
-  add: [channelId: string, data: PostType];
-  isTypingUpdate: [channelId: string, who: WhoIsTyping];
+  add: [post: PostType];
+  isTypingUpdate: [];
 }
 
-// Local to this server instance, fed by `onPubSubEvent()` below
+// Local to this server instance, fed by `ensureListening()` below
 export const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing for each channel, key is `name`
@@ -40,26 +39,7 @@ function setTyping(channelId: string, name: string, typing: boolean) {
   } else {
     return;
   }
-  ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId]);
-}
-
-async function onPubSubEvent(event: PubSubEvent) {
-  switch (event.type) {
-    case 'isTyping': {
-      setTyping(event.channelId, event.name, event.typing);
-      return;
-    }
-    case 'add': {
-      setTyping(event.channelId, event.name, false);
-      const post = await db.query.Post.findFirst({
-        where: (fields, ops) => ops.eq(fields.id, event.postId),
-      });
-      if (post) {
-        ee.emit('add', event.channelId, post);
-      }
-      return;
-    }
-  }
+  ee.emit('isTypingUpdate');
 }
 
 // Handle events one at a time so posts are emitted in the order they were published
@@ -67,28 +47,45 @@ let pubSubQueue = Promise.resolve();
 export function ensureListening() {
   return listen((event) => {
     pubSubQueue = pubSubQueue
-      .then(() => onPubSubEvent(event))
+      .then(async () => {
+        switch (event.type) {
+          case 'isTyping': {
+            setTyping(event.channelId, event.name, event.typing);
+            return;
+          }
+          case 'add': {
+            setTyping(event.channelId, event.name, false);
+            const post = await db.query.Post.findFirst({
+              where: (fields, ops) => ops.eq(fields.id, event.postId),
+            });
+            if (post) {
+              ee.emit('add', post);
+            }
+            return;
+          }
+        }
+      })
       .catch((cause) => {
         console.error('Failed to handle pubsub event', event, cause);
       });
   });
 }
 
-// every 1s, clear old "isTyping"
+// every 3s, clear old "isTyping"
 setInterval(() => {
-  const updatedChannels = new Set<string>();
+  let changed = false;
   const now = Date.now();
-  for (const [channelId, typers] of Object.entries(currentlyTyping)) {
-    for (const [key, value] of Object.entries(typers ?? {})) {
+  for (const typers of Object.values(currentlyTyping)) {
+    for (const [name, value] of Object.entries(typers)) {
       if (now - value.lastTyped.getTime() > 3e3) {
-        delete typers[key];
-        updatedChannels.add(channelId);
+        delete typers[name];
+        changed = true;
       }
     }
   }
-  updatedChannels.forEach((channelId) => {
-    ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId] ?? {});
-  });
+  if (changed) {
+    ee.emit('isTypingUpdate');
+  }
 }, 3e3).unref();
 
 export const channelRouter = {
@@ -121,42 +118,42 @@ export const channelRouter = {
       });
     }),
 
-  whoIsTyping: publicProcedure
-    .input(
-      z.object({
-        channelId: z.string().uuid(),
-      }),
-    )
-    .subscription(async function* (opts) {
-      const { channelId } = opts.input;
+  /**
+   * Who is typing in every channel, so that switching channels doesn't need a
+   * new subscription. The client picks out the channel it shows.
+   */
+  whoIsTyping: publicProcedure.subscription(async function* (opts) {
+    // Listen before reading the current state, so no update is missed in between
+    const updates = ee.toIterable('isTypingUpdate', { signal: opts.signal });
+    await ensureListening();
 
-      await ensureListening();
-
-      let lastIsTyping = '';
-
-      /**
-       * yield who is typing if it has changed
-       * won't yield if it's the same as last time
-       */
-      function* maybeYield(who: WhoIsTyping) {
-        const idx = Object.keys(who).toSorted().toString();
-        if (idx === lastIsTyping) {
-          return;
-        }
-        yield Object.keys(who);
-
-        lastIsTyping = idx;
-      }
-
-      // emit who is currently typing
-      yield* maybeYield(currentlyTyping[channelId] ?? {});
-
-      for await (const [channelId, who] of ee.toIterable('isTypingUpdate', {
-        signal: opts.signal,
-      })) {
-        if (channelId === opts.input.channelId) {
-          yield* maybeYield(who);
+    let lastSent = '';
+    /**
+     * yield who is typing if it has changed
+     * won't yield if it's the same as last time
+     */
+    function* maybeYield() {
+      // Who is typing in each channel, leaving out channels where nobody is
+      const whoIsTyping: Record<string, string[]> = {};
+      for (const [channelId, who] of Object.entries(currentlyTyping)) {
+        const names = Object.keys(who).toSorted();
+        if (names.length > 0) {
+          whoIsTyping[channelId] = names;
         }
       }
-    }),
+      const key = JSON.stringify(whoIsTyping);
+      if (key === lastSent) {
+        return;
+      }
+      lastSent = key;
+      yield whoIsTyping;
+    }
+
+    // emit who is currently typing
+    yield* maybeYield();
+
+    for await (const _ of updates) {
+      yield* maybeYield();
+    }
+  }),
 } satisfies TRPCRouterRecord;
