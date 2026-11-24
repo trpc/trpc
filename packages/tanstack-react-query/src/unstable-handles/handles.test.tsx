@@ -839,6 +839,27 @@ describe('loading', () => {
     expect(resource.calls).toHaveBeenCalledTimes(1);
   });
 
+  test('getNextPageParam gets `undefined` for the first page of an entry without a first cursor', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const lastParams: unknown[] = [];
+    await loadHandles(trpc, {
+      list: fetchInfiniteEntry(
+        trpc.post.list,
+        { limit: 2 },
+        {
+          pages: 2,
+          getNextPageParam: (last, _all, lastParam) => {
+            expectTypeOf(lastParam).toEqualTypeOf<number | null | undefined>();
+            lastParams.push(lastParam);
+            return last.nextCursor;
+          },
+        },
+      ),
+    });
+    expect(lastParams[0]).toBeUndefined();
+  });
+
   test('infinite entries can load several pages up front', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

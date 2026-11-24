@@ -488,9 +488,13 @@ export interface TRPCEntryOptions
     >,
     TRPCQueryBaseOptions {}
 
+/**
+ * A page param is `undefined` for a page without a cursor, such as the first
+ * page of an entry with no first cursor, as in `LoadedInfiniteData`
+ */
 export type HandleGetNextPageParam<TDef extends ResolverDef> =
   GetNextPageParamFunction<
-    NonNullable<ExtractCursorType<TDef['input']>> | null,
+    NonNullable<ExtractCursorType<TDef['input']>> | null | undefined,
     TDef['output']
   >;
 
