@@ -1420,6 +1420,8 @@ describe.each([
         const gate = createDeferred();
         ctx.gates.set('ada', gate.promise);
         using _release = makeResource({}, () => gate.resolve());
+        // Only this load's calls: the first one's author ran already
+        ctx.calls.mockClear();
         const abort = new AbortController();
         const post = query(c.post.bySlug, { slug: 'a' });
         const res = experimental_load(
