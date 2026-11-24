@@ -42,7 +42,14 @@ export function toTanStackEntries(opts: {
     }
     waited.add(value as object);
   }
-  const entries = new Map<object, object>();
+  /**
+   * Each entry as the load has it, by whether it is waited for: a key that
+   * isn't in `wait` and one that is can have the same entry
+   */
+  const entries = {
+    waited: new Map<object, object>(),
+    not: new Map<object, object>(),
+  };
   const refs = new Map<EntryDataRef, EntryDataRef>();
 
   function refFor(ref: EntryDataRef): EntryDataRef {
@@ -135,7 +142,9 @@ export function toTanStackEntries(opts: {
   }
 
   function entryFor(value: object, wait: boolean): object {
-    const existing = entries.get(value);
+    const isWaited = wait || waited.has(value);
+    const done = isWaited ? entries.waited : entries.not;
+    const existing = done.get(value);
     if (existing) {
       return existing;
     }
@@ -144,7 +153,7 @@ export function toTanStackEntries(opts: {
     const perItem = perItemStateOf(value);
     const shared = queryEntryStateOf(value);
     if (fromData) {
-      const inner = entryFor(fromData.entry, wait || waited.has(value));
+      const inner = entryFor(fromData.entry, isWaited);
       const source = entryFor(fromData.source, false);
       result =
         inner === fromData.entry && source === fromData.source
@@ -159,15 +168,14 @@ export function toTanStackEntries(opts: {
     } else if (shared) {
       const state = entryStateOf(value) ?? null;
       const kind: TRPCEntryKind =
-        (wait || waited.has(value)) &&
-        (state?.kind ?? 'prefetch') === 'prefetch'
+        isWaited && (state?.kind ?? 'prefetch') === 'prefetch'
           ? 'ensure'
           : (state?.kind ?? 'prefetch');
       result = rebuilt({ value, state, shared, kind });
     } else {
       result = value;
     }
-    entries.set(value, result);
+    done.set(value, result);
     return result;
   }
 

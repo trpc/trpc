@@ -169,6 +169,22 @@ describe('a description of queries', () => {
     expect(data.post).toEqual({ slug: 'b', authorId: 'u1' });
   });
 
+  test('`wait` waits for the keys it names only, also when they share an entry', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
+    const inner = experimental_query(trpc.author.byId, { id: 'u1' });
+    const wrapped = experimental_dataOf(post, () => inner);
+
+    for (const entries of [
+      { post, inner, wrapped },
+      { wrapped, inner, post },
+    ]) {
+      const [, data] = await loadHandles(trpc, entries, { wait: ['wrapped'] });
+      expect(data).toEqual({ wrapped: { id: 'u1', teamId: 'team-u1' } });
+    }
+  });
+
   test('`wait` names an entry of one query', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
