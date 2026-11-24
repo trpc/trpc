@@ -20,7 +20,7 @@ import { z } from 'zod';
 
 /**
  * A router whose `flaky` query fails as many times as its input says, for
- * each key, before it answers
+ * each key, or only for `failKey` if it has one, before it answers
  */
 function createRouter() {
   const t = initTRPC.create();
@@ -30,13 +30,17 @@ function createRouter() {
       z.object({
         key: z.string(),
         failTimes: z.number().optional(),
+        failKey: z.string().optional(),
         value: z.string().optional(),
       }),
     )
     .query((opts) => {
       const run = (runs.get(opts.input.key) ?? 0) + 1;
       runs.set(opts.input.key, run);
-      if (run <= (opts.input.failTimes ?? 0)) {
+      const fails =
+        opts.input.failKey === undefined ||
+        opts.input.failKey === opts.input.key;
+      if (fails && run <= (opts.input.failTimes ?? 0)) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `${opts.input.key} failed on run ${run}`,
@@ -298,6 +302,7 @@ describe.each([
           const b = query(client.b, {
             key: item,
             failTimes: failTimes,
+            failKey: 'y',
             value: item,
           });
           return {
@@ -362,6 +367,11 @@ describe.each([
       await expect(rows[1]!.c).rejects.toMatchObject({
         message: 'y failed on run 1',
       });
+      // The other items have their data
+      for (const row of [rows[0]!, rows[2]!]) {
+        expect(await row.b).toMatchObject({ run: 1 });
+        expect(await row.c).toMatchObject({ run: 1 });
+      }
       // `retry` said no: nothing is sent again
       expect(ctx.requests()).toEqual(['/a,b,c']);
     });
@@ -376,9 +386,10 @@ describe.each([
       const res = experimental_load(ctx.client, perItemChain(ctx.client, 1));
       const rows = await res.rows;
 
-      await expect(rows[0]!.b).rejects.toMatchObject({
-        message: 'x failed on run 1',
+      await expect(rows[1]!.b).rejects.toMatchObject({
+        message: 'y failed on run 1',
       });
+      expect(await rows[0]!.b).toMatchObject({ run: 1 });
       expect(ctx.requests()).toEqual(['/a,b,c']);
     });
   });
