@@ -44,6 +44,10 @@ overrides:
   turbo-stream@2: ^3.0.0
   fflate@0.7: ^0.7.5
   js-yaml@5: ^5.4.1
+  # eslint, ts-morph, swagger's apidom and @vercel/nft (nuxt example). Not
+  # minimatch 9: typedoc 0.27 calls Minimatch#matchOne, which 11 removed.
+  minimatch@10: ^11.0.5
+  glob@13: ^14.0.4
 
 allowBuilds:
   '@prisma/client': true
