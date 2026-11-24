@@ -1,6 +1,6 @@
 /**
  * What the live bar shows: the requests a load sends, and when each result
- * arrives. It isn't needed to use `experimental_nested()`; the page's own
+ * arrives. It isn't needed to use `experimental_load()`; the page's own
  * code is in `-trpc.ts` and `-components/posts.tsx`.
  */
 import { z } from 'zod';
@@ -47,12 +47,8 @@ export type Fetch = (
 /** The shape the page loads, as far as the meter reads it */
 type Loaded = Promise<
   ReadonlyArray<{
-    readonly edges: {
-      readonly author: Promise<{
-        readonly edges: { readonly team: Promise<{ readonly name: string }> };
-        readonly node: { readonly name: string };
-      }>;
-    };
+    readonly author: Promise<{ readonly name: string }>;
+    readonly team: Promise<{ readonly name: string }>;
   }>
 >;
 
@@ -170,10 +166,10 @@ export const meter = {
         update(id, () => ({ expected: 1 + posts.length * 2 }));
         arrive(id, { kind: 'posts', label: `${posts.length} posts` });
         for (const post of posts) {
-          post.edges.author.then(
+          post.author.then(
             (author) => {
-              arrive(id, { kind: 'author', label: author.node.name });
-              author.edges.team.then(
+              arrive(id, { kind: 'author', label: author.name });
+              post.team.then(
                 (team) => arrive(id, { kind: 'team', label: team.name }),
                 () => fail(id, 1),
               );

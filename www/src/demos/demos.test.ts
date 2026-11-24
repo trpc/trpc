@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import {
   experimental_dataOf,
-  experimental_entryPerItem,
+  experimental_perItem,
   loadHandles,
   prefetchEntry,
 } from '@trpc/tanstack-react-query/unstable-handles';
@@ -434,9 +434,8 @@ describe('backend over HTTP', () => {
     const { labels, network, queryClient, settled, trpc } = session();
     const feed = prefetchEntry(trpc.post.feed, { page: 1 });
     await loadHandles(trpc, {
-      authors: experimental_entryPerItem(
-        experimental_dataOf(feed).posts,
-        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      authors: experimental_perItem(experimental_dataOf(feed).posts, (post) =>
+        prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
       feed,
     });
@@ -462,9 +461,8 @@ describe('backend over HTTP', () => {
     network.delay = () => 20;
     const feed = prefetchEntry(trpc.post.feed, { page: 99 });
     await loadHandles(trpc, {
-      authors: experimental_entryPerItem(
-        experimental_dataOf(feed).posts,
-        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      authors: experimental_perItem(experimental_dataOf(feed).posts, (post) =>
+        prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
       feed,
     });

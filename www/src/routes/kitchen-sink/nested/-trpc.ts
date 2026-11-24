@@ -6,8 +6,11 @@
  */
 import {
   createTRPCClient,
-  experimental_nested,
+  experimental_dataOf,
+  experimental_load,
+  experimental_perItem,
   experimental_pipelining,
+  experimental_query,
   httpBatchStreamLink,
 } from '@trpc/client';
 
@@ -48,18 +51,40 @@ export function loadPosts(opts: {
   /** Stops every query of the load, those still to be sent too */
   readonly signal: AbortSignal;
 }) {
-  return experimental_nested(
-    createClient(opts),
-    (q) =>
-      q.post.list.query().items.map((post) => ({
-        author: q.author.byId.query({ id: post.authorId }).with((author) => ({
-          team: q.team.byId.query({ id: author.teamId }),
-        })),
-      })),
+  const client = createClient(opts);
+  // What to load: plain values, so nothing is sent yet
+  const posts = experimental_query(client.post.list);
+  const res = experimental_load(
+    client,
+    {
+      posts,
+      // The callback runs once, on a stand-in for every post
+      rows: experimental_perItem(experimental_dataOf(posts).items, (post) => {
+        const author = experimental_query(client.author.byId, {
+          id: post.authorId,
+        });
+        return {
+          author,
+          team: experimental_query(client.team.byId, {
+            id: experimental_dataOf(author).teamId,
+          }),
+        };
+      }),
+    },
     { signal: opts.signal },
+  );
+  // A row for each post, with its author and team as promises of their own
+  return Promise.all([res.posts, res.rows]).then(([list, rows]) =>
+    list.items.map((post, index) => {
+      const row = rows[index];
+      if (!row) {
+        throw new Error(`No row for post ${index}`);
+      }
+      return { post, ...row };
+    }),
   );
 }
 
 export type Posts = Awaited<ReturnType<typeof loadPosts>>;
-export type Author = Awaited<Posts[number]['edges']['author']>;
-export type Team = Awaited<Author['edges']['team']>;
+export type Author = Awaited<Posts[number]['author']>;
+export type Team = Awaited<Posts[number]['team']>;

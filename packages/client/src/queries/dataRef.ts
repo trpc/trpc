@@ -1,6 +1,18 @@
+import { isObject } from '@trpc/server/unstable-core-do-not-import';
 import type { DataPath } from './path';
 import { dataPath } from './path';
-import { isPlainObject, nothing } from './utils';
+
+function nothing() {
+  // A function, so that a stand-in can be called
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  if (!isObject(value)) {
+    return false;
+  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
 
 export const entryDataRef = Symbol('trpc.entryData');
 
@@ -10,7 +22,7 @@ export interface EntryDataRef {
   entry: object;
   path: DataPath;
   /**
-   * For a value read from the item of an `experimental_entryPerItem()`
+   * For a value read from the item of an `experimental_perItem()`
    * callback: the list the item is of. A value with the same path that was
    * read from the list itself, such as with `.map()`, has `null`.
    */
@@ -21,7 +33,7 @@ export interface EntryDataRef {
    * - `mapped`: what `.map()` returned, a value for every item of a list.
    * - `flat`: what `.flatMap()` returned, the items of a list in every item.
    *   The wire can read no such list into an input, so it is only the list
-   *   of an `experimental_entryPerItem()` entry. As on the server, what isn't
+   *   of an `experimental_perItem()` entry. As on the server, what isn't
    *   a list there has no items: unlike an array's `.flatMap()`, a callback
    *   that returns a value gives none.
    */
@@ -29,7 +41,7 @@ export interface EntryDataRef {
 }
 
 export const onlyAsList =
-  'A `.flatMap()` value can only be the list of `experimental_entryPerItem()`';
+  'A `.flatMap()` value can only be the list of `experimental_perItem()`';
 
 /** A `experimental_dataOf()` value in an entry's input */
 export interface EntryInputRef extends EntryDataRef {
@@ -92,7 +104,7 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
         typeof callback !== 'function'
       ) {
         throw new Error(
-          `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_entryPerItem()\``,
+          `${notData}. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_perItem()\``,
         );
       }
       // The callback runs once, on a stand-in for every item. What an
@@ -116,7 +128,7 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
         !item.every((segment, index) => returned.path[index] === segment)
       ) {
         throw new Error(
-          `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\``,
+          `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_perItem()\``,
         );
       }
       // `.flatMap()`: every item's value is a list, whose items are the items

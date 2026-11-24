@@ -274,7 +274,7 @@ function procedureAt(ctx: ProxyContext, path: readonly string[]) {
 }
 
 /**
- * The handle of one item's query, from the handle of an `experimental_entryPerItem()` entry.
+ * The handle of one item's query, from the handle of an `experimental_perItem()` entry.
  * Read it with `fromHandle(trpc, handle)`, like any handle.
  *
  * It works for any item of the list's kind, also one the load didn't have, such
@@ -310,7 +310,7 @@ export function experimental_handleOfItem(
   } | null;
   if (!Array.isArray(perItem?.queryKey) || !Array.isArray(perItem.itemInputs)) {
     throw new Error(
-      `Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got ${JSON.stringify(handle)}`,
+      `Expected the handle of an entry from \`experimental_perItem()\`, or from \`experimental_dataOf()\` with a callback, got ${JSON.stringify(handle)}`,
     );
   }
   const filled = finishInput(
@@ -454,7 +454,7 @@ export function fromHandle(
 }
 
 /**
- * What an `experimental_entryPerItem()` entry loads for each item of a list,
+ * What an `experimental_perItem()` entry loads for each item of a list,
  * as a later fetch of the list loads it: read once, as the handle is read
  */
 interface ItemQueries {

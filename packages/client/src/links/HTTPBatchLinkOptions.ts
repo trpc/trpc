@@ -39,7 +39,7 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
     /**
      * Lets the server run more queries in a query's request, with parts of
      * their inputs read from its data, so a query that depends on another
-     * costs no extra round trip. `experimental_nested()` uses it for the
+     * costs no extra round trip. `experimental_load()` uses it for the
      * queries of a page. The server must set
      * `experimental_allowPipelining: true`, or such a request fails.
      *
@@ -47,9 +47,9 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
      * has none of its code, so a bundler that tree-shakes leaves it out of an
      * app that doesn't import it.
      *
-     * Such a query is no operation of its own, so the links before this one
-     * don't see it. Batches without one are sent as they are without this
-     * option.
+     * Each query of `experimental_load()` is an operation the links before
+     * this one see. One that reads another's data goes in that one's request.
+     * Batches without such a query are sent as they are without this option.
      *
      * Experimental: it may change in a minor release.
      * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request

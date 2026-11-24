@@ -1,13 +1,16 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { hashKey, skipToken } from '@tanstack/react-query';
-import type { EntryDataRef, EntryInputRef } from './dataRef';
-import { blankInput, entryDataRefOf } from './dataRef';
-import type { EntryState } from './entry';
+import type {
+  EntryDataRef,
+  EntryInputRef,
+} from '@trpc/client/unstable-internals';
+import { blankInput, entryDataRefOf } from '@trpc/client/unstable-internals';
 import {
-  entryFromDataStateOf,
-  entryPerItemStateOf,
-  entryStateOf,
-} from './entry';
+  fromDataStateOf,
+  perItemStateOf,
+} from '@trpc/client/unstable-internals';
+import type { EntryState } from './entry';
+import { entryStateOf } from './entry';
 import type { PerItemPlan } from './list';
 import { perItemPlan } from './list';
 import { isPlainObject } from './utils';
@@ -17,7 +20,7 @@ export type EntryBuilt =
   /** `prefetchEntry()` and the like: one query */
   | { by: 'entry' }
   /**
-   * `experimental_entryPerItem()`: a query for every item of `list`. Its
+   * `experimental_perItem()`: a query for every item of `list`. Its
    * handle and its data are lists too
    */
   | { by: 'entryPerItem'; list: EntryDataRef }
@@ -82,8 +85,8 @@ export function isLoadable(value: unknown) {
   return (
     value === skipToken ||
     entryStateOf(value) !== undefined ||
-    entryPerItemStateOf(value) !== undefined ||
-    entryFromDataStateOf(value) !== undefined
+    perItemStateOf(value) !== null ||
+    fromDataStateOf(value) !== null
   );
 }
 
@@ -114,8 +117,8 @@ export function readEntries(opts: {
     }
     const keys = [...opts.keys, name];
     const key = keys.join('.');
-    const perItem = entryPerItemStateOf(entry);
-    const fromData = entryFromDataStateOf(entry);
+    const perItem = perItemStateOf(entry);
+    const fromData = fromDataStateOf(entry);
     const state = entryStateOf(perItem?.entry ?? fromData?.entry ?? entry);
     if (state) {
       if (state.queryClient !== opts.queryClient) {

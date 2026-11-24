@@ -21,7 +21,7 @@ import { type DemoContext, DemoLink, useDemoLoaderData } from './browser.tsx';
 import { type TRPC, useTRPC } from './session.tsx';
 import {
   experimental_dataOf,
-  experimental_entryPerItem,
+  experimental_perItem,
   experimental_handleOfItem,
   fromHandle,
   loadHandles,
@@ -65,9 +65,8 @@ function postPageEntries(trpc: TRPC, id: number) {
 function feedEntries(trpc: TRPC, page: number) {
   const feed = prefetchEntry(trpc.post.feed, { page });
   return {
-    authors: experimental_entryPerItem(
-      experimental_dataOf(feed).posts,
-      (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+    authors: experimental_perItem(experimental_dataOf(feed).posts, (post) =>
+      prefetchEntry(trpc.author.byId, { id: post.authorId }),
     ),
     feed,
   } satisfies TRPCLoadEntries;

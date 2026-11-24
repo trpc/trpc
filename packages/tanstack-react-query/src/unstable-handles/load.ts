@@ -15,16 +15,21 @@ import {
   pipeCall,
 } from '@trpc/client/unstable-internals';
 import type {
+  EntryDataRef,
+  EntryInputRef,
+} from '@trpc/client/unstable-internals';
+import { blankInput } from '@trpc/client/unstable-internals';
+import { itemPathOf } from '@trpc/client/unstable-internals';
+import type { RequestPath } from '@trpc/client/unstable-internals';
+import type {
   PipelineCallReads,
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
-import type { EntryDataRef, EntryInputRef } from './dataRef';
-import { blankInput } from './dataRef';
 import type { EntryQueryOptions, EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
-import { itemPathOf, itemsAt, requestPath } from './list';
+import { itemsAt, requestPath } from './list';
 import type { ListItem } from './list';
 import type { Outcome, Unit } from './outcome';
 import {
@@ -37,7 +42,6 @@ import {
   unitOf,
   whenAll,
 } from './outcome';
-import type { RequestPath } from './path';
 import {
   dataOfCall,
   outcomeOfCall,
@@ -275,7 +279,7 @@ interface OneLoad {
   handleNow: () => Handle;
 }
 
-/** The load of an entry from `experimental_entryPerItem()`: a query for every item */
+/** The load of an entry from `experimental_perItem()`: a query for every item */
 interface PerItemLoad {
   shape: 'perItem';
   leaf: LinkedLeaf;
@@ -798,7 +802,7 @@ export function beginEntries(opts: {
     };
   }
 
-  /** Loads an entry from `experimental_entryPerItem()`: a query for every item of a list */
+  /** Loads an entry from `experimental_perItem()`: a query for every item of a list */
   function loadPerItem(
     leaf: LinkedLeaf,
     list: NonNullable<LinkedLeaf['list']>,

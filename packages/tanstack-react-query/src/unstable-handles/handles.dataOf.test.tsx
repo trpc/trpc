@@ -31,7 +31,7 @@ import { z } from 'zod';
 import {
   experimental_dataOf,
   ensureEntry,
-  experimental_entryPerItem,
+  experimental_perItem,
   ensureInfiniteEntry,
   fetchEntry,
   fetchInfiniteEntry,
@@ -351,7 +351,7 @@ describe('dataOf', () => {
     expectTypeOf(experimental_dataOf(ids)).toEqualTypeOf<{ id: string }[]>();
     const [handles, data] = await loadHandles(trpc, {
       ids,
-      authors: experimental_entryPerItem(experimental_dataOf(ids), (item) =>
+      authors: experimental_perItem(experimental_dataOf(ids), (item) =>
         prefetchEntry(trpc.author.byId, { id: item.id }),
       ),
     });
@@ -387,7 +387,7 @@ describe('dataOf', () => {
     expect(() =>
       experimental_dataOf({} as typeof post),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`experimental_dataOf()\` expects an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got {}]`,
+      `[Error: \`experimental_dataOf()\` expects an entry, such as one from \`experimental_query()\`, got {}]`,
     );
     expect(resource.calls).not.toHaveBeenCalled();
   });
@@ -519,7 +519,7 @@ describe('dataOf', () => {
       team: prefetchEntry(trpc.team.byId, {
         id: experimental_dataOf(author).teamId,
       }),
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
       other: ensureEntry(trpc.team.byId, { id: 'team1' }),
@@ -568,7 +568,7 @@ describe('dataOf', () => {
         prefetchEntry(trpc.team.byId, { id: data.authorId }),
       ),
       // An entry per item has no list to build its handle from
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
@@ -592,7 +592,7 @@ describe('dataOf', () => {
     const [handles, results] = await loadHandlesSettled(trpc, {
       post,
       missing,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, {
           ids: [tag.id],
           first: experimental_dataOf(missing).id,
@@ -729,7 +729,7 @@ describe('experimental_dataOf().map()', () => {
     expect(() =>
       experimental_dataOf(post).tags.map((tag) => ({ id: tag.id })),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_entryPerItem()\`]`,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. A \`.map()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_perItem()\`]`,
     );
     expect(() =>
       experimental_dataOf(post).tags.map(() => experimental_dataOf(post).id),
@@ -737,7 +737,7 @@ describe('experimental_dataOf().map()', () => {
     expect(() =>
       experimental_dataOf(post).tags.filter((tag) => tag.id === 't1'),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_entryPerItem()\`]`,
+      `[Error: A \`experimental_dataOf()\` value has no data until the load runs, so it can only be passed on as it is, as an entry's input or anywhere inside it. Of an array's methods, only \`.map()\` works, to read a part of every item, and \`.flatMap()\`, for the list of \`experimental_perItem()\`]`,
     );
   });
 });
@@ -766,7 +766,7 @@ describe('review regressions', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(
+      tags: experimental_perItem(
         experimental_dataOf(post).tags.map((tag) => tag.id),
         (id) => ensureEntry(trpc.tag.byIds, { ids: [id] }),
       ),
@@ -784,7 +784,7 @@ describe('review regressions', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, {
           // Every tag's id, and this tag's: the same place in the post
           ids: experimental_dataOf(post).tags.map((each) => each.id),
@@ -835,9 +835,8 @@ describe('review regressions', () => {
     const [handles, data] = await loadHandles(trpc, {
       post,
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (id) => prefetchEntry(trpc.author.byId, { id }),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (id) =>
+        prefetchEntry(trpc.author.byId, { id }),
       ),
     });
     const finished = experimental_handleOfItem(handles.posts, data.post);
@@ -854,14 +853,12 @@ describe('review regressions', () => {
     const posts = ensureEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (id) =>
-          prefetchEntry(
-            trpc.author.byId,
-            { id },
-            { trpc: { context: { route: 'authors' } } },
-          ),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (id) =>
+        prefetchEntry(
+          trpc.author.byId,
+          { id },
+          { trpc: { context: { route: 'authors' } } },
+        ),
       ),
     });
     expect(handles.posts.experimental_perItem).toBeUndefined();
@@ -886,12 +883,12 @@ describe('review regressions', () => {
     const [handles] = await loadHandles(trpc, {
       posts,
       // The first page's items only: a later page has other items
-      firstPageAuthors: experimental_entryPerItem(
+      firstPageAuthors: experimental_perItem(
         experimental_dataOf(posts).pages[0]!.items,
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
       routed,
-      routedAuthors: experimental_entryPerItem(
+      routedAuthors: experimental_perItem(
         experimental_dataOf(routed).items,
         (id) => prefetchEntry(trpc.author.byId, { id }),
       ),
@@ -910,7 +907,7 @@ describe('review regressions', () => {
       author: experimental_dataOf(post, (it) =>
         prefetchEntry(trpc.author.byId, { id: it.authorId }),
       ),
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id], first: tag.id }),
       ),
     });
@@ -1082,9 +1079,8 @@ describe('edges of a load', () => {
     const sparse = ensureEntry(trpc.group.sparse);
     const [, data] = await loadHandles(trpc, {
       sparse,
-      owners: experimental_entryPerItem(
-        experimental_dataOf(sparse).owners,
-        (id) => ensureEntry(trpc.author.byId, { id }),
+      owners: experimental_perItem(experimental_dataOf(sparse).owners, (id) =>
+        ensureEntry(trpc.author.byId, { id }),
       ),
     });
     expect(data.owners).toEqual([]);
@@ -1099,17 +1095,17 @@ describe('edges of a load', () => {
       sparse,
       // A list of lists, of which one is `null`, against its type. What isn't
       // a list has no items, as the server walks it
-      members: experimental_entryPerItem(
+      members: experimental_perItem(
         experimental_dataOf(sparse).groups.flatMap((group) => group.members),
         maybe,
       ),
       // A value that `.map()` read is `null`
-      leads: experimental_entryPerItem(
+      leads: experimental_perItem(
         experimental_dataOf(sparse).leads.map((lead) => lead.id),
         maybe,
       ),
       // As the list's type says
-      maybeIds: experimental_entryPerItem(
+      maybeIds: experimental_perItem(
         experimental_dataOf(sparse).maybeIds,
         (id) => ensureEntry(trpc.author.maybe, { id }),
       ),
@@ -1125,18 +1121,20 @@ describe('edges of a load', () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const sparse = ensureEntry(trpc.group.sparse);
-    experimental_entryPerItem(experimental_dataOf(sparse).maybeIds, (id) =>
+    experimental_perItem(experimental_dataOf(sparse).maybeIds, (id) =>
       // @ts-expect-error `author.byId` takes no `null`
       prefetchEntry(trpc.author.byId, { id }),
     );
-    experimental_entryPerItem(experimental_dataOf(sparse).maybeIds, (id) =>
+    experimental_perItem(experimental_dataOf(sparse).maybeIds, (id) =>
       prefetchEntry(trpc.author.maybe, { id }),
     );
+    // `null` skips the item's entry
+    experimental_perItem(experimental_dataOf(sparse).maybeIds, () => null);
     expect(() =>
-      experimental_entryPerItem(
+      experimental_perItem(
         experimental_dataOf(sparse).maybeIds,
-        // @ts-expect-error the callback returns an entry, not `null`
-        () => null,
+        // @ts-expect-error the callback returns entries, not a string
+        () => 'author',
       ),
     ).toThrow('must return an entry');
     // A prefetch entry can be skipped. One the load waits for can't
@@ -1197,9 +1195,8 @@ describe('edges of a load', () => {
     await expect(
       loadHandles(trpc, {
         post,
-        teams: experimental_entryPerItem(
-          experimental_dataOf(post).tags,
-          (tag) => ensureEntry(trpc.team.byId, { id: tag.id }),
+        teams: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+          ensureEntry(trpc.team.byId, { id: tag.id }),
         ),
       }),
     ).rejects.toMatchObject({ key: 'post', code: 'NOT_FOUND' });
@@ -1223,7 +1220,7 @@ describe('edges of a load', () => {
     await expect(
       loadHandles(trpc, {
         ids,
-        all: experimental_entryPerItem(experimental_dataOf(ids).all, (id) =>
+        all: experimental_perItem(experimental_dataOf(ids).all, (id) =>
           ensureEntry(trpc.big.byId, { id }),
         ),
       }),
@@ -1241,7 +1238,7 @@ describe('edges of a load', () => {
     const mixed = ensureEntry(trpc.big.mixed);
     const [, results] = await loadHandlesSettled(trpc, {
       mixed,
-      authors: experimental_entryPerItem(experimental_dataOf(mixed).ids, (id) =>
+      authors: experimental_perItem(experimental_dataOf(mixed).ids, (id) =>
         ensureEntry(trpc.author.byId, { id: id as string }),
       ),
     });
@@ -1378,7 +1375,7 @@ describe('edges of a load', () => {
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const loaded = loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, {
           ids: experimental_dataOf(post).tags.map((each) => each.id),
           first: tag.id,
@@ -1450,7 +1447,7 @@ describe('edges of a load', () => {
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, {
           ids: experimental_dataOf(post).tags.map((each) => each.id),
           first: tag.id,
@@ -1740,9 +1737,8 @@ describe('edges of a load', () => {
     const posts = prefetchEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const loaded = loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (id) => prefetchEntry(trpc.author.byId, { id }),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (id) =>
+        prefetchEntry(trpc.author.byId, { id }),
       ),
     });
     // While the list's request runs: a write that the request then replaces
@@ -1769,12 +1765,12 @@ describe('edges of a load', () => {
       // @ts-expect-error -- it is finished
       experimental_handleOfItem(handles.post, {}),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got {"queryKey":[["post","bySlug"],{"input":{"slug":"hello"},"type":"query"}],"input":{"slug":"hello"}}]`,
+      `[Error: Expected the handle of an entry from \`experimental_perItem()\`, or from \`experimental_dataOf()\` with a callback, got {"queryKey":[["post","bySlug"],{"input":{"slug":"hello"},"type":"query"}],"input":{"slug":"hello"}}]`,
     );
     expect(() =>
       experimental_handleOfItem(null as any, {}),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Expected the handle of an entry from \`experimental_entryPerItem()\`, or from \`experimental_dataOf()\` with a callback, got null]`,
+      `[Error: Expected the handle of an entry from \`experimental_perItem()\`, or from \`experimental_dataOf()\` with a callback, got null]`,
     );
   });
 });
@@ -1787,13 +1783,12 @@ describe('entryPerItem', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id, 'extra'] }),
       ),
       // Not waited for, so it has no data
-      alsoTags: experimental_entryPerItem(
-        experimental_dataOf(post).tags,
-        (tag) => prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
+      alsoTags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+        prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
 
@@ -1851,7 +1846,7 @@ describe('entryPerItem', () => {
       const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
       const [handles] = await loadHandles(trpc, {
         post,
-        tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+        tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
           ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
         ),
       });
@@ -1879,7 +1874,7 @@ describe('entryPerItem', () => {
     const posts = ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [handles, data] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
@@ -1902,7 +1897,7 @@ describe('entryPerItem', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const entries = {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     } satisfies TRPCLoadEntries;
@@ -1925,15 +1920,15 @@ describe('entryPerItem', () => {
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
 
     expect(() =>
-      experimental_entryPerItem([{ id: 't1' }], (tag) =>
+      experimental_perItem([{ id: 't1' }], (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`experimental_entryPerItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got [{"id":"t1"}]]`,
+      `[Error: \`experimental_perItem()\` expects a list from \`experimental_dataOf()\`, such as \`experimental_dataOf(posts).items\`, got [{"id":"t1"}]]`,
     );
     const { tags } = experimental_dataOf(post);
-    // @ts-expect-error only a query entry
-    expect(() => experimental_entryPerItem(tags, (tag) => tag.id)).toThrow(
+    // @ts-expect-error only entries
+    expect(() => experimental_perItem(tags, (tag) => tag.id)).toThrow(
       /must return an entry/,
     );
   });
@@ -2147,7 +2142,7 @@ describe('experimental_dataOf(entry, (data) => entry)', () => {
       // @ts-expect-error -- not an entry
       experimental_dataOf(post, (it) => it.authorId),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: The callback of \`experimental_dataOf()\` must return an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, got "[a experimental_dataOf() value]"]`,
+      `[Error: The callback of \`experimental_dataOf()\` must return a query's entry, such as one from \`experimental_query()\`, got "[a experimental_dataOf() value]"]`,
     );
   });
 
@@ -2158,7 +2153,7 @@ describe('experimental_dataOf(entry, (data) => entry)', () => {
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
@@ -2233,7 +2228,7 @@ describe('without the options', () => {
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -2297,7 +2292,7 @@ describe('without the options', () => {
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -2421,7 +2416,7 @@ describe('a list fetch that streams its items', () => {
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
       ),
@@ -2503,7 +2498,7 @@ describe('a list fetch that streams its items', () => {
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
       ),
@@ -2583,7 +2578,7 @@ describe('a list fetch that streams its items', () => {
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.held, { id: post.authorId }),
       ),
@@ -2996,7 +2991,7 @@ describe.each([
     const lists = ensureEntry(trpc.group.memberLists);
     const [handles, data] = await loadHandles(trpc, {
       lists,
-      members: experimental_entryPerItem(
+      members: experimental_perItem(
         experimental_dataOf(lists).flatMap((list) => list),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
@@ -3032,7 +3027,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [, data] = await loadHandles(trpc, {
       post,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(post).tags.map((tag) => tag.id),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
@@ -3055,12 +3050,10 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [, data] = await loadHandles(trpc, {
       post,
-      sameForEvery: experimental_entryPerItem(
-        experimental_dataOf(post).tags,
-        () =>
-          ensureEntry(trpc.post.likeResults, {
-            authorId: experimental_dataOf(post).authorId,
-          }),
+      sameForEvery: experimental_perItem(experimental_dataOf(post).tags, () =>
+        ensureEntry(trpc.post.likeResults, {
+          authorId: experimental_dataOf(post).authorId,
+        }),
       ),
     });
 
@@ -3189,7 +3182,7 @@ describe.each([
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, () =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, () =>
         prefetchEntry(trpc.tag.byIds, skipToken),
       ),
     });
@@ -3228,7 +3221,7 @@ describe.each([
     const post = fetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id, 'extra'] }),
       ),
     });
@@ -3263,7 +3256,7 @@ describe.each([
     const posts = ensureInfiniteEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [handles, data] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (authorId) => ensureEntry(trpc.author.byId, { id: authorId }),
       ),
@@ -3594,7 +3587,7 @@ describe.each([
     const groups = ensureEntry(trpc.group.list);
     const [, data] = await loadHandles(trpc, {
       groups,
-      members: experimental_entryPerItem(
+      members: experimental_perItem(
         experimental_dataOf(groups).groups.flatMap((group) => group.members),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
@@ -3642,7 +3635,7 @@ describe.each([
     const groups = ensureEntry(trpc.group.list);
     const [, data] = await loadHandles(trpc, {
       groups,
-      members: experimental_entryPerItem(
+      members: experimental_perItem(
         experimental_dataOf(groups).groups.flatMap((group) => group.members),
         (id) => ensureEntry(trpc.author.byId, { id }),
       ),
@@ -3688,7 +3681,7 @@ describe.each([
     const posts = ensureInfiniteEntry(trpc.post.paged, {});
     const [, data] = await loadHandles(trpc, {
       posts,
-      firstAuthors: experimental_entryPerItem(
+      firstAuthors: experimental_perItem(
         experimental_dataOf(posts).pages,
         (page) =>
           ensureEntry(trpc.author.byId, { id: page.items[0]!.authorId }),
@@ -3712,7 +3705,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, {
           ids: experimental_dataOf(post).tags.map((each) => each.id),
           first: tag.id,
@@ -3745,7 +3738,7 @@ describe.each([
     const list = ensureEntry(trpc.post.changing);
     const [handles] = await loadHandles(trpc, {
       list,
-      tags: experimental_entryPerItem(experimental_dataOf(list).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(list).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, {
           ids: experimental_dataOf(list).tags.map((each) => each.id),
           first: tag.id,
@@ -3795,7 +3788,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [, data] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
@@ -3817,7 +3810,7 @@ describe.each([
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
@@ -3857,7 +3850,7 @@ describe.each([
     const [handles] = await loadHandles(trpc, {
       posts,
       // The same author for every row
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         () => prefetchEntry(trpc.author.byId, { id: 'u1' }),
       ),
@@ -3938,7 +3931,7 @@ describe.each([
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -4031,9 +4024,8 @@ describe.each([
     const posts = ensureEntry(trpc.post.paged, {});
     await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (post) =>
+        prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
     await vi.waitFor(() => {
@@ -4069,7 +4061,7 @@ describe.each([
     const posts = ensureEntry(trpc.tag.byIds, { ids: ['hello', 'missing'] });
     const [, results] = await loadHandlesSettled(trpc, {
       posts,
-      bySlug: experimental_entryPerItem(
+      bySlug: experimental_perItem(
         experimental_dataOf(posts).map((tag) => tag.id),
         (slug) => ensureEntry(trpc.post.bySlug, { slug }),
       ),
@@ -4130,9 +4122,8 @@ describe.each([
     const posts = ensureEntry(trpc.post.paged, {});
     await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (post) =>
+        prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
     await vi.waitFor(() => {
@@ -4164,9 +4155,8 @@ describe.each([
     const posts = ensureEntry(trpc.post.byAuthor, { authorId: 'u1' });
     const [loaded] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
-        experimental_dataOf(posts).items,
-        (id) => prefetchEntry(trpc.author.byId, { id }),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (id) =>
+        prefetchEntry(trpc.author.byId, { id }),
       ),
     });
     await vi.waitFor(() => {
@@ -4213,7 +4203,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(post).tags.map((tag) => tag.id),
         (id) => prefetchEntry(trpc.author.byId, { id }),
       ),
@@ -4262,7 +4252,7 @@ describe.each([
     );
     const [loaded] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -4361,7 +4351,7 @@ describe.each([
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -4420,7 +4410,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [handles] = await loadHandles(trpc, {
       post,
-      tags: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         prefetchEntry(trpc.tag.byIds, { ids: [tag.id] }),
       ),
     });
@@ -4808,7 +4798,7 @@ describe.each([
     const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
     const [, data] = await loadHandles(trpc, {
       post,
-      teams: experimental_entryPerItem(experimental_dataOf(post).tags, (tag) =>
+      teams: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
         ensureEntry(trpc.team.byId, { id: tag.id }),
       ),
     });
@@ -4964,7 +4954,7 @@ describe.each([
     );
     const [handles] = await loadHandles(trpc, {
       posts,
-      authors: experimental_entryPerItem(
+      authors: experimental_perItem(
         experimental_dataOf(posts).pages.flatMap((page) => page.items),
         (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
       ),
@@ -5302,7 +5292,7 @@ describe.each([
       return {
         posts,
         rows: {
-          authors: experimental_entryPerItem(
+          authors: experimental_perItem(
             experimental_dataOf(posts).pages.flatMap((page) => page.items),
             (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
           ),
@@ -5471,7 +5461,7 @@ describe('a run the link cannot read', () => {
     const list = ensureEntry(trpc.list);
     const [, results] = await loadHandlesSettled(trpc, {
       list,
-      authors: experimental_entryPerItem(experimental_dataOf(list).ids, (id) =>
+      authors: experimental_perItem(experimental_dataOf(list).ids, (id) =>
         ensureEntry(trpc.author, { id }, { retry: false }),
       ),
     });
@@ -5712,9 +5702,8 @@ describe('a transformer that keeps what JSON drops', () => {
     const zero = ensureEntry(trpc.zero);
     const [, data] = await loadHandles(trpc, {
       zero,
-      signs: experimental_entryPerItem(
-        experimental_dataOf(zero).list,
-        (value) => ensureEntry(trpc.sign, { value }),
+      signs: experimental_perItem(experimental_dataOf(zero).list, (value) =>
+        ensureEntry(trpc.sign, { value }),
       ),
     });
 
@@ -5757,7 +5746,7 @@ describe('experimental_useHandles', () => {
       <Page
         entries={() => ({
           posts,
-          authors: experimental_entryPerItem(
+          authors: experimental_perItem(
             experimental_dataOf(posts).pages.flatMap((page) => page.items),
             (item) => prefetchEntry(trpc.author.byId, { id: item.authorId }),
           ),
@@ -5855,7 +5844,7 @@ describe('experimental_useHandles', () => {
         experimental_useHandles(trpc, {
           card: { list: nested },
           'card.list': dotted,
-          authors: experimental_entryPerItem(
+          authors: experimental_perItem(
             experimental_dataOf(props.from === 'nested' ? nested : dotted).tags,
             (tag) => prefetchEntry(trpc.author.byId, { id: tag.id }),
           ),
@@ -5890,11 +5879,11 @@ describe('experimental_useHandles', () => {
         experimental_useHandles(trpc, {
           groups,
           authors: props.flat
-            ? experimental_entryPerItem(
+            ? experimental_perItem(
                 members.flatMap((group) => group.members),
                 author,
               )
-            : experimental_entryPerItem(
+            : experimental_perItem(
                 members.map((group) => group.members),
                 author,
               ),
@@ -6544,7 +6533,7 @@ describe('a key that only a `queryKeyHashFn` the QueryClient has for it can hash
     const list = ensureEntry(trpc.ids);
     const [handles] = await loadHandles(trpc, {
       list,
-      byId: experimental_entryPerItem(experimental_dataOf(list).items, (item) =>
+      byId: experimental_perItem(experimental_dataOf(list).items, (item) =>
         prefetchEntry(trpc.byId, { id: item.id }),
       ),
     });

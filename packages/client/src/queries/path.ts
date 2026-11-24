@@ -20,3 +20,17 @@ export type RequestPath = PipelinePath & { readonly [pathKind]: 'request' };
 export function dataPath(path: PipelinePath): DataPath {
   return path as DataPath;
 }
+
+/**
+ * The path to the items of the list an entry per item is for, with a `null`
+ * for each level of lists, as the server walks it. What `.map()` returned is
+ * a value for every item already. Any other list's items are its elements.
+ */
+export function itemPathOf(list: {
+  path: DataPath;
+  shape: 'value' | 'mapped' | 'flat';
+}): ItemPath {
+  return (
+    list.shape === 'mapped' ? list.path : [...list.path, null]
+  ) as ItemPath;
+}

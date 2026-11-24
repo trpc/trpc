@@ -238,22 +238,11 @@ describe('readPipelinedRun', () => {
   });
 });
 
-const link = {
-  ...resolveHTTPLinkOptions({ url: 'http://localhost' }),
-  maxItems: Infinity,
-  maxURLLength: Infinity,
-  streams: false,
-  read: (result: HTTPResult) => {
-    if ('error' in result.json) {
-      throw TRPCClientError.from(result.json);
-    }
-    return { data: result.json.result.data };
-  },
-};
+const linkOpts = { url: 'http://localhost' };
 
 describe('a pipelined call', () => {
   test('a malformed result fails its call by itself, and its siblings keep their data', async () => {
-    const pipelining = experimental_pipelining()(link);
+    const pipelining = experimental_pipelining()(linkOpts, false);
     const pipeline = createOperationPipeline();
     const op = {
       context: pipelineContext(pipeline),
@@ -297,7 +286,7 @@ describe('a pipelined call', () => {
   });
 
   test('settles once: what a response says after its final state is ignored', async () => {
-    const pipelining = experimental_pipelining()(link);
+    const pipelining = experimental_pipelining()(linkOpts, false);
     const pipeline = createOperationPipeline();
     const op = {
       context: pipelineContext(pipeline),

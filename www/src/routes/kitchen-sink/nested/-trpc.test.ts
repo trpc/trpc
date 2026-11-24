@@ -49,15 +49,24 @@ test('a load sends nothing once its signal is aborted', async () => {
 
   // Every author settles, and so does the team of each one that came: in a
   // load that kept going, each author's team is sent for as it arrives.
-  const authors = await Promise.allSettled(
-    posts.map((post) => post.edges.author),
-  );
-  await Promise.allSettled(
-    authors.flatMap((author) =>
-      author.status === 'fulfilled' ? [author.value.edges.team] : [],
-    ),
-  );
+  await Promise.allSettled(posts.map((post) => post.author));
+  await Promise.allSettled(posts.map((post) => post.team));
 
   expect(server.sent).toEqual(sentBefore);
   expect(server.sent.some((path) => path.includes('team.byId'))).toBe(false);
+});
+
+test('a pipelined load is one request, with one author query for every post', async () => {
+  const server = serve();
+  const posts = await loadPosts({
+    fetch: server.fetch,
+    mode: 'pipelined',
+    signal: new AbortController().signal,
+  });
+  const authors = await Promise.allSettled(posts.map((post) => post.author));
+  const teams = await Promise.allSettled(posts.map((post) => post.team));
+
+  expect(server.sent).toEqual(['post.list,author.byId,team.byId']);
+  expect(authors.some((author) => author.status === 'fulfilled')).toBe(true);
+  expect(teams.some((team) => team.status === 'fulfilled')).toBe(true);
 });
