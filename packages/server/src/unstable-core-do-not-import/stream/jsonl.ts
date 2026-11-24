@@ -388,6 +388,7 @@ class AsyncError extends Error {
   }
 }
 export type ConsumerOnError = (opts: { error: unknown }) => void;
+export type ConsumerOnSettled = (opts: { key: string }) => void;
 
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
@@ -473,7 +474,10 @@ function createConsumerStream<THead>(
 /**
  * Creates a handler for managing stream controllers and their lifecycle
  */
-function createStreamsManager(abortController: AbortController) {
+function createStreamsManager(opts: {
+  abortController: AbortController;
+  onSettled: ConsumerOnSettled | null;
+}) {
   let terminalState:
     | { type: 'closed' }
     | { type: 'errored'; reason: unknown }
@@ -482,6 +486,9 @@ function createStreamsManager(abortController: AbortController) {
     ChunkIndex,
     ReturnType<typeof createStreamController>
   >();
+  /** The head key each decoded chunk is under */
+  const headKeys = new Map<ChunkIndex, string>();
+  const settledKeys = new Set<string>();
 
   /**
    * Checks if there are no pending controllers or deferred promises
@@ -491,9 +498,21 @@ function createStreamsManager(abortController: AbortController) {
   }
 
   /**
+   * Checks if every chunk under a head key has closed
+   */
+  function isSettled(key: string) {
+    for (const [chunkId, headKey] of headKeys) {
+      if (headKey === key && !controllerMap.get(chunkId)?.closed) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Creates a stream controller
    */
-  function createStreamController() {
+  function createStreamController(chunkId: ChunkIndex) {
     let originalController: ReadableStreamDefaultController<ChunkData>;
     const stream = new ReadableStream<ChunkData>({
       start(controller) {
@@ -508,8 +527,13 @@ function createStreamsManager(abortController: AbortController) {
 
         clear();
 
+        const key = headKeys.get(chunkId);
+        if (key !== undefined && !settledKeys.has(key) && isSettled(key)) {
+          settledKeys.add(key);
+          opts.onSettled?.({ key });
+        }
         if (isEmpty()) {
-          abortController.abort();
+          opts.abortController.abort();
         }
       },
       closed: false,
@@ -552,7 +576,7 @@ function createStreamsManager(abortController: AbortController) {
   function getOrCreate(chunkId: ChunkIndex) {
     let c = controllerMap.get(chunkId);
     if (!c) {
-      c = createStreamController();
+      c = createStreamController(chunkId);
       controllerMap.set(chunkId, c);
       // Buffered values can reveal nested async values after the source ends.
       if (terminalState?.type === 'closed') {
@@ -590,8 +614,20 @@ function createStreamsManager(abortController: AbortController) {
     }
   }
 
+  /**
+   * Gets or creates the stream controller of a chunk decoded under a head key.
+   * A chunk is decoded while its parent is still open, so the head key can't
+   * settle before its last chunk closes, unless the source has already ended
+   * and nothing is left to stream.
+   */
+  function getOrCreateUnder(chunkId: ChunkIndex, key: string) {
+    headKeys.set(chunkId, key);
+    return getOrCreate(chunkId);
+  }
+
   return {
     getOrCreate,
+    getOrCreateUnder,
     cancelAll,
     closeAll,
   };
@@ -610,6 +646,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
    * This `AbortController` will be triggered when there are no more listeners to the stream.
    */
   abortController: AbortController;
+  /**
+   * Called with a head key once every streamed part under it has closed:
+   * each promise has settled and each async iterable has finished or been
+   * cancelled.
+   */
+  onSettled?: ConsumerOnSettled;
 }) {
   const { deserialize = (v) => v } = opts;
 
@@ -625,12 +667,15 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
   let headDeferred: null | Deferred<THead> = createDeferred();
 
-  const streamManager = createStreamsManager(opts.abortController);
+  const streamManager = createStreamsManager({
+    abortController: opts.abortController,
+    onSettled: opts.onSettled ?? null,
+  });
 
-  function decodeChunkDefinition(value: ChunkDefinition) {
+  function decodeChunkDefinition(value: ChunkDefinition, headKey: string) {
     const [_path, type, chunkId] = value;
 
-    const controller = streamManager.getOrCreate(chunkId);
+    const controller = streamManager.getOrCreateUnder(chunkId, headKey);
 
     if (type === CHUNK_VALUE_TYPE_PROMISE) {
       const promise = run(async () => {
@@ -645,7 +690,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
         const [_chunkId, status, data] = value as PromiseChunk;
         switch (status) {
           case PROMISE_STATUS_FULFILLED:
-            return decode(data);
+            return decode(data, headKey);
           case PROMISE_STATUS_REJECTED:
             throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
         }
@@ -671,10 +716,10 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
           switch (status) {
             case ASYNC_ITERABLE_STATUS_YIELD:
-              yield decode(data);
+              yield decode(data, headKey);
               break;
             case ASYNC_ITERABLE_STATUS_RETURN:
-              return decode(data);
+              return decode(data, headKey);
             case ASYNC_ITERABLE_STATUS_ERROR:
               throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
           }
@@ -685,12 +730,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
     assertNever(type);
   }
 
-  function decode(value: EncodedValue): unknown {
+  function decode(value: EncodedValue, headKey: string): unknown {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
       const [key] = value;
-      const decoded = decodeChunkDefinition(value);
+      const decoded = decodeChunkDefinition(value, headKey);
 
       if (key === null) {
         return decoded;
@@ -727,7 +772,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
-              const parsed = decode(value as any);
+              const parsed = decode(value as any, key);
               head[key] = parsed;
             }
             headDeferred.resolve(head as THead);
