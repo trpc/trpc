@@ -1051,18 +1051,45 @@ export function applyWSSHandler(
 
   return {
     broadcastReconnectNotification: () => {
-      const response: TRPCReconnectNotification = {
-        id: null,
-        method: 'reconnect',
-      };
-      const data = encoder.encode(response);
-      for (const client of opts.wss.clients) {
-        if (client.readyState === WEBSOCKET_OPEN) {
-          client.send(data);
-        }
-      }
+      broadcastReconnectNotification(wss, { experimental_encoder: encoder });
     },
   };
+}
+
+/**
+ * Tells every open client of a WebSocket server to reconnect, for example
+ * before a deploy. Use it where you have the server but not the handler
+ * `applyWSSHandler` returns, such as `fastify.websocketServer` with the
+ * Fastify adapter. Every open client gets the message, including ones that
+ * tRPC doesn't serve.
+ * @example
+ * ```ts
+ * broadcastReconnectNotification(fastify.websocketServer);
+ * await fastify.close();
+ * ```
+ * @see https://trpc.io/docs/server/adapters/fastify#telling-clients-to-reconnect
+ */
+export function broadcastReconnectNotification(
+  wss: Pick<WSServer, 'clients'>,
+  opts?: {
+    /**
+     * The encoder the server was set up with, if not JSON.
+     * @default jsonEncoder
+     */
+    experimental_encoder?: Encoder;
+  },
+): void {
+  const encoder = opts?.experimental_encoder ?? jsonEncoder;
+  const response: TRPCReconnectNotification = {
+    id: null,
+    method: 'reconnect',
+  };
+  const data = encoder.encode(response);
+  for (const client of wss.clients) {
+    if (client.readyState === WEBSOCKET_OPEN) {
+      client.send(data);
+    }
+  }
 }
 
 export type { Encoder } from './wsEncoder';

@@ -19,6 +19,7 @@ import type {
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
+import { broadcastReconnectNotification } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import fastify from 'fastify';
@@ -408,6 +409,46 @@ describe('anonymous user', () => {
     expect(message.toString()).toBe('hello');
 
     client.close();
+  });
+
+  test('broadcastReconnectNotification asks connected clients to reconnect', async () => {
+    await using app = await setup();
+    const socket = new WebSocket(
+      `ws://localhost:${app.url.port}${config.prefix}`,
+    );
+    // `await using` closes the socket even when an assertion below throws
+    await using _socket = makeAsyncResource(socket, () => {
+      return new Promise<void>((resolve) => {
+        if (socket.readyState === WebSocket.CLOSED) {
+          resolve();
+          return;
+        }
+        socket.once('close', resolve);
+        socket.close();
+      });
+    });
+
+    const received: string[] = [];
+    socket.on('message', (data) => {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      received.push(data.toString());
+    });
+    await new Promise<void>((resolve, reject) => {
+      socket.once('open', () => resolve());
+      socket.once('error', reject);
+    });
+
+    // the plugin is registered without `fastify-plugin` here, which is fine:
+    // `@fastify/websocket` puts `websocketServer` on the root instance
+    broadcastReconnectNotification(app.server.websocketServer);
+
+    await vi.waitFor(() => {
+      expect(received).toHaveLength(1);
+    });
+    expect(JSON.parse(received[0]!)).toEqual({
+      id: null,
+      method: 'reconnect',
+    });
   });
 
   test('subscription', async () => {
