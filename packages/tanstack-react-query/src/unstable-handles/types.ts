@@ -782,6 +782,19 @@ export type experimental_WaitableKey<TEntries> = {
 }[keyof TEntries & string];
 
 /**
+ * The `wait` list of a load's options, as its type has it. Options whose
+ * `wait` may be absent may wait for none of its keys: their data may be
+ * there
+ */
+export type WaitOf<TOpts> = TOpts extends {
+  wait: infer TWait extends readonly string[];
+}
+  ? TWait
+  : TOpts extends { wait?: infer TWait }
+    ? Extract<TWait, readonly string[]> | []
+    : [];
+
+/**
  * Options of `loadHandles()` and `loadHandlesSettled()`
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#wait
  */

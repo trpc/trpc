@@ -227,6 +227,25 @@ describe('a description of queries', () => {
       post: { slug: string; authorId: string };
       author?: { id: string; teamId: string };
     }>();
+
+    // Options whose `wait` may not be there
+    const opts: { wait?: readonly ['post'] } = {};
+    const [, maybe] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      opts,
+    );
+    expect(maybe).toEqual({});
+    expectTypeOf(maybe).toEqualTypeOf<{
+      post?: { slug: string; authorId: string };
+    }>();
+
+    const [, none] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+      {},
+    );
+    expectTypeOf(none).toEqualTypeOf<{}>();
   });
 
   test('`wait` waits for the keys it names only, also when they share an entry', async () => {

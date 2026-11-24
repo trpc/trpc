@@ -19,6 +19,7 @@ import type {
   experimental_WaitableKey,
   experimental_WithWait,
   FeatureFlagsOf,
+  WaitOf,
 } from './types';
 
 /**
@@ -179,14 +180,17 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
 export function loadHandles<
   TProxy extends DecorateRouterKeyable<any>,
   TEntries extends TRPCLoadEntries,
-  const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
+  const TOpts extends TRPCLoadOptions<
+    TEntries,
+    readonly experimental_WaitableKey<TEntries>[]
+  > = {},
 >(
   trpc: TProxy,
   entries: TEntries,
-  opts?: TRPCLoadOptions<TEntries, TWait>,
+  opts?: TOpts,
 ): Promise<
   TRPCLoadedHandles<
-    experimental_WithWait<TEntries, TWait, FeatureFlagsOf<TProxy>>
+    experimental_WithWait<TEntries, WaitOf<TOpts>, FeatureFlagsOf<TProxy>>
   >
 > {
   const load = readLoad({
@@ -248,14 +252,17 @@ export function loadHandles<
 export function loadHandlesSettled<
   TProxy extends DecorateRouterKeyable<any>,
   TEntries extends TRPCLoadEntries,
-  const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
+  const TOpts extends TRPCLoadOptions<
+    TEntries,
+    readonly experimental_WaitableKey<TEntries>[]
+  > = {},
 >(
   trpc: TProxy,
   entries: TEntries,
-  opts?: TRPCLoadOptions<TEntries, TWait>,
+  opts?: TOpts,
 ): Promise<
   TRPCSettledHandles<
-    experimental_WithWait<TEntries, TWait, FeatureFlagsOf<TProxy>>
+    experimental_WithWait<TEntries, WaitOf<TOpts>, FeatureFlagsOf<TProxy>>
   >
 > {
   const load = readLoad({
