@@ -1594,6 +1594,24 @@ describe.each([
     await expect(res.failing).rejects.toThrow('no feed');
   });
 
+  test("an infinite query's `pageParams` has the cursor of an input that is an instance of a class, as it is sent", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+    class FeedInput {
+      constructor(public cursor: number) {}
+    }
+
+    const res = experimental_load(c, {
+      feed: infiniteQuery(c.post.feed, new FeedInput(2)),
+    });
+
+    expect(await res.feed).toMatchObject({
+      pages: [{ items: posts.slice(2) }],
+      pageParams: [2],
+    });
+  });
+
   test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
     await using ctx = setup({ pipelining: true });
     using _quiet = quietWarnings();

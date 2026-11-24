@@ -1256,7 +1256,9 @@ export function experimental_load<
               ? wholeRead
                 ? call.input
                 : call.initialCursor
-              : isPlainObject(call.input)
+              : // A plain input has the cursor `firstPageInput()` gave it. An
+                // instance of a class goes as it is, with its own
+                isObject(call.input) && hasOwn(call.input, 'cursor')
                 ? call.input['cursor']
                 : undefined,
             items,
