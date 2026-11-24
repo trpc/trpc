@@ -206,6 +206,14 @@ export class WsClient {
   private async open() {
     this.allowReconnect = true;
     if (this.reconnecting) return this.reconnecting;
+    // In lazy mode nothing reconnects after the server rejects a connection,
+    // so the next request, e.g. one sent again by `retryLink`, opens the next
+    // one. It waits for the backoff too. `close()` forgets the rejection, so a
+    // request made once the client is idle again connects at once.
+    if (this.connectionRejected) {
+      this.reconnect(null);
+      return this.reconnecting;
+    }
     this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
       callUserCallback(() =>
@@ -238,6 +246,7 @@ export class WsClient {
    */
   public async close() {
     this.allowReconnect = false;
+    this.connectionRejected = false;
     this.replacementError = null;
     this.retiredConnection = null;
     this.inactivityTimeoutEnabled = false;
@@ -403,8 +412,9 @@ export class WsClient {
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
    * instead of starting over at attempt 0. Cleared again when the socket
-   * receives a result, which proves the connection was accepted. Also set
-   * on a keepAlive pong timeout when the socket never received anything.
+   * receives a result, which proves the connection was accepted, and by
+   * `close()`. Also set on a keepAlive pong timeout when the socket never
+   * received anything.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
