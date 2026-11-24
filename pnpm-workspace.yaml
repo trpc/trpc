@@ -38,15 +38,12 @@ allowBuilds:
   '@prisma/engines': true
   '@swc/core': true
   '@tree-sitter-grammars/tree-sitter-yaml': true
-  aws-sdk: true
   core-js: true
   core-js-pure: true
-  es5-ext: true
   esbuild: true
   nx: true
   playwright: true
   prisma: true
-  serverless: true
   sharp: true
   tree-sitter: true
   tree-sitter-json: true
