@@ -247,6 +247,7 @@ export class WsClient {
   public async close() {
     this.allowReconnect = false;
     this.connectionRejected = false;
+    this.reconnecting = null;
     this.replacementError = null;
     this.retiredConnection = null;
     this.inactivityTimeoutEnabled = false;
@@ -447,10 +448,14 @@ export class WsClient {
     }
     if (this.reconnecting) return;
 
+    // `close()` drops a reconnect that's still running, so a later `open()`
+    // doesn't wait for it.
+    const isCurrent = () =>
+      this.allowReconnect && this.reconnecting === reconnecting;
     const tryReconnect = async (attemptIndex: number) => {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
-        if (this.allowReconnect) {
+        if (isCurrent()) {
           const next = this.createConnection();
           this.nextConnection = next;
           try {
@@ -464,10 +469,10 @@ export class WsClient {
             await next.close().catch(() => null);
             throw error;
           } finally {
-            this.nextConnection = null;
+            if (this.nextConnection === next) this.nextConnection = null;
           }
 
-          if (this.allowReconnect) {
+          if (isCurrent()) {
             // Read only now: losing the active socket while `next` opened may
             // have restored the one it replaced.
             const previous = this.activeConnection;
@@ -480,17 +485,17 @@ export class WsClient {
             await next.close();
           }
         }
-        this.reconnecting = null;
+        if (this.reconnecting === reconnecting) this.reconnecting = null;
       } catch (error) {
         const closedError = new TRPCWebSocketClosedError({
           message: 'Initialization error',
           cause: error,
         });
-        if (this.allowReconnect && this.activeConnection.isOpen()) {
+        if (isCurrent() && this.activeConnection.isOpen()) {
           // The old socket keeps serving every request, so this is shown only
           // once it closes.
           this.replacementError = closedError;
-        } else if (this.allowReconnect) {
+        } else if (isCurrent()) {
           callUserCallback(() =>
             this.connectionState.next({
               type: 'state',
@@ -503,9 +508,10 @@ export class WsClient {
       }
     };
 
-    this.reconnecting = tryReconnect(
+    const reconnecting = tryReconnect(
       this.connectionRejected ? this.connectionAttemptIndex + 1 : 0,
     );
+    this.reconnecting = reconnecting;
   }
 
   /**

@@ -113,3 +113,32 @@ test('a request made once the lazy client is idle again does not wait for an old
   expect(ctx.retryDelayMs).not.toHaveBeenCalled();
   expect(states).toEqual(['idle', 'connecting', 'pending']);
 });
+
+test('a request made once the lazy client is idle again does not join a reconnect from before', async () => {
+  let isRejecting = true;
+  const createContext = vi.fn((): object => {
+    if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
+    return {};
+  });
+  await using ctx = setup({ createContext, delayMs: 1_000 });
+
+  const abortController = new AbortController();
+  ctx.client.greeting
+    .query(undefined, { signal: abortController.signal })
+    .catch(() => null);
+  // the retried query waits for the backoff
+  await vi.waitFor(() => {
+    expect(ctx.retryDelayMs).toHaveBeenCalled();
+  });
+  // cancelling it leaves nothing in flight, so the client closes
+  abortController.abort();
+  await vi.waitFor(() => {
+    expect(ctx.wsClient.connectionState.get().state).toBe('idle');
+  });
+
+  isRejecting = false;
+  const start = Date.now();
+  expect(await ctx.client.greeting.query()).toBe('hello');
+  expect(Date.now() - start).toBeLessThan(500);
+  expect(ctx.retryDelayMs).toHaveBeenCalledTimes(1);
+});
