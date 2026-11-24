@@ -108,6 +108,7 @@ catalog:
   node-fetch: ^3.3.2
   npm-run-all2: ^9.0.4
   sury: 11.1.0
+  start-server-and-test: ^3.0.13
   yaml: 2.9.1
 
 catalogs:
