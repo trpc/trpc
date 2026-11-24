@@ -12058,8 +12058,8 @@ packages:
   es-toolkit@1.53.1:
     resolution: {integrity: sha512-VhMc6IXmexu8iYFfL2aaAww6IvJTdHlqBLruLoEUs33YD4IcP5DdZcLOybMsMmmLsiy1c8PsiLsrM0DdIuuRUA==}
 
-  es5-ext@0.10.62:
-    resolution: {integrity: sha512-BHLqn0klhEpnOKSrzn/Xsz2UIW8j+cGmo9JLzr8BiUapV8hPL9+FliFqjwr9ngW7jWdnxv6eO+/LqyhJVqgrjA==}
+  es5-ext@0.10.64:
+    resolution: {integrity: sha512-p2snDhiLaXe6dahss1LddxqEm+SkuDvV8dnIQG0MWjyHpcMNfXKPE+/Cc0y+PhxJX3A4xGNeFCj5oc0BUh6deg==}
     engines: {node: '>=0.10'}
 
   es6-iterator@2.0.3:
@@ -12142,6 +12142,10 @@ packages:
 
   esniff@1.1.0:
     resolution: {integrity: sha512-vmHXOeOt7FJLsqofvFk4WB3ejvcHizCd8toXXwADmYfd02p2QwHRgkUbhYDX54y08nqk818CUTWipgZGlyN07g==}
+
+  esniff@2.0.1:
+    resolution: {integrity: sha512-kTUIGKQ/mDPFoJ0oVfcmyJn4iBDRptjNVIzwIFR7tqWXdVI9xfA2RMwY/gbSpJG3lkdWNEjLap/NqVHZiJsdfg==}
+    engines: {node: '>=0.10'}
 
   espree@11.2.0:
     resolution: {integrity: sha512-7p3DrVEIopW1B1avAGLuCSh1jubc01H2JHc8B4qqGblmg5gI9yumBgACjWo4JlIc04ufug4xJ3SQI8HkS/Rgzw==}
@@ -17838,7 +17842,7 @@ snapshots:
   2-thenable@1.0.0:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
 
   '@aashutoshrathi/word-wrap@1.2.6':
     optional: true
@@ -23104,7 +23108,7 @@ snapshots:
     dependencies:
       '@redis/client': 6.3.1(@opentelemetry/api@1.10.0)
 
-  '@reduxjs/toolkit@2.13.0(react-redux@9.3.1(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1))(react@19.3.1)':
+  '@reduxjs/toolkit@2.13.0(react-redux@9.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@standard-schema/spec': 1.0.0
       '@standard-schema/utils': 0.3.0
@@ -23982,6 +23986,36 @@ snapshots:
       '@shadcn/react': 0.3.1(@types/react@19.3.0)(react@19.3.1)
       class-variance-authority: 0.7.1
       cmdk: 1.1.1(@types/react-dom@19.1.1(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      cn: 0.5.2
+      date-fns: 4.4.0
+      embla-carousel-react: 8.6.0(react@19.3.1)
+      input-otp: 1.5.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      lucide-react: 1.70.0(@types/react@19.3.0)(react@19.3.1)
+      next-themes: 0.4.6(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react: 19.3.1
+      react-day-picker: 10.0.2(@types/react@19.3.0)(react@19.3.1)
+      react-dom: 19.3.1(react@19.3.1)
+      react-resizable-panels: 4.21.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      recharts: 3.10.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@17.0.2)(react@19.3.1)(redux@5.0.1)
+      shadcn: 4.23.0(supports-color@10.0.0)
+      shiki: 4.6.0
+      sonner: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      tw-animate-css: 1.4.0
+    transitivePeerDependencies:
+      - '@date-fns/tz'
+      - '@types/react'
+      - '@types/react-dom'
+      - babel-plugin-macros
+      - react-is
+      - redux
+      - supports-color
+
+  '@shared/ui@file:tooling/ui(@date-fns/tz@1.5.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@17.0.2)(react@19.3.1)(supports-color@10.0.0)':
+    dependencies:
+      '@base-ui/react': 1.9.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@shadcn/react': 0.3.1(@types/react@19.3.0)(react@19.3.1)
+      class-variance-authority: 0.7.1
+      cmdk: 1.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       cn: 0.5.2
       date-fns: 4.4.0
       embla-carousel-react: 8.6.0(react@19.3.1)
@@ -27495,7 +27529,7 @@ snapshots:
   child-process-ext@2.1.1:
     dependencies:
       cross-spawn: 6.0.5
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       log: 6.3.1
       split2: 3.2.2
       stream-promise: 3.2.0
@@ -27503,7 +27537,7 @@ snapshots:
   child-process-ext@3.0.2:
     dependencies:
       cross-spawn: 7.0.6
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       log: 6.3.1
       split2: 3.2.2
       stream-promise: 3.2.0
@@ -27552,7 +27586,7 @@ snapshots:
   cli-color@2.0.3:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-iterator: 2.0.3
       memoizee: 0.4.15
       timers-ext: 0.1.7
@@ -27569,7 +27603,7 @@ snapshots:
     dependencies:
       cli-color: 2.0.3
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       mute-stream: 0.0.8
       process-utils: 4.0.0
       timers-ext: 0.1.7
@@ -27580,7 +27614,7 @@ snapshots:
   cli-sprintf-format@1.1.1:
     dependencies:
       cli-color: 2.0.3
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       sprintf-kit: 2.0.1
       supports-color: 6.1.0
 
@@ -27947,7 +27981,7 @@ snapshots:
 
   d@1.0.1:
     dependencies:
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       type: 1.2.0
 
   data-uri-to-buffer@3.0.1: {}
@@ -28116,7 +28150,7 @@ snapshots:
   deferred@0.7.11:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       event-emitter: 0.3.5
       next-tick: 1.1.0
       timers-ext: 0.1.7
@@ -28282,7 +28316,7 @@ snapshots:
   duration@0.2.2:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
 
   eastasianwidth@0.2.0: {}
 
@@ -28506,22 +28540,23 @@ snapshots:
 
   es-toolkit@1.53.1: {}
 
-  es5-ext@0.10.62:
+  es5-ext@0.10.64:
     dependencies:
       es6-iterator: 2.0.3
       es6-symbol: 3.1.3
+      esniff: 2.0.1
       next-tick: 1.1.0
 
   es6-iterator@2.0.3:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-symbol: 3.1.3
 
   es6-set@0.1.6:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-iterator: 2.0.3
       es6-symbol: 3.1.3
       event-emitter: 0.3.5
@@ -28535,7 +28570,7 @@ snapshots:
   es6-weak-map@2.0.3:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-iterator: 2.0.3
       es6-symbol: 3.1.3
 
@@ -28723,7 +28758,14 @@ snapshots:
   esniff@1.1.0:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
+
+  esniff@2.0.1:
+    dependencies:
+      d: 1.0.1
+      es5-ext: 0.10.64
+      event-emitter: 0.3.5
+      type: 2.7.2
 
   espree@11.2.0:
     dependencies:
@@ -28768,7 +28810,7 @@ snapshots:
   event-emitter@0.3.5:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
 
   event-source-polyfill@1.0.31: {}
 
@@ -29142,7 +29184,7 @@ snapshots:
 
   find-requires@1.0.0:
     dependencies:
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       esniff: 1.1.0
 
   find-up@3.0.0:
@@ -29281,7 +29323,7 @@ snapshots:
     dependencies:
       d: 1.0.1
       deferred: 0.7.11
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       event-emitter: 0.3.5
       ignore: 5.3.1
       memoizee: 0.4.15
@@ -30555,7 +30597,7 @@ snapshots:
       cli-color: 2.0.3
       cli-sprintf-format: 1.1.1
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       log: 6.3.1
       sprintf-kit: 2.0.1
       supports-color: 8.1.1
@@ -30575,7 +30617,7 @@ snapshots:
     dependencies:
       d: 1.0.1
       duration: 0.2.2
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       event-emitter: 0.3.5
       sprintf-kit: 2.0.1
       type: 2.7.2
@@ -30603,7 +30645,7 @@ snapshots:
 
   lru-queue@0.1.0:
     dependencies:
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
 
   lucide-react@1.70.0(@types/react@19.3.0)(react@19.3.1):
     dependencies:
@@ -30800,7 +30842,7 @@ snapshots:
   memoizee@0.4.15:
     dependencies:
       d: 1.0.1
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-weak-map: 2.0.3
       event-emitter: 0.3.5
       is-promise: 2.2.2
@@ -31168,7 +31210,7 @@ snapshots:
     dependencies:
       builtin-modules: 3.3.0
       deferred: 0.7.11
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-set: 0.1.6
       ext: 1.7.0
       find-requires: 1.0.0
@@ -31179,7 +31221,7 @@ snapshots:
     dependencies:
       builtin-modules: 3.3.0
       deferred: 0.7.11
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       es6-set: 0.1.6
       ext: 1.7.0
       find-requires: 1.0.0
@@ -32715,7 +32757,7 @@ snapshots:
 
   recharts@3.10.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@17.0.2)(react@19.3.1)(redux@5.0.1):
     dependencies:
-      '@reduxjs/toolkit': 2.13.0(react-redux@9.3.1(@types/react@19.3.0)(react@19.3.1)(redux@5.0.1))(react@19.3.1)
+      '@reduxjs/toolkit': 2.13.0(react-redux@9.3.1(@types/react@19.3.0)(react@19.3.1))(react@19.3.1)
       clsx: 2.1.1
       decimal.js-light: 2.5.1
       es-toolkit: 1.53.1
@@ -33876,7 +33918,7 @@ snapshots:
 
   sprintf-kit@2.0.1:
     dependencies:
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
 
   srvx@0.12.8: {}
 
@@ -33913,7 +33955,7 @@ snapshots:
   stream-promise@3.2.0:
     dependencies:
       2-thenable: 1.0.0
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       is-stream: 1.1.0
 
   stream-shift@1.0.3: {}
@@ -34288,7 +34330,7 @@ snapshots:
 
   timers-ext@0.1.7:
     dependencies:
-      es5-ext: 0.10.62
+      es5-ext: 0.10.64
       next-tick: 1.1.0
 
   tiny-case@1.0.3: {}
