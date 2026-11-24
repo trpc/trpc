@@ -60,7 +60,11 @@ interface MergedAsyncIterables<TYield> extends AsyncIterable<
   void,
   unknown
 > {
-  add(iterable: AsyncIterable<TYield>): void;
+  /**
+   * @returns `false` if the merge has already stopped, so the iterable won't be
+   * started
+   */
+  add(iterable: AsyncIterable<TYield>): boolean;
 }
 
 /**
@@ -130,14 +134,13 @@ export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
       switch (state) {
         case 'idle':
           iterables.push(iterable);
-          break;
+          return true;
         case 'pending':
           initIterable(iterable);
-          break;
-        case 'done': {
-          // shouldn't happen
-          break;
-        }
+          return true;
+        case 'done':
+          // the merge was stopped, such as by the stream being cancelled
+          return false;
       }
     },
     async *[Symbol.asyncIterator]() {

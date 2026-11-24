@@ -87,15 +87,16 @@ function Home() {
               <li className="flex gap-3">
                 <RadioIcon className="mt-0.5 size-4 shrink-0" />
                 <span>
-                  <code>post.onAdd</code> adds new messages as they&apos;re
-                  posted, and resumes from the last event id after a reconnect
+                  <code>post.onAdd</code> sends new messages from every channel
+                  over one subscription, and resumes from the last event id
+                  after a reconnect
                 </span>
               </li>
               <li className="flex gap-3">
                 <KeyboardIcon className="mt-0.5 size-4 shrink-0" />
                 <span>
-                  <code>channel.whoIsTyping</code> shows who&apos;s writing in
-                  each channel
+                  <code>channel.whoIsTyping</code> shows who&apos;s writing,
+                  also for every channel at once
                 </span>
               </li>
             </ul>

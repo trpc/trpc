@@ -5,7 +5,13 @@ import { nitro } from 'nitro/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig((env) => ({
-  plugins: [tailwindcss(), tanstackStart(), nitro(), react()],
+  plugins: [
+    tailwindcss(),
+    tanstackStart(),
+    nitro(),
+    // React Compiler memoizes components, so there is no `useMemo` or `React.memo` to maintain
+    react({ compiler: true }),
+  ],
   resolve: {
     tsconfigPaths: true,
   },

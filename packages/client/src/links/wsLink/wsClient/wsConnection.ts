@@ -1,7 +1,12 @@
 import { behaviorSubject } from '@trpc/server/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
 import type { Encoder } from './encoder';
-import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
+import {
+  buildConnectionMessage,
+  prepareUrl,
+  TRPCWebSocketClosedError,
+  withResolvers,
+} from './utils';
 
 /**
  * Opens a WebSocket connection asynchronously and returns a promise
@@ -68,6 +73,7 @@ interface PingPongOptions {
 function setupPingInterval(
   ws: WebSocket,
   { intervalMs, pongTimeoutMs }: PingPongOptions,
+  onPongTimeout: () => void,
 ) {
   let pingTimeout: ReturnType<typeof setTimeout> | undefined;
   let pongTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -76,7 +82,10 @@ function setupPingInterval(
     pingTimeout = setTimeout(() => {
       sendPing(ws, null);
       pongTimeout = setTimeout(() => {
+        // A socket that is already closing was closed on purpose.
+        if (ws.readyState !== ws.OPEN) return;
         ws.close();
+        onPongTimeout();
       }, pongTimeoutMs);
     }, intervalMs);
   }
@@ -113,6 +122,12 @@ export interface WebSocketConnectionOptions {
     enabled: boolean;
   };
   encoder: Encoder;
+  /**
+   * Called when a keepAlive pong times out, once the socket is closing. Its
+   * `close` event can come much later: an unresponsive server never answers
+   * the closing handshake.
+   */
+  onPongTimeout: (ws: WebSocket) => void;
 }
 
 /**
@@ -127,6 +142,7 @@ export class WsConnection {
   private readonly urlOptions: UrlOptionsWithConnectionParams;
   private readonly keepAliveOpts: WebSocketConnectionOptions['keepAlive'];
   private readonly encoder: Encoder;
+  private readonly onPongTimeout: WebSocketConnectionOptions['onPongTimeout'];
   public readonly wsObservable = behaviorSubject<WebSocket | null>(null);
 
   constructor(opts: WebSocketConnectionOptions) {
@@ -140,6 +156,7 @@ export class WsConnection {
     this.urlOptions = opts.urlOptions;
     this.keepAliveOpts = opts.keepAlive;
     this.encoder = opts.encoder;
+    this.onPongTimeout = opts.onPongTimeout;
   }
 
   public get ws() {
@@ -189,7 +206,7 @@ export class WsConnection {
     const wsPromise = prepareUrl(this.urlOptions).then(
       (url) => new this.WebSocketPonyfill(url),
     );
-    this.openPromise = wsPromise.then(async (ws) => {
+    const openPromise = wsPromise.then(async (ws) => {
       this.ws = ws;
 
       // Set binaryType to handle both text and binary messages consistently
@@ -202,8 +219,23 @@ export class WsConnection {
         }
       });
 
+      const abandoned = withResolvers<never>();
       if (this.keepAliveOpts.enabled) {
-        setupPingInterval(ws, this.keepAliveOpts);
+        setupPingInterval(ws, this.keepAliveOpts, () => {
+          // A pong timeout gives up on an attempt still waiting on its
+          // `connectionParams`, so the reconnect doesn't wait on them. The
+          // attempt stays in `openPromise` until it rejects, so an `open()`
+          // meanwhile, e.g. from `onClose`, gets that rejection instead of
+          // starting another attempt on this connection.
+          if (this.openPromise === openPromise) {
+            abandoned.reject(
+              new TRPCWebSocketClosedError({
+                message: 'Pong timeout before connectionParams were sent',
+              }),
+            );
+          }
+          this.onPongTimeout(ws);
+        });
       }
 
       ws.addEventListener('close', () => {
@@ -216,18 +248,24 @@ export class WsConnection {
 
       if (this.urlOptions.connectionParams) {
         ws.send(
-          await buildConnectionMessage(
-            this.urlOptions.connectionParams,
-            this.encoder,
-          ),
+          await Promise.race([
+            buildConnectionMessage(
+              this.urlOptions.connectionParams,
+              this.encoder,
+            ),
+            abandoned.promise,
+          ]),
         );
       }
     });
+    this.openPromise = openPromise;
 
     try {
-      await this.openPromise;
+      await openPromise;
     } finally {
-      this.openPromise = null;
+      if (this.openPromise === openPromise) {
+        this.openPromise = null;
+      }
     }
   }
 

@@ -242,12 +242,31 @@ test.each([false, true])(
 
 describe('httpBatchStreamLink abort listener cleanup', () => {
   const t = initTRPC.context<{ res: ServerResponse }>().create();
+  /** The signal of each call to `ticks`, oldest first */
+  const tickSignals: (AbortSignal | undefined)[] = [];
+  /** The deferred value of each call to `pending`, oldest first */
+  const pendingValues: ReturnType<typeof createDeferred<string>>[] = [];
   const router = t.router({
     value: t.procedure.query(() => 'ok'),
+    deferred: t.procedure.query(() => ({
+      promise: new Promise<string>((resolve) =>
+        setTimeout(() => resolve('done'), 10),
+      ),
+      iterable: (async function* () {
+        yield 1;
+        yield 2;
+      })(),
+    })),
+    pending: t.procedure.query(() => {
+      const value = createDeferred<string>();
+      pendingValues.push(value);
+      return { value: value.promise };
+    }),
     fail: t.procedure.query(() => {
       throw new TRPCError({ code: 'BAD_REQUEST' });
     }),
-    ticks: t.procedure.query(async function* () {
+    ticks: t.procedure.query(async function* ({ signal }) {
+      tickSignals.push(signal);
       for (let i = 0; ; i++) {
         yield i;
         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -318,6 +337,110 @@ describe('httpBatchStreamLink abort listener cleanup', () => {
       }
     }).rejects.toThrow();
     expect(seen).toEqual([0, 1, 2]);
+  });
+
+  test('cancels a batch holding a settled query and a streamed query', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const settled = new AbortController();
+    const streamed = new AbortController();
+    const firstSignal = tickSignals.length;
+    const [, ticks] = await Promise.all([
+      ctx.client.value.query(undefined, { signal: settled.signal }),
+      ctx.client.ticks.query(undefined, { signal: streamed.signal }),
+    ]);
+    const seen: number[] = [];
+    await expect(async () => {
+      for await (const tick of ticks) {
+        seen.push(tick);
+        if (tick === 2) streamed.abort();
+        if (tick === 10) break;
+      }
+    }).rejects.toThrow();
+    expect(seen).toEqual([0, 1, 2]);
+    // The server must see the cancellation and stop the procedure
+    await vi.waitFor(() =>
+      expect(tickSignals[firstSignal]?.aborted).toBe(true),
+    );
+  });
+
+  test('stops a streamed query cancelled before it streams, in a batch with a settled query', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const streamed = new AbortController();
+    const firstSignal = tickSignals.length;
+    const plain = ctx.client.value.query(undefined);
+    const ticks = ctx.client.ticks.query(undefined, {
+      signal: streamed.signal,
+    });
+    streamed.abort();
+    const [value] = await Promise.all([plain, ticks]);
+    expect(value).toBe('ok');
+    // The server must see the cancellation and stop the procedure
+    await vi.waitFor(() =>
+      expect(tickSignals[firstSignal]?.aborted).toBe(true),
+    );
+  });
+
+  test('cancels a batch holding a settled query with deferred values and a streamed query', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const streamed = new AbortController();
+    const firstSignal = tickSignals.length;
+    const [deferred, ticks] = await Promise.all([
+      ctx.client.deferred.query(),
+      ctx.client.ticks.query(undefined, { signal: streamed.signal }),
+    ]);
+    expect(await deferred.promise).toBe('done');
+    const items: number[] = [];
+    for await (const item of deferred.iterable) {
+      items.push(item);
+    }
+    expect(items).toEqual([1, 2]);
+
+    const seen: number[] = [];
+    await expect(async () => {
+      for await (const tick of ticks) {
+        seen.push(tick);
+        if (tick === 2) streamed.abort();
+        if (tick === 10) break;
+      }
+    }).rejects.toThrow();
+    expect(seen).toEqual([0, 1, 2]);
+    // The server must see the cancellation and stop the procedure
+    await vi.waitFor(() =>
+      expect(tickSignals[firstSignal]?.aborted).toBe(true),
+    );
+  });
+
+  test('keeps a batch open for a pending deferred value after a streamed query is cancelled', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      clientLink: 'httpBatchStreamLink',
+    });
+    const streamed = new AbortController();
+    const firstSignal = tickSignals.length;
+    const firstValue = pendingValues.length;
+    const [pending, ticks] = await Promise.all([
+      ctx.client.pending.query(),
+      ctx.client.ticks.query(undefined, { signal: streamed.signal }),
+    ]);
+    const iterator = ticks[Symbol.asyncIterator]();
+    expect((await iterator.next()).value).toBe(0);
+    streamed.abort();
+    // The pending value holds the batch open, so the stream keeps going
+    expect((await iterator.next()).value).toBe(1);
+    expect((await iterator.next()).value).toBe(2);
+    expect(tickSignals[firstSignal]?.aborted).toBe(false);
+
+    pendingValues[firstValue]?.resolve('late');
+    expect(await pending.value).toBe('late');
+    // Once it settles, nothing holds the batch open
+    await vi.waitFor(() =>
+      expect(tickSignals[firstSignal]?.aborted).toBe(true),
+    );
   });
 
   test('removes caller listeners when the response stream fails', async () => {
