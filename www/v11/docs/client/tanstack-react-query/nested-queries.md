@@ -152,7 +152,7 @@ export const HydrateClient = unstable_createHydrateClient(getQueryClient);
 ```
 
 ```twoslash include dq-post-entries
-// @filename: post-page.entries.ts
+// @filename: post-page.tsx
 import {
   experimental_dataOf,
   prefetchEntry,
@@ -177,7 +177,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 ```
 
 ```twoslash include dq-list-entries
-// @filename: post-list.entries.ts
+// @filename: posts-page.tsx
 import {
   ensureInfiniteEntry,
   experimental_dataOf,
@@ -209,12 +209,12 @@ Three steps: say what the page needs, load it, read it.
 
 #### 1. Say what the page needs {#gist-entries}
 
-An entry names a query. `experimental_dataOf(post, (it) => …)` builds an entry from the post's data, before the post has loaded.
+An entry names a query. `experimental_dataOf(post, (it) => …)` builds an entry from the post's data, before the post has loaded. Say it in the page's file, which loads it:
 
-```ts twoslash title='post-page.entries.ts'
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: post-page.entries.ts
+// @filename: post-page.tsx
 // ---cut---
 import {
   experimental_dataOf,
@@ -248,16 +248,16 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 The loader, or server component, starts every query from the URL. A page that has neither loads [from a component](#without-a-loader).
 
-```ts twoslash
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
 // @include: dq-post-entries
-// @filename: snippet.ts
 import { trpc } from '~/trpc/server';
 declare const slug: string;
 // ---cut---
 import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { postPageEntries } from './post-page.entries';
+
+// ...postPageEntries(), from step 1
 
 // Only prefetch entries: this starts the queries and returns
 const [handles] = await loadHandles(trpc, postPageEntries(trpc, { slug }));
@@ -290,7 +290,7 @@ import type {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/trpc/client';
-import type { postPageEntries } from './post-page.entries';
+import type { postPageEntries } from './post-page';
 
 export function AuthorCard(props: {
   handles: experimental_inferHandles<typeof postPageEntries>;
@@ -437,16 +437,16 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 
 `wait` makes the load wait for the entries you name, as if each were an ensure entry. The entries themselves stay as they are, so the same function serves a loader that waits and one that doesn't:
 
-```ts twoslash
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
 // @include: dq-post-entries
-// @filename: snippet.ts
 import { trpc } from '~/trpc/server';
 declare const slug: string;
 // ---cut---
 import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { postPageEntries } from './post-page.entries';
+
+// ...postPageEntries(), from In short
 
 const [handles, data] = await loadHandles(
   trpc,
@@ -469,7 +469,7 @@ data.post.title;
 The functions that say what to load are `@trpc/client`'s: `experimental_query()`, `experimental_infiniteQuery()`, `experimental_dataOf()` and `experimental_perItem()`. This package exports the same functions. So one description loads with `loadHandles()` and with a plain client's [`experimental_load()`](/docs/client/vanilla/nested-queries#without-tanstack-query):
 
 ```twoslash include dq-shared-queries
-// @filename: post.queries.ts
+// @filename: post-page.tsx
 import {
   experimental_dataOf,
   experimental_query,
@@ -477,7 +477,7 @@ import {
 } from '@trpc/client';
 import type { AppRouter } from '~/server/router';
 
-export function postQueries(
+function postQueries(
   trpc: experimental_QueryProcedures<AppRouter>,
   opts: { slug: string },
 ) {
@@ -491,9 +491,9 @@ export function postQueries(
 }
 ```
 
-```ts twoslash title='post.queries.ts'
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
-// @filename: post.queries.ts
+// @filename: post-page.tsx
 // ---cut---
 import {
   experimental_dataOf,
@@ -503,7 +503,7 @@ import {
 import type { AppRouter } from '~/server/router';
 
 // A tRPC client and an options proxy are both `experimental_QueryProcedures`
-export function postQueries(
+function postQueries(
   trpc: experimental_QueryProcedures<AppRouter>,
   opts: { slug: string },
 ) {
@@ -517,18 +517,18 @@ export function postQueries(
 }
 ```
 
-In a loader, pass the options proxy:
+In the page's loader, further down the same file, pass the options proxy:
 
-```ts twoslash
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
 // @include: dq-shared-queries
-// @filename: snippet.ts
 import { trpc } from '~/trpc/server';
 declare const slug: string;
 // ---cut---
 import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { postQueries } from './post.queries';
+
+// ...postQueries(), from above
 
 const [handles, data] = await loadHandles(trpc, postQueries(trpc, { slug }), {
   wait: ['post'],
@@ -555,10 +555,10 @@ A list often needs a query for every row: the author of every post. Without help
 ```demo nested-queries start=list
 ```
 
-```ts twoslash title='post-list.entries.ts'
+```ts twoslash title='posts-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: post-list.entries.ts
+// @filename: posts-page.tsx
 // ---cut---
 import {
   ensureInfiniteEntry,
@@ -586,7 +586,7 @@ export function postListEntries(trpc: TRPC) {
 }
 ```
 
-The load gives one handle for it. A row turns it into the handle of its own author with `experimental_handleOfItem(handle, item)`:
+The page's load gives one handle for it. A row turns it into the handle of its own author with `experimental_handleOfItem(handle, item)`:
 
 ```tsx twoslash title='post-list.tsx'
 // @include: dq-router
@@ -607,7 +607,7 @@ import type {
   inferQueryHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { useTRPC, type TRPC } from '~/trpc/client';
-import type { postListEntries } from './post-list.entries';
+import type { postListEntries } from './posts-page';
 
 export function PostList(props: {
   handles: experimental_inferHandles<typeof postListEntries>;
@@ -692,16 +692,23 @@ Content-Type: application/json
 
 ## Entries next to components {#groups}
 
-A component can say which queries it needs in a function next to it. A page puts those functions together, as a GraphQL query does with fragments. An object of entries is a group: its handles and data are under its key.
+A component can say which queries it needs in a function in its own file. A page puts those functions together, as a GraphQL query does with fragments. An object of entries is a group: its handles and data are under its key.
 
-```ts twoslash title='author-card.entries.ts'
+```tsx twoslash title='author-card.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: author-card.entries.ts
+// @filename: author-card.tsx
 // ---cut---
-import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  fromHandle,
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type {
+  experimental_inferHandles,
+  TRPCLoadEntries,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { useTRPC, type TRPC } from '~/trpc/client';
 
 // It takes an author's id, and doesn't care where it comes from
 export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
@@ -709,31 +716,6 @@ export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
     author: prefetchEntry(trpc.author.byId, { id: opts.authorId }),
   } satisfies TRPCLoadEntries;
 }
-```
-
-The component is in a file of its own, which can be a client component:
-
-```tsx twoslash title='author-card.tsx'
-// @include: dq-router
-// @include: dq-trpc
-// @filename: author-card.entries.ts
-import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
-  return {
-    author: prefetchEntry(trpc.author.byId, { id: opts.authorId }),
-  } satisfies TRPCLoadEntries;
-}
-// @filename: author-card.tsx
-// ---cut---
-'use client';
-
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { fromHandle } from '@trpc/tanstack-react-query/unstable-handles';
-import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import { useTRPC } from '~/trpc/client';
-import type { authorCardEntries } from './author-card.entries';
 
 export function AuthorCard(props: {
   handles: experimental_inferHandles<typeof authorCardEntries>;
@@ -746,10 +728,10 @@ export function AuthorCard(props: {
 
 The post page passes it an id that the server fills in:
 
-```ts twoslash title='post-page.entries.ts'
+```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @filename: author-card.entries.ts
+// @filename: author-card.tsx
 import { prefetchEntry } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPC } from '~/trpc/client';
@@ -758,7 +740,7 @@ export function authorCardEntries(trpc: TRPC, opts: { authorId: string }) {
     author: prefetchEntry(trpc.author.byId, { id: opts.authorId }),
   } satisfies TRPCLoadEntries;
 }
-// @filename: post-page.entries.ts
+// @filename: post-page.tsx
 // ---cut---
 import {
   ensureEntry,
@@ -766,7 +748,7 @@ import {
 } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPCLoadEntries } from '@trpc/tanstack-react-query/unstable-handles';
 import type { TRPC } from '~/trpc/client';
-import { authorCardEntries } from './author-card.entries';
+import { authorCardEntries } from './author-card';
 
 export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
   const post = ensureEntry(trpc.post.bySlug, { slug: opts.slug });
@@ -781,7 +763,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 
 - **End an entries function with `satisfies TRPCLoadEntries`.** It checks the entries where you write them, and keeps a [`skipToken`](/docs/client/tanstack-react-query/handles#conditional-queries) a `skipToken`.
 - **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props. A [description](#shared) has no proxy of its own: with a [`keyPrefix`](/docs/client/tanstack-react-query/usage#keyPrefix), pass `{ keyPrefix: true }` second, for its keys.
-- **In Next.js**, keep an entries function out of a `'use client'` file, as `author-card.entries.ts` is. A server component calls it, and a server component can't call a function from a client component's module. The component's file imports only the type of its entries.
+- **In Next.js**, a server component can't call a function from a `'use client'` module. For a client component, move its entries function to a file of its own without `'use client'`, such as `author-card.entries.ts`, and import only the type of its entries into the component's file.
 - **A failed entry is named by its keys**: `authorCard.author`.
 
 ## Without a loader {#without-a-loader}
@@ -795,14 +777,13 @@ Some pages have no loader. The same entries load from a component.
 ```tsx twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @include: dq-post-entries
 // @filename: author-card.tsx
 import type { experimental_inferHandles } from '@trpc/tanstack-react-query/unstable-handles';
-import type { postPageEntries } from './post-page.entries';
+import type { postPageEntries } from './post-page';
 export declare function AuthorCard(props: {
   handles: experimental_inferHandles<typeof postPageEntries>;
 }): React.ReactNode;
-// @filename: post-page.tsx
+// @include: dq-post-entries
 // ---cut---
 'use client';
 
@@ -810,7 +791,8 @@ import { experimental_useHandles } from '@trpc/tanstack-react-query/unstable-han
 import { Suspense } from 'react';
 import { useTRPC } from '~/trpc/client';
 import { AuthorCard } from './author-card';
-import { postPageEntries } from './post-page.entries';
+
+// ...postPageEntries(), from In short
 
 export function PostPage(props: { slug: string }) {
   const trpc = useTRPC();
