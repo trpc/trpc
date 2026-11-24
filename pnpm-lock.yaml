@@ -429,6 +429,14 @@ catalogs:
 
 overrides:
   ws@7: ^8.23.0
+  simple-git@3: ^4.0.2
+  adm-zip@0.5: ^0.6.1
+  tar@6: ^7.5.23
+  qs@<6.16.1: ^6.17.1
+  fast-xml-parser@4: ^4.5.7
+
+patchedDependencies:
+  '@serverless/dashboard-plugin@7.2.3': 2a4d1d6ced6208e64da781cbafde8d0e61e135a3264b1ee7447d667347ffc9f8
 
 importers:
 
@@ -8547,6 +8555,12 @@ packages:
     engines: {node: '>= 8.0.0'}
     hasBin: true
 
+  '@simple-git/args-pathspec@1.0.4':
+    resolution: {integrity: sha512-EtMX6XjRWSastG2SdkmSQByPtJ9dx/NIjnHbpQPCYt62j4RmSx5rgLTGpw0YCjF5h191gZOmBfheOT23cRSFdw==}
+
+  '@simple-git/argv-parser@3.0.0':
+    resolution: {integrity: sha512-MhLm6/9J7PiVZghJnaJG4tOc+rTotsSINJkjbUqZA7lYmYklOXdk+d0UZ8Pm8WFcMuxafx3oSUIYYYnPY92GTQ==}
+
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
@@ -10204,9 +10218,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  adm-zip@0.5.9:
-    resolution: {integrity: sha512-s+3fXLkeeLjZ2kLjCBwQufpI5fuN+kIGBxu6530nVQZGVol0d7Y/M88/xw9HGGUcJjKf8LutN3VPRUBq6N7Ajg==}
-    engines: {node: '>=6.0'}
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
+    engines: {node: '>=14.0'}
 
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -10795,10 +10809,6 @@ packages:
   chokidar@5.0.0:
     resolution: {integrity: sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw==}
     engines: {node: '>= 20.19.0'}
-
-  chownr@2.0.0:
-    resolution: {integrity: sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==}
-    engines: {node: '>=10'}
 
   chownr@3.0.0:
     resolution: {integrity: sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==}
@@ -12139,12 +12149,8 @@ packages:
   fast-wrap-ansi@0.2.2:
     resolution: {integrity: sha512-7F2Fl+TjRSenLqlU3UjSH0iyqopqoZIu7eZVpEirP2g1GtWa2G/ecEmBdgz31+Mxr+ELclgg6sokpSFIQiZ02Q==}
 
-  fast-xml-parser@4.1.2:
-    resolution: {integrity: sha512-CDYeykkle1LiA/uqQyNwYpFbyF6Axec6YapmpUP+/RHWIoR1zKjocdvNaTsxCxZzQ6v9MLXaSYm9Qq0thv0DHg==}
-    hasBin: true
-
-  fast-xml-parser@4.4.1:
-    resolution: {integrity: sha512-xkjOecfnKGkSsOwtZ5Pz7Us/T6mrbPQrq0nh+aCO5V9nk5NLWmasAHumTKjiPJPWANe+kAZ84Jc8ooJkzZ88Sw==}
+  fast-xml-parser@4.5.7:
+    resolution: {integrity: sha512-a6Qh1RMCNbSrU1+sAyAAZH3rTe+OaWJbNZIq0S+ifZciUUOQtlVxBJwoTUE2bYhysmG/RYyI5WJFIKdBahJdrQ==}
     hasBin: true
 
   fastest-levenshtein@1.0.16:
@@ -12357,10 +12363,6 @@ packages:
   fs-extra@9.1.0:
     resolution: {integrity: sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==}
     engines: {node: '>=10'}
-
-  fs-minipass@2.1.0:
-    resolution: {integrity: sha512-V/JgOLFCS+R6Vcq0slCuaeWEdNC3ouDlJMNIsacH2VtALiu9mV4LPrHc5cDl8k5aw6J8jwgWWpiTo5RYhmIzvg==}
-    engines: {node: '>= 8'}
 
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
@@ -13882,24 +13884,12 @@ packages:
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
-  minipass@3.3.6:
-    resolution: {integrity: sha512-DxiNidxSEK+tHG6zOIklvNOwm3hvCrbUrdtzY74U6HKTJxvIDfOUL5W5P2Ghd3DTkhhKPYGqeNUIh5qcM4YBfw==}
-    engines: {node: '>=8'}
-
-  minipass@5.0.0:
-    resolution: {integrity: sha512-3FnjYuehv9k6ovOEbyOswadCDPX1piCfhV8ncmYtHOjuPwylVWsghTLo7rabjC3Rx5xD4HDx8Wm1xnMF7S5qFQ==}
-    engines: {node: '>=8'}
-
   minipass@7.1.3:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
 
   minisearch@7.2.0:
     resolution: {integrity: sha512-dqT2XBYUOZOiC5t2HRnwADjhNS2cecp9u+TJRiJ1Qp/f5qjkeT5APcGPjHw+bz89Ms8Jp+cG4AlE+QZ/QnDglg==}
-
-  minizlib@2.1.2:
-    resolution: {integrity: sha512-bAxsR8BVfj60DWXHE3u30oHzfl4G7khkSuPW+qvpd7jFRHm7dLxOjUk1EHACJ/hxLY8phGJ0YhYHZo7jil7Qdg==}
-    engines: {node: '>= 8'}
 
   minizlib@3.1.0:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
@@ -14880,10 +14870,6 @@ packages:
     resolution: {integrity: sha512-jd3COkaKVgGUW+ZHyEHCG9bH7RoaaiWuMgzsIBjUMVjLAaWGWpoUAVwljVvBHxRu/2qEHnadLGZrkutYUBPQJA==}
     engines: {node: '>=0.6'}
 
-  qs@6.9.3:
-    resolution: {integrity: sha512-EbZYNarm6138UKKq46tdx08Yo/q9ZhFoAXAI1meAFd2GtbRDhbZY2WQSICskT0c5q99aFzLG1D4nvTk9tqfXIw==}
-    engines: {node: '>=0.6'}
-
   quansync@0.2.11:
     resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
 
@@ -15636,8 +15622,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  simple-git@3.27.0:
-    resolution: {integrity: sha512-ivHoFS9Yi9GY49ogc6/YAi3Fl9ROnF4VyubNylgCkA+RVqLaKWnDSzXOVzya8csELIaWaYNutsEuAhZrtOjozA==}
+  simple-git@4.1.0:
+    resolution: {integrity: sha512-FZJESy4Vxahk4eOadmRsWF5TjhCrfpDP563j8jAMbMEi/phIHPDgzN/tDkRIZ2GyQdLKEeXMPXqA8hhWjAdQZA==}
 
   sirv@3.0.2:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
@@ -16023,11 +16009,6 @@ packages:
 
   tar-stream@3.1.7:
     resolution: {integrity: sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==}
-
-  tar@6.2.1:
-    resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
-    engines: {node: '>=10'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   tar@7.5.23:
     resolution: {integrity: sha512-lkukzdoGngZHJZXxW4S/E4Fp9ghTDlyZXrQGRNoJ/LXvDKcXUTq2sg5yQe74po7Voea6n/IN09+wE/QvJMiifA==}
@@ -18373,7 +18354,7 @@ snapshots:
       '@aws-sdk/util-user-agent-browser': 3.272.0
       '@aws-sdk/util-user-agent-node': 3.272.0
       '@aws-sdk/util-utf8': 3.254.0
-      fast-xml-parser: 4.1.2
+      fast-xml-parser: 4.5.7
       tslib: 2.8.1
     transitivePeerDependencies:
       - aws-crt
@@ -18441,7 +18422,7 @@ snapshots:
       '@smithy/smithy-client': 4.2.0
       '@smithy/types': 4.2.0
       '@smithy/util-middleware': 4.0.2
-      fast-xml-parser: 4.4.1
+      fast-xml-parser: 4.5.7
       tslib: 2.9.1
 
   '@aws-sdk/credential-provider-env@3.272.0':
@@ -23379,7 +23360,7 @@ snapshots:
       - rollup
       - webpack
 
-  '@serverless/dashboard-plugin@7.2.3(debug@4.4.3(supports-color@10.0.0))(encoding@0.1.13)(supports-color@8.1.1)':
+  '@serverless/dashboard-plugin@7.2.3(patch_hash=2a4d1d6ced6208e64da781cbafde8d0e61e135a3264b1ee7447d667347ffc9f8)(debug@4.4.3(supports-color@10.0.0))(encoding@0.1.13)(supports-color@8.1.1)':
     dependencies:
       '@aws-sdk/client-cloudformation': 3.782.0
       '@aws-sdk/client-sts': 3.782.0
@@ -23399,7 +23380,7 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
       open: 7.4.2
       semver: 7.7.1
-      simple-git: 3.27.0(supports-color@8.1.1)
+      simple-git: 4.1.0(supports-color@8.1.1)
       timers-ext: 0.1.7
       type: 2.7.2
       uuid: 8.3.2
@@ -23412,7 +23393,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@serverless/dashboard-plugin@7.2.3(debug@4.4.3(supports-color@8.1.1))(encoding@0.1.13)(supports-color@8.1.1)':
+  '@serverless/dashboard-plugin@7.2.3(patch_hash=2a4d1d6ced6208e64da781cbafde8d0e61e135a3264b1ee7447d667347ffc9f8)(debug@4.4.3(supports-color@8.1.1))(encoding@0.1.13)(supports-color@8.1.1)':
     dependencies:
       '@aws-sdk/client-cloudformation': 3.782.0
       '@aws-sdk/client-sts': 3.782.0
@@ -23432,7 +23413,7 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
       open: 7.4.2
       semver: 7.7.1
-      simple-git: 3.27.0(supports-color@8.1.1)
+      simple-git: 4.1.0(supports-color@8.1.1)
       timers-ext: 0.1.7
       type: 2.7.2
       uuid: 8.3.2
@@ -23452,7 +23433,7 @@ snapshots:
 
   '@serverless/platform-client@4.5.1(debug@4.4.3(supports-color@10.0.0))(supports-color@8.1.1)':
     dependencies:
-      adm-zip: 0.5.9
+      adm-zip: 0.6.1
       archiver: 5.3.1
       axios: 1.21.1(debug@4.4.3(supports-color@10.0.0))(supports-color@8.1.1)
       fast-glob: 3.3.3
@@ -23475,7 +23456,7 @@ snapshots:
 
   '@serverless/platform-client@4.5.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)':
     dependencies:
-      adm-zip: 0.5.9
+      adm-zip: 0.6.1
       archiver: 5.3.1
       axios: 1.21.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       fast-glob: 3.3.3
@@ -23774,6 +23755,12 @@ snapshots:
     dependencies:
       fflate: 0.7.4
       string.prototype.codepointat: 0.2.1
+
+  '@simple-git/args-pathspec@1.0.4': {}
+
+  '@simple-git/argv-parser@3.0.0':
+    dependencies:
+      '@simple-git/args-pathspec': 1.0.4
 
   '@sindresorhus/is@4.6.0': {}
 
@@ -26375,7 +26362,7 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  adm-zip@0.5.9: {}
+  adm-zip@0.6.1: {}
 
   agent-base@6.0.2(supports-color@10.0.0):
     dependencies:
@@ -27206,8 +27193,6 @@ snapshots:
   chokidar@5.0.0:
     dependencies:
       readdirp: 5.0.0
-
-  chownr@2.0.0: {}
 
   chownr@3.0.0: {}
 
@@ -28665,11 +28650,7 @@ snapshots:
     dependencies:
       fast-string-width: 3.0.2
 
-  fast-xml-parser@4.1.2:
-    dependencies:
-      strnum: 1.0.5
-
-  fast-xml-parser@4.4.1:
+  fast-xml-parser@4.5.7:
     dependencies:
       strnum: 1.0.5
 
@@ -28872,7 +28853,7 @@ snapshots:
       dezalgo: 1.0.3
       hexoid: 1.0.0
       once: 1.4.0
-      qs: 6.9.3
+      qs: 6.17.1
 
   formidable@3.5.4:
     dependencies:
@@ -28912,10 +28893,6 @@ snapshots:
       graceful-fs: 4.2.11
       jsonfile: 6.1.0
       universalify: 2.0.0
-
-  fs-minipass@2.1.0:
-    dependencies:
-      minipass: 3.3.6
 
   fs.realpath@1.0.0: {}
 
@@ -30709,20 +30686,9 @@ snapshots:
 
   minimist@1.2.8: {}
 
-  minipass@3.3.6:
-    dependencies:
-      yallist: 4.0.0
-
-  minipass@5.0.0: {}
-
   minipass@7.1.3: {}
 
   minisearch@7.2.0: {}
-
-  minizlib@2.1.2:
-    dependencies:
-      minipass: 3.3.6
-      yallist: 4.0.0
 
   minizlib@3.1.0:
     dependencies:
@@ -32109,8 +32075,6 @@ snapshots:
       es-define-property: 1.0.1
       side-channel: 1.1.1
 
-  qs@6.9.3: {}
-
   quansync@0.2.11: {}
 
   quansync@1.0.0: {}
@@ -33034,7 +32998,7 @@ snapshots:
       '@aws-sdk/client-iam': 3.782.0
       '@aws-sdk/client-lambda': 3.782.0
       '@aws-sdk/client-s3': 3.782.0
-      '@serverless/dashboard-plugin': 7.2.3(debug@4.4.3(supports-color@10.0.0))(encoding@0.1.13)(supports-color@8.1.1)
+      '@serverless/dashboard-plugin': 7.2.3(patch_hash=2a4d1d6ced6208e64da781cbafde8d0e61e135a3264b1ee7447d667347ffc9f8)(debug@4.4.3(supports-color@10.0.0))(encoding@0.1.13)(supports-color@8.1.1)
       '@serverless/platform-client': 4.5.1(debug@4.4.3(supports-color@10.0.0))(supports-color@8.1.1)
       '@serverless/utils': 6.15.0(encoding@0.1.13)
       abort-controller: 3.0.0
@@ -33083,7 +33047,7 @@ snapshots:
       stream-buffers: 3.0.3
       strip-ansi: 6.0.1
       supports-color: 8.1.1
-      tar: 6.2.1
+      tar: 7.5.23
       timers-ext: 0.1.7
       type: 2.7.2
       untildify: 4.0.0
@@ -33105,7 +33069,7 @@ snapshots:
       '@aws-sdk/client-iam': 3.782.0
       '@aws-sdk/client-lambda': 3.782.0
       '@aws-sdk/client-s3': 3.782.0
-      '@serverless/dashboard-plugin': 7.2.3(debug@4.4.3(supports-color@8.1.1))(encoding@0.1.13)(supports-color@8.1.1)
+      '@serverless/dashboard-plugin': 7.2.3(patch_hash=2a4d1d6ced6208e64da781cbafde8d0e61e135a3264b1ee7447d667347ffc9f8)(debug@4.4.3(supports-color@8.1.1))(encoding@0.1.13)(supports-color@8.1.1)
       '@serverless/platform-client': 4.5.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       '@serverless/utils': 6.15.0(encoding@0.1.13)
       abort-controller: 3.0.0
@@ -33154,7 +33118,7 @@ snapshots:
       stream-buffers: 3.0.3
       strip-ansi: 6.0.1
       supports-color: 8.1.1
-      tar: 6.2.1
+      tar: 7.5.23
       timers-ext: 0.1.7
       type: 2.7.2
       untildify: 4.0.0
@@ -33350,10 +33314,12 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  simple-git@3.27.0(supports-color@8.1.1):
+  simple-git@4.1.0(supports-color@8.1.1):
     dependencies:
       '@kwsites/file-exists': 1.1.1(supports-color@8.1.1)
       '@kwsites/promise-deferred': 1.1.1
+      '@simple-git/args-pathspec': 1.0.4
+      '@simple-git/argv-parser': 3.0.0
       debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
@@ -33771,15 +33737,6 @@ snapshots:
       b4a: 1.6.7
       fast-fifo: 1.3.2
       streamx: 2.20.1
-
-  tar@6.2.1:
-    dependencies:
-      chownr: 2.0.0
-      fs-minipass: 2.1.0
-      minipass: 5.0.0
-      minizlib: 2.1.2
-      mkdirp: 1.0.4
-      yallist: 4.0.0
 
   tar@7.5.23:
     dependencies:

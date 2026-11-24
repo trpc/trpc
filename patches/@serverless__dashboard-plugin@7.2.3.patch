@@ -1,0 +1,13 @@
+diff --git a/lib/deployment/parse.js b/lib/deployment/parse.js
+index 2bd500902c5992a11baa2e6093b7d884ba80a237..2f25678ce3d89fc3199544038ec5f9731df3de5f 100644
+--- a/lib/deployment/parse.js
++++ b/lib/deployment/parse.js
+@@ -8,7 +8,7 @@
+ const path = require('path');
+ const fs = require('fs-extra');
+ const _ = require('lodash');
+-const simpleGit = require('simple-git');
++const { simpleGit } = require('simple-git');
+ const { version: packageJsonVersion } = require('../../package');
+ const Deployment = require('./deployment');
+ 

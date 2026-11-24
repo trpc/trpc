@@ -38,6 +38,16 @@ minimumReleaseAgeExclude:
 overrides:
   # serverless 3 (lambda examples) and isomorphic-ws still resolve ws 7.
   ws@7: ^8.23.0
+  # serverless 3 (lambda examples) pins these below their patched majors.
+  simple-git@3: ^4.0.2
+  adm-zip@0.5: ^0.6.1
+  tar@6: ^7.5.23
+  qs@<6.16.1: ^6.17.1
+  fast-xml-parser@4: ^4.5.7
+
+# simple-git 4 is no longer callable as require('simple-git'); use its named export.
+patchedDependencies:
+  '@serverless/dashboard-plugin@7.2.3': patches/@serverless__dashboard-plugin@7.2.3.patch
 
 allowBuilds:
   '@prisma/client': true
