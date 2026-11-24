@@ -22,6 +22,14 @@ import type {
   TRPCClient,
   TRPCLink,
 } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
+import type { OperationReads } from '@trpc/client/unstable-internals';
+import {
+  createOperationPipeline,
+  isPipelineTaken,
+  pipelineContext,
+  readsContext,
+} from '@trpc/client/unstable-internals';
 import type { AnyRouter, TRPCDefaultErrorShape } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { tap } from '@trpc/server/observable';
@@ -1677,6 +1685,61 @@ describe('a `splitLink` that sends a query and one that reads it to different li
 
     expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
     expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+
+  test('a link that pipelines takes one that reads it, and puts it in the request of what it reads only if it has that request', async () => {
+    await using ctx = setupSplit({ dependent: 'pipelining' });
+    const untyped = getUntypedClient(ctx.client);
+    // As `loadHandles()` sends them: the query, then one that reads it,
+    // through the links, with what it reads in its context
+    const post = createOperationPipeline();
+    const sentPost = untyped.query(
+      'post.bySlug',
+      { slug: 'a' },
+      { context: pipelineContext(post) },
+    );
+    const send = (path: string) => {
+      const pipeline = createOperationPipeline();
+      const reads: OperationReads = {
+        reads: {
+          each: null,
+          reads: [
+            { kind: 'whole', to: ['id'], from: post, path: ['authorId'] },
+          ],
+        },
+        perItem: false,
+        resolve: () => sentPost.then((it) => ({ id: it.authorId })),
+        known: () => null,
+      };
+      const abort = new AbortController();
+      const sent = untyped
+        .query(
+          path,
+          { id: undefined },
+          {
+            signal: abort.signal,
+            context: { ...pipelineContext(pipeline), ...readsContext(reads) },
+          },
+        )
+        .catch((error: unknown) => error);
+      return { pipeline, abort, sent };
+    };
+
+    // The `splitLink` sends `author.byId` to another link than the post's
+    const author = send('author.byId');
+    expect(isPipelineTaken(post)).toBe(true);
+    expect(isPipelineTaken(author.pipeline)).toBe(true);
+    expect(author.pipeline.attached).toBeNull();
+    author.abort.abort();
+
+    // And `team.byId` to the post's
+    const team = send('team.byId');
+    expect(isPipelineTaken(team.pipeline)).toBe(true);
+    expect(team.pipeline.attached).not.toBeNull();
+
+    await sentPost;
+    expect(await team.sent).toEqual({ id: 'ada', name: 'Team ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug,team.byId']);
   });
 
   test("one that reads it gets its input filled in, through a link that doesn't pipeline", async () => {
