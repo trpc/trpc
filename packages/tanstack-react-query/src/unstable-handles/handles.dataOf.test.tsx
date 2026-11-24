@@ -1539,15 +1539,21 @@ describe('edges of a load', () => {
         }
       }),
     );
+    /** The runs whose load joined the other fetch, and a listener wrote in */
+    const joinedWritten: string[] = [];
     // Whichever step after the other fetch starts the load joins it in
     for (let run = 0; run < 16; run++) {
       const ticks = run % 8;
-      const slug = `finishing-${run < 8 ? 'alone' : 'written'}-${ticks}`;
+      const isWritten = run >= 8;
+      const slug = `finishing-${isWritten ? 'written' : 'alone'}-${ticks}`;
       const key = trpc.post.bySlug.queryKey({ slug });
-      // The cache keeps the data it has: the fetch resolves to what it fetched
+      // The cache keeps the data it has over a fetch's, which resolves to
+      // what it fetched, and takes the listener's
       queryClient.setQueryDefaults(key, {
         structuralSharing: (previous: unknown, next: unknown) =>
-          previous ?? next,
+          (next as { authorId: string }).authorId === 'listener'
+            ? next
+            : (previous ?? next),
       });
       queryClient.setQueryData(key, {
         id: 'cached',
@@ -1575,14 +1581,29 @@ describe('edges of a load', () => {
         }),
       });
       await other;
-      expect(queryClient.getQueryData(key)).toMatchObject({
-        authorId: 'cache',
-      });
+      // A load that started later fetched by itself, and reads its own write
+      const joined = !resource.calls.mock.calls.some(
+        ([path, input]) => path === 'post.bySlug' && input.slug === slug,
+      );
+      const cached = queryClient.getQueryData(key);
+      if (joined) {
+        expect(cached).toMatchObject({
+          authorId: isWritten ? 'listener' : 'cache',
+        });
+        if (isWritten) {
+          joinedWritten.push(slug);
+        }
+      }
       expect({ slug, author: handles.author }).toMatchObject({
         slug,
-        author: { input: { id: 'cache' } },
+        author: {
+          input: {
+            id: joined ? 'cache' : (cached as { authorId: string }).authorId,
+          },
+        },
       });
     }
+    expect(joinedWritten).not.toEqual([]);
     await vi.waitFor(() => {
       expect(queryClient.isFetching()).toBe(0);
     });
