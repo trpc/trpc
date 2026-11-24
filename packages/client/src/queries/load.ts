@@ -945,7 +945,7 @@ export function experimental_load<
    * link that pipelines can send: any other would send its input with blanks.
    * A link takes an operation as it is sent, so one that a link that doesn't
    * pipeline took, such as through a `splitLink`, is aborted before it goes.
-   * Then the call is alone, and `null` is returned
+   * Then `null` is returned
    */
   function sendReading(send: {
     call: Call;
@@ -977,7 +977,6 @@ export function experimental_load<
     if (!taken(send.pipeline)) {
       abort.abort();
       signal.cleanup();
-      send.call.alone = true;
       return null;
     }
     void sent.then(async (outcome) => {
@@ -1123,6 +1122,17 @@ export function experimental_load<
     if (made) {
       return made;
     }
+    if (prior && call.alone) {
+      // A run that failed already, which a link that doesn't pipeline took:
+      // none can fail its first attempt with that error, so no link that
+      // retries can count it, and sending it again would run it again
+      const final: Spawn = {
+        pipeline: null,
+        sent: settles(async () => failed(prior.error), failed),
+      };
+      call.spawns.set(key, final);
+      return final;
+    }
     if (call.alone || !pipelined()) {
       // A context of its own, which a link may route by, a link that doesn't
       // pipeline, or none that does: it goes alone, as it is, once all it
@@ -1179,8 +1189,10 @@ export function experimental_load<
       ...(prior ? priorFailureContext(prior) : {}),
     };
     const input = firstPage(call, known);
+    // A run that failed already goes by a link that pipelines, which fails
+    // its first attempt with that error, for a link that retries to count
     const sent =
-      complete && reads.length === 0
+      complete && reads.length === 0 && !prior
         ? outcomeOf(untyped.query(call.path, input, request(call, context)))
         : sendReading({
             call,
@@ -1189,21 +1201,25 @@ export function experimental_load<
             perItem: false,
             context: {
               ...context,
-              ...readsContext({
-                // A read it can't put in a request: it goes once all is there
-                reads: { each: null, reads: complete ? reads : [] },
-                perItem: false,
-                resolve: () =>
-                  inputFor(call, items).then((it) => firstPage(call, it)),
-                known: () => {
-                  const known = knownInput(call, items);
-                  return known && { input: firstPage(call, known.input) };
-                },
-              }),
+              ...(complete && reads.length === 0
+                ? {}
+                : readsContext({
+                    // A read it can't put in a request: it goes once all is
+                    // there
+                    reads: { each: null, reads: complete ? reads : [] },
+                    perItem: false,
+                    resolve: () =>
+                      inputFor(call, items).then((it) => firstPage(call, it)),
+                    known: () => {
+                      const known = knownInput(call, items);
+                      return known && { input: firstPage(call, known.input) };
+                    },
+                  })),
             },
           });
     if (!sent) {
       // A link that doesn't pipeline took it: it goes alone
+      call.alone = true;
       return spawn(call, items, prior);
     }
     const result: Spawn = { pipeline, sent };
@@ -1510,6 +1526,7 @@ export function experimental_load<
     });
     if (!call.sent) {
       // Its runs ask by themselves, and what reads it doesn't name it
+      call.alone = true;
       call.pipeline = null;
       call.frame = [];
     }

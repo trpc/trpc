@@ -1692,6 +1692,46 @@ describe('a `splitLink` that sends a query and one that reads it to different li
     expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
     expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
   });
+
+  test("an item's run that failed is not sent again through a link that doesn't pipeline", async () => {
+    const { appRouter, calls } = createRouter();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          splitLink({
+            // An author's query with its `id` filled in goes by `httpLink`
+            condition: (op) =>
+              op.path === 'author.byId' &&
+              isObject(op.input) &&
+              typeof op.input['id'] === 'string',
+            true: httpLink({ url: clientOpts.httpUrl }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 3 });
+    const authors = await experimental_load(c, {
+      authors: perItem(dataOf(list).items, (it) =>
+        query(c.author.byId, { id: it.authorId }),
+      ),
+    }).authors;
+
+    await expect(authors[2]).rejects.toThrow('no author');
+    expect(await authors[0]).toMatchObject({ id: 'ada' });
+    // Without a link that retries, its failure is final: it ran once
+    expect(calls.mock.calls).toEqual([
+      ['author', 'ada'],
+      ['author', 'bob'],
+      ['author', 'missing'],
+    ]);
+  });
 });
 
 test('a query that asks by itself reads a `Date` in two places of the data as one `Date`', async () => {
