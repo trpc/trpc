@@ -499,7 +499,7 @@ Each query is an operation of its own, and goes through your links. The batch li
 
 - **A query that reads another's data has blanks in its input** where those values go, until the server fills them in: the author's `op.input` is `{ id: undefined }`. A link that reads `op.input`, such as one that shares the requests of identical queries, sees the blank.
 - **Once it ran, its input is known**: `loggerLink` logs its result with the input the server filled in, `{ id: 'dee' }`, and [a retry](#retries) of it is an operation like any other, with that input.
-- **[`loggerLink`](/docs/client/links/loggerLink) logs every query**, and names what went with the post on its line: `>> query #1 post.bySlug (+ author.byId, post.list)`.
+- **[`loggerLink`](/docs/client/links/loggerLink) logs every query** on a line of its own, as without pipelining.
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
 - **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
