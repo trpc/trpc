@@ -1452,6 +1452,67 @@ describe.each([
   });
 });
 
+describe('a `splitLink` that sends a query and one that reads it to different links', () => {
+  function setupSplit(opts: { dependent: 'pipelining' | 'httpLink' }) {
+    const { appRouter } = createRouter();
+    return testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          splitLink({
+            condition: (op) => op.path === 'author.byId',
+            true:
+              opts.dependent === 'httpLink'
+                ? httpLink({ url: clientOpts.httpUrl })
+                : httpBatchStreamLink({
+                    url: clientOpts.httpUrl,
+                    experimental_pipelining: experimental_pipelining(),
+                  }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+  }
+
+  function pathsOf(ctx: ReturnType<typeof setupSplit>) {
+    return ctx.onRequestSpy.mock.calls.map(
+      ([req]) => new URL(req.url!, 'http://localhost').pathname,
+    );
+  }
+
+  test('one that reads it goes by itself through its own link, when both pipeline', async () => {
+    await using ctx = setupSplit({ dependent: 'pipelining' });
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      post,
+      author: query(c.author.byId, { id: dataOf(post).authorId }),
+    });
+
+    expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+
+  test("one that reads it gets its input filled in, through a link that doesn't pipeline", async () => {
+    await using ctx = setupSplit({ dependent: 'httpLink' });
+    const c = ctx.client;
+
+    const post = query(c.post.bySlug, { slug: 'a' });
+    const res = experimental_load(c, {
+      post,
+      author: query(c.author.byId, { id: dataOf(post).authorId }),
+    });
+
+    expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+});
+
 test('a query that asks by itself reads a `Date` as it arrived, not as the caller changed it', async () => {
   const t = initTRPC.create({ transformer: superjson });
   const gate = createDeferred();

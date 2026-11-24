@@ -487,29 +487,27 @@ Each query is an operation of its own, and goes through your links. The batch li
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
 - **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
-- **The server that gets the post runs the author's query too**, whatever your links would do with it. If a `splitLink` sends the two procedures to different servers, don't make one query's input from the other's data.
+- **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, it isn't put in the post's request: it goes by itself through its own link, with its input filled in, once the post's data is there.
 
-A terminating link of your own that doesn't pipeline gets the input with what it reads filled in from `experimental_inputOf(op)`, once those queries have their data. The links of `@trpc/client` do this already.
+A link that doesn't pipeline never sends a blank. The load aborts the author's operation with `op.signal` as such a link takes it, and sends the query again with its input filled in, once the post's data is there. A terminating link of your own should stop when `op.signal` aborts, as the links of `@trpc/client` do. A link that wants the filled-in input sooner, such as one that logs it, gets it from `experimental_inputOf(op)`, once those queries have their data:
 
-```ts twoslash title='my-link.ts'
+```ts twoslash title='input-logger-link.ts'
 // @include: dq-router
-// @filename: my-link.ts
-declare function send(path: string, input: unknown): Promise<unknown>;
+// @filename: input-logger-link.ts
 // ---cut---
 import { experimental_inputOf, type TRPCLink } from '@trpc/client';
-import { observable } from '@trpc/server/observable';
 import type { AppRouter } from '~/server/router';
 
-export const myLink: TRPCLink<AppRouter> = () => ({ op }) =>
-  observable((observer) => {
-    experimental_inputOf(op)
-      .then((input) => send(op.path, input))
-      .then((data) => {
-        observer.next({ result: { type: 'data', data } });
-        observer.complete();
-      })
-      .catch((error) => observer.error(error));
-  });
+export const inputLoggerLink: TRPCLink<AppRouter> =
+  () =>
+  ({ op, next }) => {
+    experimental_inputOf(op).then(
+      (input) => console.log(op.path, input),
+      // A query it reads failed: it doesn't run
+      () => {},
+    );
+    return next(op);
+  };
 ```
 
 ### Retries {#retries}

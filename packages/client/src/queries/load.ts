@@ -6,6 +6,7 @@ import type {
 import { hasOwn, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClient } from '../createTRPCClient';
 import { getUntypedClient } from '../createTRPCClient';
+import { raceAbortSignals } from '../internals/signals';
 import type { TRPCRequestOptions } from '../internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from '../internals/types';
 import type {
@@ -136,6 +137,11 @@ interface Call {
    * goes once what it reads is there
    */
   context: OperationContext | null;
+  /**
+   * Whether it isn't pipelined: it has a context of its own, or a link that
+   * doesn't pipeline took an operation of it
+   */
+  alone: boolean;
   /** Of an infinite query: the `initialCursor` of its options */
   initialCursor: unknown;
   /**
@@ -786,6 +792,7 @@ export function experimental_load<
       holes,
       scopes: scopesOfReads(refs),
       context: state.context,
+      alone: state.context !== null,
       initialCursor: state.initialCursor,
       pipeline: null,
       frame: [],
@@ -895,6 +902,34 @@ export function experimental_load<
       (!reads.each || taken(reads.each.from)) &&
       reads.reads.every((read) => read.kind === 'item' || taken(read.from))
     );
+  }
+
+  /**
+   * Sends a call's operation whose context says what it reads, which only a
+   * link that pipelines can send: any other would send its input with blanks.
+   * A link takes an operation as it is sent, so one that a link that doesn't
+   * pipeline took, such as through a `splitLink`, is aborted before it goes.
+   * Then the call is alone, and `null` is returned
+   */
+  function sendReading(send: {
+    call: Call;
+    input: unknown;
+    pipeline: OperationPipeline;
+    context: OperationContext;
+  }) {
+    const abort = new AbortController();
+    const sent = outcomeOf(
+      untyped.query(send.call.path, send.input, {
+        signal: raceAbortSignals(opts?.signal, abort.signal),
+        context: { ...opts?.context, ...send.call.context, ...send.context },
+      }),
+    );
+    if (taken(send.pipeline)) {
+      return sent;
+    }
+    abort.abort();
+    send.call.alone = true;
+    return null;
   }
 
   /** Whether a link that pipelines took any operation of the load */
@@ -1031,9 +1066,10 @@ export function experimental_load<
     if (made) {
       return made;
     }
-    if (call.context || !pipelined()) {
-      // A context of its own, which a link may route by, or no link that
-      // pipelines: it goes alone, as it is, once all it reads is there
+    if (call.alone || !pipelined()) {
+      // A context of its own, which a link may route by, a link that doesn't
+      // pipeline, or none that does: it goes alone, as it is, once all it
+      // reads is there
       const alone: Spawn = {
         pipeline: null,
         sent: settles(async (): Promise<Outcome<unknown>> => {
@@ -1077,31 +1113,36 @@ export function experimental_load<
     });
     const context: OperationContext = {
       ...pipelineContext(pipeline),
-      ...(complete && reads.length === 0
-        ? {}
-        : readsContext({
-            // A read it can't put in a request: it goes once all is there
-            reads: { each: null, reads: complete ? reads : [] },
-            perItem: false,
-            resolve: () =>
-              inputFor(call, items).then((input) => firstPage(call, input)),
-            known: () => {
-              const known = knownInput(call, items);
-              return known && { input: firstPage(call, known.input) };
-            },
-          })),
       ...(prior ? priorFailureContext(prior) : {}),
     };
-    const result: Spawn = {
-      pipeline,
-      sent: outcomeOf(
-        untyped.query(
-          call.path,
-          firstPage(call, known),
-          request(call, context),
-        ),
-      ),
-    };
+    const input = firstPage(call, known);
+    const sent =
+      complete && reads.length === 0
+        ? outcomeOf(untyped.query(call.path, input, request(call, context)))
+        : sendReading({
+            call,
+            input,
+            pipeline,
+            context: {
+              ...context,
+              ...readsContext({
+                // A read it can't put in a request: it goes once all is there
+                reads: { each: null, reads: complete ? reads : [] },
+                perItem: false,
+                resolve: () =>
+                  inputFor(call, items).then((it) => firstPage(call, it)),
+                known: () => {
+                  const known = knownInput(call, items);
+                  return known && { input: firstPage(call, known.input) };
+                },
+              }),
+            },
+          });
+    if (!sent) {
+      // A link that doesn't pipeline took it: it goes alone
+      return spawn(call, items, prior);
+    }
+    const result: Spawn = { pipeline, sent };
     call.spawns.set(key, result);
     return result;
   }
@@ -1349,7 +1390,7 @@ export function experimental_load<
       continue;
     }
     // One with a context of its own isn't pipelined: a link may route by it
-    const declared = call.context ? null : declare(call);
+    const declared = call.alone ? null : declare(call);
     if (!declared || !readsTaken(declared.reads)) {
       continue;
     }
@@ -1357,23 +1398,27 @@ export function experimental_load<
     call.pipeline = pipeline;
     call.frame = declared.frame;
     const perItem = declared.frame.length > 0;
-    call.sent = outcomeOf(
-      untyped.query(
-        call.path,
-        call.blanked,
-        request(call, {
-          ...pipelineContext(pipeline),
-          ...readsContext({
-            reads: declared.reads,
-            perItem,
-            resolve: perItem
-              ? () => sourcesReady(call)
-              : () => inputFor(call, new Map()),
-            known: () => knownInput(call, new Map()),
-          }),
+    call.sent = sendReading({
+      call,
+      input: call.blanked,
+      pipeline,
+      context: {
+        ...pipelineContext(pipeline),
+        ...readsContext({
+          reads: declared.reads,
+          perItem,
+          resolve: perItem
+            ? () => sourcesReady(call)
+            : () => inputFor(call, new Map()),
+          known: () => knownInput(call, new Map()),
         }),
-      ),
-    );
+      },
+    });
+    if (!call.sent) {
+      // Its runs ask by themselves, and what reads it doesn't name it
+      call.pipeline = null;
+      call.frame = [];
+    }
   }
   // The data of each call that runs once, as soon as it arrives: what a
   // retry of a query that read it sends
