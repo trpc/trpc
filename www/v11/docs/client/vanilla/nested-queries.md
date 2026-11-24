@@ -501,7 +501,13 @@ export const inputLoggerLink: TRPCLink<AppRouter> =
   () =>
   ({ op, next }) => {
     experimental_inputOf(op).then(
-      (input) => console.log(op.path, input),
+      (input) => {
+        // Aborted as a link that doesn't pipeline took it: the query goes
+        // again, filled in, and this link logs that operation
+        if (!op.signal?.aborted) {
+          console.log(op.path, input);
+        }
+      },
       // A query it reads failed: it doesn't run
       () => {},
     );
@@ -568,9 +574,10 @@ A query that reads another's data then waits for that data, fills in its input i
 - **The query it reads doesn't go through a batch link with `experimental_pipelining`**: `httpLink` or `wsLink`.
 - **It doesn't fit in the request** of the query it reads, within `maxURLLength` and `maxItems`.
 - **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values, 16 by default, is more than `maxDepth` calls deep in its chain, 3 by default, or would make the request more than `maxRuns` calls, 100 by default.
-- **The request failed as a whole**, such as on a network error, and no link sends it again. With a link that [retries](#retries), the query goes in the request of the next attempt.
 - **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
+
+A request that fails as a whole, such as on a network error, is no such case. The query it reads was in that request, and fails too, so there is no data to fill in. If no link sends the request again, the query rejects with that error. With a link that [retries](#retries), it goes in the request of the next attempt.
 
 ### Limits {#limits}
 

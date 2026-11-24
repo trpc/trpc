@@ -271,6 +271,21 @@ describe.each([
     expect(ctx.ops).toEqual(['a', 'b', 'c', 'b']);
   });
 
+  test('without a link that retries, a request that fails as a whole rejects the queries that read its queries: none asks by itself', async () => {
+    await using ctx = setup({
+      attempts: null,
+      retryDelayMs: 0,
+      failFirstFetch: true,
+    });
+
+    const res = experimental_load(ctx.client, chain(ctx.client, {}));
+
+    await expect(res.a).rejects.toThrow('fetch failed');
+    await expect(res.b).rejects.toThrow('fetch failed');
+    await expect(res.c).rejects.toThrow('fetch failed');
+    expect(ctx.requests()).toEqual([]);
+  });
+
   test('without a link that retries, a failure is final, and nothing is sent again', async () => {
     await using ctx = setup({
       attempts: null,
