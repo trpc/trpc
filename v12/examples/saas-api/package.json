@@ -15,7 +15,7 @@
     "@trpc12/trpc": "workspace:*",
     "effect": "4.1.2",
     "express": "5.2.1",
-    "fastify": "5.12.7",
+    "fastify": "5.12.8",
     "zod": "4.6.5"
   },
   "devDependencies": {

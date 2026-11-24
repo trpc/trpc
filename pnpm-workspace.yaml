@@ -120,7 +120,9 @@ catalog:
   ws: ^8.22.1
   devalue: ^6.0.3
   valibot: ^1.5.0
-  fastify: ^5.12.6
+  # Not ^5.12.6 as on main, which locked 5.12.7 here beside www's 5.12.8:
+  # keep one Fastify in the workspace, or the v11 docs' Twoslash blocks fail.
+  fastify: ^5.12.8
   '@hey-api/openapi-ts': 0.0.0-next-20260930190945
   '@fastify/websocket': ^11.3.7
   fastify-plugin: ^6.0.1
@@ -180,7 +182,7 @@ catalogs:
     event-source-polyfill: 1.0.31
     express: 5.3.0
     # The v11 docs' blocks pass it to `@trpc/server`'s adapter, whose
-    # `fastify: ^5.12.6` resolves to the workspace's newest.
+    # `fastify` comes from the default catalog: keep the two on one version.
     fastify: 5.12.8
     react-dom: 19.3.1
     react: 19.3.1
