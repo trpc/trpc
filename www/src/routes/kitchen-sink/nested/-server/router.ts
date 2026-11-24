@@ -1,7 +1,7 @@
 /**
  * The showcase's API: a small blog kept in memory. Each author takes a
- * different time to load, so you can watch the edges of
- * `experimental_nested()` arrive one by one.
+ * different time to load, so you can watch the promises of
+ * `experimental_load()` settle one by one.
  */
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';

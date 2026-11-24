@@ -22,9 +22,15 @@ export const showcases = [
   },
   {
     description:
-      'Posts, their authors and the authors’ teams in one pipelined request, with experimental_nested() and a plain client. Switch pipelining off to see the requests it saves.',
+      'Posts, their authors and the authors’ teams in one pipelined request, with experimental_load() and a plain client. Switch pipelining off to see the requests it saves.',
     path: '/kitchen-sink/nested',
     title: 'Nested queries',
+  },
+  {
+    description:
+      'Queries that fail on purpose in a pipelined load: retryLink retries only the one that failed, with the queries that read it in the same request. A log shows each request and each attempt.',
+    path: '/kitchen-sink/retries',
+    title: 'Retrying part of a load',
   },
 ] as const;
 

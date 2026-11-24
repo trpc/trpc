@@ -1,4 +1,8 @@
+import type { Observable, Unsubscribable } from '@trpc/server/observable';
+import { observable } from '@trpc/server/observable';
 import type {
+  AnyClientTypes,
+  InferrableClientTypes,
   PipelineCallReads,
   PipelinedBatchPlan,
   PipelineErrorMark,
@@ -15,16 +19,33 @@ import {
   pipelineLimitDefaults,
   pipelineMarkOf,
   planPipelinedBatch,
+  transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { BatchLoader } from '../../internals/dataLoader';
+import { raceAbortSignals } from '../../internals/signals';
 import { isTRPCClientError, TRPCClientError } from '../../TRPCClientError';
-import type { Operation } from '../types';
+import type { HTTPBatchLinkOptions } from '../HTTPBatchLinkOptions';
+import type {
+  Operation,
+  OperationLink,
+  OperationResultEnvelope,
+} from '../types';
 import type {
   ContentOptions,
   HTTPResult,
   ResolvedHTTPLinkOptions,
 } from './httpUtils';
-import { getBody, getUrl } from './httpUtils';
-import { pipelineOf } from './pipelineContext';
+import { getBody, getUrl, resolveHTTPLinkOptions } from './httpUtils';
+import type { OperationReads } from './pipelineContext';
+import {
+  fallbacks,
+  fillOperation,
+  isPipelineFallback,
+  pipelineOf,
+  priorFailureOf,
+  readsOf,
+  withoutReads,
+} from './pipelineContext';
 
 export { pipelineContext } from './pipelineContext';
 
@@ -116,6 +137,17 @@ export interface OperationPipeline {
   sent: Promise<readonly string[]>;
   /** Only for the link that takes the operation */
   settleSent: (paths: readonly string[]) => void;
+  /**
+   * The call the operation is in this attempt, if a link put it in the
+   * request of an operation it reads, rather than in a request of its own.
+   * The operations that read it go in that request too
+   */
+  attached: PipelinedCall | null;
+  /**
+   * What runs each time a link opens it: the operations that read it, and
+   * wait for an attempt of it to go in
+   */
+  onOpen: Set<() => void>;
   /** What a link that serializes an operation's context gets: it has no cycles */
   toJSON: () => unknown;
 }
@@ -243,6 +275,8 @@ export function createOperationPipeline(): OperationPipeline {
     calls: [],
     sent: sent.promise,
     settleSent: sent.resolve,
+    attached: null,
+    onOpen: new Set(),
     toJSON: () => ({
       calls: pipeline.calls.map((call) => ({
         path: call.path,
@@ -442,8 +476,24 @@ export interface PipeliningLink extends ResolvedHTTPLinkOptions {
    * for every item deserialized already, and as a promise of its own
    */
   streams: boolean;
-  /** A call's result, as the link gives an operation's. Throws its error */
-  read: (result: HTTPResult) => PipelinedCallResult;
+}
+
+/**
+ * A call's result, as the link gives an operation's. Throws its error. A
+ * streamed result is deserialized already
+ */
+function readResult(link: PipeliningLink, result: HTTPResult): unknown {
+  if (link.streams) {
+    if ('error' in result.json) {
+      throw TRPCClientError.from(result.json, { meta: result.meta });
+    }
+    return result.json.result.data;
+  }
+  const transformed = transformResult(result.json, link.transformer.output);
+  if (!transformed.ok) {
+    throw TRPCClientError.from(transformed.error, { meta: result.meta });
+  }
+  return transformed.result.data;
 }
 
 /** A batch's request, with calls in it that read the data of others */
@@ -456,6 +506,74 @@ export interface PipelinedBatch {
   results: readonly (HTTPResult | Promise<HTTPResult>)[];
 }
 
+type RoutedEnvelope = OperationResultEnvelope<unknown, TRPCClientError<any>>;
+
+/**
+ * What an operation reads, by what gets the data of each operation in this
+ * attempt: its request, or the call a link put it in. `null` if one of them
+ * has neither open now
+ */
+function sourcesNow(
+  reads: OperationReads['reads'],
+): PipelineCallReads<PipelineSource> | null {
+  const sourceOf = (pipeline: OperationPipeline): PipelineSource | null =>
+    pipeline.attached ?? (pipeline.open ? pipeline : null);
+  const each = reads.each && {
+    from: sourceOf(reads.each.from),
+    path: reads.each.path,
+  };
+  if (each && !each.from) {
+    return null;
+  }
+  const whole: PipelineCallReads<PipelineSource>['reads'] = [];
+  for (const read of reads.reads) {
+    if (read.kind === 'item') {
+      whole.push(read);
+      continue;
+    }
+    const from = sourceOf(read.from);
+    if (!from) {
+      return null;
+    }
+    whole.push({ ...read, from });
+  }
+  return {
+    each: each as PipelineCallReads<PipelineSource>['each'],
+    reads: whole,
+  };
+}
+
+/** An operation's input, if the client has what it reads within a moment */
+function knownSoon(reads: OperationReads) {
+  const known = reads.known();
+  if (known) {
+    return Promise.resolve(known);
+  }
+  return new Promise<{ input: unknown } | null>((resolve) => {
+    const timer = setTimeout(() => resolve(null));
+    reads.resolve().then(
+      (input) => {
+        clearTimeout(timer);
+        resolve({ input });
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
+
+/** The operations an operation reads */
+function pipelinesRead(reads: OperationReads['reads']) {
+  return new Set([
+    ...(reads.each ? [reads.each.from] : []),
+    ...reads.reads.flatMap((read) =>
+      read.kind === 'whole' ? [read.from] : [],
+    ),
+  ]);
+}
+
 /** What a batch link does with the operations it takes, when it pipelines */
 export interface BatchPipelining {
   /** Lets calls go in an operation's request, as the link takes it */
@@ -463,10 +581,15 @@ export interface BatchPipelining {
   /** Ends what an operation's calls wait for, once it has a result */
   close: (op: Pick<Operation, 'context'>) => void;
   /**
-   * Once every call of an operation has its result: a link that streams
-   * keeps reading the response for them, also when the operation failed
+   * Takes an operation whose input reads other operations' data: into the
+   * request of what it reads, as a call, while that request is open. Else it
+   * waits for an attempt of what it reads to open one, or for that data, and
+   * goes by itself with `send`. `null` for an operation that reads nothing
    */
-  settled: (op: Pick<Operation, 'context'>) => Promise<unknown>;
+  route: (
+    op: Operation,
+    send: (op: Operation) => Observable<RoutedEnvelope, TRPCClientError<any>>,
+  ) => Observable<RoutedEnvelope, TRPCClientError<any>> | null;
   /**
    * Whether the last operation of a batch has to go in the next request: more
    * calls fit in the two requests than in one with it
@@ -477,11 +600,38 @@ export interface BatchPipelining {
    * it is then an ordinary batch.
    */
   take: (ops: readonly BatchOp[]) => {
-    calls: PipelinedBatch['calls'];
+    calls: readonly PipelinedCall[];
     request: PipelinedBatch['request'];
     /** Gives the calls their results, or what the request failed with */
     settle: (results: Promise<PipelinedBatch['results']>) => void;
   } | null;
+  /**
+   * The link's batch loader, sending the calls that read a batch's
+   * operations in its request
+   */
+  loader: <TOp extends Operation>(
+    loader: PipeliningLoader<TOp>,
+  ) => BatchLoader<TOp, HTTPResult>;
+  /**
+   * The link's handler of an operation, opening each operation's request to
+   * calls, and routing an operation that reads others' data with `route()`
+   */
+  link: <TInferrable extends InferrableClientTypes>(
+    handler: OperationLink<TInferrable>,
+  ) => OperationLink<TInferrable>;
+}
+
+/** A batch link's loader, which can send a batch with a URL and body of its own */
+export interface PipeliningLoader<TOp> {
+  validate: BatchLoader<TOp, HTTPResult>['validate'];
+  /**
+   * Its `request` is a pipelined batch's. Optional, as the loader is a
+   * `BatchLoader` too, whose `fetch` takes the batch only
+   */
+  fetch: (
+    ops: TOp[],
+    request?: PipelinedBatch['request'],
+  ) => ReturnType<BatchLoader<TOp, HTTPResult>['fetch']>;
 }
 
 /**
@@ -516,7 +666,12 @@ export interface experimental_PipeliningLinkOptions {
  * The value of a batch link's `experimental_pipelining` option. Make one with
  * `experimental_pipelining()`.
  */
-export type experimental_Pipelining = (link: PipeliningLink) => BatchPipelining;
+export type experimental_Pipelining = (
+  /** The options of the batch link */
+  opts: HTTPBatchLinkOptions<AnyClientTypes>,
+  /** Whether its responses stream: see `PipeliningLink` */
+  streams: boolean,
+) => BatchPipelining;
 
 /**
  * The URL and body of a pipelined batch. Its `pipe` is in its body if it has
@@ -712,7 +867,10 @@ function decodeCall(
   try {
     return {
       status: 'ran',
-      outcome: { ok: true, data: { kind: 'once', data: link.read(sent).data } },
+      outcome: {
+        ok: true,
+        data: { kind: 'once', data: readResult(link, sent) },
+      },
     };
   } catch (error) {
     if (pipelineMarkOf(sent.json) === 'not-run') {
@@ -825,19 +983,57 @@ function settlePipelinedBatch(opts: {
       ),
     ];
     void outcomeOf(Promise.resolve(opts.results[index])).then((received) => {
+      const asWhole =
+        received.ok &&
+        isObject(received.data?.json) &&
+        received.data.json === first;
       const settled = settlePipelinedCall({
-        own: decodeCall(received, opts.link),
+        // An answer for the request that is no error is the operations'
+        // only, as without pipelining: no result of a call
+        own: decodeCall(
+          asWhole && !('error' in (received.data?.json ?? {}))
+            ? { ok: true, data: undefined }
+            : received,
+          opts.link,
+        ),
         mark: received.ok ? pipelineMarkOf(received.data?.json) : null,
         sourcesOk: sources.map((source) => ok[source] ?? null),
-        asWhole:
-          received.ok &&
-          isObject(received.data?.json) &&
-          received.data.json === first,
+        asWhole,
       });
       ok[index] = sentResult(received);
       moveCall(call, { from: 'sent', to: settled });
     });
   }
+}
+
+/** Each call that has an operation, as the link sends it: see `route()` */
+const sentOps = /* @__PURE__ */ new WeakMap<PipelinedCall, object>();
+
+/**
+ * A call as an operation for a link to send. Its signal keeps the request,
+ * and a streamed response, going until the call has its result
+ */
+function sentOp(
+  call: PipelinedCall,
+  /** The operation it is for, if one */
+  op: Operation | null,
+  /** Aborts once nothing wants its result anymore */
+  unsubscribed: AbortSignal | null,
+) {
+  const settled = new AbortController();
+  void call.settled.then(() => settled.abort());
+  return {
+    id: -1,
+    type: 'query',
+    context: {},
+    ...op,
+    path: call.path,
+    input: call.input,
+    signal: raceAbortSignals(op?.signal, unsubscribed, settled.signal),
+    releaseSignal() {
+      // Its signal is its own
+    },
+  };
 }
 
 /**
@@ -860,7 +1056,13 @@ export function experimental_pipelining(
     maxDepth: opts?.maxDepth ?? pipelineLimitDefaults.maxDepth,
     maxRuns: opts?.maxRuns ?? pipelineLimitDefaults.maxRuns,
   };
-  return (link) => {
+  return (linkOpts, streams) => {
+    const link: PipeliningLink = {
+      ...resolveHTTPLinkOptions(linkOpts),
+      maxItems: linkOpts.maxItems ?? Infinity,
+      maxURLLength: linkOpts.maxURLLength ?? Infinity,
+      streams,
+    };
     /** The calls that go in the request of a batch, within the link's limits */
     const plan = (ops: readonly BatchOp[]) => {
       const pipelines = ops.map(pipelineOf);
@@ -895,7 +1097,7 @@ export function experimental_pipelining(
         },
       });
     };
-    return {
+    const pipelining: BatchPipelining = {
       open(op) {
         const pipeline = pipelineOf(op);
         // Only queries: the server makes no more calls in a mutation's request
@@ -908,11 +1110,165 @@ export function experimental_pipelining(
           const sent = createDeferred<readonly string[]>();
           pipeline.sent = sent.promise;
           pipeline.settleSent = sent.resolve;
+          // An attempt of its own: not a call in another's request
+          pipeline.attached = null;
+          for (const listener of Array.from(pipeline.onOpen)) {
+            listener();
+          }
         }
       },
+      route(op, send) {
+        const failure = priorFailureOf(op);
+        if (failure && !failure.replayed) {
+          // A run's failure in the request of its list: its first attempt,
+          // for a link that retries to count. Without one, it is final
+          failure.replayed = true;
+          return observable<RoutedEnvelope, TRPCClientError<any>>(
+            (observer) => {
+              observer.error(TRPCClientError.from(failure.error as Error));
+            },
+          );
+        }
+        const reads = readsOf(op);
+        const own = pipelineOf(op);
+        if (!reads || !own || op.type !== 'query') {
+          return null;
+        }
+        // A link that pipelines has it: what reads it can say what it reads
+        own.limits = limits;
+        own.streams = link.streams;
+        return observable<RoutedEnvelope, TRPCClientError<any>>((observer) => {
+          let done = false;
+          let alone: Unsubscribable | null = null;
+          const listening = new Map<OperationPipeline, () => void>();
+          const stopListening = () => {
+            for (const [pipeline, listener] of listening) {
+              pipeline.onOpen.delete(listener);
+            }
+            listening.clear();
+          };
+          const fail = (error: TRPCClientError<any>) => {
+            if (!done) {
+              done = true;
+              stopListening();
+              observer.error(error);
+            }
+          };
+          /** Aborts once nothing wants its result anymore */
+          const unsubscribed = new AbortController();
+          /** Into the open request of what it reads, as a call */
+          const attach = () => {
+            const sources = sourcesNow(reads.reads);
+            const call =
+              sources &&
+              pipeCall({ path: op.path, input: op.input, reads: sources });
+            if (!call) {
+              return false;
+            }
+            sentOps.set(call, sentOp(call, op, unsubscribed.signal));
+            own.attached = call;
+            stopListening();
+            // The operations that read it, and wait for an attempt of it
+            for (const listener of Array.from(own.onOpen)) {
+              listener();
+            }
+            void call.settled.then(async (settled) => {
+              if (done || own.attached !== call) {
+                return;
+              }
+              if (settled.status === 'not-run') {
+                wait();
+                return;
+              }
+              // It ran, so the data it read is there: its input, for the
+              // links that log it and for a retry of it. The client may not
+              // have read all of that data yet, so it waits a moment for it,
+              // and no more: a slow call it reads doesn't hold its result
+              const known = reads.perItem ? null : await knownSoon(reads);
+              if (known) {
+                fillOperation(op, known.input);
+              }
+              if (done || own.attached !== call) {
+                return;
+              }
+              if (!settled.outcome.ok) {
+                fail(TRPCClientError.from(settled.outcome.error as Error));
+                return;
+              }
+              const data = settled.outcome.data;
+              done = true;
+              observer.next({
+                result: {
+                  type: 'data',
+                  data: data.kind === 'once' ? data.data : data.runs,
+                },
+              });
+              observer.complete();
+            });
+            return true;
+          };
+          /**
+           * Until an attempt of what it reads opens a request to go in, or
+           * that data is there and it goes by itself
+           */
+          const wait = () => {
+            own.attached = null;
+            // An attempt of what it reads may have opened its request
+            // already: a retry goes as soon as its first attempt fails
+            if (attach()) {
+              return;
+            }
+            for (const pipeline of pipelinesRead(reads.reads)) {
+              const listener = () => {
+                if (!done && own.attached === null) {
+                  attach();
+                }
+              };
+              pipeline.onOpen.add(listener);
+              listening.set(pipeline, listener);
+            }
+            reads.resolve().then(
+              (input) => {
+                if (done || own.attached !== null) {
+                  return;
+                }
+                stopListening();
+                if (reads.perItem) {
+                  // Its runs are for items it doesn't know: the engine asks
+                  // for each by itself
+                  done = true;
+                  observer.next({ result: { type: 'data', data: notRun } });
+                  observer.complete();
+                  return;
+                }
+                alone = send({ ...withoutReads(op), input }).subscribe({
+                  next: (envelope) => observer.next(envelope),
+                  error: (error) => fail(error),
+                  complete: () => {
+                    done = true;
+                    observer.complete();
+                  },
+                });
+              },
+              (error: unknown) => {
+                if (!done && own.attached === null) {
+                  fail(pipelineFallback(error));
+                }
+              },
+            );
+          };
+          if (!attach()) {
+            wait();
+          }
+          return () => {
+            done = true;
+            unsubscribed.abort();
+            stopListening();
+            alone?.unsubscribe();
+          };
+        });
+      },
       close: closePipeline,
-      settled: (op) =>
-        Promise.all(pipelineOf(op)?.calls.map((call) => call.settled) ?? []),
       splits(ops) {
         if (ops.length < 2) {
           return false;
@@ -987,6 +1343,99 @@ export function experimental_pipelining(
           },
         };
       },
+      loader: (loader) => ({
+        validate: (ops) => !pipelining.splits(ops) && loader.validate(ops),
+        async fetch(ops) {
+          const taken = pipelining.take(ops);
+          if (!taken) {
+            return loader.fetch(ops);
+          }
+          // The calls go after the operations, as operations the link sends
+          const results = loader.fetch(
+            [
+              ...ops,
+              ...taken.calls.map(
+                (call) => sentOps.get(call) ?? sentOp(call, null, null),
+              ),
+            ] as typeof ops,
+            taken.request,
+          );
+          taken.settle(results);
+          return (await results).slice(0, ops.length);
+        },
+      }),
+      link: (handler) => (linkOpts) => {
+        const send = (op: Operation) =>
+          observable<RoutedEnvelope, TRPCClientError<any>>((observer) => {
+            pipelining.open(op);
+            // Before the observer hears of it: an error handler can send
+            // the operation again, and its calls are then the new attempt's
+            let closed = false;
+            const close = () => {
+              if (!closed) {
+                closed = true;
+                closePipeline(op);
+              }
+            };
+            return handler({ ...linkOpts, op }).subscribe({
+              next(envelope) {
+                close();
+                observer.next(envelope);
+              },
+              error(error) {
+                close();
+                observer.error(error);
+              },
+              complete() {
+                observer.complete();
+              },
+            });
+          });
+        return (pipelining.route(linkOpts.op, send) ??
+          send(linkOpts.op)) as ReturnType<typeof handler>;
+      },
     };
+    return pipelining;
   };
+}
+
+/**
+ * What an operation for every item resolves to when it couldn't go in the
+ * request of what it reads: the engine asks for each of its runs by itself
+ */
+export const notRun = /* @__PURE__ */ Object.freeze({
+  '~pipeline': 'not-run',
+});
+
+/**
+ * The error of an operation whose input reads one that failed: it didn't
+ * fail for itself. Its cause is that one's error
+ */
+export function pipelineFallback(cause: unknown): TRPCClientError<any> {
+  if (isPipelineFallback(cause)) {
+    return cause as TRPCClientError<any>;
+  }
+  const error = new TRPCClientError<any>('An operation this one reads failed', {
+    cause: cause instanceof Error ? cause : undefined,
+  });
+  fallbacks.add(error);
+  return error;
+}
+
+/**
+ * The input of an operation as a link that doesn't pipeline sends it: with
+ * what it reads of other operations filled in, once they have their data.
+ *
+ * Experimental: it may change in a minor release.
+ * @see https://trpc.io/docs/client/vanilla/nested-queries#links
+ */
+export function experimental_inputOf(
+  op: Pick<Operation, 'context' | 'input'>,
+): Promise<unknown> {
+  const reads = readsOf(op);
+  return reads
+    ? reads
+        .resolve()
+        .catch((error: unknown) => Promise.reject(pipelineFallback(error)))
+    : Promise.resolve(op.input);
 }

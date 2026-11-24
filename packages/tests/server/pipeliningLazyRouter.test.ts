@@ -1,7 +1,11 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import {
-  experimental_nested,
+  experimental_dataOf,
+  experimental_load,
+  experimental_perItem,
   experimental_pipelining,
+  experimental_query,
+  experimental_settle,
   httpBatchLink,
   httpBatchStreamLink,
 } from '@trpc/client';
@@ -44,21 +48,25 @@ describe.each([
       }),
     });
 
-    const load = () =>
-      experimental_nested(ctx.client, (q) =>
-        q.post.list.query().items.map((post) => ({
-          author: q.author.byId.query({ id: post.authorId }),
-        })),
+    const load = () => {
+      const list = experimental_query(ctx.client.post.list);
+      return experimental_settle(
+        experimental_load(ctx.client, {
+          authors: experimental_perItem(
+            experimental_dataOf(list).items,
+            (post) =>
+              experimental_query(ctx.client.author.byId, {
+                id: post.authorId,
+              }),
+          ),
+        }),
       );
+    };
 
     await expect(load()).rejects.toThrow('Loading failed');
     expect(loader).toHaveBeenCalledTimes(1);
 
-    const loaded = await load();
-    expect(await Promise.all(loaded.map((it) => it.edges.author))).toEqual([
-      { id: 'ada' },
-      { id: 'bob' },
-    ]);
+    expect((await load()).authors).toEqual([{ id: 'ada' }, { id: 'bob' }]);
     await load();
     expect(loader).toHaveBeenCalledTimes(2);
     // Each load was one pipelined request
