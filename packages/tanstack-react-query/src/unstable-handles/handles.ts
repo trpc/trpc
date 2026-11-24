@@ -4,7 +4,7 @@ import type {
   DecorateQueryProcedure,
   DecorateRouterKeyable,
 } from '../internals/createOptionsProxy';
-import type { FeatureFlags, ResolverDef } from '../internals/types';
+import type { ResolverDef } from '../internals/types';
 import { queryClientOf, readProxy, readRoot } from './entry';
 import { TRPCEntryError } from './entryError';
 import { isServerEnvironment } from './handle';
@@ -18,6 +18,7 @@ import type {
   TRPCSettledHandles,
   experimental_WaitableKey,
   experimental_WithWait,
+  FeatureFlagsOf,
 } from './types';
 
 /**
@@ -176,14 +177,18 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * @see https://trpc.io/docs/client/tanstack-react-query/handles
  */
 export function loadHandles<
-  TFeatureFlags extends FeatureFlags,
+  TProxy extends DecorateRouterKeyable<any>,
   TEntries extends TRPCLoadEntries,
   const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
 >(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
+  trpc: TProxy,
   entries: TEntries,
   opts?: TRPCLoadOptions<TEntries, TWait>,
-): Promise<TRPCLoadedHandles<experimental_WithWait<TEntries, TWait>>> {
+): Promise<
+  TRPCLoadedHandles<
+    experimental_WithWait<TEntries, TWait, FeatureFlagsOf<TProxy>>
+  >
+> {
   const load = readLoad({
     trpc,
     fn: 'loadHandles',
@@ -241,14 +246,18 @@ export function loadHandles<
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
 export function loadHandlesSettled<
-  TFeatureFlags extends FeatureFlags,
+  TProxy extends DecorateRouterKeyable<any>,
   TEntries extends TRPCLoadEntries,
   const TWait extends readonly experimental_WaitableKey<TEntries>[] = [],
 >(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
+  trpc: TProxy,
   entries: TEntries,
   opts?: TRPCLoadOptions<TEntries, TWait>,
-): Promise<TRPCSettledHandles<experimental_WithWait<TEntries, TWait>>> {
+): Promise<
+  TRPCSettledHandles<
+    experimental_WithWait<TEntries, TWait, FeatureFlagsOf<TProxy>>
+  >
+> {
   const load = readLoad({
     trpc,
     fn: 'loadHandlesSettled',
@@ -307,12 +316,14 @@ export function loadHandlesSettled<
 export const experimental_useHandles = useHandles;
 
 function useHandles<
-  TFeatureFlags extends FeatureFlags,
+  TProxy extends DecorateRouterKeyable<any>,
   TEntries extends TRPCLoadEntries,
 >(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
+  trpc: TProxy,
   given: TEntries,
-): TRPCLoadedHandles<experimental_WithWait<TEntries, []>>[0] {
+): TRPCLoadedHandles<
+  experimental_WithWait<TEntries, [], FeatureFlagsOf<TProxy>>
+>[0] {
   const root = readRoot(trpc, 'experimental_useHandles');
   const queryClient = queryClientOf(root);
   const entries = toTanStackEntries({ root, entries: given, wait: [] });

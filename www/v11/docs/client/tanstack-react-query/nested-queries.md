@@ -780,7 +780,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 ```
 
 - **End an entries function with `satisfies TRPCLoadEntries`.** It checks the entries where you write them, and keeps a [`skipToken`](/docs/client/tanstack-react-query/handles#conditional-queries) a `skipToken`.
-- **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props.
+- **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props. A [description](#shared) has no proxy of its own: with a [`keyPrefix`](/docs/client/tanstack-react-query/usage#keyPrefix), pass `{ keyPrefix: true }` second, for its keys.
 - **In Next.js**, keep an entries function out of a `'use client'` file, as `author-card.entries.ts` is. A server component calls it, and a server component can't call a function from a client component's module. The component's file imports only the type of its entries.
 - **A failed entry is named by its keys**: `authorCard.author`.
 

@@ -441,4 +441,33 @@ describe('a description of queries', () => {
       id: string;
     }>();
   });
+
+  test('the handles of a description have the key prefix of the proxy that loads it', async () => {
+    const { appRouter } = createAppRouter();
+    await using resource = testReactResource(appRouter, { keyPrefix: 'blog' });
+    const trpc = resource.optionsProxyServer;
+
+    const [handles] = await loadHandles(
+      trpc,
+      postPageQueries(trpc, { slug: 'a' }),
+    );
+
+    expect(handles.post.queryKey).toEqual([
+      ['blog'],
+      ['post', 'bySlug'],
+      { input: { slug: 'a' }, type: 'query' },
+    ]);
+    expectTypeOf(handles.post.queryKey).toEqualTypeOf<
+      [
+        prefix: string[],
+        path: string[],
+        opts?: { input?: { slug: string }; type?: 'query' },
+      ]
+    >();
+    type Handles = experimental_inferHandles<
+      typeof postPageQueries,
+      { keyPrefix: true }
+    >;
+    expectTypeOf<Handles['post']>().toEqualTypeOf<typeof handles.post>();
+  });
 });
