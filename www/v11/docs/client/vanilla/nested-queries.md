@@ -285,7 +285,7 @@ const res = experimental_load(client, {
 const rows = await res.rows;
 //    ^?
 ```
-- **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself.
+- **To read a part of every item into one input, use `.map()`**: `{ ids: experimental_dataOf(posts).items.map((post) => post.authorId) }`. That is a whole list, so the server takes it only with [`allowWholeValues`](#limit-whole-values). Else the query asks by itself. The callback returns the item or a part of it: a `.map()` inside it, for a list of lists, throws.
 - **`experimental_settle()` awaits every promise**, and rejects if one does.
 - **With `httpBatchLink`, it works too.** The promises in a request resolve together, with its whole response. One that asks by itself resolves with its own response, later. In development, the client warns once.
 - **What isn't one request asks by itself**, once the data it reads is there, as in [When it isn't one request](#fallback). The result has the same shape.

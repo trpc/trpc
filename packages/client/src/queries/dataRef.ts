@@ -121,14 +121,16 @@ export function createEntryDataRef(ref: EntryDataRef): unknown {
           }),
         ),
       );
+      // What a `.map()` inside returned is a list for every item, whose
+      // items no path can tell from the outer ones
       if (
         returned?.entry !== ref.entry ||
         returned.itemOf !== ref.itemOf ||
-        returned.shape === 'flat' ||
+        returned.shape !== 'value' ||
         !item.every((segment, index) => returned.path[index] === segment)
       ) {
         throw new Error(
-          `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`. To load an entry for every item, use \`experimental_perItem()\``,
+          `${notData}. A \`.${method}()\` callback must return the item or a part of it, such as \`(post) => post.authorId\`, and not what a \`.map()\` inside it returned. To load an entry for every item, use \`experimental_perItem()\``,
         );
       }
       // `.flatMap()`: every item's value is a list, whose items are the items

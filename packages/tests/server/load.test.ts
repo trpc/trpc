@@ -11,6 +11,8 @@ import {
   experimental_settle,
   httpBatchLink,
   httpBatchStreamLink,
+  httpLink,
+  splitLink,
 } from '@trpc/client';
 import type {
   experimental_PipeliningLinkOptions,
@@ -1329,9 +1331,9 @@ describe.each([
     // A `.flatMap()` value is only a list of an entry per item
     expect(() =>
       query(c.ids, {
-        ids: dataOf(query(c.post.pages)).pages.flatMap((page) =>
-          page.items.map((it) => it.authorId),
-        ),
+        ids: dataOf(query(c.post.pages)).pages.flatMap(
+          (page) => page.items,
+        ) as never,
       }),
     ).toThrow('can only be the list of `experimental_perItem()`');
     // A value is passed on, not computed with
@@ -1361,6 +1363,20 @@ describe.each([
       Object.getOwnPropertyDescriptor(settled, '__proto__')!.value,
     ).toEqual({ id: 'ada', teamId: 'team-ada' });
   });
+
+  test('a nested `.map()` is refused as the description is built', async () => {
+    await using ctx = setup({ pipelining: true });
+    const c = ctx.client;
+    const pages = query(c.post.pages);
+
+    expect(() =>
+      dataOf(pages).pages.map((page) => page.items.map((it) => it.slug)),
+    ).toThrow('must return the item or a part of it');
+    expect(() =>
+      dataOf(pages).pages.flatMap((page) => page.items.map((it) => it.slug)),
+    ).toThrow('must return the item or a part of it');
+  });
+
 });
 
 describe('httpBatchStreamLink', () => {
