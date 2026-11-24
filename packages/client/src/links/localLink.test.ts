@@ -1,6 +1,7 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import {
   createDeferred,
   makeResource,
@@ -512,6 +513,75 @@ test('subscription', async () => {
   });
 
   expect(result).toEqual(['hello', 'world']);
+});
+
+test('observable subscription', async () => {
+  const t = initTRPC.create();
+  const teardown = vi.fn();
+
+  const appRouter = t.router({
+    hello: t.procedure.subscription(() =>
+      observable<string>((emit) => {
+        emit.next('hello');
+        emit.next('world');
+        emit.complete();
+        return teardown;
+      }),
+    ),
+  });
+
+  const ctx = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+
+  const result = await new Promise<string[]>((resolve, reject) => {
+    const aggregated: string[] = [];
+    ctx.client.hello.subscribe(undefined, {
+      onData: (data) => {
+        aggregated.push(data);
+      },
+      onError: reject,
+      onComplete: () => {
+        resolve(aggregated);
+      },
+    });
+  });
+
+  expect(result).toEqual(['hello', 'world']);
+  expect(ctx.onError).not.toHaveBeenCalled();
+  expect(teardown).toHaveBeenCalledOnce();
+});
+
+test('observable subscription teardown runs on unsubscribe', async () => {
+  const t = initTRPC.create();
+  const teardown = vi.fn();
+
+  const appRouter = t.router({
+    hello: t.procedure.subscription(() =>
+      observable<string>((emit) => {
+        emit.next('hello');
+        return teardown;
+      }),
+    ),
+  });
+
+  const ctx = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+
+  const onData = vi.fn();
+  const sub = ctx.client.hello.subscribe(undefined, { onData });
+
+  await vi.waitFor(() => {
+    expect(onData).toHaveBeenCalledWith('hello');
+  });
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(teardown).toHaveBeenCalledOnce();
+  });
 });
 
 test('subscription reconnects on errors', async () => {
