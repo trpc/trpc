@@ -121,7 +121,9 @@ export function toTanStackEntries(opts: {
           : 'experimental_query'),
       type: shared.type,
       kind,
-      procedure: procedureAt(shared.path),
+      // A TanStack Query entry keeps its proxy: the load checks that it is
+      // the root's
+      procedure: state ? state.procedure : procedureAt(shared.path),
       input,
       opts: state
         ? state.opts

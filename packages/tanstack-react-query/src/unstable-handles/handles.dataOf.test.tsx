@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-query';
 import {
   experimental_pipelining,
+  getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
   retryLink,
@@ -51,6 +52,7 @@ import type {
   inferQueryHandle,
 } from '.';
 import type { TRPCOptionsProxy } from '..';
+import { createTRPCOptionsProxy } from '..';
 
 const createAppRouter = () => {
   const t = initTRPC.create();
@@ -3468,6 +3470,52 @@ describe.each([
       input: { id: 'u1' },
       context: expect.objectContaining({ route: 'authors' }),
     });
+  });
+
+  test("an entry of a proxy for another tRPC client goes in none of the root proxy's requests", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    await using other = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // Another server, with the same `QueryClient`
+    const otherTrpc = createTRPCOptionsProxy<AppRouter>({
+      client: getUntypedClient(other.client),
+      queryClient: resource.queryClient,
+    });
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [, data] = await loadHandles(trpc, {
+      post,
+      author: ensureEntry(otherTrpc.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
+      tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(otherTrpc.tag.byIds, { ids: [tag.id] }),
+      ),
+    });
+
+    expect(data.author).toMatchObject({ id: 'u1' });
+    expect(data.tags).toEqual([[{ id: 't1' }], [{ id: 't2' }]]);
+    // Their own client's server ran them
+    expect(other.calls.mock.calls).toEqual([
+      ['author.byId', { id: 'u1' }],
+      ['tag.byIds', { ids: ['t1'] }],
+      ['tag.byIds', { ids: ['t2'] }],
+    ]);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+    ]);
   });
 
   test('an entry whose `trpc.context` has only symbol keys goes to the links with it', async () => {

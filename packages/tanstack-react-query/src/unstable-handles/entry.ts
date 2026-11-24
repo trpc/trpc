@@ -168,6 +168,13 @@ export interface EntryState {
   context: Readonly<Record<PropertyKey, unknown>> | null;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
+  /** The procedure of the proxy that built the entry */
+  procedure: unknown;
+  /**
+   * What the requests of the proxy that built the entry go through: its
+   * request goes in no request of another's
+   */
+  transport: unknown;
 }
 
 export function createEntry(state: EntryState, shared: QueryEntryState) {
@@ -206,6 +213,10 @@ export function readProxy(proxy: unknown, fn: string): ProxyContext {
 
 export function queryClientOf(ctx: ProxyContext): QueryClient {
   return ctx.proxy['~queryClient']();
+}
+
+function transportOf(ctx: ProxyContext): unknown {
+  return ctx.proxy['~transport']();
 }
 
 /**
@@ -309,6 +320,8 @@ export function entry(opts: {
       cursorFromOptions,
       context: ownContextOf(queryOpts),
       queryClient: queryClientOf(ctx),
+      procedure: opts.procedure,
+      transport: transportOf(ctx),
     },
     {
       type: opts.type,

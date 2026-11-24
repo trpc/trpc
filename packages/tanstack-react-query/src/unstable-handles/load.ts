@@ -515,7 +515,12 @@ export function beginEntries(opts: {
           path: ref.path,
           item: false,
         });
-        if (!source.server || !path) {
+        // Not in a request of another client's, which another server answers
+        if (
+          !source.server ||
+          !path ||
+          source.leaf.state.transport !== leaf.state.transport
+        ) {
           return [];
         }
         sent.set(ref.entry, source.server.sent);

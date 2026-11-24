@@ -231,7 +231,12 @@ export function linkEntries(tree: EntryTree): LinkedEntries {
           list: built.list,
           listType: source.state.type,
           listRequest: source.state.request,
-          itemRequest: leaf.state.request,
+          // Its calls go in no request of another client's, which another
+          // server answers
+          itemRequest:
+            source.state.transport === leaf.state.transport
+              ? leaf.state.request
+              : { kind: 'alone' },
         }),
       };
       // Not by its path: the whole list, read with `.map()`, has the same one
