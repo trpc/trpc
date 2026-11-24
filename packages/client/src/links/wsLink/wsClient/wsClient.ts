@@ -211,6 +211,16 @@ export class WsClient {
     // one. It waits for the backoff too. `close()` forgets the rejection, so a
     // request made once the client is idle again connects at once.
     if (this.connectionRejected) {
+      // No socket is open while the request waits.
+      if (this.connectionState.get().state !== 'connecting') {
+        callUserCallback(() =>
+          this.connectionState.next({
+            type: 'state',
+            state: 'connecting',
+            error: null,
+          }),
+        );
+      }
       this.reconnect(null);
       return this.reconnecting;
     }

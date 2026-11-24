@@ -16,7 +16,11 @@ const router = t.router({
   greeting: t.procedure.query(() => 'hello'),
 });
 
-function setup(opts: { createContext: () => object; delayMs: number }) {
+function setup(opts: {
+  createContext: () => object;
+  delayMs: number;
+  closeMs?: number;
+}) {
   const retryDelayMs = vi.fn<
     NonNullable<WebSocketClientOptions['retryDelayMs']>
   >((attemptIndex) => (attemptIndex === 0 ? 0 : opts.delayMs));
@@ -28,7 +32,7 @@ function setup(opts: { createContext: () => object; delayMs: number }) {
     wsClient: {
       lazy: {
         enabled: true,
-        closeMs: 0,
+        closeMs: opts.closeMs ?? 0,
       },
       retryDelayMs,
     },
@@ -137,8 +141,38 @@ test('a request made once the lazy client is idle again does not join a reconnec
   });
 
   isRejecting = false;
-  const start = Date.now();
   expect(await ctx.client.greeting.query()).toBe('hello');
-  expect(Date.now() - start).toBeLessThan(500);
+  // the request didn't wait for the backoff
   expect(ctx.retryDelayMs).toHaveBeenCalledTimes(1);
+});
+
+test('a request waiting out the backoff before the lazy client goes idle shows connecting', async () => {
+  let isRejecting = true;
+  const createContext = vi.fn((): object => {
+    if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
+    return {};
+  });
+  await using ctx = setup({ createContext, delayMs: 100, closeMs: 1_000 });
+
+  await expect(
+    ctx.client.greeting.query(undefined, { context: { retry: false } }),
+  ).rejects.toThrow();
+
+  isRejecting = false;
+  const states: string[] = [];
+  const subscription = ctx.wsClient.connectionState.subscribe({
+    next(state) {
+      states.push(state.state);
+    },
+  });
+  await using _unsubscribe = makeAsyncResource({}, async () => {
+    subscription.unsubscribe();
+  });
+
+  const query = ctx.client.greeting.query();
+  // no socket is open while the request waits for the backoff
+  expect(ctx.wsClient.connectionState.get().state).toBe('connecting');
+  expect(await query).toBe('hello');
+  expect(ctx.retryDelayMs).toHaveBeenCalledTimes(1);
+  expect(states.at(-1)).toBe('pending');
 });
