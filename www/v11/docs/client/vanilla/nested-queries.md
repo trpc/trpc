@@ -488,7 +488,7 @@ Each query is an operation of its own, and goes through your links. The batch li
 - **`headers()` gets the queries of the request**, not what the server runs in it.
 - **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, it isn't put in the post's request: it goes by itself through its own link, with its input filled in, once the post's data is there.
 
-A link that doesn't pipeline never sends a blank. The load aborts the author's operation with `op.signal` as such a link takes it, and sends the query again with its input filled in, once the post's data is there. A terminating link of your own should stop when `op.signal` aborts, as the links of `@trpc/client` do. A link that wants the filled-in input sooner, such as one that logs it, gets it from `experimental_inputOf(op)`, once those queries have their data:
+A link that doesn't pipeline never sends a blank. The load aborts the author's operation with `op.signal` as such a link takes it, and sends the query again with its input filled in, once the post's data is there. A terminating link of your own should stop when `op.signal` aborts, as the links of `@trpc/client` do. A link that wants the filled-in input sooner, such as one that logs it, gets it from `experimental_inputOf(op)`, once those queries have their data. That is for the operation of one query. The operation of a query for every item stands for a run per item, each with an input of its own: `experimental_inputOf(op)` resolves to `undefined` for it, once the data its runs read is there. A run that asks by itself is an operation of its own, with its input.
 
 ```ts twoslash title='input-logger-link.ts'
 // @include: dq-router
