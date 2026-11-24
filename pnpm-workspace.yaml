@@ -33,6 +33,13 @@ minimumReleaseAgeStrict: false
 minimumReleaseAgeExclude:
   - sury@11.0.0
 
+# Sub-dependencies forced past their parents' ranges. None of them reach a
+# published @trpc/* package: they're dev tooling, examples and the docs site.
+overrides:
+  # next pins postcss exactly; @tailwindcss/typography (docs) pins postcss-selector-parser.
+  next>postcss: 'catalog:'
+  postcss-selector-parser@6: ^6.1.5
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
@@ -99,6 +106,7 @@ catalog:
   node-fetch: ^3.3.2
   npm-run-all2: ^9.0.4
   sury: 11.1.0
+  postcss: ^8.5.33
   start-server-and-test: ^3.0.13
   yaml: 2.9.1
 
