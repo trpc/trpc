@@ -8,6 +8,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { avatars, post, teams, users } from './data.ts';
+
 const t = initTRPC.create();
 
 /** The runs of each query, by the load's session and the query's key */
@@ -46,30 +48,6 @@ const flaky = z.object({
   session: z.string().min(1).max(64),
 });
 
-const comments = [
-  { by: 'ada', id: 'c1', text: 'One request, nice.' },
-  { by: 'bob', id: 'c2', text: 'And retries only redo what failed?' },
-  { by: 'cy', id: 'c3', text: 'With the queries that read it.' },
-];
-
-const users: Readonly<
-  Record<string, { readonly avatarId: string; readonly name: string }>
-> = {
-  ada: { avatarId: 'owl', name: 'Ada' },
-  bob: { avatarId: 'fox', name: 'Bob' },
-  cy: { avatarId: 'cat', name: 'Cy' },
-  dee: { avatarId: 'bee', name: 'Dee' },
-};
-
-const avatars: Readonly<Record<string, string>> = {
-  bee: '🐝',
-  cat: '🐱',
-  fox: '🦊',
-  owl: '🦉',
-};
-
-const teams: Readonly<Record<string, string>> = { core: 'Core team' };
-
 const known = <T>(record: Readonly<Record<string, T>>, id: string) => {
   const found = record[id];
   if (found === undefined) {
@@ -83,11 +61,9 @@ export const appRouter = t.router({
     bySlug: t.procedure
       .input(flaky.extend({ slug: z.string() }))
       .query(async ({ input }) => ({
-        authorId: 'dee',
-        comments,
+        ...post,
         run: await run({ ...input, key: `post:${input.slug}` }),
         slug: input.slug,
-        title: 'Retrying part of a load',
       })),
   }),
   author: t.router({

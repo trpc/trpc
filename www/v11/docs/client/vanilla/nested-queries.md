@@ -70,7 +70,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 ```twoslash include dq-post-queries
-// @filename: post.queries.ts
+// @filename: post.ts
 import {
   experimental_dataOf,
   experimental_query,
@@ -78,7 +78,7 @@ import {
 } from '@trpc/client';
 import type { AppRouter } from '~/server/router';
 
-export function postQueries(
+function postQueries(
   trpc: experimental_QueryProcedures<AppRouter>,
   opts: { slug: string },
 ) {
@@ -102,11 +102,11 @@ Two steps: say what to load, then load it.
 
 #### 1. Say what to load {#describe}
 
-Say what to load in a plain function. It sits next to the code that needs the data:
+Say what to load in a plain function, in the file that loads it:
 
-```ts twoslash title='post.queries.ts'
+```ts twoslash title='post.ts'
 // @include: dq-router
-// @filename: post.queries.ts
+// @filename: post.ts
 // ---cut---
 import {
   experimental_dataOf,
@@ -115,7 +115,7 @@ import {
 } from '@trpc/client';
 import type { AppRouter } from '~/server/router';
 
-export function postQueries(
+function postQueries(
   trpc: experimental_QueryProcedures<AppRouter>,
   opts: { slug: string },
 ) {
@@ -142,12 +142,11 @@ export function postQueries(
 
 #### 2. Load it {#load}
 
-[Turn on one request](#turn-on), then load it with `experimental_load()` and a plain [`@trpc/client`](/docs/client/vanilla):
+[Turn on one request](#turn-on), then load it with `experimental_load()` and a plain [`@trpc/client`](/docs/client/vanilla), further down the same file:
 
 ```ts twoslash title='post.ts'
 // @include: dq-router
 // @include: dq-post-queries
-// @filename: post.ts
 // ---cut---
 import {
   createTRPCClient,
@@ -155,8 +154,8 @@ import {
   experimental_pipelining,
   httpBatchStreamLink,
 } from '@trpc/client';
-import type { AppRouter } from '~/server/router';
-import { postQueries } from './post.queries';
+
+// ...postQueries(), from step 1
 
 const client = createTRPCClient<AppRouter>({
   links: [
