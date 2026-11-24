@@ -1502,6 +1502,58 @@ describe('edges of a load', () => {
     ).toEqual([['author.byId', { id: 'u2' }]]);
   });
 
+  test("the entries that read a fetch entry that joins a finishing fetch fill in that fetch's write to the cache", async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const { queryClient } = resource;
+    // Whichever step after the other fetch starts the load joins it in
+    for (let ticks = 0; ticks < 8; ticks++) {
+      const slug = `finishing-${ticks}`;
+      const key = trpc.post.bySlug.queryKey({ slug });
+      // The cache keeps the data it has: the fetch resolves to what it fetched
+      queryClient.setQueryDefaults(key, {
+        structuralSharing: (previous: unknown, next: unknown) =>
+          previous ?? next,
+      });
+      queryClient.setQueryData(key, {
+        id: 'cached',
+        title: 'Cached',
+        authorId: 'cache',
+        tags: [],
+      });
+      const other = queryClient.fetchQuery({
+        queryKey: key,
+        queryFn: () => ({
+          id: 'wire',
+          title: 'Wire',
+          authorId: 'wire',
+          tags: [],
+        }),
+      });
+      for (let tick = 0; tick < ticks; tick++) {
+        await Promise.resolve();
+      }
+      const post = fetchEntry(trpc.post.bySlug, { slug });
+      const [handles] = await loadHandles(trpc, {
+        post,
+        author: prefetchEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+      });
+      await other;
+      expect(queryClient.getQueryData(key)).toMatchObject({
+        authorId: 'cache',
+      });
+      expect({ ticks, author: handles.author }).toMatchObject({
+        ticks,
+        author: { input: { id: 'cache' } },
+      });
+    }
+    await vi.waitFor(() => {
+      expect(queryClient.isFetching()).toBe(0);
+    });
+  });
+
   test("the entries that read a fetch entry whose fetch starts paused, offline, fill in the cache's data once it runs", async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;

@@ -395,7 +395,7 @@ export function beginEntries(opts: {
    * load starts or joins, in the step in which the `QueryClient` gets it,
    * after its structural sharing. A prefetch resolves to nothing, and a fetch
    * to what it fetched rather than what the cache keeps. Returns what to call
-   * once the query has started
+   * with the `QueryClient` method's promise once the query has started
    */
   function watch(
     leaf: LinkedLeaf,
@@ -403,7 +403,7 @@ export function beginEntries(opts: {
     data: Unit<unknown, EntryFailure>,
   ) {
     if (state.status === 'closed') {
-      return nothing;
+      return (promise: Promise<unknown>) => promise;
     }
     const defaulted = queryClient.defaultQueryOptions(options);
     const { queryHash } = defaulted;
@@ -447,17 +447,14 @@ export function beginEntries(opts: {
         }
       }
     });
-    return () => {
+    return (promise: Promise<unknown>) => {
       // Without a fetch, such as for a fresh hit, the data is what the
       // `QueryClient` method resolves to. A fetch that is paused, such as
       // one started offline, is still the load's: it runs once it can, and
       // its success is a write after structural sharing like any other
-      if (
-        !joins ||
-        (queryClient.getQueryCache().get(queryHash)?.state.fetchStatus ??
-          'idle') === 'idle'
-      ) {
-        return;
+      const query = queryClient.getQueryCache().get(queryHash);
+      if (!joins || !query || query.state.fetchStatus === 'idle') {
+        return promise;
       }
       // From the next microtask. A notification in this step is of an
       // action dispatched before the load started the query: the listener
@@ -467,6 +464,13 @@ export function beginEntries(opts: {
       queueMicrotask(() => {
         one.armed = true;
       });
+      // A joined fetch whose function had returned can write before then.
+      // The `QueryClient` method resolves after that write: if it was the
+      // only one since, the data is what it wrote
+      const writes = query.state.dataUpdateCount;
+      return promise.then((value) =>
+        query.state.dataUpdateCount === writes + 1 ? query.state.data : value,
+      );
     };
   }
 
@@ -616,7 +620,7 @@ export function beginEntries(opts: {
      * `QueryClient` method resolves to, whichever is first
      */
     const start = (options: EntryQueryOptions) => {
-      const started = isRead ? watch(leaf, options, data) : nothing;
+      const started = isRead ? watch(leaf, options, data) : null;
       const promise = startEntry({
         queryClient,
         type: state.type,
@@ -624,8 +628,7 @@ export function beginEntries(opts: {
         kind: isRead && state.kind === 'prefetch' ? 'fetch' : state.kind,
         options,
       });
-      started();
-      return promise;
+      return started ? started(promise) : promise;
     };
 
     let server: ServerSide | null = null;
