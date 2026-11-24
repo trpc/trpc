@@ -800,6 +800,15 @@ describe.each([
       name: 'a pipeline that can not be told what was sent',
       value: { open: false, calls: [], sent: Promise.resolve([]) },
     },
+    {
+      name: 'a pipeline without what runs as it opens',
+      value: {
+        open: false,
+        calls: [],
+        sent: Promise.resolve([]),
+        settleSent: () => {},
+      },
+    },
   ])(
     'a context whose `~pipeline` is $name is not a pipeline: its operation is an ordinary one',
     async (scenario) => {

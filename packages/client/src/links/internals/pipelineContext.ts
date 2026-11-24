@@ -22,7 +22,8 @@ function isOperationPipeline(value: unknown): value is OperationPipeline {
     typeof value['open'] === 'boolean' &&
     Array.isArray(value['calls']) &&
     value['sent'] instanceof Promise &&
-    typeof value['settleSent'] === 'function'
+    typeof value['settleSent'] === 'function' &&
+    value['onOpen'] instanceof Set
   );
 }
 
