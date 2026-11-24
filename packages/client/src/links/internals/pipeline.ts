@@ -282,6 +282,16 @@ export interface PipelinedCallResult {
   data: unknown;
 }
 
+/**
+ * Whether a link that pipelines took an operation with this pipeline: one
+ * that reads it can go by saying what it reads, and only then. Any other
+ * link gets inputs that are filled in, so it costs nothing to a client that
+ * doesn't pipeline
+ */
+export function isPipelineTaken(pipeline: OperationPipeline) {
+  return pipeline.streams !== null;
+}
+
 export function createOperationPipeline(): OperationPipeline {
   const sent = createDeferred<readonly string[]>();
   const pipeline: OperationPipeline = {
