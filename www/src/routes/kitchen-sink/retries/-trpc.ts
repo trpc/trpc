@@ -261,10 +261,13 @@ export function loadRetries(opts: {
           const end = opts.log.request(
             callsOf(url instanceof Request ? url.url : String(url), init ?? {}),
           );
-          const response = await opts.fetch(url, {
-            ...init,
-            signal: init?.signal ?? null,
-          });
+          const response = await opts
+            .fetch(url, { ...init, signal: init?.signal ?? null })
+            .catch((error: unknown) => {
+              // The request ended without a response
+              end();
+              throw error;
+            });
           // The request ends when its streamed body does
           if (response.body) {
             const [forPage, forLog] = response.body.tee();
