@@ -11,6 +11,7 @@ import type {
 
 /**
  * Use to describe a mutation route which matches a given mutation procedure's interface
+ * @public
  */
 export type MutationLike<
   TRoot extends AnyRootTypes,
@@ -23,6 +24,7 @@ export type MutationLike<
 
 /**
  * Use to unwrap a MutationLike's input
+ * @public
  */
 export type InferMutationLikeInput<
   TMutationLike extends MutationLike<any, any>,
@@ -33,6 +35,7 @@ export type InferMutationLikeInput<
 
 /**
  * Use to unwrap a MutationLike's data output
+ * @public
  */
 export type InferMutationLikeData<
   TMutationLike extends MutationLike<any, any>,

@@ -10,6 +10,7 @@ function asArray<TType>(value: TType | TType[]) {
  * Sends each operation down one of two link chains, based on `condition`.
  *
  * @see https://trpc.io/docs/client/links/splitLink
+ * @public
  */
 export function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   /**

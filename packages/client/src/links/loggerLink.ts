@@ -62,6 +62,7 @@ type ColorMode = 'ansi' | 'css' | 'none';
  * Options for {@link loggerLink}.
  *
  * @see https://trpc.io/docs/client/links/loggerLink#loggerlink-options
+ * @public
  */
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   /**
@@ -232,6 +233,7 @@ const defaultLogger =
  * time since the start.
  *
  * @see https://trpc.io/docs/client/links/loggerLink
+ * @public
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},

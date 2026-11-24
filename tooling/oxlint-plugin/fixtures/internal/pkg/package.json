@@ -1,0 +1,9 @@
+{
+  "name": "@fixtures/internal-checkout",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
+    }
+  }
+}

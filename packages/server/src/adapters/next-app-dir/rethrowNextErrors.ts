@@ -46,6 +46,7 @@ function isNotFoundError(error: unknown) {
  * `redirect()`, and a `notFound()` or `redirect()` error in `cause` is
  * rethrown. It only takes a `TRPCError`; rethrow Next.js's own errors, such
  * as those `nextAppDirCaller` throws, yourself.
+ * @public
  */
 export const rethrowNextErrors = (error: TRPCError) => {
   if (error.code === 'NOT_FOUND') {

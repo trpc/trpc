@@ -25,6 +25,7 @@ import {
 /**
  * The options of `httpLink`.
  * @see https://trpc.io/docs/client/links/httpLink#httplink-options
+ * @public
  */
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
@@ -78,6 +79,7 @@ const universalRequester: Requester = (opts) => {
  * A terminating link that sends each call in its own HTTP request. It can
  * send `FormData` and binary inputs.
  * @see https://trpc.io/docs/client/links/httpLink
+ * @public
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,

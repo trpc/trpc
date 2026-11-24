@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { cancel } from '@clack/prompts';
 import { execa } from './execa';
 
+/** @internal */
 export async function assertCleanGitTree() {
   const { stdout } = await execa('git status');
   if (!stdout.includes('nothing to commit')) {
@@ -16,6 +17,7 @@ export async function assertCleanGitTree() {
 /**
  * The environment without variables that point git at another repository,
  * e.g. `GIT_DIR` from a hook, so `cwd` decides which repository git reads.
+ * @internal
  */
 export function isolatedGitEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
@@ -39,6 +41,7 @@ export function isolatedGitEnv(): NodeJS.ProcessEnv {
  * rule matches it, as absolute paths. Leaves out `node_modules`, build output
  * and generated code. Reads git's output as a stream, so no buffer limit
  * stops a big repository.
+ * @internal
  */
 export function projectFiles(cwd: string): Promise<string[]> {
   return new Promise((done, fail) => {

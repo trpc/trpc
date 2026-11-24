@@ -38,6 +38,7 @@ const DECLARATION_FILE = /\.d\.[cm]?ts$/;
 /**
  * Reads the project around `cwd`, then stops the TypeScript compiler process
  * it started.
+ * @internal
  */
 export function scanProject(cwd: string) {
   const configFile = findConfigFile(cwd);
@@ -77,6 +78,7 @@ export function scanProject(cwd: string) {
  * The router type `createTRPCReact<AppRouter>()` or `createTRPCNext` was
  * given, and the file that exports it, so files that only import the hooks
  * can still type `createTRPCClient<AppRouter>()`.
+ * @internal
  */
 export type RouterTypeSource =
   | {

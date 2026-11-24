@@ -61,7 +61,7 @@ export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
 
 /**
  * A procedure's types, as the client sees them.
- * @internal
+ * @public
  */
 export type TRPCResolverDef = {
   input: any;
@@ -77,7 +77,7 @@ type coerceAsyncGeneratorToIterable<T> =
 
 /**
  * The `.query()` or `.mutate()` of a procedure on the client.
- * @internal
+ * @public
  */
 export type Resolver<TDef extends TRPCResolverDef> = (
   input: TDef['input'],
@@ -89,7 +89,7 @@ export type Resolver<TDef extends TRPCResolverDef> = (
 
 /**
  * The `.subscribe()` of a subscription procedure on the client.
- * @internal
+ * @public
  */
 export type SubscriptionResolver<TDef extends TRPCResolverDef> = {
   (
@@ -125,7 +125,7 @@ type DecorateProcedure<
       : never;
 
 /**
- * @internal
+ * @public
  */
 type DecoratedProcedureRecord<
   TRoot extends InferrableClientTypes,
@@ -162,7 +162,7 @@ const clientCallTypeMap: Record<
 
 /**
  * The procedure type of a client method: `query`, `mutate` or `subscribe`.
- * @internal
+ * @public
  */
 export const clientCallTypeToProcedureType = (
   clientCallType: string,
@@ -172,7 +172,7 @@ export const clientCallTypeToProcedureType = (
 
 /**
  * Wraps an untyped client in the typed proxy `createTRPCClient` returns.
- * @internal
+ * @public
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
@@ -204,6 +204,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
  * const post = await client.post.byId.query({ id: '1' });
  * ```
  * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
+ * @public
  */
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
@@ -216,7 +217,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
 /**
  * The untyped client behind a typed client, which calls procedures by
  * path string.
- * @internal
+ * @public
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
   client: TRPCClient<TRouter>,

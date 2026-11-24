@@ -18,11 +18,13 @@ import { PING_SYM, withPing } from './utils/withPing';
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
  * @see ReadableStream from lib.dom.d.ts
+ * @internal
  */
 export type WebReadableStreamEsque = {
   getReader: () => ReadableStreamDefaultReader<Uint8Array>;
 };
 
+/** @internal */
 export type NodeJSReadableStreamEsque = {
   on(
     eventName: string | symbol,
@@ -98,6 +100,7 @@ type IterableChunk =
     ];
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
+/** @internal */
 export function isPromise(value: unknown): value is Promise<unknown> {
   return (
     (isObject(value) || isFunction(value)) &&
@@ -110,10 +113,12 @@ type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
 type PathArray = readonly (string | number)[];
+/** @internal */
 export type ProducerOnError = (opts: {
   error: unknown;
   path: PathArray;
 }) => void;
+/** @public */
 export interface JSONLProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
@@ -279,6 +284,7 @@ async function* createBatchStreamProducer(
 /**
  * JSON Lines stream producer
  * @see https://jsonlines.org/
+ * @internal
  */
 export function jsonlStreamProducer(opts: JSONLProducerOptions) {
   let stream = readableStreamFrom(createBatchStreamProducer(opts));
@@ -318,6 +324,7 @@ class AsyncError extends Error {
     super('Received error from server');
   }
 }
+/** @internal */
 export type ConsumerOnError = (opts: { error: unknown }) => void;
 
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
@@ -531,12 +538,13 @@ function createStreamsManager(abortController: AbortController) {
 /**
  * JSON Lines stream consumer
  * @see https://jsonlines.org/
+ * @internal
  */
 export async function jsonlStreamConsumer<THead>(opts: {
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
-  deserialize?: Deserialize;
-  onError?: ConsumerOnError;
-  formatError?: (opts: { error: unknown }) => Error;
+  deserialize: Deserialize | undefined;
+  onError: ConsumerOnError | undefined;
+  formatError: ((opts: { error: unknown }) => Error) | undefined;
   /**
    * This `AbortController` will be triggered when there are no more listeners to the stream.
    */

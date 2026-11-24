@@ -18,6 +18,7 @@ import { getTransformer } from '../../unstable-internals';
 import type { HTTPLinkBaseOptions } from '../HTTPLinkBaseOptions';
 import type { HTTPHeaders } from '../types';
 
+/** @internal */
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch: FetchEsque | undefined;
@@ -26,6 +27,7 @@ export interface ResolvedHTTPLinkOptions {
   pathSeparator: PathSeparator;
 }
 
+/** @internal */
 export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
@@ -54,10 +56,14 @@ const METHOD = {
   subscription: 'PATCH',
 } as const;
 
+/** @internal */
 export interface HTTPResult {
   json: TRPCResponse;
   meta: {
     response: ResponseEsque;
+    // Users read `meta` as `TRPCClientError#meta`, where streamed responses
+    // have no `responseJSON` key; adding one would change what they see.
+    // oxlint-disable-next-line trpc/no-internal-optional
     responseJSON?: unknown;
   };
 }
@@ -66,6 +72,7 @@ type GetInputOptions = {
   transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
+/** @internal */
 export function getInput(opts: GetInputOptions) {
   return 'input' in opts
     ? opts.transformer.input.serialize(opts.input)
@@ -74,6 +81,7 @@ export function getInput(opts: GetInputOptions) {
       );
 }
 
+/** @internal */
 export type HTTPBaseRequestOptions = GetInputOptions &
   ResolvedHTTPLinkOptions & {
     type: ProcedureType;
@@ -84,6 +92,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
+/** @internal */
 export type ContentOptions = {
   trpcAccept: {
     header: TRPCAcceptHeader;
@@ -94,6 +103,7 @@ export type ContentOptions = {
   getBody: GetBody;
 };
 
+/** @internal */
 export const getUrl: GetUrl = (opts) => {
   const parts = opts.url.split('?') as [string, string?];
   const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
@@ -119,6 +129,7 @@ export const getUrl: GetUrl = (opts) => {
   return url;
 };
 
+/** @internal */
 export const getBody: GetBody = (opts) => {
   if (opts.type === 'query' && opts.methodOverride !== 'POST') {
     return undefined;
@@ -127,12 +138,14 @@ export const getBody: GetBody = (opts) => {
   return input !== undefined ? JSON.stringify(input) : undefined;
 };
 
+/** @internal */
 export type Requester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
 ) => Promise<HTTPResult>;
 
+/** @internal */
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
     ...opts,
@@ -143,11 +156,13 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
+/** @internal */
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
+/** @internal */
 export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   throwIfAborted(opts.signal);
 
@@ -184,6 +199,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   });
 }
 
+/** @internal */
 export async function httpRequest(
   opts: HTTPRequestOptions,
 ): Promise<HTTPResult> {

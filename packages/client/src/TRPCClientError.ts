@@ -11,7 +11,10 @@ import {
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
   inferClientTypes<TInferrable>['errorShape'];
-/** What a client error has, whatever its router. */
+/**
+ * What a client error has, whatever its router.
+ * @public
+ */
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
   /** The error as the server's error formatter shaped it, if it came from the server. */
@@ -23,6 +26,7 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
  * The shape of a client error for a router or procedure, without the
  * class. Use it to type errors you pass around, such as in React state.
  * @see https://trpc.io/docs/client/vanilla/infer-types#infer-trpcclienterror-types
+ * @public
  */
 export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
@@ -30,6 +34,7 @@ export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
 /**
  * Whether a value is a `TRPCClientError`, typed for a router or procedure.
  * @see https://trpc.io/docs/client/vanilla/error-handling#catching-a-thrown-error
+ * @public
  */
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
@@ -60,6 +65,7 @@ function getMessageFromUnknownError(err: unknown, fallback: string): string {
  * The error a client call throws, whether the server sent an error or the
  * request failed.
  * @see https://trpc.io/docs/client/vanilla/error-handling
+ * @public
  */
 export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   extends Error

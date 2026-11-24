@@ -2,7 +2,7 @@ import type { QueryClientConfig } from '@tanstack/react-query';
 import { QueryClient } from '@tanstack/react-query';
 
 /**
- * @internal
+ * @public
  */
 export type CreateTRPCReactQueryClientConfig =
   | {

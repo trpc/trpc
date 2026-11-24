@@ -20,6 +20,7 @@ type HTTPHeaders = Dict<string[] | string>;
 /**
  * The status and headers `responseMeta` sets on a response.
  * @see https://trpc.io/docs/server/caching#using-responsemeta-to-cache-responses
+ * @public
  */
 export interface ResponseMeta {
   /** The HTTP status. Defaults to the one tRPC picks from the results. */
@@ -31,7 +32,7 @@ export interface ResponseMeta {
 /**
  * Sets a response's status and headers from the request and its results.
  * @see https://trpc.io/docs/server/caching#using-responsemeta-to-cache-responses
- * @internal
+ * @public
  */
 export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
@@ -55,6 +56,7 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
 
 /**
  * The options every HTTP adapter takes.
+ * @public
  */
 export interface HTTPBaseHandlerOptions<
   TRouter extends AnyRouter,
@@ -68,10 +70,16 @@ export interface HTTPBaseHandlerOptions<
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-/** The `trpc-accept` header's value for a streamed response. */
+/**
+ * The `trpc-accept` header's value for a streamed response.
+ * @internal
+ */
 export type TRPCAcceptHeader = 'application/jsonl';
 
-/** One procedure call in a request. */
+/**
+ * One procedure call in a request.
+ * @internal
+ */
 export interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
@@ -158,7 +166,7 @@ export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
 
 /**
  * The options every adapter takes.
- * @internal
+ * @public
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   /**

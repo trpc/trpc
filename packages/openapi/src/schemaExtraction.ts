@@ -15,7 +15,10 @@ import type {
 } from 'zod/v4/core';
 import type { SchemaObject } from './types';
 
-/** Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path. */
+/**
+ * Description strings extracted from Zod `.describe()` calls, keyed by dot-delimited property path.
+ * @internal
+ */
 export interface DescriptionMap {
   /** Top-level description on the schema itself (empty-string key). */
   self: string | null;
@@ -23,6 +26,7 @@ export interface DescriptionMap {
   properties: Map<string, string>;
 }
 
+/** @internal */
 export interface RuntimeDescriptions {
   input: DescriptionMap | null;
   output: DescriptionMap | null;
@@ -111,6 +115,7 @@ function unwrapZodSchema(schema: $ZodType): $ZodType {
 /**
  * Walk a Zod schema and collect description strings at each property path.
  * Returns `null` if the value is not a Zod schema or has no descriptions.
+ * @internal
  */
 export function extractZodDescriptions(schema: unknown): DescriptionMap | null {
   if (!isZodSchema(schema)) return null;
@@ -225,6 +230,7 @@ function isRouterInstance(value: unknown): value is AnyTRPCRouter {
  * 1. Exact `exportName` match
  * 2. lcfirst variant (`AppRouter` → `appRouter`)
  * 3. First export that looks like a router
+ * @internal
  */
 export function findRouterExport(
   mod: Record<string, unknown>,
@@ -255,6 +261,7 @@ export function findRouterExport(
  * Try to dynamically import the router file and extract a tRPC router
  * instance.  Returns `null` if the import fails (e.g. no TS loader) or
  * no router export is found.
+ * @internal
  */
 export async function tryImportRouter(
   resolvedPath: string,
@@ -277,6 +284,7 @@ export async function tryImportRouter(
 /**
  * Walk a runtime tRPC router/record and collect Zod `.describe()` strings
  * keyed by procedure path.
+ * @internal
  */
 export function collectRuntimeDescriptions(
   routerOrRecord: AnyTRPCRouter | TRPCRouterRecord,
@@ -339,6 +347,7 @@ function isProcedure(
 /**
  * Overlay description strings from a `DescriptionMap` onto an existing
  * JSON schema produced by the TypeScript type checker.  Mutates in place.
+ * @internal
  */
 export function applyDescriptions(opts: {
   schema: SchemaObject;

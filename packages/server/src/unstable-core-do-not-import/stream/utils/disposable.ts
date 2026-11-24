@@ -12,6 +12,7 @@ Symbol.asyncDispose ??= Symbol();
  * @param thing The value to make disposable
  * @param dispose Function to call when disposing the resource
  * @returns The original value with Symbol.dispose method added
+ * @internal
  */
 export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
   const it = thing as T & Partial<Disposable>;
@@ -34,6 +35,7 @@ export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
  * @param thing The value to make async disposable
  * @param dispose Async function to call when disposing the resource
  * @returns The original value with Symbol.asyncDispose method added
+ * @internal
  */
 export function makeAsyncResource<T>(
   thing: T,

@@ -1,7 +1,10 @@
 import { observable } from './observable';
 import type { Observable, Observer } from './types';
 
-/** An observable that holds a current value. */
+/**
+ * An observable that holds a current value.
+ * @public
+ */
 export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   observable: Observable<TValue, never>;
   /**
@@ -13,7 +16,10 @@ export interface BehaviorSubject<TValue> extends Observable<TValue, never> {
   get: () => TValue;
 }
 
-/** A `BehaviorSubject` that can't be set. */
+/**
+ * A `BehaviorSubject` that can't be set.
+ * @public
+ */
 export interface ReadonlyBehaviorSubject<TValue> extends Omit<
   BehaviorSubject<TValue>,
   'next'

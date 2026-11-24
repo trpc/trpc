@@ -36,6 +36,7 @@ export function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 type AnyFn = ((...args: any[]) => unknown) & Record<keyof any, unknown>;
+/** @internal */
 export function isFunction(fn: unknown): fn is AnyFn {
   return typeof fn === 'function';
 }
@@ -51,6 +52,7 @@ export function emptyObject<TObj extends Record<string, unknown>>(): TObj {
 const asyncIteratorsSupported =
   typeof Symbol === 'function' && !!Symbol.asyncIterator;
 
+/** @internal */
 export function isAsyncIterable<TValue>(
   value: unknown,
 ): value is AsyncIterable<TValue> {
@@ -61,12 +63,15 @@ export function isAsyncIterable<TValue>(
 
 /**
  * Run an IIFE
+ * @internal
  */
 export const run = <TValue>(fn: () => TValue): TValue => fn();
 
+/** @internal */
 // oxlint-disable-next-line typescript/no-empty-function
 export function noop(): void {}
 
+/** @internal */
 export function identity<T>(it: T): T {
   return it;
 }
@@ -76,9 +81,12 @@ export function identity<T>(it: T): T {
  *
  * Can be used as a slightly less dangerous variant of type assertions. Code
  * mistakes would be revealed at runtime then (hopefully during testing).
+ * @internal
  */
 export function assert(
   condition: boolean,
+  // Libraries outside tRPC call this without a message.
+  // oxlint-disable-next-line trpc/no-internal-optional
   msg = 'no additional info',
 ): asserts condition {
   if (!condition) {
@@ -86,17 +94,20 @@ export function assert(
   }
 }
 
+/** @internal */
 export function assertNever(value: never): never {
   throw new Error(`AssertionError: unexpected value ${String(value)}`);
 }
 
-export function sleep(ms = 0): Promise<void> {
+/** @internal */
+export function sleep(ms: number): Promise<void> {
   return new Promise<void>((res) => setTimeout(res, ms));
 }
 
 /**
  * Ponyfill for
  * [`AbortSignal.any`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static).
+ * @internal
  */
 export function abortSignalsAnyPonyfill(signals: AbortSignal[]): AbortSignal {
   if (typeof AbortSignal.any === 'function') {

@@ -19,7 +19,7 @@ type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
 /**
- * @internal
+ * @public
  */
 export interface SSEPingOptions {
   /**
@@ -34,6 +34,7 @@ export interface SSEPingOptions {
   intervalMs?: number;
 }
 
+/** @public */
 export interface SSEClientOptions {
   /**
    * Timeout and reconnect after inactivity in milliseconds
@@ -42,6 +43,7 @@ export interface SSEClientOptions {
   reconnectAfterInactivityMs?: number;
 }
 
+/** @public */
 export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
   data: AsyncIterable<TValue>;
@@ -78,6 +80,11 @@ const CONNECTED_EVENT = 'connected';
 const RETURN_EVENT = 'return';
 const RESTORE_ID_EVENT = 'restore-id';
 
+/**
+ * An event on the wire. Absent fields aren't written, and the consumer hands
+ * `{ data, id? }` to users as tracked data.
+ * @public
+ */
 interface SSEvent {
   id?: string;
   data: unknown;
@@ -87,6 +94,7 @@ interface SSEvent {
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @internal
  */
 export function sseStreamProducer<TValue = unknown>(
   opts: SSEStreamProducerOptions<TValue>,
@@ -278,13 +286,14 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultPing<TConfig>
   | ConsumerStreamResultConnected<TConfig>;
 
+/** @internal */
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
   init: () =>
     | MaybePromise<EventSourceLike.InitDictOf<TConfig['EventSource']>>
     | undefined;
   signal: AbortSignal;
-  deserialize?: Deserialize;
+  deserialize: Deserialize | undefined;
   EventSource: TConfig['EventSource'];
 }
 
@@ -310,6 +319,7 @@ async function withTimeout<T>(opts: {
 
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @internal
  */
 export function sseStreamConsumer<TConfig extends ConsumerConfig>(
   opts: SSEStreamConsumerOptions<TConfig>,
@@ -501,6 +511,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
   });
 }
 
+/** @internal */
 export const sseHeaders = {
   'Content-Type': 'text/event-stream',
   'Cache-Control': 'no-cache, no-transform',

@@ -48,6 +48,7 @@ interface TRPCUseUtilsOptions {
 }
 /**
  * Options for the `fetch` and `prefetch` helpers.
+ * @public
  */
 export interface TRPCFetchQueryOptions<TOutput, TError>
   extends
@@ -58,6 +59,7 @@ export interface TRPCFetchQueryOptions<TOutput, TError>
 
 /**
  * Options for the `fetchInfinite` and `prefetchInfinite` helpers.
+ * @public
  */
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
@@ -77,11 +79,12 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
       initialCursor?: ExtractCursorType<TInput>;
     };
 
-/** @internal */
+/** @public */
 export type SSRState = 'mounted' | 'mounting' | 'prepass' | false;
 
 /**
  * Props shared by the tRPC React context and its `Provider`.
+ * @public
  */
 export interface TRPCContextPropsBase<TRouter extends AnyRouter, TSSRContext> {
   /**
@@ -111,7 +114,7 @@ export interface TRPCContextPropsBase<TRouter extends AnyRouter, TSSRContext> {
 }
 
 /**
- * @internal
+ * @public
  */
 export type DecoratedTRPCContextProps<
   TRouter extends AnyRouter,
@@ -122,6 +125,7 @@ export type DecoratedTRPCContextProps<
 
 /**
  * Props for the tRPC React context: the base props plus a `QueryClient`.
+ * @public
  */
 export interface TRPCContextProps<
   TRouter extends AnyRouter,
@@ -135,6 +139,7 @@ export interface TRPCContextProps<
 
 /**
  * The keys of {@link TRPCContextPropsBase}.
+ * @public
  */
 export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
   'client',
@@ -144,7 +149,7 @@ export const contextProps: (keyof TRPCContextPropsBase<any, any>)[] = [
 ];
 
 /**
- * @internal
+ * @public
  */
 export interface TRPCContextState<
   TRouter extends AnyRouter,
@@ -155,7 +160,7 @@ export interface TRPCContextState<
     TRPCQueryUtils<TRouter> {}
 
 /**
- * @internal
+ * @public
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
@@ -373,5 +378,6 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
 }
 /**
  * The React context that holds the tRPC client and `QueryClient`.
+ * @public
  */
 export const TRPCContext = React.createContext?.(null as any);

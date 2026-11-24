@@ -99,6 +99,7 @@ export function internal_exceptionHandler<
 /**
  * Handles a Node.js request for a router. The adapters for Express,
  * Next.js and the standalone server use it. The promise never rejects.
+ * @public
  */
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,

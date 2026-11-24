@@ -3,6 +3,7 @@ import { type TRPCRequestInfo } from '@trpc/server/http';
 /**
  * Get the result of a value or function that returns a value
  * It also optionally accepts typesafe arguments for the function
+ * @internal
  */
 export const resultOf = <T, TArgs extends any[]>(
   value: T | ((...args: TArgs) => T),
@@ -15,9 +16,11 @@ export const resultOf = <T, TArgs extends any[]>(
 
 /**
  * A value that can be wrapped in callback
+ * @internal
  */
 export type CallbackOrValue<T> = T | (() => T | Promise<T>);
 
+/** @public */
 export interface UrlOptionsWithConnectionParams {
   /**
    * The URL to connect to (can be a function that returns a URL)

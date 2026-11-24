@@ -46,13 +46,17 @@ export type HTTPHeaders =
 
 /**
  * The `fetch` the HTTP links call: only its `(url, options)` form.
+ * @public
  */
 export type TRPCFetch = (
   url: string,
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
-/** What a link gets when the client is created. Empty for now. */
+/**
+ * What a link gets when the client is created. Empty for now.
+ * @public
+ */
 export interface TRPCClientRuntime {
   // nothing here anymore
 }
@@ -60,7 +64,7 @@ export interface TRPCClientRuntime {
 /**
  * A result a link passes back: data, a subscription's `started` or
  * `stopped` event, or a change of connection state.
- * @internal
+ * @public
  */
 export interface OperationResultEnvelope<TOutput, TError> {
   result:

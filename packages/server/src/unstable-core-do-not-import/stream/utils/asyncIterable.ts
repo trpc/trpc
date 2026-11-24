@@ -3,6 +3,7 @@ import { throwAbortError } from '../../http/abortError';
 import { makeAsyncResource } from './disposable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
+/** @internal */
 export function iteratorResource<TYield, TReturn, TNext>(
   iterable: AsyncIterable<TYield, TReturn, TNext>,
 ): AsyncIterator<TYield, TReturn, TNext> & AsyncDisposable {
@@ -23,6 +24,7 @@ export function iteratorResource<TYield, TReturn, TNext>(
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields its first
  * {@link count} values. Then, a grace period of {@link gracePeriodMs} is started in which further
  * values may still come through. After this period, the generator aborts.
+ * @internal
  */
 export async function* takeWithGrace<T>(
   iterable: AsyncIterable<T>,

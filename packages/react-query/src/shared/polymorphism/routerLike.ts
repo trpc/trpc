@@ -10,6 +10,7 @@ import type { QueryLike } from './queryLike';
 
 /**
  * Use to describe a route path which matches a given route's interface
+ * @public
  */
 export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['_config']['$types'],
@@ -17,6 +18,7 @@ export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
 >;
 /**
  * The record behind {@link RouterLike}.
+ * @public
  */
 export type RouterLikeInner<
   TRoot extends AnyRootTypes,

@@ -23,6 +23,10 @@ import type {
 } from '../../useQueries';
 import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
+/**
+ * What `t.path.to.query()` takes inside `useQueries`.
+ * @public
+ */
 type GetQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
@@ -55,6 +59,10 @@ export type UseQueriesProcedureRecord<
     : never;
 };
 
+/**
+ * What `t.path.to.query()` takes inside `useSuspenseQueries`.
+ * @public
+ */
 type GetSuspenseQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,

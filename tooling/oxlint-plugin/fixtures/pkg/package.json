@@ -1,0 +1,12 @@
+{
+  "name": "@fixtures/pkg",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
+    },
+    "./unstable-core-do-not-import": {
+      "import": "./dist/unstable-core-do-not-import.mjs"
+    }
+  }
+}

@@ -1,12 +1,14 @@
 import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
 import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
 
+/** @internal */
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
   _output: TParsedInput;
 };
 
+/** @public */
 export type ParserValibotEsque<TInput, TParsedInput> = {
   schema: {
     _types?: {
@@ -16,36 +18,44 @@ export type ParserValibotEsque<TInput, TParsedInput> = {
   };
 };
 
+/** @internal */
 export type ParserArkTypeEsque<TInput, TParsedInput> = {
   inferIn: TInput;
   infer: TParsedInput;
 };
 
+/** @internal */
 export type ParserStandardSchemaEsque<TInput, TParsedInput> = StandardSchemaV1<
   TInput,
   TParsedInput
 >;
 
+/** @internal */
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
 
+/** @internal */
 export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
+/** @internal */
 export type ParserCustomValidatorEsque<TInput> = (
   input: unknown,
 ) => Promise<TInput> | TInput;
 
+/** @internal */
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
 
+/** @internal */
 export type ParserScaleEsque<TInput> = {
   assert(value: unknown): asserts value is TInput;
 };
 
+/** @internal */
 export type ParserWithoutInput<TInput> =
   | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
@@ -53,14 +63,17 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
+/** @internal */
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
   | ParserArkTypeEsque<TInput, TParsedInput>
   | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
+/** @internal */
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
+/** @internal */
 export type inferParser<TParser extends Parser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
     ? {
@@ -79,8 +92,10 @@ export type inferParser<TParser extends Parser> =
           }
         : never;
 
+/** @internal */
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
+/** @internal */
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
   const isStandardSchema = '~standard' in parser;

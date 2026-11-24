@@ -183,8 +183,17 @@
       }
     },
     {
+      // Optionals are for public APIs. See `trpc-conventions`.
+      "files": ["packages/*/src/**"],
+      "rules": {
+        "trpc/no-internal-optional": "error",
+        "trpc/release-tag": "error"
+      }
+    },
+    {
       "files": [
         "**/test/**",
+        "**/__tests__/**",
         "packages/tests/**",
         "**/*.test.tsx",
         "**/*.test.ts"
@@ -194,6 +203,8 @@
         "typescript/no-non-null-assertion": "off",
         "no-unused-vars": "off",
         "trpc/type-parameter-naming": "off",
+        "trpc/no-internal-optional": "off",
+        "trpc/release-tag": "off",
         "no-unused-expressions": "off",
         "typescript/only-throw-error": "off",
         "typescript/switch-exhaustiveness-check": "off"

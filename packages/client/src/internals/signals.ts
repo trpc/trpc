@@ -4,6 +4,7 @@ import type { Maybe } from '@trpc/server/unstable-core-do-not-import';
  * Like `Promise.all()` but for abort signals
  * - When all signals have been aborted, the merged signal will be aborted
  * - If one signal is `null`, no signal will be aborted
+ * @internal
  */
 export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
   const ac = new AbortController();
@@ -36,6 +37,7 @@ export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
  *
  * Basically, a ponyfill for
  * [`AbortSignal.any`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static).
+ * @internal
  */
 export function raceAbortSignals(
   ...signals: Maybe<AbortSignal>[]
@@ -43,6 +45,7 @@ export function raceAbortSignals(
   return raceAbortSignalsWithCleanup(...signals).signal;
 }
 
+/** @internal */
 // Completion can release input listeners without aborting a consumed response.
 export function raceAbortSignalsWithCleanup(...signals: Maybe<AbortSignal>[]) {
   const ac = new AbortController();
@@ -67,6 +70,7 @@ export function raceAbortSignalsWithCleanup(...signals: Maybe<AbortSignal>[]) {
   return { signal: ac.signal, cleanup };
 }
 
+/** @internal */
 export function abortSignalToPromise(signal: AbortSignal): Promise<never> {
   return new Promise((_, reject) => {
     if (signal.aborted) {
@@ -99,6 +103,7 @@ class AbortError extends Error {
  * Polyfill for `signal.throwIfAborted()`
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted
+ * @internal
  */
 export const throwIfAborted = (signal: Maybe<AbortSignal>) => {
   if (!signal?.aborted) {

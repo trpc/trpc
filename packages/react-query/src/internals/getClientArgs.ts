@@ -6,10 +6,10 @@ import type { TRPCQueryKey } from '../getQueryKey';
 export function getClientArgs<TOptions>(
   queryKey: TRPCQueryKey,
   opts: TOptions,
-  infiniteParams?: {
+  infiniteParams: {
     pageParam: any;
     direction: 'forward' | 'backward';
-  },
+  } | null,
 ) {
   const path = queryKey[0];
   let input = queryKey[1]?.input;

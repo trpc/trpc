@@ -35,6 +35,7 @@ import type { TRPCQueryKey } from '../../getQueryKey';
 
 /**
  * A page of data and the cursor that fetched it.
+ * @public
  */
 export type OutputWithCursor<TData, TCursor = any> = {
   cursor: TCursor | null;
@@ -43,6 +44,7 @@ export type OutputWithCursor<TData, TCursor = any> = {
 
 /**
  * tRPC options for a single hook call, passed as `trpc`.
+ * @public
  */
 export interface TRPCReactRequestOptions
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
@@ -59,6 +61,7 @@ export interface TRPCReactRequestOptions
 
 /**
  * Adds the `trpc` option to TanStack Query options.
+ * @public
  */
 export interface TRPCUseQueryBaseOptions {
   /**
@@ -70,6 +73,7 @@ export interface TRPCUseQueryBaseOptions {
 /**
  * Options for `useQuery`: TanStack Query options without `queryKey`, plus `trpc`.
  * @see https://trpc.io/docs/client/react/useQuery
+ * @public
  */
 export interface UseTRPCQueryOptions<
   TOutput,
@@ -87,6 +91,7 @@ export interface UseTRPCQueryOptions<
 /**
  * Options for `useSuspenseQuery`.
  * @see https://trpc.io/docs/client/react/suspense#usesuspensequery
+ * @public
  */
 export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
   extends
@@ -99,6 +104,7 @@ export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
 /**
  * Options for `usePrefetchQuery`.
  * @see https://trpc.io/docs/client/react/suspense#component-level-prefetching-with-useprefetchquery
+ * @public
  */
 export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
   extends
@@ -123,6 +129,7 @@ export interface DefinedUseTRPCQueryOptions<
 
 /**
  * TanStack Query options with a tRPC query key.
+ * @public
  */
 export interface TRPCQueryOptions<TData, TError>
   extends
@@ -133,6 +140,7 @@ export interface TRPCQueryOptions<TData, TError>
 
 /**
  * The type of the `cursor` field in a procedure's input.
+ * @public
  */
 export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
@@ -141,6 +149,7 @@ export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
 /**
  * Options for `useInfiniteQuery`. Use `initialCursor` instead of `initialPageParam`.
  * @see https://trpc.io/docs/client/react/useInfiniteQuery
+ * @public
  */
 export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
   extends
@@ -164,6 +173,7 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
 /**
  * Options for `usePrefetchInfiniteQuery`.
  * @see https://trpc.io/docs/client/react/suspense#component-level-prefetching-with-useprefetchinfinitequery
+ * @public
  */
 export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
@@ -186,6 +196,7 @@ export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
 /**
  * Options for `useSuspenseInfiniteQuery`.
  * @see https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
+ * @public
  */
 export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
   extends
@@ -209,6 +220,7 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
 /**
  * Options for `useMutation`.
  * @see https://trpc.io/docs/client/react/useMutation
+ * @public
  */
 export interface UseTRPCMutationOptions<
   TInput,
@@ -223,6 +235,7 @@ export interface UseTRPCMutationOptions<
 /**
  * Options for `useSubscription`.
  * @see https://trpc.io/docs/client/react/useSubscription#options
+ * @public
  */
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   /**
@@ -256,6 +269,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
 /**
  * Fields shared by every `useSubscription` result.
  * @see https://trpc.io/docs/client/react/useSubscription#return-type
+ * @public
  */
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'idle' | 'connecting' | 'pending' | 'error';
@@ -269,6 +283,7 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
 
 /**
  * `useSubscription` result while the subscription is not running.
+ * @public
  */
 export interface TRPCSubscriptionIdleResult<
   TOutput,
@@ -280,6 +295,7 @@ export interface TRPCSubscriptionIdleResult<
 
 /**
  * `useSubscription` result while connecting or reconnecting.
+ * @public
  */
 export interface TRPCSubscriptionConnectingResult<
   TOutput,
@@ -293,6 +309,7 @@ export interface TRPCSubscriptionConnectingResult<
 /**
  * `useSubscription` result while the subscription is active. It stays
  * `pending` after data arrives, so `data` may be set.
+ * @public
  */
 export interface TRPCSubscriptionPendingResult<
   TOutput,
@@ -304,6 +321,7 @@ export interface TRPCSubscriptionPendingResult<
 
 /**
  * `useSubscription` result after an error that stopped the subscription.
+ * @public
  */
 export interface TRPCSubscriptionErrorResult<
   TOutput,
@@ -317,6 +335,7 @@ export interface TRPCSubscriptionErrorResult<
 /**
  * The result of `useSubscription`. Check `status` to narrow it.
  * @see https://trpc.io/docs/client/react/useSubscription#return-type
+ * @public
  */
 export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
@@ -326,6 +345,7 @@ export type TRPCSubscriptionResult<TOutput, TError> =
 
 /**
  * Props for the `Provider` from `createTRPCReact`.
+ * @public
  */
 export interface TRPCProviderProps<
   TRouter extends AnyRouter,
@@ -338,6 +358,7 @@ export interface TRPCProviderProps<
 /**
  * The `Provider` component from `createTRPCReact`.
  * @see https://trpc.io/docs/client/react/setup#4-add-trpc-providers
+ * @public
  */
 export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
   props: TRPCProviderProps<TRouter, TSSRContext>,
@@ -345,6 +366,7 @@ export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
 
 /**
  * A function that creates a tRPC client.
+ * @public
  */
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
@@ -418,6 +440,7 @@ export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
 
 /**
  * Extra fields that tRPC adds to every hook result.
+ * @public
  */
 export interface TRPCHookResult {
   trpc: {

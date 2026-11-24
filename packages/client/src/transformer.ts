@@ -9,7 +9,7 @@ import type {
  * @internal
  */
 export type CoercedTransformerParameters = {
-  transformer?: DataTransformerOptions;
+  transformer: DataTransformerOptions | undefined;
 };
 
 type TransformerOptionYes = {
@@ -21,6 +21,10 @@ type TransformerOptionYes = {
    **/
   transformer: DataTransformerOptions;
 };
+/**
+ * Part of the public `TransformerOptions`.
+ * @public
+ */
 type TransformerOptionNo = {
   /**
    * Data transformer

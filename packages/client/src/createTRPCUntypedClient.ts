@@ -5,6 +5,7 @@ import { TRPCUntypedClient } from './TRPCUntypedClient';
 /**
  * Creates a client that calls procedures by path string, without types.
  * Meant for libraries built on tRPC; apps should use `createTRPCClient`.
+ * @public
  */
 export function createTRPCUntypedClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,

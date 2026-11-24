@@ -32,6 +32,7 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
   : false;
 
 /* oxfmt-ignore */
+/** @internal */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :

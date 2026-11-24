@@ -5,6 +5,7 @@ import type { TRPCRequestInfo } from './types';
 /**
  * Checks that connection params are an object of strings, or `null`.
  * Throws a `PARSE_ERROR` if they aren't.
+ * @public
  */
 export function parseConnectionParamsFromUnknown(
   parsed: unknown,
@@ -39,6 +40,7 @@ export function parseConnectionParamsFromUnknown(
 /**
  * Parses connection params from JSON, as `parseConnectionParamsFromUnknown`
  * checks them.
+ * @public
  */
 export function parseConnectionParamsFromString(
   str: string,

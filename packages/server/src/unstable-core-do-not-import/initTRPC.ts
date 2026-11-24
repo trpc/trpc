@@ -30,7 +30,7 @@ type inferErrorFormatterShape<TType> =
   TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
 /**
  * The options `initTRPC.create()` takes.
- * @internal
+ * @public
  */
 export interface RuntimeConfigOptions<
   TContext extends object,
@@ -60,6 +60,7 @@ type ContextCallback = (...args: any[]) => object | Promise<object>;
  * What `initTRPC.create()` returns: the builders for your procedures,
  * middlewares and routers. Create it once per backend.
  * @see https://trpc.io/docs/server/routers#initialize-trpc
+ * @public
  */
 export interface TRPCRootObject<
   TContext extends object,
@@ -131,6 +132,7 @@ export interface TRPCRootObject<
 /**
  * The type of `initTRPC`. Chain `.context()` and `.meta()` to set their
  * types, then call `.create()`.
+ * @public
  */
 class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
@@ -246,6 +248,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
  * export const publicProcedure = t.procedure;
  * ```
  * @see https://trpc.io/docs/server/routers#initialize-trpc
+ * @public
  */
 export const initTRPC = new TRPCBuilder();
 export type { TRPCBuilder };

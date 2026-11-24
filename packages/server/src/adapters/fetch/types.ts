@@ -22,6 +22,7 @@ import type {
 /**
  * What `createContext` gets in the Fetch adapter.
  * @see https://trpc.io/docs/server/adapters/fetch#create-the-context
+ * @public
  */
 export type FetchCreateContextFnOptions = {
   req: Request;
@@ -30,19 +31,28 @@ export type FetchCreateContextFnOptions = {
   info: TRPCRequestInfo;
 };
 
-/** The `createContext` function the Fetch adapter takes. */
+/**
+ * The `createContext` function the Fetch adapter takes.
+ * @public
+ */
 export type FetchCreateContextFn<TRouter extends AnyRouter> = (
   opts: FetchCreateContextFnOptions,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-/** The Fetch adapter's `createContext` option. */
+/**
+ * The Fetch adapter's `createContext` option.
+ * @public
+ */
 export type FetchCreateContextOption<TRouter extends AnyRouter> =
   CreateContextCallback<
     inferRouterContext<TRouter>,
     FetchCreateContextFn<TRouter>
   >;
 
-/** The options of the Fetch adapter. */
+/**
+ * The options of the Fetch adapter.
+ * @public
+ */
 export type FetchHandlerOptions<TRouter extends AnyRouter> =
   FetchCreateContextOption<TRouter> &
     HTTPBaseHandlerOptions<TRouter, Request> & {
@@ -54,6 +64,7 @@ export type FetchHandlerOptions<TRouter extends AnyRouter> =
 /**
  * The options of `fetchRequestHandler`.
  * @see https://trpc.io/docs/server/adapters/fetch
+ * @public
  */
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   HTTPBaseHandlerOptions<TRouter, Request> &

@@ -32,7 +32,9 @@ import { backwardCompatibility, sendPing, WsConnection } from './wsConnection';
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
- * reconnection, keep-alive, and request management.
+ * reconnection, keep-alive, and request management. `createWSClient`
+ * returns one.
+ * @public
  */
 export class WsClient {
   /**
@@ -208,6 +210,7 @@ export class WsClient {
             TRPCClientError.from(
               new TRPCWebSocketClosedError({
                 message: 'Closed before connection was established',
+                cause: undefined,
               }),
             ),
           ),

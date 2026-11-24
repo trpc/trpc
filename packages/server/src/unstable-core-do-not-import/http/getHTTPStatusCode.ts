@@ -4,6 +4,7 @@ import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc';
 import type { InvertKeyValue, ValueOf } from '../types';
 import { isObject } from '../utils';
 
+/** @internal */
 export const JSONRPC2_TO_HTTP_CODE: Record<
   keyof typeof TRPC_ERROR_CODES_BY_KEY,
   number
@@ -31,6 +32,7 @@ export const JSONRPC2_TO_HTTP_CODE: Record<
   GATEWAY_TIMEOUT: 504,
 };
 
+/** @internal */
 export const HTTP_CODE_TO_JSONRPC2: InvertKeyValue<
   typeof JSONRPC2_TO_HTTP_CODE
 > = {
@@ -56,12 +58,14 @@ export const HTTP_CODE_TO_JSONRPC2: InvertKeyValue<
   504: 'GATEWAY_TIMEOUT',
 } as const;
 
+/** @internal */
 export function getStatusCodeFromKey(
   code: keyof typeof TRPC_ERROR_CODES_BY_KEY,
 ) {
   return JSONRPC2_TO_HTTP_CODE[code] ?? 500;
 }
 
+/** @internal */
 export function getStatusKeyFromCode(
   code: keyof typeof HTTP_CODE_TO_JSONRPC2,
 ): ValueOf<typeof HTTP_CODE_TO_JSONRPC2> {
@@ -72,6 +76,7 @@ export function getStatusKeyFromCode(
  * The HTTP status for a response, or for a batch of them: `207` when the
  * responses' statuses differ.
  * @see https://trpc.io/docs/rpc#error-codes---http-status
+ * @public
  */
 export function getHTTPStatusCode(
   json: TRPCResponse | TRPCResponse[],
@@ -113,6 +118,7 @@ export function getHTTPStatusCode(
 /**
  * The HTTP status of a `TRPCError`'s code.
  * @see https://trpc.io/docs/rpc#error-codes---http-status
+ * @public
  */
 export function getHTTPStatusCodeFromError(error: TRPCError) {
   return getStatusCodeFromKey(error.code);

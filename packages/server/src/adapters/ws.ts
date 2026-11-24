@@ -116,7 +116,10 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
   opts: CreateWSSContextFnOptions,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
-/** The options of `getWSConnectionHandler`. */
+/**
+ * The options of `getWSConnectionHandler`.
+ * @public
+ */
 export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
   BaseHandlerOptions<TRouter, IncomingMessage> &
     CreateContextCallback<
@@ -127,6 +130,7 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
 /**
  * The options of `applyWSSHandler`.
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
+ * @public
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
@@ -198,6 +202,7 @@ function nextUnlessStopped<TValue, TReturn>(
 /**
  * Returns a `ws` connection listener that serves a router. `applyWSSHandler`
  * uses it; call it to attach tRPC to your own WebSocket server.
+ * @public
  */
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
@@ -905,6 +910,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 /**
  * Pings a client after `pingMs` of quiet, and closes the connection if no
  * message comes within `pongWaitMs`.
+ * @public
  */
 export function handleKeepAlive(
   client: WsWebSocket,
@@ -958,6 +964,7 @@ export function handleKeepAlive(
  * });
  * ```
  * @see https://trpc.io/docs/server/websockets#creating-a-websocket-server
+ * @public
  */
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,

@@ -21,6 +21,7 @@ import { rethrowNextErrors } from './rethrowNextErrors';
  * Makes procedures callable as Next.js server actions and from React
  * Server Components. Pass it to `.experimental_caller()`.
  * @see https://trpc.io/docs/client/nextjs/server-actions#1-define-a-base-procedure-with-experimental_caller
+ * @public
  */
 export function nextAppDirCaller<TContext, TMeta>(
   config: Simplify<

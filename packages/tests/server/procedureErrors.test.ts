@@ -757,7 +757,7 @@ test('a handler that throws bubbles its own error', async () => {
 test('a builder created outside `initTRPC` still gets the dev stack', async () => {
   const seen: { stack?: string }[] = [];
 
-  const procedure = createBuilder<object, object>()
+  const procedure = createBuilder<object, object>({})
     .errors((opts) => {
       seen.push(opts.shape.data);
       return undefined;

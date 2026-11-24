@@ -120,7 +120,9 @@ function transformTRPCResponseItem<
 /**
  * Serializes a response, or a list of them, with the router's output
  * transformer. Meant for custom adapters.
- **/
+ *
+ * @public
+ */
 export function transformTRPCResponse<
   TResponse extends
     | TRPCResponse
@@ -133,10 +135,10 @@ export function transformTRPCResponse<
     : transformTRPCResponseItem(config, itemOrItems);
 }
 
+/** @internal */
 // FIXME:
 // - the generics here are probably unnecessary
 // - the RPC-spec could probably be simplified to combine HTTP + WS
-/** @internal */
 function transformResultInner<TRouter extends AnyRouter, TOutput>(
   response:
     | TRPCResponse<TOutput, inferRouterError<TRouter>>

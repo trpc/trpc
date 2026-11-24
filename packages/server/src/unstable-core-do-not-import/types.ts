@@ -29,6 +29,7 @@ export type Dict<TType> = Record<string, TType | undefined>;
  */
 export type MaybePromise<TType> = Promise<TType> | TType;
 
+/** @internal */
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
@@ -132,6 +133,7 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     : TPick
   : TType;
 
+/** @internal */
 export type KeyFromValue<
   TValue,
   TType extends Record<PropertyKey, PropertyKey>,
@@ -139,6 +141,7 @@ export type KeyFromValue<
   [K in keyof TType]: TValue extends TType[K] ? K : never;
 }[keyof TType];
 
+/** @internal */
 export type InvertKeyValue<TType extends Record<PropertyKey, PropertyKey>> = {
   [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
 };
@@ -176,12 +179,16 @@ export type ProtectedIntersection<TType, TWith> =
 export type GetRawInputFn = () => Promise<unknown>;
 
 const _errorSymbol = Symbol();
+/** @internal */
 export type ErrorSymbol = typeof _errorSymbol;
+/** @internal */
 export type TypeError<TMessage extends string> = TMessage & {
   _: typeof _errorSymbol;
 };
+/** @internal */
 export type ValueOf<TObj> = TObj[keyof TObj];
 
+/** @internal */
 export type coerceAsyncIterableToArray<TValue> =
   TValue extends AsyncIterable<infer $Inferred> ? $Inferred[] : TValue;
 

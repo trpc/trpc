@@ -6,13 +6,16 @@ import {
 import type { DecoratedMutation, DecoratedQuery } from './createTRPCReact';
 import type { DecorateRouterRecord } from './shared';
 
+/** @public */
 export type QueryType = 'any' | 'infinite' | 'query';
 
+/** @public */
 export type TRPCQueryKey = [
   readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
+/** @public */
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 type ProcedureOrRouter =
@@ -24,7 +27,9 @@ type ProcedureOrRouter =
  * To allow easy interactions with groups of related queries, such as
  * invalidating all queries of a router, we use an array as the path when
  * storing in tanstack query.
- **/
+ *
+ * @internal
+ */
 export function getQueryKeyInternal(
   path: readonly string[],
   input: unknown,
@@ -73,6 +78,7 @@ export function getQueryKeyInternal(
   ];
 }
 
+/** @internal */
 export function getMutationKeyInternal(path: readonly string[]) {
   return getQueryKeyInternal(path, undefined, 'any') as TRPCMutationKey;
 }
@@ -87,7 +93,7 @@ type GetInfiniteQueryInput<
   ? undefined
   : DeepPartial<TInputWithoutCursorAndDirection> | undefined;
 
-/** @internal */
+/** @public */
 export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
   cursor?: any;
 }
@@ -116,6 +122,7 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
  * @see https://trpc.io/docs/client/react/getQueryKey
+ * @public
  */
 export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
   procedureOrRouter: TProcedureOrRouter,
@@ -129,6 +136,7 @@ export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
   return queryKey;
 }
 
+/** @public */
 // TODO: look over if we can't use a single type
 export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
   string[],
@@ -144,6 +152,7 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
  * @see https://trpc.io/docs/client/react/getQueryKey#mutations
+ * @public
  */
 export function getMutationKey<TProcedure extends DecoratedMutation<any>>(
   procedure: TProcedure,

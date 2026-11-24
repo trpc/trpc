@@ -23,6 +23,7 @@ type TRPCProviderType<
 
 /**
  * What {@link createTRPCContext} returns.
+ * @public
  */
 export interface CreateTRPCContextResult<
   TRouter extends AnyTRPCRouter,
@@ -56,6 +57,7 @@ export interface CreateTRPCContextResult<
  * ```
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
+ * @public
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,

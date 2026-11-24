@@ -35,6 +35,7 @@ export type OctetInput = Blob | Uint8Array | FileLike;
  * });
  * ```
  * @see https://trpc.io/docs/server/non-json-content-types#file-and-other-binary-type-inputs
+ * @public
  */
 export const octetInputParser: UtilityParser<OctetInput, ReadableStream> = {
   _input: null as any as OctetInput,

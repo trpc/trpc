@@ -56,7 +56,7 @@ export type AnyProcedureErrorFormatter = ProcedureErrorFormatter<any, any, any>;
 
 /**
  * The `data` of the default error shape.
- * @internal
+ * @public
  */
 export type DefaultErrorData = {
   code: TRPC_ERROR_CODE_KEY;
@@ -81,6 +81,7 @@ export interface DefaultErrorShape extends TRPCErrorShape<DefaultErrorData> {
   code: TRPC_ERROR_CODE_NUMBER;
 }
 
+/** @internal */
 export const defaultFormatter: ErrorFormatter<any, any> = ({ shape }) => {
   return shape;
 };
@@ -140,6 +141,7 @@ export function getFormattedErrorShape(
   return undefined;
 }
 
+/** @internal */
 export function isFormattedErrorShape(
   error: TRPCError,
 ): error is TRPCError & { [formattedShapeSymbol]: TRPCErrorShape } {

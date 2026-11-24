@@ -1,3 +1,7 @@
+/**
+ * Part of the public `TRPCConnectionState`.
+ * @public
+ */
 interface ConnectionStateBase<TError> {
   type: 'state';
   data?: never;
@@ -18,6 +22,7 @@ interface ConnectionPendingState extends ConnectionStateBase<null> {
   state: 'pending';
 }
 
+/** @public */
 export type TRPCConnectionState<TError> =
   | ConnectionIdleState
   | ConnectionConnectingState<TError>

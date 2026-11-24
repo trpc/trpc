@@ -4,6 +4,7 @@ export type { Encoder };
 
 /**
  * The default WebSocket encoder. Sends messages as JSON text frames.
+ * @public
  */
 export const jsonEncoder: Encoder = {
   encode: (data) => JSON.stringify(data),

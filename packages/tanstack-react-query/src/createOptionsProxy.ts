@@ -51,6 +51,7 @@ import type {
 
 /**
  * Key and filter helpers for a router path.
+ * @public
  */
 export interface DecorateRouterKeyable<TFeatureFlags extends FeatureFlags> {
   /**
@@ -89,6 +90,7 @@ interface TypeHelper<TDef extends ResolverDef> {
 /**
  * The input type of a procedure on the options proxy.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ * @public
  */
 export type inferInput<
   TProcedure extends
@@ -100,6 +102,7 @@ export type inferInput<
 /**
  * The output type of a procedure on the options proxy.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#inferring-input-and-output-types
+ * @public
  */
 export type inferOutput<
   TProcedure extends
@@ -111,6 +114,7 @@ export type inferOutput<
 /**
  * The helpers for a query procedure whose input has a `cursor`.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+ * @public
  */
 export interface DecorateInfiniteQueryProcedure<
   TDef extends ResolverDef,
@@ -174,6 +178,7 @@ export interface DecorateInfiniteQueryProcedure<
 /**
  * The helpers for a query procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+ * @public
  */
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
   extends TypeHelper<TDef>, DecorateRouterKeyable<TDef['featureFlags']> {
@@ -236,6 +241,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
 /**
  * The helpers for a mutation procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
+ * @public
  */
 export interface DecorateMutationProcedure<
   TDef extends ResolverDef,
@@ -258,6 +264,7 @@ export interface DecorateMutationProcedure<
 /**
  * The helpers for a subscription procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
+ * @public
  */
 export interface DecorateSubscriptionProcedure<
   TDef extends ResolverDef,
@@ -272,6 +279,7 @@ export interface DecorateSubscriptionProcedure<
 
 /**
  * The helpers for a procedure of the given type.
+ * @public
  */
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
@@ -288,7 +296,7 @@ export type DecorateProcedure<
       : never;
 
 /**
- * @internal
+ * @public
  */
 export type DecoratedRouterRecord<
   TRoot extends AnyTRPCRootTypes,
@@ -317,6 +325,7 @@ export type DecoratedRouterRecord<
 /**
  * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage
+ * @public
  */
 export type TRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
@@ -330,6 +339,7 @@ export type TRPCOptionsProxy<
 
 /**
  * Options shared by every {@link createTRPCOptionsProxy} call.
+ * @public
  */
 export type TRPCOptionsProxyOptionsBase<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -348,6 +358,7 @@ export type TRPCOptionsProxyOptionsBase<
 
 /**
  * Call procedures on a router directly, for example on the server.
+ * @public
  */
 export interface TRPCOptionsProxyOptionsInternal<
   TRouter extends AnyTRPCRouter,
@@ -366,6 +377,7 @@ export interface TRPCOptionsProxyOptionsInternal<
 
 /**
  * Call procedures through a tRPC client.
+ * @public
  */
 export interface TRPCOptionsProxyOptionsExternal<
   TRouter extends AnyTRPCRouter,
@@ -378,6 +390,7 @@ export interface TRPCOptionsProxyOptionsExternal<
 
 /**
  * Options for {@link createTRPCOptionsProxy}. Pass either `client` or `router` and `ctx`.
+ * @public
  */
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
@@ -408,6 +421,7 @@ type UtilsMethods =
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
  * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ * @public
  */
 export function createTRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,

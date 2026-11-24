@@ -22,7 +22,7 @@ import type { WithTRPCNoSSROptions, WithTRPCSSROptions } from './withTRPC';
 import { withTRPC } from './withTRPC';
 
 /**
- * @internal
+ * @public
  */
 export interface CreateTRPCNextBase<
   TRouter extends AnyRouter,
@@ -54,7 +54,7 @@ export interface CreateTRPCNextBase<
 }
 
 /**
- * @internal
+ * @public
  * @deprecated part of `createTRPCNext`, which is built on `@trpc/react-query`.
  */
 export type CreateTRPCNext<
@@ -83,6 +83,7 @@ export type CreateTRPCNext<
  * @deprecated built on `@trpc/react-query`, which only gets bug fixes. Use
  * `createTRPCContext` from `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/nextjs/pages-router/setup#moving-from-createtrpcnext
+ * @public
  */
 export function createTRPCNext<
   TRouter extends AnyRouter,

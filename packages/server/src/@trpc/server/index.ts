@@ -148,6 +148,7 @@ export {
 /**
  * The type a function's promise resolves to.
  * @deprecated Use `Awaited<ReturnType<typeof myFunction>>` instead.
+ * @public
  */
 export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
   Awaited<ReturnType<TFunction>>;

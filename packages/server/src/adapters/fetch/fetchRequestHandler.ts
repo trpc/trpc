@@ -31,6 +31,7 @@ const trimSlashes = (path: string): string => {
  *   fetchRequestHandler({ endpoint: '/trpc', req, router: appRouter });
  * ```
  * @see https://trpc.io/docs/server/adapters/fetch
+ * @public
  */
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,

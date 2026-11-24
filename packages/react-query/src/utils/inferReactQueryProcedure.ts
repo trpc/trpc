@@ -94,6 +94,7 @@ type inferReactQueryProcedureOptionsInner<
  * the next major version. Use `@trpc/tanstack-react-query` instead.
  * @see https://trpc.io/docs/client/tanstack-react-query/migrating
  * @see https://trpc.io/docs/client/react/infer-types#infer-react-query-options-based-on-your-router
+ * @public
  */
 export type inferReactQueryProcedureOptions<TRouter extends AnyRouter> =
   inferReactQueryProcedureOptionsInner<

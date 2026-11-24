@@ -53,6 +53,7 @@ export type { ActionHandlerDef };
  * helper on each procedure.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -107,6 +108,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
  * @see https://trpc.io/docs/client/nextjs/server-actions
+ * @public
  */
 export function experimental_createServerActionHandler<
   TInstance extends {
@@ -229,6 +231,7 @@ export function experimental_createServerActionHandler<
  * A route handler that revalidates a cache tag sent in the request body.
  *
  * @see https://trpc.io/docs/client/nextjs/app-router-setup
+ * @public
  */
 // ts-prune-ignore-next
 export async function experimental_revalidateEndpoint(req: Request) {

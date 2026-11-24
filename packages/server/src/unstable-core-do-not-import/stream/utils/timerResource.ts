@@ -1,7 +1,9 @@
 import { makeResource } from './disposable';
 
+/** @internal */
 export const disposablePromiseTimerResult = Symbol();
 
+/** @internal */
 export function timerResource(ms: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 

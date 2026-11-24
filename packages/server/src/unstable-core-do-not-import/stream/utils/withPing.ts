@@ -2,11 +2,13 @@ import { Unpromise } from '../../../vendor/unpromise';
 import { iteratorResource } from './asyncIterable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
+/** @internal */
 export const PING_SYM = Symbol('ping');
 
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields {@link PING_SYM}
  * whenever no value has been yielded for {@link pingIntervalMs}.
+ * @internal
  */
 export async function* withPing<TValue>(
   iterable: AsyncIterable<TValue>,

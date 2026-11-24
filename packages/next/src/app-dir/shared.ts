@@ -40,6 +40,7 @@ export type UseProcedureRecord<
     : never;
 };
 
+/** @internal */
 export function createUseProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
 ) {
@@ -81,6 +82,7 @@ type NextAppRouterUse<TRouter extends AnyRouter> = {
 type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
   use: NextAppRouterUse<TRouter>;
 };
+/** @internal */
 export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
   ProtectedIntersection<
     CreateTRPCNextAppRouterBase<TRouter>,
@@ -128,6 +130,7 @@ export function generateCacheTags(opts: {
   return tags;
 }
 
+/** @internal */
 export function isFormData(value: unknown): value is FormData {
   if (typeof FormData === 'undefined') {
     // FormData is not supported
@@ -137,7 +140,7 @@ export function isFormData(value: unknown): value is FormData {
 }
 
 /**
- * @internal
+ * @public
  */
 export interface ActionHandlerDef {
   input?: any;

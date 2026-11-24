@@ -7,6 +7,7 @@
  * are never percent-encoded or normalised and mean nothing to routers. `/`
  * would need catch-all routes in every adapter, and `,` separates batched
  * calls.
+ * @public
  */
 export type PathSeparator = '.' | '_' | '~' | '-';
 

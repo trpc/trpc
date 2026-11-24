@@ -184,7 +184,7 @@ export type SuspenseQueriesOptions<
           : UseQueryOptionsForUseSuspenseQueries[];
 
 /**
- * @internal
+ * @public
  */
 export type TRPCUseQueries<TRouter extends AnyRouter> = {
   <
@@ -229,7 +229,7 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = {
 };
 
 /**
- * @internal
+ * @public
  */
 export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = {
   <

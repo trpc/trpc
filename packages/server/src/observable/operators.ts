@@ -6,7 +6,10 @@ import type {
   Unsubscribable,
 } from './types';
 
-/** Maps each value with `project`. */
+/**
+ * Maps each value with `project`.
+ * @public
+ */
 export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,
 ): OperatorFunction<TValueBefore, TError, TValueAfter, TError> {
@@ -33,6 +36,7 @@ interface ShareConfig {}
 /**
  * Shares one subscription to the source between all subscribers. It
  * starts with the first subscriber and ends when the last unsubscribes.
+ * @public
  */
 export function share<TValue, TError>(
   _opts?: ShareConfig,
@@ -136,7 +140,10 @@ export function share<TValue, TError>(
   };
 }
 
-/** Calls `observer` with each value, error and completion, and passes them on unchanged. */
+/**
+ * Calls `observer` with each value, error and completion, and passes them on unchanged.
+ * @public
+ */
 export function tap<TValue, TError>(
   observer: Partial<Observer<TValue, TError>>,
 ): MonoTypeOperatorFunction<TValue, TError> {
@@ -161,7 +168,10 @@ export function tap<TValue, TError>(
 }
 
 const distinctUnsetMarker = Symbol();
-/** Skips values equal to the one before, by `compare` (`===` by default). */
+/**
+ * Skips values equal to the one before, by `compare` (`===` by default).
+ * @public
+ */
 export function distinctUntilChanged<TValue, TError>(
   compare: (a: TValue, b: TValue) => boolean = (a, b) => a === b,
 ): MonoTypeOperatorFunction<TValue, TError> {
@@ -205,6 +215,7 @@ const isDeepEqual = <T>(a: T, b: T): boolean => {
  * Skips values equal to the one before, comparing objects and arrays by
  * their own enumerable keys. Objects without such keys, like two `Date`s,
  * always count as equal.
+ * @public
  */
 export function distinctUntilDeepChanged<
   TValue,

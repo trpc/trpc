@@ -73,6 +73,7 @@ export type GetInferenceHelpers<
  * type PostByIdInput = inferRouterInputs<AppRouter>['post']['byId'];
  * ```
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-input--output-types
+ * @public
  */
 export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'input',
@@ -84,6 +85,7 @@ export type inferRouterInputs<TRouter extends AnyRouter> = GetInferenceHelpers<
  * The output types of every procedure in a router, by path, as the client
  * gets them.
  * @see https://trpc.io/docs/client/vanilla/infer-types#inferring-input--output-types
+ * @public
  */
 export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   'output',

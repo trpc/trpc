@@ -20,6 +20,7 @@ import type { ExtractCursorType, TRPCReactRequestOptions } from './hooks/types';
 
 /**
  * Adds the `trpc` option to TanStack Query options.
+ * @public
  */
 export interface TRPCQueryBaseOptions {
   /**
@@ -30,6 +31,7 @@ export interface TRPCQueryBaseOptions {
 
 /**
  * Extra fields that tRPC adds to the options it returns.
+ * @public
  */
 export interface TRPCQueryOptionsResult {
   trpc: {
@@ -45,6 +47,7 @@ type TRPCInfiniteOptionOverrides = TRPCOptionOverrides | 'initialPageParam';
 
 /**
  * Options you pass to `queryOptions` without `initialData`.
+ * @public
  */
 export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
@@ -61,6 +64,7 @@ export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
 
 /**
  * What `queryOptions` returns without `initialData`.
+ * @public
  */
 export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
   extends
@@ -76,6 +80,7 @@ export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
 
 /**
  * Options you pass to `queryOptions` with `initialData`.
+ * @public
  */
 export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
@@ -92,6 +97,7 @@ export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
 
 /**
  * What `queryOptions` returns with `initialData`.
+ * @public
  */
 export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
   extends
@@ -107,6 +113,7 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
 
 /**
  * Options you pass to `queryOptions` when `queryFn` can't be `skipToken`.
+ * @public
  */
 export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends
@@ -123,6 +130,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
 
 /**
  * What `queryOptions` returns when `queryFn` can't be `skipToken`.
+ * @public
  */
 export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
@@ -142,6 +150,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsOut<
 
 /**
  * Options you pass to `infiniteQueryOptions` without `initialData`.
+ * @public
  */
 export interface UndefinedTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -169,6 +178,7 @@ export interface UndefinedTRPCInfiniteQueryOptionsIn<
 
 /**
  * What `infiniteQueryOptions` returns without `initialData`.
+ * @public
  */
 export interface UndefinedTRPCInfiniteQueryOptionsOut<
   TInput,
@@ -194,6 +204,7 @@ export interface UndefinedTRPCInfiniteQueryOptionsOut<
 
 /**
  * Options you pass to `infiniteQueryOptions` with `initialData`.
+ * @public
  */
 export interface DefinedTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -221,6 +232,7 @@ export interface DefinedTRPCInfiniteQueryOptionsIn<
 
 /**
  * What `infiniteQueryOptions` returns with `initialData`.
+ * @public
  */
 export interface DefinedTRPCInfiniteQueryOptionsOut<
   TInput,
@@ -246,6 +258,7 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
 
 /**
  * Options you pass to `infiniteQueryOptions` when `queryFn` can't be `skipToken`.
+ * @public
  */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -273,6 +286,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
 
 /**
  * What `infiniteQueryOptions` returns when `queryFn` can't be `skipToken`.
+ * @public
  */
 export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
@@ -314,7 +328,7 @@ export interface UseMutationOverride {
 }
 
 /**
- * @internal
+ * @public
  */
 export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
   /**
