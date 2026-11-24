@@ -260,7 +260,13 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
           })
         : err,
     report: (error, request, path, type) => {
-      opts.onError?.({ error, path, type, request });
+      // A throwing `onError` mustn't fail what it reports on, such as an
+      // event stream whose headers are already sent.
+      try {
+        opts.onError?.({ error, path, type, request });
+      } catch {
+        // ignored: the error it was told about is still answered
+      }
     },
     fork: (session, context = Context.empty()) => {
       const fiber = Effect.runForkWith(context)(session);

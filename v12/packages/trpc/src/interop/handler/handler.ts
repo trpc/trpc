@@ -723,26 +723,39 @@ export function createV11Handler<
           idField,
         );
       };
-      const errorFrame = (err: AnyTrpcError) => {
+      // An error event that can't be encoded either (a transformer that
+      // throws) is reported too, and the stream ends, as v11's does.
+      const errorFrame = (err: AnyTrpcError): Stream.Stream<string> => {
         report(err, request, call.path, 'subscription');
-        return frame(
-          'serialized-error',
-          JSON.stringify(
-            output.serialize(
-              errorShape(err, call.path, 'subscription', call.procedure),
-            ),
-          ),
+        return Stream.fromEffect(
+          Effect.try({
+            try: () =>
+              frame(
+                'serialized-error',
+                JSON.stringify(
+                  output.serialize(
+                    errorShape(err, call.path, 'subscription', call.procedure),
+                  ),
+                ),
+              ),
+            catch: unexpectedError,
+          }),
+        ).pipe(
+          Stream.catch((failure) => {
+            report(failure, request, call.path, 'subscription');
+            return Stream.empty;
+          }),
         );
       };
       const events: Stream.Stream<string, AnyTrpcError> = Exit.isFailure(exit)
-        ? Stream.make(errorFrame(normalizeCause(exit.cause)))
+        ? errorFrame(normalizeCause(exit.cause))
         : (exit.value as Stream.Stream<unknown, AnyTrpcError>).pipe(
             Stream.map(eventFrame),
             Stream.concat(Stream.make(frame('return', ''))),
             Stream.catchCause((cause) =>
               Cause.hasInterruptsOnly(cause)
                 ? Stream.failCause(cause)
-                : Stream.make(errorFrame(normalizeCause(cause))),
+                : errorFrame(normalizeCause(cause)),
             ),
           );
       // Abort inside the merge: interrupting the merge waits for this side's

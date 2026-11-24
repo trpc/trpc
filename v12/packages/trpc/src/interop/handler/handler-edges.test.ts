@@ -56,6 +56,10 @@ const router = t.router({
   slow: t.procedure.subscription(() =>
     Stream.fromEffect(Effect.as(Effect.sleep('60 millis'), 'late')),
   ),
+  conflictEvents: t.procedure.subscription(async function* () {
+    yield 1;
+    throw error({ code: 'CONFLICT', message: 'Taken' });
+  }),
 });
 
 type Options = Partial<V11HandlerOptions<typeof router>>;
@@ -329,6 +333,51 @@ test('subscriptions: invalid input is an error event, cookies set, pings optiona
   expect(slow).toContain('event: ping');
   expect(slow).toContain('data: "late"');
   await chatty.dispose();
+});
+
+test('an SSE event that cannot be serialized is reported with its call, then the stream ends', async () => {
+  const reports: unknown[] = [];
+  const handler = make({
+    transformer: {
+      serialize: () => {
+        throw new Error('Cannot serialize');
+      },
+      deserialize: (v: unknown) => v,
+    },
+    onError: (opts) => {
+      reports.push({
+        path: opts.path,
+        type: opts.type,
+        message: opts.error.message,
+      });
+    },
+  });
+  const text = await (await call(handler, '/trpc/events')).text();
+  expect(text).toContain('event: connected');
+  // The event fails to serialize, then so does the error event for it.
+  const reported = {
+    path: 'events',
+    type: 'subscription',
+    message: 'Cannot serialize',
+  };
+  expect(reports).toEqual([reported, reported]);
+  await handler.dispose();
+});
+
+test('an onError that throws does not end an SSE stream before its error event', async () => {
+  let reports = 0;
+  const handler = make({
+    onError: () => {
+      reports++;
+      throw new Error('onError failed');
+    },
+  });
+  const text = await (await call(handler, '/trpc/conflictEvents')).text();
+  expect(text).toContain('data: 1\n');
+  expect(text).toContain('event: serialized-error');
+  expect(text).toContain('"message":"Taken"');
+  expect(reports).toBe(1);
+  await handler.dispose();
 });
 
 test('createContext errors fail every call, with their code when they have one', async () => {
