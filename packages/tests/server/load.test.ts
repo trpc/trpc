@@ -1530,36 +1530,47 @@ describe.each([
 
   test.each([
     { name: '', allowWholeValues: false },
-    { name: ', also where the server takes whole values', allowWholeValues: true },
-  ])('`initialCursor` takes the place of the cursor of an input that is all read of another entry$name', async (opts) => {
-    await using ctx = setup({
-      pipelining: true,
-      allowWholeValues: opts.allowWholeValues,
-    });
-    using _quiet = quietWarnings();
-    const c = ctx.client;
+    {
+      name: ', also where the server takes whole values',
+      allowWholeValues: true,
+    },
+  ])(
+    '`initialCursor` takes the place of the cursor of an input that is all read of another entry$name',
+    async (opts) => {
+      await using ctx = setup({
+        pipelining: true,
+        allowWholeValues: opts.allowWholeValues,
+      });
+      using _quiet = quietWarnings();
+      const c = ctx.client;
 
-    const first = infiniteQuery(c.post.feed, {});
-    const res = experimental_load(c, {
-      // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
-      feed: infiniteQuery(
-        c.post.feed,
-        dataOf(first).pages[0]! as { cursor?: number },
-        { initialCursor: 1 },
-      ),
-    });
+      const first = infiniteQuery(c.post.feed, {});
+      const res = experimental_load(c, {
+        // `{ items, nextCursor, direction }`: its `cursor` is `undefined`
+        feed: infiniteQuery(
+          c.post.feed,
+          dataOf(first).pages[0]! as { cursor?: number },
+          { initialCursor: 1 },
+        ),
+      });
 
-    expect(await res.feed).toMatchObject({
-      pages: [{ items: posts.slice(1, 3) }],
-      pageParams: [1],
-    });
-  });
+      expect(await res.feed).toMatchObject({
+        pages: [{ items: posts.slice(1, 3) }],
+        pageParams: [1],
+      });
+    },
+  );
 
   test("an entry per item of an infinite query's `pages` has a row for the first page, and rejects if the query fails", async () => {
     const t = initTRPC.create();
     const appRouter = t.router({
       feed: t.procedure
-        .input(z.object({ cursor: z.number().nullish(), fail: z.boolean() }))
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+            fail: z.boolean().optional(),
+          }),
+        )
         .query((opts) => {
           if (opts.input.fail) {
             throw new TRPCError({ code: 'NOT_FOUND', message: 'no feed' });
