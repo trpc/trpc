@@ -56,6 +56,18 @@ const router = t.router({
   slow: t.procedure.subscription(() =>
     Stream.fromEffect(Effect.as(Effect.sleep('60 millis'), 'late')),
   ),
+  conflict: t.procedure.query(() =>
+    error({ code: 'CONFLICT', message: 'Taken' }),
+  ),
+  conflictRows: t.procedure.query(async function* () {
+    yield 1;
+    throw error({ code: 'CONFLICT', message: 'Taken' });
+  }),
+  rows: t.procedure.query(async function* () {
+    yield 'a';
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    yield 'b';
+  }),
   conflictEvents: t.procedure.subscription(async function* () {
     yield 1;
     throw error({ code: 'CONFLICT', message: 'Taken' });
@@ -377,6 +389,64 @@ test('an onError that throws does not end an SSE stream before its error event',
   expect(text).toContain('event: serialized-error');
   expect(text).toContain('"message":"Taken"');
   expect(reports).toBe(1);
+  await handler.dispose();
+});
+
+test('a throwing errorFormatter fails only its own streamed call, with the fallback shape', async () => {
+  const reports: unknown[] = [];
+  const handler = make({
+    errorFormatter: () => {
+      throw new Error('Formatter failed');
+    },
+    onError: (opts) => {
+      reports.push({ path: opts.path, message: opts.error.message });
+    },
+  });
+  const client = createTRPCUntypedClient<any>({
+    links: [
+      httpBatchStreamLink({
+        url: 'http://localhost/trpc',
+        fetch: (input, init) =>
+          handler.fetch(new Request(input as string, init as RequestInit)),
+      }),
+    ],
+  });
+  const collect = async (iterable: AsyncIterable<unknown>) => {
+    const seen: unknown[] = [];
+    for await (const value of iterable) seen.push(value);
+    return seen;
+  };
+  const fallback = {
+    message: 'Internal server error',
+    data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+  };
+  const [conflict, conflictRows, rows] = await Promise.allSettled([
+    client.query('conflict'),
+    client.query('conflictRows') as Promise<AsyncIterable<unknown>>,
+    client.query('rows') as Promise<AsyncIterable<unknown>>,
+  ]);
+  expect(conflict).toMatchObject({ status: 'rejected', reason: fallback });
+  if (conflictRows.status !== 'fulfilled' || rows.status !== 'fulfilled') {
+    throw new Error('expected results');
+  }
+  await expect(collect(conflictRows.value)).rejects.toMatchObject(fallback);
+  expect(await collect(rows.value)).toEqual(['a', 'b']);
+  expect(reports).toContainEqual({
+    path: 'conflict',
+    message: 'Formatter failed',
+  });
+  expect(reports).toContainEqual({
+    path: 'conflictRows',
+    message: 'Formatter failed',
+  });
+
+  const text = await (await call(handler, '/trpc/conflictEvents')).text();
+  expect(text).toContain('event: serialized-error');
+  expect(text).toContain('"message":"Internal server error"');
+  expect(reports).toContainEqual({
+    path: 'conflictEvents',
+    message: 'Formatter failed',
+  });
   await handler.dispose();
 });
 

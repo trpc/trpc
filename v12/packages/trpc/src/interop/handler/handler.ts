@@ -410,6 +410,34 @@ export function createV11Handler<
     const shape = v11Shape(error, path, procedure?.['~trpc'].errors);
     return opts.errorFormatter?.({ error, shape, path, type }) ?? shape;
   };
+  /**
+   * `errorShape` for an error sent in a stream, after the headers. A
+   * throwing `errorFormatter` is reported and the call gets a fixed
+   * `INTERNAL_SERVER_ERROR` shape, so the stream goes on: the rest of a
+   * batch still answers, and a subscription still gets its error event.
+   */
+  const streamedErrorShape = (
+    request: HttpServerRequest.HttpServerRequest,
+    err: AnyTrpcError,
+    path: string | undefined,
+    type: ProcedureType | 'unknown',
+    procedure?: AnyProcedure,
+  ): V11ErrorShape => {
+    try {
+      return errorShape(err, path, type, procedure);
+    } catch (cause) {
+      report(
+        unexpectedError(cause),
+        request,
+        path,
+        type === 'unknown' ? undefined : type,
+      );
+      return v11Shape(
+        new TrpcError.InternalServerError({ message: 'Internal server error' }),
+        undefined,
+      );
+    }
+  };
   const core: V11Core = {
     router: opts.router,
     base,
@@ -734,7 +762,13 @@ export function createV11Handler<
                 'serialized-error',
                 JSON.stringify(
                   output.serialize(
-                    errorShape(err, call.path, 'subscription', call.procedure),
+                    streamedErrorShape(
+                      request,
+                      err,
+                      call.path,
+                      'subscription',
+                      call.procedure,
+                    ),
                   ),
                 ),
               ),
@@ -875,7 +909,8 @@ export function createV11Handler<
               }
               report(result.error, request, call.path);
               return {
-                error: errorShape(
+                error: streamedErrorShape(
+                  request,
                   result.error,
                   call.path,
                   call.type,
@@ -890,7 +925,8 @@ export function createV11Handler<
               const call = calls[Number(path[0])];
               const err = normalizeCause(cause);
               report(err, request, call?.path);
-              return errorShape(
+              return streamedErrorShape(
+                request,
                 err,
                 call?.path,
                 call?.type ?? 'unknown',
