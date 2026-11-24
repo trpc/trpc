@@ -68,6 +68,11 @@ const router = t.router({
     await new Promise((resolve) => setTimeout(resolve, 20));
     yield 'b';
   }),
+  gaps: t.procedure.subscription(async function* () {
+    yield 1;
+    yield undefined;
+    yield 3;
+  }),
   conflictEvents: t.procedure.subscription(async function* () {
     yield 1;
     throw error({ code: 'CONFLICT', message: 'Taken' });
@@ -345,6 +350,14 @@ test('subscriptions: invalid input is an error event, cookies set, pings optiona
   expect(slow).toContain('event: ping');
   expect(slow).toContain('data: "late"');
   await chatty.dispose();
+});
+
+test('an undefined SSE event is an empty data line, which v11 clients read as undefined', async () => {
+  const handler = make();
+  const text = await (await call(handler, '/trpc/gaps')).text();
+  expect(text).toContain('data: 1\n\n\ndata: \n\n\ndata: 3\n');
+  expect(text).not.toContain('undefined');
+  await handler.dispose();
 });
 
 test('an SSE event that cannot be serialized is reported with its call, then the stream ends', async () => {

@@ -735,9 +735,14 @@ export function createV11Handler<
         url.searchParams.get('Last-Event-Id');
       let lastEventId =
         resumedId && !/[\0\n\r]/.test(resumedId) ? resumedId : null;
+      // `undefined` is an empty data line, which v11 clients read back as
+      // `undefined`, as v11 sends it since trpc/trpc#8146; `JSON.stringify`
+      // would give `undefined`, written as the text `data: undefined`.
+      const eventData = (value: unknown) =>
+        JSON.stringify(output.serialize(value)) ?? '';
       const eventFrame = (event: unknown) => {
         if (!isTracked(event)) {
-          const data = JSON.stringify(output.serialize(event));
+          const data = eventData(event);
           return lastEventId === null
             ? frame(undefined, data)
             : frame(undefined, data, 'id: \n') +
@@ -745,11 +750,7 @@ export function createV11Handler<
         }
         const idField = sseIdField(event.id);
         if (idField !== '') lastEventId = event.id;
-        return frame(
-          undefined,
-          JSON.stringify(output.serialize(event.data)),
-          idField,
-        );
+        return frame(undefined, eventData(event.data), idField);
       };
       // An error event that can't be encoded either (a transformer that
       // throws) is reported too, and the stream ends, as v11's does.
