@@ -546,7 +546,8 @@ export function experimental_dataOf<TEntry extends experimental_DataEntry>(
 ): experimental_DataOfEntry<TEntry>;
 export function experimental_dataOf<
   TEntry extends experimental_DataEntry,
-  TInner extends experimental_DataEntry,
+  // A query's entry: not one `experimental_dataOf()` built with a callback
+  TInner extends QueryDataEntry<any>,
 >(
   entry: TEntry,
   entryFrom: (data: experimental_DataOfEntry<TEntry>) => TInner,

@@ -1423,9 +1423,9 @@ describe.each([
     cyclic.self = cyclic;
 
     expect(() => query(c.author.byId, cyclic)).toThrow('has a cycle');
-    expect(() => query(c.author.byId, { id: 'ada', list: [cyclic] })).toThrow(
-      'has a cycle',
-    );
+    expect(() =>
+      query(c.author.byId, { id: 'ada', list: [cyclic] } as { id: string }),
+    ).toThrow('has a cycle');
     const shared = { at: 'x' };
     const post = query(c.post.bySlug, { slug: 'a' });
     const res = experimental_load(c, {
@@ -2285,6 +2285,10 @@ describe('types', () => {
       perItem(dataOf(list).items, (it) =>
         // @ts-expect-error - an item is a post
         query(client.author.byId, { id: it.missing }),
+      );
+      dataOf(post, (it) =>
+        // @ts-expect-error - the callback returns a query's entry
+        dataOf(post, () => query(client.author.byId, { id: it.authorId })),
       );
     });
   });
