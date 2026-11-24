@@ -18,6 +18,7 @@ import type {
 import {
   createOperationPipeline,
   failed,
+  isPipelineTaken,
   isUnread,
   notRun,
   outcomeOf,
@@ -923,20 +924,13 @@ export function experimental_load<
     return complete ? { input } : null;
   }
 
-  /**
-   * Whether a link that pipelines took an operation: one that reads it can go
-   * by saying what it reads, and only then. Any other link gets inputs that
-   * are filled in, so it costs nothing to a client that doesn't pipeline
-   */
-  function taken(pipeline: OperationPipeline) {
-    return pipeline.streams !== null;
-  }
-
   /** Whether a link that pipelines took every operation a call reads */
   function readsTaken(reads: PipelineCallReads<OperationPipeline>) {
     return (
-      (!reads.each || taken(reads.each.from)) &&
-      reads.reads.every((read) => read.kind === 'item' || taken(read.from))
+      (!reads.each || isPipelineTaken(reads.each.from)) &&
+      reads.reads.every(
+        (read) => read.kind === 'item' || isPipelineTaken(read.from),
+      )
     );
   }
 
@@ -974,7 +968,7 @@ export function experimental_load<
         context: { ...opts?.context, ...send.call.context, ...send.context },
       }),
     );
-    if (!taken(send.pipeline)) {
+    if (!isPipelineTaken(send.pipeline)) {
       abort.abort();
       signal.cleanup();
       return null;
@@ -990,7 +984,9 @@ export function experimental_load<
 
   /** Whether a link that pipelines took any operation of the load */
   function pipelined() {
-    return calls.some((call) => call.pipeline && taken(call.pipeline));
+    return calls.some(
+      (call) => call.pipeline && isPipelineTaken(call.pipeline),
+    );
   }
 
   /** A filled input, or a rejection that a link passes on as `blocked` */
