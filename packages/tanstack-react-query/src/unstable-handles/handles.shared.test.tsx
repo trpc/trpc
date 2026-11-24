@@ -222,6 +222,27 @@ describe('a description of queries', () => {
     }
   });
 
+  test('`wait` waits for the key it names only, when another key has the same entry', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
+    const author = experimental_query(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    });
+
+    for (const entries of [
+      { first: post, second: post, author },
+      { author, second: post, first: post },
+    ]) {
+      const [handles, data] = await loadHandles(trpc, entries, {
+        wait: ['first'],
+      });
+      expect(data).toEqual({ first: { slug: 'a', authorId: 'u1' } });
+      expect(handles.author.input).toEqual({ id: 'u1' });
+      expect(handles.second.input).toEqual({ slug: 'a' });
+    }
+  });
+
   test('`wait` names an entry of one query', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;

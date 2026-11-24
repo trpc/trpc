@@ -32,6 +32,11 @@ export function toTanStackEntries(opts: {
   /** The keys whose entries the load waits for */
   wait: readonly string[];
 }): Record<string, unknown> {
+  /**
+   * The entries of the keys in `wait`. Only to choose which of an entry's
+   * two forms another entry reads: a key is waited for by its name, not by
+   * its entry, which another key can have too
+   */
   const waited = new Set<object>();
   for (const key of opts.wait) {
     const value = opts.entries[key];
@@ -55,7 +60,8 @@ export function toTanStackEntries(opts: {
   function refFor(ref: EntryDataRef): EntryDataRef {
     let mapped = refs.get(ref);
     if (!mapped) {
-      const source = entryFor(ref.entry, false);
+      // The form a waited key has, if one has it: its data is there first
+      const source = entryFor(ref.entry, waited.has(ref.entry));
       const itemOf = ref.itemOf && refFor(ref.itemOf);
       mapped =
         source === ref.entry && itemOf === ref.itemOf
@@ -141,8 +147,7 @@ export function toTanStackEntries(opts: {
     });
   }
 
-  function entryFor(value: object, wait: boolean): object {
-    const isWaited = wait || waited.has(value);
+  function entryFor(value: object, isWaited: boolean): object {
     const done = isWaited ? entries.waited : entries.not;
     const existing = done.get(value);
     if (existing) {
@@ -154,7 +159,7 @@ export function toTanStackEntries(opts: {
     const shared = queryEntryStateOf(value);
     if (fromData) {
       const inner = entryFor(fromData.entry, isWaited);
-      const source = entryFor(fromData.source, false);
+      const source = entryFor(fromData.source, waited.has(fromData.source));
       result =
         inner === fromData.entry && source === fromData.source
           ? value
@@ -228,7 +233,11 @@ export function toTanStackEntries(opts: {
     );
   }
 
-  function tree(values: Record<string, unknown>): Record<string, unknown> {
+  function tree(
+    values: Record<string, unknown>,
+    /** The keys of `values` that are in `wait`: of the top level only */
+    waitedKeys: readonly string[],
+  ): Record<string, unknown> {
     return Object.fromEntries(
       Object.entries(values).map(([key, value]) => {
         if (value === null) {
@@ -246,12 +255,12 @@ export function toTanStackEntries(opts: {
           fromDataStateOf(value) ||
           perItemStateOf(value)
         ) {
-          return [key, entryFor(value, false)];
+          return [key, entryFor(value, waitedKeys.includes(key))];
         }
-        return [key, isPlainObject(value) ? tree(value) : value];
+        return [key, isPlainObject(value) ? tree(value, []) : value];
       }),
     );
   }
 
-  return tree(opts.entries);
+  return tree(opts.entries, opts.wait);
 }
