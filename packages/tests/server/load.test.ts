@@ -2087,6 +2087,53 @@ describe('httpBatchLink, without streaming', () => {
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
+  test("an infinite query whose cursor read data the link can't deserialize rejects with that error, and one with a literal cursor keeps it", async () => {
+    const identity = {
+      serialize: (value: unknown) => value,
+      deserialize: (value: unknown) => value,
+    };
+    const t = initTRPC.create({ transformer: identity });
+    const appRouter = t.router({
+      first: t.procedure.query(() => ({ next: 2, unreadable: true })),
+      feed: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+            direction: z.enum(['forward', 'backward']).optional(),
+            filter: z.number().optional(),
+          }),
+        )
+        .query((opts) => ({ at: opts.input.cursor ?? 0 })),
+    });
+    await using ctx = setupBatch(appRouter, {
+      ...identity,
+      deserialize: (value: unknown) => {
+        if (isObject(value) && value['unreadable'] === true) {
+          throw new Error('cannot read the first page');
+        }
+        return value;
+      },
+    });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const first = query(c.first);
+    const res = experimental_load(c, {
+      read: infiniteQuery(c.feed, { cursor: dataOf(first).next }),
+      literal: infiniteQuery(c.feed, { cursor: 1, filter: dataOf(first).next }),
+    });
+
+    // The server filled in the cursor, but the client never knew it
+    await expect(res.read).rejects.toThrow(
+      'Unable to transform response from server',
+    );
+    expect(await res.literal).toEqual({
+      pages: [{ at: 1 }],
+      pageParams: [1],
+    });
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
   /** A procedure the server serializes once to fill in a read, then fails to serialize for the response */
   function serializedOnce<TValue>(value: TValue) {
     let serialized = 0;

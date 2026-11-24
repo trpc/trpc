@@ -1189,15 +1189,35 @@ export function experimental_load<
         let data = outcome.data;
         if (call.type === 'infinite') {
           // As TanStack Query has it: its pages, and the cursor of each, as
-          // it was sent. The data a cursor read is there, as the page is
-          const input =
-            call.holes.length === 0
-              ? { ok: true as const, data: call.input }
-              : await fill({ value: call.input, items, skip: null });
-          const sent = input.ok ? firstPage(call, input.data) : undefined;
+          // it was sent. Only the cursor is filled in, so a literal one is
+          // as it is. One read of data the client couldn't read is unknown,
+          // though the server filled it in: the run fails with that error
+          const whole = standInOf(call.input) !== null;
+          const wholeRead = whole && call.initialCursor == null;
+          const cursor = await fill({
+            value: whole
+              ? wholeRead
+                ? call.input
+                : call.initialCursor
+              : isPlainObject(call.input)
+                ? call.input['cursor']
+                : undefined,
+            items,
+            skip: null,
+          });
+          if (!cursor.ok) {
+            return failed(ownError(cursor.error));
+          }
+          const sent = wholeRead ? firstPage(call, cursor.data) : null;
           data = {
             pages: [outcome.data],
-            pageParams: [isPlainObject(sent) ? sent['cursor'] : undefined],
+            pageParams: [
+              wholeRead
+                ? isPlainObject(sent)
+                  ? sent['cursor']
+                  : undefined
+                : cursor.data,
+            ],
           };
         }
         const snapshot = snapshotOf(call, data);
