@@ -165,13 +165,16 @@ export interface BatchCall {
 }
 
 /**
- * One JSONL line of a batch response.
+ * One JSONL line of a batch response: a call's head (`deferred` when chunks
+ * follow), a chunk of its deferred values, then `{ i }` once they've all
+ * settled.
  * @since 0.1.0
  * @stability stable
  */
 export type BatchLine =
-  | { i: number; status: number; body: unknown }
-  | { i: number; chunk: unknown };
+  | { i: number; status: number; body: unknown; deferred?: true }
+  | { i: number; chunk: unknown }
+  | { i: number };
 
 /**
  * SSE event names. A subscription event with deferred values (`Promise`s,

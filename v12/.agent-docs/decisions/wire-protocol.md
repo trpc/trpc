@@ -6,7 +6,7 @@
   - Bodies keep the `{ json, refs? }` wrapper, whatever the serializer.
   - Queries are `GET` with one `?input=` param (the serialized JSON, keys sorted), falling back per `longQuery` above `maxUrlLength` ([`progressive-json.md`](./progressive-json.md), Q11.3). Mutations require `POST` with `content-type: application/json`, which is the CSRF guard.
   - Errors are `{ error: { code, message, data, defined } }` with the error's HTTP status, which the body doesn't repeat.
-  - Batching is `POST {base}` with `trpc-batch: 1`, answered with JSONL in completion order: `{ i, status, body }`, plus `{ i, chunk }` for deferred values.
+  - Batching is `POST {base}` with `trpc-batch: 1`, answered with JSONL in completion order: `{ i, status, body }` (`deferred: true` when chunks follow), plus `{ i, chunk }` for deferred values and `{ i }` once they've all settled, as sockets' `chunkEnd`. (agent) The end line tells the client a call no longer needs the request, so a streamed call aborted in a batch can stop its request once no other call is still streaming.
   - Deferred values (a `Promise` or `AsyncIterable` nested in an output) stream as JSONL, in the serializer's async format ([`nested-deferred-values-kept.md`](./nested-deferred-values-kept.md)). The server only switches to JSONL when an output contains one, so plain responses stay `application/json`.
   - `trpc-version: 12` on requests and responses; a mismatch is `UNSUPPORTED_PROTOCOL` (400).
   - Subscriptions are SSE ([`fetch-sse.md`](./fetch-sse.md)).

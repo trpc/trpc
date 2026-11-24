@@ -6,8 +6,8 @@ import { badResponse } from '../events.ts';
 export interface Batch<C> {
   readonly calls: ReadonlyArray<C>;
   /**
-   * Closed when a caller stops waiting and every other call is gone too
-   * (answered, or its caller stopped waiting): the batch is no longer needed.
+   * Closed when a caller stops waiting or reading and every other call is
+   * released too: the batch is no longer needed.
    */
   readonly scope: Scope.Scope;
   /** Answers call `i` now. A call keeps its first answer. */
@@ -17,6 +17,13 @@ export interface Batch<C> {
     i: number,
     result: Effect.Effect<unknown, AnyTrpcError>,
   ) => Effect.Effect<void>;
+  /**
+   * Call `i` no longer needs the batch: its answer has nothing left to
+   * stream. An answered call holds the batch until it's released.
+   */
+  readonly release: (i: number) => Effect.Effect<void>;
+  /** Call `i`'s caller stopped reading its answer, which releases it. */
+  readonly leave: (i: number) => Effect.Effect<void>;
 }
 
 /**
@@ -30,7 +37,7 @@ export function makeBatcher<C>(opts: {
   readonly send: (batch: Batch<C>) => Effect.Effect<void, AnyTrpcError>;
 }): (call: C) => Effect.Effect<unknown, AnyTrpcError> {
   /**
-   * A call waiting for its batch. `gone` once it settled or its caller
+   * A call waiting for its batch. `gone` once it's released or its caller
    * stopped waiting; `onAbort` closes the batch's scope once every call in
    * it is gone.
    */
@@ -47,18 +54,31 @@ export function makeBatcher<C>(opts: {
   ): Effect.Effect<void> =>
     Effect.gen(function* () {
       const scope = yield* Scope.make();
-      const onAbort = Effect.suspend(() =>
-        entries.every((entry) => entry.request.gone)
+      /**
+       * Whether a caller stopped waiting or reading. A batch whose calls all
+       * finished streaming ends by itself, so only then is it aborted.
+       */
+      let left = false;
+      const closeIfGone = Effect.suspend(() =>
+        left && entries.every((entry) => entry.request.gone)
           ? Scope.close(scope, Exit.void)
           : Effect.void,
       );
+      const onAbort = Effect.suspend(() => {
+        left = true;
+        return closeIfGone;
+      });
       for (const entry of entries) entry.request.onAbort = onAbort;
       const settle = (i: number, exit: Exit.Exit<unknown, AnyTrpcError>) => {
-        const entry = entries[i];
-        if (!entry) return;
-        entry.request.gone = true;
-        entry.completeUnsafe(exit);
+        entries[i]?.completeUnsafe(exit);
       };
+      const release = (i: number) =>
+        Effect.suspend(() => {
+          const entry = entries[i];
+          if (!entry) return Effect.void;
+          entry.request.gone = true;
+          return closeIfGone;
+        });
       /**
        * Answers still resolving. `Effect.request` fails the calls a batch
        * ends without settling, so the batch waits for them.
@@ -69,6 +89,12 @@ export function makeBatcher<C>(opts: {
           calls: entries.map((entry) => entry.request.call),
           scope,
           settle,
+          release,
+          leave: (i) =>
+            Effect.suspend(() => {
+              left = true;
+              return release(i);
+            }),
           settleWith: (i, result) =>
             Effect.exit(result).pipe(
               Effect.map((exit) => settle(i, exit)),

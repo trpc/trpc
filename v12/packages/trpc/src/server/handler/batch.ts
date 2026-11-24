@@ -169,11 +169,12 @@ export const batched: (
                     i,
                     status: result.status,
                     body: result.body,
+                    ...(result.chunks ? { deferred: true as const } : {}),
                   } satisfies BatchLine),
                   result.chunks
                     ? runChunks(result.chunks, (chunk) =>
                         write({ i, chunk } satisfies BatchLine),
-                      )
+                      ).pipe(Effect.andThen(write({ i } satisfies BatchLine)))
                     : Effect.void,
                 ),
               { concurrency: 'unbounded', discard: true },

@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import { Cause, Effect, Exit, Fiber, Queue, Scope, Stream } from 'effect';
 import {
   FetchHttpClient,
   HttpBody,
@@ -36,7 +36,7 @@ import type {
   Frame,
   SerializeReturn,
 } from '../../../transformer/index.ts';
-import { toClientError, type Operation } from '../../link.ts';
+import { abortedBy, toClientError, type Operation } from '../../link.ts';
 import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
@@ -529,6 +529,25 @@ export function makeTransport(
       const frames = yield* Effect.forEach(ops, () =>
         Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
       );
+      /**
+       * Per call with deferred values still streaming: fails them once its
+       * caller aborts, and leaves the batch.
+       */
+      const watchers = new Map<number, Fiber.Fiber<void>>();
+      /** Ends call `i`'s frames: it has nothing left to stream. */
+      const end = (
+        i: number,
+        queue: Queue.Queue<Frame, AnyTrpcError | Cause.Done>,
+      ) =>
+        Effect.suspend(() => {
+          Queue.endUnsafe(queue);
+          const watcher = watchers.get(i);
+          watchers.delete(i);
+          return Effect.andThen(
+            watcher ? Fiber.interrupt(watcher) : Effect.void,
+            batch.release(i),
+          );
+        });
       const onLine = (line: BatchLine, headers: Headers) => {
         const op = ops[line.i];
         const queue = frames[line.i];
@@ -537,12 +556,12 @@ export function makeTransport(
           Queue.offerUnsafe(queue, line.chunk as Frame);
           return Effect.void;
         }
+        if (!('status' in line)) return end(line.i, queue);
         try {
           report(op, line.status, headers);
         } catch (error) {
           batch.settle(line.i, Exit.fail(error as AnyTrpcError));
-          Queue.endUnsafe(queue);
-          return Effect.void;
+          return end(line.i, queue);
         }
         if (line.status >= 400) {
           let error: AnyTrpcError;
@@ -552,11 +571,10 @@ export function makeTransport(
             error = badResponse('Invalid error message')(cause);
           }
           batch.settle(line.i, Exit.fail(error));
-          Queue.endUnsafe(queue);
-          return Effect.void;
+          return end(line.i, queue);
         }
         Queue.offerUnsafe(queue, line.body as Frame);
-        return batch.settleWith(
+        const answer = batch.settleWith(
           line.i,
           transformer
             .deserializeStream(Stream.fromQueue(queue), {
@@ -568,6 +586,22 @@ export function makeTransport(
                 Effect.fail(toHttpError(Cause.squash(cause))),
               ),
             ),
+        );
+        if (!line.deferred) return Effect.andThen(answer, end(line.i, queue));
+        const signal = op.signal;
+        if (!signal) return answer;
+        return Effect.andThen(
+          answer,
+          abortedBy(signal).pipe(
+            Effect.catch((error) => {
+              Queue.failCauseUnsafe(queue, Cause.fail(error));
+              return batch.leave(line.i);
+            }),
+            Effect.forkDetach,
+            Effect.map((watcher) => {
+              watchers.set(line.i, watcher);
+            }),
+          ),
         );
       };
       return yield* Effect.gen(function* () {
@@ -611,8 +645,9 @@ export function makeTransport(
           Effect.fail(toHttpError(Cause.squash(cause))),
         ),
         Effect.ensuring(
-          Effect.sync(() => {
+          Effect.suspend(() => {
             for (const queue of frames) Queue.endUnsafe(queue);
+            return Fiber.interruptAll(watchers.values());
           }),
         ),
       );

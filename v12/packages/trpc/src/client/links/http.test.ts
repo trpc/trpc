@@ -49,18 +49,20 @@ const router = t.router({
       throw new Error('kaboom');
     }) as Promise<number>,
   })),
-  ticks: t.procedure.mutation(async function* () {
-    try {
-      for (let n = 0; ; n++) {
-        await sleep(5);
-        yield n;
-      }
-    } finally {
-      ticksStopped++;
-    }
-  }),
+  ticks: t.procedure.mutation(countUp),
+  clock: t.procedure.query(countUp),
 });
 let ticksStopped = 0;
+async function* countUp() {
+  try {
+    for (let n = 0; ; n++) {
+      await sleep(5);
+      yield n;
+    }
+  } finally {
+    ticksStopped++;
+  }
+}
 type AppRouter = typeof router;
 
 async function setup(opts: { serverBatch?: false; clientBatch?: false }) {
@@ -205,6 +207,53 @@ test('aborting a streamed output rejects with CLIENT_CLOSED_REQUEST and stops th
   );
   expect(seen).toEqual([0, 1, 2]);
   expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
+});
+
+test('aborting a streamed output in a batch stops it once its siblings have nothing left to stream', async () => {
+  await using ctx = await setup({});
+  const before = ticksStopped;
+  const controller = new AbortController();
+  const [bumped, ticks] = await Promise.all([
+    ctx.client.bump.mutate({ by: 1 }),
+    ctx.client.ticks.mutate(undefined, { signal: controller.signal }),
+  ]);
+  expect(bumped).toEqual({ bumped: 1 });
+  const seen: number[] = [];
+  const [, err] = await safe(
+    (async () => {
+      for await (const n of ticks) {
+        seen.push(n);
+        if (n === 2) controller.abort();
+        if (n === 10) break;
+      }
+    })(),
+  );
+  expect(seen).toEqual([0, 1, 2]);
+  expect(err).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
+  expect(ctx.server.requests).toHaveLength(1);
+});
+
+test("aborting a streamed output in a batch leaves a sibling's deferred values streaming", async () => {
+  await using ctx = await setup({});
+  const before = ticksStopped;
+  const controller = new AbortController();
+  const [dashboard, ticks] = await Promise.all([
+    ctx.client.dashboard.query(),
+    ctx.client.clock.query(undefined, { signal: controller.signal }),
+  ]);
+  const iterator = ticks[Symbol.asyncIterator]();
+  expect((await iterator.next()).value).toBe(0);
+  controller.abort();
+  await expect(iterator.next()).rejects.toMatchObject({
+    code: 'CLIENT_CLOSED_REQUEST',
+  });
+  const items: string[] = [];
+  for await (const item of dashboard.feed) items.push(item);
+  expect(items).toEqual(['a', 'b', 'c']);
+  expect(await dashboard.stats).toEqual({ visits: 42 });
+  // Once the sibling has nothing left to stream, nothing holds the batch open
   await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
 });
 
