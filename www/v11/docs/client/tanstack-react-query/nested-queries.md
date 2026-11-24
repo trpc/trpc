@@ -287,28 +287,45 @@ import {
 import type {
   experimental_inferHandles,
   inferInfiniteQueryHandle,
+  inferQueryHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { useTRPC, type TRPC } from '~/trpc/client';
 import type { postPageEntries } from './post-page';
 
-export function AuthorCard(props: {
-  handles: experimental_inferHandles<typeof postPageEntries>;
-}) {
+type PostPageHandles = experimental_inferHandles<typeof postPageEntries>;
+
+export function AuthorCard(props: { handles: PostPageHandles }) {
   const trpc = useTRPC();
   const { handles } = props;
-  // The author's id is in the post
   const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
-  const authorQuery = useSuspenseQuery(
-    fromHandle(trpc, experimental_handleOfItem(handles.author, postQuery.data)),
+  return (
+    <article>
+      <h2>{postQuery.data.title}</h2>
+      {/* The author's id is in the post */}
+      <Suspense fallback="Loading…">
+        <Author
+          author={experimental_handleOfItem(handles.author, postQuery.data)}
+          moreFromTeam={handles.moreFromTeam}
+        />
+      </Suspense>
+    </article>
   );
+}
+
+function Author(props: {
+  author: inferQueryHandle<TRPC['author']['byId']>;
+  moreFromTeam: PostPageHandles['moreFromTeam'];
+}) {
+  const trpc = useTRPC();
+  const authorQuery = useSuspenseQuery(fromHandle(trpc, props.author));
   return (
     <address>
       {authorQuery.data.name}
       <Suspense fallback="Loading…">
         <MoreFromTeam
           posts={experimental_handleOfItem(
-            handles.moreFromTeam,
+            props.moreFromTeam,
             authorQuery.data,
           )}
         />
