@@ -1063,13 +1063,19 @@ function isVoidLikeInput(inputType: Type | null): boolean {
   return isUnionOfVoids;
 }
 
-/** Whether `undefined` is among the values an input type accepts. */
+/**
+ * Whether `undefined` is among the values an input type accepts.
+ *
+ * `any` and `unknown` accept `undefined` too, but without an `Undefined` flag
+ * or union member of their own, so they are checked explicitly.
+ */
 function acceptsUndefined(inputType: Type | null): boolean {
   if (!inputType) {
     return false;
   }
   return (
     hasFlag(inputType, TypeFlags.Undefined) ||
+    isUnknownLikeType(inputType) ||
     (inputType.isUnionType() &&
       inputType
         .getTypes()

@@ -39,6 +39,18 @@ describe('generateOpenAPIDocument optional procedure input', () => {
     expect(getRequestBody(doc, 'nullish')?.required).toBe(false);
   });
 
+  it('does not require the body of a mutation whose input is any', async () => {
+    const doc = await getDoc();
+    // `any` accepts `undefined` without an explicit `undefined` union member.
+    expect(getRequestBody(doc, 'any')?.required).toBe(false);
+  });
+
+  it('does not require the body of a mutation whose input is unknown', async () => {
+    const doc = await getDoc();
+    // `unknown` accepts `undefined` without an explicit `undefined` union member.
+    expect(getRequestBody(doc, 'unknown')?.required).toBe(false);
+  });
+
   it('still requires the body of a mutation whose input is not optional', async () => {
     const doc = await getDoc();
     expect(getRequestBody(doc, 'required')?.required).toBe(true);
