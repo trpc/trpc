@@ -536,6 +536,8 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     retryLink({
       retry: (opts) =>
+        // An operation that was aborted, such as one the load sends again
+        !opts.op.signal?.aborted &&
         // A query that never ran because one it reads failed
         !experimental_isPipelineFallback(opts.error) &&
         opts.error.data?.code === 'INTERNAL_SERVER_ERROR' &&
@@ -563,6 +565,8 @@ POST /author.byId,post.list               ← its retry, with what reads it
 - **Once that query's retries give up**, the queries that read it reject with its error, and `retry` is asked about them too. `experimental_isPipelineFallback(opts.error)` is `true` for them: return `false`, or each waits `retryDelayMs` for nothing before it rejects. Without pipelining there are no such errors, so a `retry` without this check works as it always has.
 - **A request that fails as a whole, such as on a network error**, is retried as one request when `retry` returns `true` for the post's error: its next attempt has the author's query and the team's posts in it again. The `retry` above returns `false` for a network error, which has no `data.code`.
 - **A query for every item that fails for one item** comes back as a query of its own for that item, and the item's queries that read it go in its request. `retryLink` counts the failure in the first request as its first attempt.
+- **An operation the load aborted is asked about too**: when a link that doesn't pipeline takes a query that reads another, the load aborts that operation and sends the query again with its input filled in. `opts.op.signal?.aborted` is `true` for it. Return `false`, as for any aborted operation.
+- **An item's failure in the first request is only retried through a link that pipelines.** That link replays the server's error as the item's first attempt, for `retryLink` to count. If a `splitLink` sends the item's query to a link that doesn't pipeline, such as `httpLink`, that link never saw the error: the item rejects with it, `retry` isn't asked, and it doesn't run again.
 - **Without a link that retries, a failure is final.** The query rejects, and so do the queries that read it, with its error. Nothing is sent again.
 
 [See it in the kitchen sink](/kitchen-sink/retries): queries fail on purpose, and a log shows each request and each attempt.

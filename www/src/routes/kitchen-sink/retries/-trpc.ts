@@ -243,6 +243,8 @@ export function loadRetries(opts: {
         ? [
             retryLink<AppRouter>({
               retry: (retryOpts) =>
+                // An operation that was aborted
+                !retryOpts.op.signal?.aborted &&
                 // A query that never ran because one it reads failed for good
                 !experimental_isPipelineFallback(retryOpts.error) &&
                 retryOpts.attempts < (plan.retry?.attempts ?? 1),

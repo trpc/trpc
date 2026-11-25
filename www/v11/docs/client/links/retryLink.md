@@ -18,7 +18,7 @@ If you use `@trpc/react-query` you will generally **not** need this link as it's
 :::info
 With [nested queries in one request](/docs/client/vanilla/nested-queries#retries), each query of an `experimental_load()` goes through the links by itself. `retryLink` retries only the query that failed, and the queries that read it go in its retry's request.
 
-Only with pipelining: once a query's retries give up, the queries that read it reject with its error. Skip them in `retry` with [`experimental_isPipelineFallback(opts.error)`](/docs/client/vanilla/nested-queries#retries). Without pipelining you don't need it.
+Only with pipelining: once a query's retries give up, the queries that read it reject with its error. Skip them in `retry` with [`experimental_isPipelineFallback(opts.error)`](/docs/client/vanilla/nested-queries#retries). A load also aborts a query's operation to send it again when a link that doesn't pipeline takes it: skip that with `opts.op.signal?.aborted`. Without pipelining you don't need either.
 :::
 
 ## Usage
