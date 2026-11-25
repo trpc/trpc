@@ -6,14 +6,8 @@ import type {
   QueryFunctionContext,
 } from '@tanstack/react-query';
 import { isCancelledError, skipToken } from '@tanstack/react-query';
-import type {
-  PipelinedCall,
-  PipelineSource,
-} from '@trpc/client/unstable-internals';
-import {
-  createOperationPipeline,
-  pipeCall,
-} from '@trpc/client/unstable-internals';
+import type { OperationPipeline } from '@trpc/client/unstable-internals';
+import { createOperationPipeline } from '@trpc/client/unstable-internals';
 import type {
   EntryDataRef,
   EntryInputRef,
@@ -26,6 +20,7 @@ import type {
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
 import { readPipelinePath } from '@trpc/server/unstable-core-do-not-import';
+import { getClientArgs } from '../internals/utils';
 import type { EntryQueryOptions, EntryState } from './entry';
 import { entryCause, TRPCEntryError } from './entryError';
 import { toHandle } from './handle';
@@ -43,12 +38,13 @@ import {
   whenAll,
 } from './outcome';
 import {
-  dataOfCall,
-  outcomeOfCall,
   outcomeOfItem,
+  outcomeOfSend,
   sameValue,
+  sendReading,
   withPipelinedResult,
 } from './pipelined';
+import type { ReadingSend } from './pipelined';
 import type { EntryTree, LinkedLeaf } from './plan';
 import { linkEntries, mapEntryTree, readEntries } from './plan';
 import type { HandleType, TRPCEntryKind } from './types';
@@ -243,13 +239,14 @@ function unfinishedHandle(leaf: LinkedLeaf, data: SourceData) {
 
 /**
  * What the server read of an entry, for the entries that read its data: the
- * pipeline of its request, which a link that pipelines opens, or the call
- * the server makes for it in another's request; and what that returned, in
- * the shape of the query's data. That is only ever compared with the
- * client's data: what an entry's input is filled in with is the cache's.
+ * pipeline of its operation, which a link that pipelines opens, or puts in
+ * another's request; and what that returned, in the shape of the query's
+ * data. That is only ever compared with the client's data: what an entry's
+ * input is filled in with is the cache's.
  */
 interface ServerSide {
-  source: PipelineSource;
+  /** The pipeline of its operation, which an operation that reads it reads */
+  source: OperationPipeline;
   sent: Unit<unknown>;
 }
 
@@ -308,10 +305,12 @@ export function settledOf(load: EntryLoad): Promise<unknown> {
     : load.items.then((items) => (items.ok ? Promise.all(items.data) : null));
 }
 
-/** A call the server makes in another's request, and what it read */
-interface PipelinedSend {
-  call: PipelinedCall;
-  /** What the server read of each entry the call reads, by entry */
+/**
+ * The operation of an entry that the server runs in another's request, and
+ * what it read
+ */
+interface PipelinedSend extends ReadingSend {
+  /** What the server read of each entry the operation reads, by entry */
   sent: ReadonlyMap<object, Unit<unknown>>;
 }
 
@@ -521,7 +520,7 @@ export function beginEntries(opts: {
     );
     const sent = new Map<object, Unit<unknown>>();
     const reads = read.flatMap(
-      ({ ref, source }): PipelineCallReads<PipelineSource>['reads'] => {
+      ({ ref, source }): PipelineCallReads<OperationPipeline>['reads'] => {
         if (list && leaf.fromItem(ref)) {
           return [
             {
@@ -554,7 +553,7 @@ export function beginEntries(opts: {
     if (reads.length !== read.length) {
       return null;
     }
-    let each: PipelineCallReads<PipelineSource>['each'] = null;
+    let each: PipelineCallReads<OperationPipeline>['each'] = null;
     if (list) {
       if (!list.source.server) {
         return null;
@@ -562,12 +561,57 @@ export function beginEntries(opts: {
       each = { from: list.source.server.source, path: list.path };
       sent.set(list.ref.entry, list.source.server.sent);
     }
-    const call = pipeCall({
+    const readers = readersOf(
+      new Map([
+        ...pipelined.reads.map(
+          ({ ref, source }) => [ref.entry, source] as const,
+        ),
+        ...(list ? [[list.ref.entry, list.source] as const] : []),
+      ]),
+    );
+    /**
+     * Its input, filled in with the client's data, as the query's own
+     * request has it. A query for every item has none: its runs each have an
+     * input of their own
+     */
+    const inputFrom = (data: SourceData) => {
+      if (list) {
+        return undefined;
+      }
+      const options = optionsFrom(leaf, { data, item: null, holes: false });
+      return getClientArgs(
+        options.queryKey,
+        undefined,
+        leaf.state.type === 'infinite'
+          ? { pageParam: options.initialPageParam, direction: 'forward' }
+          : undefined,
+      )[1];
+    };
+    // Through its own links: they may send it elsewhere than what it reads
+    const sending = sendReading({
+      transport: leaf.state.transport,
       path: request.path,
       input: request.input,
       reads: { each, reads },
+      perItem: list !== null,
+      resolve: () =>
+        allOf(readers).then((data) =>
+          data.ok ? inputFrom(data.data) : Promise.reject(data.error),
+        ),
+      known: () => {
+        const data = new Map<object, unknown>();
+        for (const [entry, reader] of readers) {
+          const state = reader.state();
+          if (state.status === 'pending' || !state.outcome.ok) {
+            return null;
+          }
+          data.set(entry, state.outcome.data);
+        }
+        const input = attemptNow(() => inputFrom(data));
+        return input.ok ? { input: input.data } : null;
+      },
     });
-    return call && { call, sent };
+    return sending && { ...sending, sent };
   }
 
   /** The units the data of an entry's sources is read from, by entry */
@@ -714,7 +758,10 @@ export function beginEntries(opts: {
       if (send && state.type === 'query') {
         // An infinite query's data is its pages, which no one request returns,
         // so the server can't read it for the entries that read this one
-        server = { source: send.call, sent: unitOf(dataOfCall(send.call)) };
+        server = {
+          source: send.pipeline,
+          sent: unitOf(send.settled),
+        };
       }
       // The query starts in the step in which the last of the entries it reads
       // has data. When one of them has none, this entry never starts
@@ -739,7 +786,7 @@ export function beginEntries(opts: {
         const built = send
           ? withPipelinedResult({
               options: filled.data,
-              result: outcomeOfCall(send.call),
+              result: outcomeOfSend(send),
               sameInput: async (context) => {
                 if (
                   state.type === 'infinite' &&
@@ -936,7 +983,7 @@ export function beginEntries(opts: {
                   const place = placeOf(listItem);
                   options = withPipelinedResult({
                     options,
-                    result: outcomeOfItem(send.call, serverIndexes(listItem)),
+                    result: outcomeOfItem(send, serverIndexes(listItem)),
                     // The server ran the same query at the item's place. Not
                     // by their hashes: `-0` and `0` hash alike, and a
                     // transformer, such as superjson, can tell them apart

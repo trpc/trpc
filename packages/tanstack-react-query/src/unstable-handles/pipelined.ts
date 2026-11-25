@@ -1,12 +1,23 @@
 import type { QueryFunctionContext } from '@tanstack/react-query';
 import { skipToken } from '@tanstack/react-query';
-import type { PipelinedCall } from '@trpc/client/unstable-internals';
-import { readPipelinedRun } from '@trpc/client/unstable-internals';
+import {
+  experimental_isPipelineFallback,
+  TRPCUntypedClient,
+} from '@trpc/client';
+import type { OperationPipeline } from '@trpc/client/unstable-internals';
+import {
+  createOperationPipeline,
+  isPipelineTaken,
+  pipelineContext,
+  readPipelinedRun,
+  readsContext,
+} from '@trpc/client/unstable-internals';
+import type { PipelineCallReads } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { streamIntoQuery } from '../internals/utils';
 import type { EntryQueryOptions } from './entry';
 import type { Outcome } from './outcome';
-import { failed, ok } from './outcome';
+import { attempt } from './outcome';
 import { isPlainObject } from './utils';
 
 /**
@@ -77,55 +88,44 @@ export type PipelinedOutcome =
 export const notRun: PipelinedOutcome = { kind: 'notRun' };
 
 /**
- * What a call that runs once settled to: its data, or its own error if it
- * ran and failed. Never rejects
+ * What the operation of a query that runs once ended with: its data, or its
+ * own error. It didn't run if what it reads failed: the query, which can't
+ * start then, would make its request itself. Never rejects
  */
-export function outcomeOfCall(call: PipelinedCall): Promise<PipelinedOutcome> {
-  return call.settled.then((settled): PipelinedOutcome => {
-    if (settled.status === 'not-run') {
-      return notRun;
-    }
-    const { outcome } = settled;
-    if (!outcome.ok) {
-      return { kind: 'error', error: outcome.error };
-    }
-    return outcome.data.kind === 'once'
-      ? { kind: 'data', data: outcome.data.data }
-      : // A call for every item is read by item, with `outcomeOfItem()`
-        notRun;
-  });
-}
-
-/** A call's data, as the outcome of what the server read. Never rejects */
-export function dataOfCall(call: PipelinedCall): Promise<Outcome<unknown>> {
-  return outcomeOfCall(call).then((outcome) =>
-    outcome.kind === 'data'
-      ? ok(outcome.data)
-      : failed(outcome.kind === 'error' ? outcome.error : null),
+export function outcomeOfSend(send: ReadingSend): Promise<PipelinedOutcome> {
+  return send.settled.then((settled): PipelinedOutcome =>
+    settled.ok
+      ? { kind: 'data', data: settled.data }
+      : experimental_isPipelineFallback(settled.error)
+        ? notRun
+        : { kind: 'error', error: settled.error },
   );
 }
 
 /**
- * One item's outcome of a call that the server ran for every item, at
+ * One item's outcome of the operation of a query for every item, at
  * `indexes`: `null` for an item the server ran no call for. Each item has
- * its own. A call that failed as a whole ran for none of them, so none has
- * its error. A run's error, also one the link couldn't read, is a
+ * its own. An operation that failed as a whole ran for none of them, so none
+ * has its error, and one that couldn't go in the request of its list ran for
+ * none either. A run's error, also one the link couldn't read, is a
  * `TRPCClientError` already, and is the item's as it is. Never rejects
  */
 export function outcomeOfItem(
-  call: PipelinedCall,
+  send: ReadingSend,
   indexes: number[] | null,
 ): Promise<PipelinedOutcome> {
-  return call.settled.then(async (settled): Promise<PipelinedOutcome> => {
-    if (
-      !indexes ||
-      settled.status === 'not-run' ||
-      !settled.outcome.ok ||
-      settled.outcome.data.kind !== 'each'
-    ) {
+  return send.settled.then(async (settled): Promise<PipelinedOutcome> => {
+    if (!indexes || !settled.ok) {
       return notRun;
     }
-    const item = await readPipelinedRun(settled.outcome.data.runs, indexes);
+    // Its runs, as the link that pipelines gave them, which the promise of
+    // the operation's result awaited the first level of. Or what that link
+    // gives for runs it couldn't put in a request, which has no run of any
+    // item
+    const item = await readPipelinedRun(
+      Promise.resolve(settled.data) as Parameters<typeof readPipelinedRun>[0],
+      indexes,
+    );
     switch (item.kind) {
       case 'data':
         return { kind: 'data', data: item.data };
@@ -186,4 +186,87 @@ export function withPipelinedResult(opts: {
       }
     },
   };
+}
+
+/**
+ * A query that reads other queries' data, sent through the links of its
+ * client as `experimental_load()` sends one, which a link that pipelines took
+ */
+export interface ReadingSend {
+  /** Its operation's pipeline, which an operation that reads it reads */
+  pipeline: OperationPipeline;
+  /**
+   * What the operation ended with, after its links: an attempt of what it
+   * reads that a link such as `retryLink` sends again takes it into its
+   * request, and one that left it out sends it by itself, filled in. For a
+   * query for every item, its runs: see `outcomeOfItem()`. Never rejects
+   */
+  settled: Promise<Outcome<unknown>>;
+}
+
+/**
+ * Sends a query that reads other queries' data through the links of its
+ * client, as `experimental_load()` does. Every link sees it, with `undefined`
+ * in its input where it reads. A link that pipelines puts it in the open
+ * request of what it reads if that link has that request, and sends it by
+ * itself, filled in, if not: a `splitLink` may send the two to different
+ * links. One that doesn't pipeline would send the blanks: the operation is
+ * aborted as that link takes it, before it goes, and this gives `null`. The
+ * query then sends its own request, filled in, through the same links
+ */
+export function sendReading(opts: {
+  /** What the requests of the query's proxy go through */
+  transport: unknown;
+  path: string;
+  /** With `undefined` for what the server fills in */
+  input: unknown;
+  reads: PipelineCallReads<OperationPipeline>;
+  /** Whether it runs for every item of a list */
+  perItem: boolean;
+  /**
+   * Its input, filled in, once what it reads has its data, for a link that
+   * logs it with `experimental_inputOf()` and for a retry of it. `undefined`
+   * for one for every item. Rejects if what it reads failed
+   */
+  resolve: () => Promise<unknown>;
+  /** Its input, filled in, if what it reads has its data now. Else `null` */
+  known: () => { input: unknown } | null;
+}): ReadingSend | null {
+  const { transport } = opts;
+  // A proxy of a router calls procedures without links. And only what a link
+  // that pipelines took has a request to go in
+  if (
+    !(transport instanceof TRPCUntypedClient) ||
+    (opts.reads.each && !isPipelineTaken(opts.reads.each.from)) ||
+    opts.reads.reads.some(
+      (read) => read.kind === 'whole' && !isPipelineTaken(read.from),
+    )
+  ) {
+    return null;
+  }
+  const pipeline = createOperationPipeline();
+  const abort = new AbortController();
+  const settled = attempt(() =>
+    transport.query(opts.path, opts.input, {
+      signal: abort.signal,
+      context: {
+        ...pipelineContext(pipeline),
+        ...readsContext({
+          reads: opts.reads,
+          perItem: opts.perItem,
+          resolve: opts.resolve,
+          known: opts.known,
+        }),
+      },
+    }),
+  );
+  // A link takes an operation as it is sent. One that doesn't pipeline, such
+  // as an `httpLink` that a `splitLink` chose, would send it with its blanks.
+  // One that pipelines and has no open request of what it reads, such as
+  // another backend's, sends it by itself, filled in, once that data is there
+  if (!isPipelineTaken(pipeline)) {
+    abort.abort();
+    return null;
+  }
+  return { pipeline, settled };
 }

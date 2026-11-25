@@ -11,11 +11,14 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import {
+  experimental_inputOf,
   experimental_pipelining,
   getUntypedClient,
   httpBatchLink,
   httpBatchStreamLink,
+  httpLink,
   retryLink,
+  splitLink,
   TRPCClientError,
 } from '@trpc/client';
 import type { Operation, TRPCLink } from '@trpc/client';
@@ -3691,8 +3694,9 @@ describe.each([
     });
   });
 
-  test('the links see only the query whose request it is, with its whole input', async () => {
+  test('the links see every query, and one that reads another has blanks in its input until the server fills them in', async () => {
     const ops: Pick<Operation, 'path' | 'input'>[] = [];
+    const filled: Pick<Operation, 'path' | 'input'>[] = [];
     await using resource = pipeliningCtx({
       link: scenario.link,
       latency: 0,
@@ -3700,8 +3704,12 @@ describe.each([
       allowPipelining: true,
       before: [
         () => (linkOpts) => {
-          ops.push({ path: linkOpts.op.path, input: linkOpts.op.input });
-          return linkOpts.next(linkOpts.op);
+          const { op } = linkOpts;
+          ops.push({ path: op.path, input: op.input });
+          void experimental_inputOf(op).then((input) =>
+            filled.push({ path: op.path, input }),
+          );
+          return linkOpts.next(op);
         },
       ],
     });
@@ -3727,9 +3735,30 @@ describe.each([
         ),
       ).toBeDefined();
     });
-    // The others came back with its request. They were no operations, so no
-    // link saw one with a hole in its input
-    expect(ops).toEqual([{ path: 'post.bySlug', input: { slug: 'hello' } }]);
+    // Each query is an operation, as with `experimental_load()`. What the
+    // server fills in is `undefined` as the links see it
+    expect(ops).toEqual([
+      { path: 'post.bySlug', input: { slug: 'hello' } },
+      { path: 'author.byId', input: { id: undefined } },
+      {
+        path: 'post.byAuthor',
+        input: { authorId: undefined, direction: 'forward' },
+      },
+    ]);
+    // A link that wants the input filled in gets it once the data is there
+    await vi.waitFor(() => {
+      expect(filled).toHaveLength(3);
+    });
+    expect(filled).toEqual(
+      expect.arrayContaining([
+        { path: 'author.byId', input: { id: 'u1' } },
+        {
+          path: 'post.byAuthor',
+          input: { authorId: 'u1', direction: 'forward' },
+        },
+      ]),
+    );
+    // The server ran them in the post's request
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
     expect(resource.calls).toHaveBeenCalledTimes(3);
   });
@@ -3769,7 +3798,11 @@ describe.each([
         queryClient.getQueryData(trpc.author.byId.queryKey({ id: 'u1' })),
       ).toMatchObject({ id: 'u1' });
     });
-    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    // The link sees both authors as `{ id: undefined }` and shares the first
+    // one's request with the second, whose operation then never reaches the
+    // batch link. The load aborts it, and the second author asks by itself,
+    // with its own id, in a request of its own
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
     expect(
       resource.calls.mock.calls.filter(([path]) => path === 'author.byId'),
     ).toEqual([
@@ -4952,7 +4985,7 @@ describe.each([
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(3);
   });
 
-  test('a request that fails as a whole and that a link retries: the entry that reads it asks again', async () => {
+  test('a request that fails as a whole and that a link retries: the entry that reads it runs once, in the request of the retry', async () => {
     const { appRouter, calls } = createAppRouter();
     let failed = false;
     await using resource = testReactResource(appRouter, {
@@ -4983,12 +5016,79 @@ describe.each([
         id: experimental_dataOf(post).authorId,
       }),
     });
-    // Its call was in the request that failed, and never ran
+    // Its operation was in the request that failed, and never ran. It went
+    // in the retry's request, and the entry uses that result: it doesn't
+    // ask by itself as well
     expect(data.author).toEqual({ id: 'u1', name: 'KATT', teamId: 'team1' });
     expect(calls.mock.calls).toEqual([
       ['post.bySlug', { slug: 'hello' }],
       ['author.byId', { id: 'u1' }],
     ]);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('a request that fails as a whole and that a link retries: an entry per item runs once for each item, in the request of the retry, also as its list is fetched again', async () => {
+    const { appRouter, calls } = createAppRouter();
+    /** Whether the next request fails as a whole, before it reaches the server */
+    const fails = { next: true };
+    await using resource = testReactResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (opts) => ({
+        links: [
+          retryLink({ retry: (retryOpts) => retryOpts.attempts < 2 }),
+          scenario.link({
+            url: opts.httpUrl,
+            experimental_pipelining: experimental_pipelining(),
+            fetch: async (input, init) => {
+              if (fails.next) {
+                fails.next = false;
+                throw new TypeError('fetch failed');
+              }
+              return fetch(input, init);
+            },
+          }),
+        ],
+      }),
+    });
+    const trpc = resource.optionsProxyClient;
+
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+    const [handles, data] = await loadHandles(trpc, {
+      post,
+      authors: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+        ensureEntry(trpc.author.byId, { id: tag.id }),
+      ),
+    });
+    expect(data.authors.map((author) => author.id)).toEqual(['t1', 't2']);
+    const once = [
+      ['post.bySlug', { slug: 'hello' }],
+      ['author.byId', { id: 't1' }],
+      ['author.byId', { id: 't2' }],
+    ];
+    expect(calls.mock.calls).toEqual(once);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+
+    // As after an invalidation, whose first request fails as well
+    resource.queryClient.removeQueries({
+      queryKey: trpc.author.byId.pathKey(),
+    });
+    calls.mockClear();
+    resource.onRequestSpy.mockClear();
+    fails.next = true;
+    await resource.queryClient.fetchQuery({
+      ...fromHandle(trpc, handles.post),
+      staleTime: 0,
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(
+      resource.queryClient.getQueryData(
+        trpc.author.byId.queryKey({ id: 't2' }),
+      ),
+    ).toMatchObject({ id: 't2' });
+    expect(calls.mock.calls).toEqual(once);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
   test('a cached list with more items than the server has: the item the server ran for none of asks by itself', async () => {
@@ -5341,6 +5441,152 @@ describe('pipelining with a streaming link', () => {
     expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe.each([
+  { name: 'a batch link that pipelines', linkB: 'pipelining' as const },
+  { name: '`httpLink`', linkB: 'httpLink' as const },
+])(
+  'a `splitLink` that sends the posts to backend A and the rest to backend B, through $name',
+  (scenario) => {
+    /** Backend B, whose authors and teams have data of their own */
+    const createBackendB = () => {
+      const t = initTRPC.create();
+      const calls = vi.fn();
+      const appRouter = t.router({
+        author: t.router({
+          byId: t.procedure
+            .input(z.object({ id: z.string() }))
+            .query((opts) => {
+              calls('author.byId', opts.input);
+              return { id: opts.input.id, name: 'From B', teamId: 'team1' };
+            }),
+        }),
+        team: t.router({
+          byId: t.procedure
+            .input(z.object({ id: z.string() }))
+            .query((opts) => {
+              calls('team.byId', opts.input);
+              return { id: opts.input.id, name: 'From B' };
+            }),
+        }),
+      });
+      return { appRouter, calls };
+    };
+
+    /** Backend A, with a client whose `splitLink` sends to both */
+    const splitCtx = (urlB: string) => {
+      const { appRouter, calls } = createAppRouter();
+      const resource = testReactResource(appRouter, {
+        server: { experimental_allowPipelining: true },
+        client: (opts) => ({
+          links: [
+            splitLink({
+              condition: (op) => op.path.startsWith('post.'),
+              true: httpBatchStreamLink({
+                url: opts.httpUrl,
+                experimental_pipelining: experimental_pipelining(),
+              }),
+              false:
+                scenario.linkB === 'httpLink'
+                  ? httpLink({ url: urlB })
+                  : httpBatchStreamLink({
+                      url: urlB,
+                      experimental_pipelining: experimental_pipelining(),
+                    }),
+            }),
+          ],
+        }),
+      });
+      return { ...resource, calls };
+    };
+
+    test("an entry that reads another's data goes to its own backend, and gets that backend's data", async () => {
+      const backendB = createBackendB();
+      await using resourceB = testReactResource(backendB.appRouter, {
+        server: { experimental_allowPipelining: true },
+      });
+      await using resource = splitCtx(resourceB.httpUrl);
+      const trpc = resource.optionsProxyClient;
+
+      const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+      const [, data] = await loadHandles(trpc, {
+        post,
+        author: ensureEntry(trpc.author.byId, {
+          id: experimental_dataOf(post).authorId,
+        }),
+      });
+
+      const author = { id: 'u1', name: 'From B', teamId: 'team1' };
+      expect(data.author).toEqual(author);
+      expect(
+        resource.queryClient.getQueryData(
+          trpc.author.byId.queryKey({ id: 'u1' }),
+        ),
+      ).toEqual(author);
+      // Not in the post's request, which went to A
+      expect(resource.calls.mock.calls).toEqual([
+        ['post.bySlug', { slug: 'hello' }],
+      ]);
+      expect(backendB.calls.mock.calls).toEqual([
+        ['author.byId', { id: 'u1' }],
+      ]);
+    });
+
+    test("an entry per item goes to its own backend, also as its list is fetched again, and gets that backend's data", async () => {
+      const backendB = createBackendB();
+      await using resourceB = testReactResource(backendB.appRouter, {
+        server: { experimental_allowPipelining: true },
+      });
+      await using resource = splitCtx(resourceB.httpUrl);
+      const trpc = resource.optionsProxyClient;
+
+      const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+      const [handles, data] = await loadHandles(trpc, {
+        post,
+        teams: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+          ensureEntry(trpc.team.byId, { id: tag.id }),
+        ),
+      });
+
+      expect(data.teams).toEqual([
+        { id: 't1', name: 'From B' },
+        { id: 't2', name: 'From B' },
+      ]);
+      expect(resource.calls.mock.calls).toEqual([
+        ['post.bySlug', { slug: 'hello' }],
+      ]);
+      // In any order: through `httpLink`, each in a request of its own
+      expect(backendB.calls.mock.calls).toHaveLength(2);
+      expect(backendB.calls.mock.calls).toEqual(
+        expect.arrayContaining([
+          ['team.byId', { id: 't1' }],
+          ['team.byId', { id: 't2' }],
+        ]),
+      );
+
+      // As after an invalidation: the post again, whose read loads what
+      // its items load
+      expect(handles.post.experimental_perItem).toHaveLength(1);
+      resource.calls.mockClear();
+      await resource.queryClient.fetchQuery({
+        ...fromHandle(trpc, handles.post),
+        staleTime: 0,
+      });
+      await vi.waitFor(() => {
+        expect(resource.queryClient.isFetching()).toBe(0);
+      });
+      // A ran none of the items: their queries are B's
+      expect(resource.calls.mock.calls).toEqual([
+        ['post.bySlug', { slug: 'hello' }],
+      ]);
+      expect(
+        resource.queryClient.getQueryData(
+          trpc.team.byId.queryKey({ id: 't2' }),
+        ),
+      ).toEqual({ id: 't2', name: 'From B' });
+    });
+  },
+);
 
 describe.each([
   { name: 'httpBatchLink', link: httpBatchLink },

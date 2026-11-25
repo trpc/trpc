@@ -215,7 +215,7 @@ export function queryClientOf(ctx: ProxyContext): QueryClient {
   return ctx.proxy['~queryClient']();
 }
 
-function transportOf(ctx: ProxyContext): unknown {
+export function transportOf(ctx: ProxyContext): unknown {
   return ctx.proxy['~transport']();
 }
 

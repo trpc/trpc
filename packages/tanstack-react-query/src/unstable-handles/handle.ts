@@ -8,10 +8,7 @@ import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
 import type { OperationPipeline } from '@trpc/client/unstable-internals';
 import { pipelineContext } from '@trpc/client/unstable-internals';
-import {
-  createOperationPipeline,
-  pipeCall,
-} from '@trpc/client/unstable-internals';
+import { createOperationPipeline } from '@trpc/client/unstable-internals';
 import type { PipelinePath } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
@@ -33,11 +30,22 @@ import type {
 } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type { EntryQueryOptions, ProxyContext } from './entry';
-import { optionsOf, ownContextOf, queryClientOf, readProxy } from './entry';
+import {
+  optionsOf,
+  ownContextOf,
+  queryClientOf,
+  readProxy,
+  transportOf,
+} from './entry';
 import type { ErrorOf } from './entryError';
 import { attempt, attemptNow } from './outcome';
 import type { PipelinedOutcome } from './pipelined';
-import { notRun, outcomeOfItem, withPipelinedResult } from './pipelined';
+import {
+  notRun,
+  outcomeOfItem,
+  sendReading,
+  withPipelinedResult,
+} from './pipelined';
 import type {
   AnyTRPCHandle,
   HandleType,
@@ -588,10 +596,12 @@ export function withItemQueries(opts: {
         done.ok ||
         (query.promise === fetch && query.state.fetchStatus !== 'idle');
       for (const queries of opts.itemQueries) {
-        // One call, which the server runs for every item of the list. Without
-        // a link that took the list into a batch, the items load when they
-        // are read
-        const call = pipeCall({
+        // One operation, which the server runs for every item of the list,
+        // through the proxy's links: they may send it elsewhere than the
+        // list. Unless a link that pipelines takes it, the items load when
+        // they are read
+        const sending = sendReading({
+          transport: transportOf(opts.ctx),
           path: queries.path,
           input: queries.input,
           reads: {
@@ -603,8 +613,13 @@ export function withItemQueries(opts: {
               path: [...queries.itemRead, ...itemInput.path],
             })),
           },
+          perItem: true,
+          // Its runs each have an input of their own
+          resolve: () => list.then(() => undefined),
+          // Never read for a query for every item
+          known: () => null,
         });
-        if (!call) {
+        if (!sending) {
           continue;
         }
         // Before the list's data reaches the components that read the items
@@ -635,7 +650,7 @@ export function withItemQueries(opts: {
                 .getQueryCache()
                 .build(queryClient, defaulted);
               const own = itemResult({
-                outcome: outcomeOfItem(call, [index]),
+                outcome: outcomeOfItem(sending, [index]),
                 isCurrent,
               });
               // An earlier list fetch's result for the item, which its query
