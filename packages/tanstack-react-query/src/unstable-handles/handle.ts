@@ -469,6 +469,11 @@ interface ItemQueries {
   /** The procedure of the options proxy the items' queries are of */
   procedure: any;
   path: string;
+  /**
+   * The key prefix of the proxy that built the items' entry, which may be
+   * another than the list's: its queries are in the cache under it
+   */
+  prefix: string | undefined;
   /** The input, without the parts that come from an item */
   input: unknown;
   itemInputs: readonly { readonly to: string[]; readonly path: PipelinePath }[];
@@ -490,7 +495,7 @@ function readItemQueries(
     if (queries.skipped || queries.itemInputs.length === 0) {
       return [];
     }
-    const { path } = readQueryKey(queries.queryKey);
+    const { path, prefix } = readQueryKey(queries.queryKey);
     const procedure = procedureAt(ctx, path);
     return procedure === null
       ? []
@@ -498,6 +503,7 @@ function readItemQueries(
           {
             procedure,
             path: path.join('.'),
+            prefix: prefix?.[0],
             input: queries.input,
             itemInputs: queries.itemInputs,
             list: queries.list,
@@ -636,10 +642,21 @@ export function withItemQueries(opts: {
             // key can hold, fails by itself: the row that reads it gets that
             // error, and the others load
             void attempt(() => {
-              const built = optionsOf(queries.procedure, 'query')(
+              const fromList = optionsOf(queries.procedure, 'query')(
                 finishInput(queries, item),
                 undefined,
               );
+              // Built with the list's proxy, which may have another key
+              // prefix: the item's query is under the prefix of the proxy
+              // that built the items' entry, where a row reads it
+              const key = readQueryKey(fromList.queryKey);
+              const built = {
+                ...fromList,
+                queryKey:
+                  queries.prefix === undefined
+                    ? [key.path, key.args]
+                    : [[queries.prefix], key.path, key.args],
+              };
               // With the QueryClient's defaults: `build()` alone hashes the
               // key without its default `queryKeyHashFn`, which can throw,
               // or name another query than the prefetch's. The prefetch

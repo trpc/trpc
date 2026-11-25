@@ -4546,6 +4546,69 @@ describe.each([
     ).toHaveLength(3);
   });
 
+  test("a later page loads its items' queries under the key prefix of the items' proxy, not the list's", async () => {
+    await using resource = pipeliningCtx({
+      link: scenario.link,
+      latency: 0,
+      maxBatchSize: undefined,
+      allowPipelining: true,
+      before: [],
+    });
+    const trpc = resource.optionsProxyClient;
+    // The same client and QueryClient, with keys of its own
+    const people = createTRPCOptionsProxy<AppRouter, { keyPrefix: true }>({
+      client: getUntypedClient(resource.client),
+      queryClient: resource.queryClient,
+      keyPrefix: 'people',
+    });
+    const getNextPageParam = (last: { nextCursor: number | null }) =>
+      last.nextCursor;
+
+    const posts = ensureInfiniteEntry(
+      trpc.post.paged,
+      {},
+      { getNextPageParam },
+    );
+    const [handles] = await loadHandles(trpc, {
+      posts,
+      authors: experimental_perItem(
+        experimental_dataOf(posts).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(people.author.byId, { id: post.authorId }),
+      ),
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    const observer = new InfiniteQueryObserver(resource.queryClient, {
+      ...fromHandle(trpc, handles.posts, { getNextPageParam }),
+      staleTime: Infinity,
+    });
+    using _subscription = makeResource({}, observer.subscribe(vi.fn()));
+    const data = await observer.fetchNextPage();
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+
+    // The page's request has its authors in it
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(2);
+    expect(resource.onRequestSpy.mock.calls[1]![0].url).toContain(
+      '/post.paged,author.byId?batch=pipeline',
+    );
+    // Where a row that reads its author with the items' proxy looks
+    const lastPost = data.data!.pages[1]!.items[0]!;
+    const authorKey = fromHandle(
+      people,
+      experimental_handleOfItem(handles.authors, lastPost),
+    ).queryKey;
+    expect(authorKey[0]).toEqual(['people']);
+    expect(resource.queryClient.getQueryData(authorKey)).toEqual({
+      id: 'u1',
+      name: 'KATT',
+      teamId: 'team1',
+    });
+  });
+
   test("a later page whose fetch another replaced writes none of its items' queries", async () => {
     // Holds back the result of the first request for the second page, which
     // the transport still completes: the query doesn't abort it
