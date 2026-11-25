@@ -159,6 +159,11 @@ interface Call {
    * doesn't pipeline took an operation of it
    */
   alone: boolean;
+  /**
+   * The runs, by key, that a link that doesn't pipeline took an operation of:
+   * they go alone. Only the run whose operation it took, not its siblings
+   */
+  aloneRuns: Set<string>;
   /** Of an infinite query: the `initialCursor` of its options */
   initialCursor: unknown;
   /**
@@ -830,6 +835,7 @@ export function experimental_load<
       scopes: scopesOfReads(refs),
       context: state.context,
       alone: state.context !== null,
+      aloneRuns: new Set(),
       initialCursor: state.initialCursor,
       pipeline: null,
       frame: [],
@@ -1118,7 +1124,8 @@ export function experimental_load<
     if (made) {
       return made;
     }
-    if (prior && call.alone) {
+    const alone = call.alone || call.aloneRuns.has(key);
+    if (prior && alone) {
       // A run that failed already, which a link that doesn't pipeline took:
       // none can fail its first attempt with that error, so no link that
       // retries can count it, and sending it again would run it again
@@ -1129,11 +1136,11 @@ export function experimental_load<
       call.spawns.set(key, final);
       return final;
     }
-    if (call.alone || !pipelined()) {
+    if (alone || !pipelined()) {
       // A context of its own, which a link may route by, a link that doesn't
       // pipeline, or none that does: it goes alone, as it is, once all it
       // reads is there
-      const alone: Spawn = {
+      const byItself: Spawn = {
         pipeline: null,
         sent: settles(async (): Promise<Outcome<unknown>> => {
           const filled = await fill({ value: call.input, items, skip: null });
@@ -1148,8 +1155,8 @@ export function experimental_load<
             : filled;
         }, failed),
       };
-      call.spawns.set(key, alone);
-      return alone;
+      call.spawns.set(key, byItself);
+      return byItself;
     }
     const pipeline = createOperationPipeline();
     const reads: PipelineCallReads<OperationPipeline>['reads'] = [];
@@ -1214,8 +1221,9 @@ export function experimental_load<
             },
           });
     if (!sent) {
-      // A link that doesn't pipeline took it: it goes alone
-      call.alone = true;
+      // A link that doesn't pipeline took it: this run goes alone. Its
+      // siblings each find their own link
+      call.aloneRuns.add(key);
       return spawn(call, items, prior);
     }
     const result: Spawn = { pipeline, sent };
@@ -1246,12 +1254,13 @@ export function experimental_load<
           // as it is. One read of data the client couldn't read is unknown,
           // though the server filled it in: the run fails with that error
           const whole = standInOf(call.input) !== null;
-          const wholeRead = whole && call.initialCursor == null;
-          const cursor = await fill({
+          // A whole input read of another call: its cursor is the one
+          // `firstPage()` sent, `initialCursor` in a plain object, or an
+          // instance's own. If that read can't be read, a literal
+          // `initialCursor` is still what a plain object went with
+          const filled = await fill({
             value: whole
-              ? wholeRead
-                ? call.input
-                : call.initialCursor
+              ? call.input
               : // A plain input has the cursor `firstPageInput()` gave it. An
                 // instance of a class goes as it is, with its own
                 isObject(call.input) && hasOwn(call.input, 'cursor')
@@ -1260,19 +1269,22 @@ export function experimental_load<
             items,
             skip: null,
           });
-          if (!cursor.ok) {
-            return failed(ownError(cursor.error));
+          if (!filled.ok && !(whole && call.initialCursor != null)) {
+            return failed(ownError(filled.error));
           }
-          const sent = wholeRead ? firstPage(call, cursor.data) : null;
+          const sent = whole && filled.ok ? firstPage(call, filled.data) : null;
+          const pageParam = !whole
+            ? filled.ok
+              ? filled.data
+              : undefined
+            : sent !== null
+              ? isObject(sent) && hasOwn(sent, 'cursor')
+                ? sent['cursor']
+                : undefined
+              : call.initialCursor;
           data = {
             pages: [outcome.data],
-            pageParams: [
-              wholeRead
-                ? isPlainObject(sent)
-                  ? sent['cursor']
-                  : undefined
-                : cursor.data,
-            ],
+            pageParams: [pageParam],
           };
         }
         const snapshot = snapshotOf(call, data);
