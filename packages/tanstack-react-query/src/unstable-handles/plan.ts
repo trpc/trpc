@@ -309,22 +309,33 @@ export function describeOption(value: unknown) {
 }
 
 /**
- * Every symbol a context has had, by its number. A context's symbols are
- * module constants, so the map stays small
+ * The number of the next symbol that no live load has. Never one an earlier
+ * symbol had: a load that is still kept may have its number in its key
  */
-const symbolIds = new Map<symbol, number>();
+const nextSymbolId = { value: 0 };
+
+/**
+ * The numbers of the symbols a description has, which aren't registered
+ * with `Symbol.for()`. Not held by the module: a symbol, such as one of a
+ * session, can be new for each load. Not every runtime can hold a symbol
+ * weakly
+ */
+interface SymbolIds {
+  /** Of the symbols in the descriptions of the live loads, which keep them */
+  known: ReadonlyMap<symbol, number>;
+  /** Of the symbols in this description */
+  used: Map<symbol, number>;
+}
 
 /** A symbol as a string that no other symbol and no string key has */
-function describeSymbol(symbol: symbol) {
+function describeSymbol(symbol: symbol, ids: SymbolIds) {
   const registered = Symbol.keyFor(symbol);
   if (registered !== undefined) {
     return `symbol.for:${registered}`;
   }
-  let id = symbolIds.get(symbol);
-  if (id === undefined) {
-    id = symbolIds.size;
-    symbolIds.set(symbol, id);
-  }
+  const id =
+    ids.used.get(symbol) ?? ids.known.get(symbol) ?? nextSymbolId.value++;
+  ids.used.set(symbol, id);
   return `symbol:${id}`;
 }
 
@@ -362,12 +373,15 @@ function describeFunction(fn: object) {
 function describeKeys(
   object: Readonly<Record<PropertyKey, unknown>>,
   describe: (member: unknown) => unknown,
+  ids: SymbolIds,
 ) {
   return Reflect.ownKeys(object)
     .map(
       (key) =>
         [
-          typeof key === 'symbol' ? describeSymbol(key) : `string:${key}`,
+          typeof key === 'symbol'
+            ? describeSymbol(key, ids)
+            : `string:${key}`,
           describe(object[key]),
         ] as const,
     )
@@ -389,6 +403,7 @@ function describeValue(
   value: unknown,
   /** The objects and arrays `value` is in, so that one in itself ends */
   within: readonly object[],
+  ids: SymbolIds,
 ): unknown {
   switch (typeof value) {
     case 'undefined':
@@ -399,7 +414,7 @@ function describeValue(
       // `NaN` and `Infinity` have no JSON either
       return ['number', Object.is(value, -0) ? '-0' : String(value)];
     case 'symbol':
-      return ['symbol', describeSymbol(value)];
+      return ['symbol', describeSymbol(value, ids)];
     case 'function':
       return ['function', describeFunction(value)];
     case 'string':
@@ -424,7 +439,7 @@ function describeValue(
     return [
       'array',
       Array.from({ length: value.length }, (_, index) =>
-        index in value ? describeValue(value[index], inside) : ['hole'],
+        index in value ? describeValue(value[index], inside, ids) : ['hole'],
       ),
     ];
   }
@@ -433,22 +448,26 @@ function describeValue(
     return [
       'map',
       Array.from(value, ([key, member]) => [
-        describeValue(key, inside),
-        describeValue(member, inside),
+        describeValue(key, inside, ids),
+        describeValue(member, inside, ids),
       ]),
     ];
   }
   if (value instanceof Set) {
     return [
       'set',
-      Array.from(value, (member) => describeValue(member, inside)),
+      Array.from(value, (member) => describeValue(member, inside, ids)),
     ];
   }
   if (isPlainObject(value)) {
     // Symbol keys too: a link can route by them, at any level
     return [
       'object',
-      describeKeys(value, (member) => describeValue(member, inside)),
+      describeKeys(
+        value,
+        (member) => describeValue(member, inside, ids),
+        ids,
+      ),
     ];
   }
   try {
@@ -465,11 +484,16 @@ function describeValue(
  */
 function describeContext(
   context: Readonly<Record<PropertyKey, unknown>> | null,
+  ids: SymbolIds,
 ): unknown {
   if (context === null) {
     return null;
   }
-  return describeKeys(context, (member) => describeValue(member, []));
+  return describeKeys(
+    context,
+    (member) => describeValue(member, [], ids),
+    ids,
+  );
 }
 
 /**
@@ -480,8 +504,18 @@ function describeContext(
 export function describeEntries(opts: {
   queryClient: QueryClient;
   entries: Record<string, unknown>;
+  /**
+   * The number of each symbol that a live load's description has: the same
+   * symbol gets the same number
+   */
+  symbolIds: ReadonlyMap<symbol, number>;
 }) {
-  const tree = readEntries({ ...opts, keys: [] });
+  const ids: SymbolIds = { known: opts.symbolIds, used: new Map() };
+  const tree = readEntries({
+    queryClient: opts.queryClient,
+    entries: opts.entries,
+    keys: [],
+  });
   const keysOfEntry = new Map(
     leavesOf(tree).map((leaf) => [leaf.entry, leaf.keys]),
   );
@@ -513,10 +547,10 @@ export function describeEntries(opts: {
       // new on every render
       options: startOptions.map((name) => describeOption(options[name])),
       // A cursor can be a bigint, or have one in it, which has no JSON
-      firstCursor: describeValue(firstCursor, []),
+      firstCursor: describeValue(firstCursor, [], ids),
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       // Where its requests go, and so whether they can go in another's
-      context: describeContext(leaf.state.context),
+      context: describeContext(leaf.state.context, ids),
       // The client or router they go through: the same for every proxy of it
       transport: idOf(leaf.state.transport as object),
       built:
@@ -534,5 +568,9 @@ export function describeEntries(opts: {
       name,
       Array.isArray(node) ? describeTree(node) : describeLeaf(node),
     ]);
-  return hashKey(describeTree(tree));
+  return {
+    key: hashKey(describeTree(tree)),
+    /** The number of each symbol it has, which a load of it keeps */
+    symbols: ids.used,
+  };
 }

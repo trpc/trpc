@@ -91,14 +91,52 @@ interface UsedLoad {
   handles: Record<string, unknown>;
   /** The components that have it and are on the page */
   mounts: number;
+  /** The number of each symbol its description has */
+  symbols: ReadonlyMap<symbol, number>;
 }
 
-const usedLoads = new WeakMap<QueryClient, Map<string, UsedLoad>>();
+/** The loads of a `QueryClient` that components have, by their description */
+interface UsedLoads {
+  byKey: Map<string, UsedLoad>;
+  /**
+   * The number of each symbol their descriptions have, which describes it the
+   * same while one of them is kept. No other symbol is held
+   */
+  symbolIds: Map<symbol, number>;
+}
+
+const usedLoads = new WeakMap<QueryClient, UsedLoads>();
 
 function usedLoadsOf(queryClient: QueryClient) {
-  const loads = usedLoads.get(queryClient) ?? new Map<string, UsedLoad>();
+  const loads = usedLoads.get(queryClient) ?? {
+    byKey: new Map<string, UsedLoad>(),
+    symbolIds: new Map<symbol, number>(),
+  };
   usedLoads.set(queryClient, loads);
   return loads;
+}
+
+function keepLoad(loads: UsedLoads, key: string, load: UsedLoad) {
+  loads.byKey.set(key, load);
+  for (const [symbol, id] of load.symbols) {
+    // Not over a number a newer load has for it, which its key has
+    if (!loads.symbolIds.has(symbol)) {
+      loads.symbolIds.set(symbol, id);
+    }
+  }
+}
+
+/** Lets go of a load, and of every symbol no load that is left has */
+function dropLoad(loads: UsedLoads, key: string) {
+  loads.byKey.delete(key);
+  const kept = new Set(
+    [...loads.byKey.values()].flatMap((load) => [...load.symbols.keys()]),
+  );
+  for (const symbol of loads.symbolIds.keys()) {
+    if (!kept.has(symbol)) {
+      loads.symbolIds.delete(symbol);
+    }
+  }
 }
 
 /**
@@ -332,9 +370,13 @@ function useHandles<
   const root = readRoot(trpc, 'experimental_useHandles');
   const queryClient = queryClientOf(root);
   const entries = toTanStackEntries({ root, entries: given, wait: [] });
-  const key = describeEntries({ queryClient, entries });
   const loads = usedLoadsOf(queryClient);
-  let used = loads.get(key);
+  const { key, symbols } = describeEntries({
+    queryClient,
+    entries,
+    symbolIds: loads.symbolIds,
+  });
+  let used = loads.byKey.get(key);
   if (!used) {
     const started = beginEntries({
       queryClient,
@@ -352,16 +394,19 @@ function useHandles<
         ),
       }),
       mounts: 0,
+      symbols,
     };
     used = load;
-    loads.set(key, load);
-    // A component that never got on the page keeps nothing. On a server, the
-    // request's `QueryClient` goes with the request
+    keepLoad(loads, key, load);
+    // A component that never got on the page keeps nothing. One that is on
+    // the page lets go of it as it leaves, and no timer holds it, or its
+    // symbols, after that. On a server, the request's `QueryClient` goes with
+    // the request
     void Promise.all(started.allLoads.map(settledOf)).then(() => {
-      if (!isServerEnvironment()) {
+      if (!isServerEnvironment() && load.mounts === 0) {
         setTimeout(() => {
-          if (load.mounts === 0 && loads.get(key) === load) {
-            loads.delete(key);
+          if (load.mounts === 0 && loads.byKey.get(key) === load) {
+            dropLoad(loads, key);
           }
         }, USED_LOAD_KEPT_MS);
       }
@@ -372,12 +417,12 @@ function useHandles<
     const kept = usedLoadsOf(queryClient);
     load.mounts++;
     // Back, if a development-mode remount took it away
-    kept.set(key, load);
+    keepLoad(kept, key, load);
     return () => {
       load.mounts--;
-      if (load.mounts === 0 && kept.get(key) === load) {
+      if (load.mounts === 0 && kept.byKey.get(key) === load) {
         // The component left the page: its next visit loads again
-        kept.delete(key);
+        dropLoad(kept, key);
       }
     };
   }, [load, queryClient, key]);

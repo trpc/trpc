@@ -28,6 +28,8 @@ import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import * as React from 'react';
 import superjson from 'superjson';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -7045,6 +7047,60 @@ describe('experimental_useHandles', () => {
     ]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('a symbol in a `trpc.context` is not kept once no load has it', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    setFlagsFromString('--expose-gc');
+    const gc: () => void = runInNewContext('gc');
+    // A symbol of its own for each session, as a link may route by. Not in
+    // the props, which React may hold on to after the component leaves, and
+    // not a key, which V8 may hold on to as an object's shape
+    const current: { session: symbol | null } = { session: Symbol('session') };
+    const session = new WeakRef(current.session!);
+    const seen: unknown[] = [];
+    function Card() {
+      const context = { session: current.session };
+      seen.push(
+        experimental_useHandles(trpc, {
+          post: prefetchEntry(
+            trpc.post.bySlug,
+            { slug: 'hello' },
+            { trpc: { context } },
+          ),
+        }),
+      );
+      return null;
+    }
+    // Strict mode undoes the effects once and runs them again
+    const page = () => (
+      <React.StrictMode>
+        <Card />
+        <Card />
+      </React.StrictMode>
+    );
+    const view = resource.renderApp(page());
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.rerenderApp(view, page());
+    // Its number stays the same while a load has it: every render has the
+    // same load
+    expect(seen.length).toBeGreaterThan(2);
+    expect(new Set(seen).size).toBe(1);
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    // The components leave the page, and their queries the cache
+    view.unmount();
+    resource.queryClient.clear();
+    current.session = null;
+    await vi.waitFor(async () => {
+      // A `WeakRef` keeps its value until the job that read it ends
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      gc();
+      expect(session.deref()).toBeUndefined();
     });
   });
 
