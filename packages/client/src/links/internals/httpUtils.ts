@@ -96,9 +96,12 @@ export interface HTTPResult {
 
 type GetInputOptions = {
   transformer: CombinedDataTransformer;
-} & ({ input: unknown } | { inputs: unknown[] });
+} & ({ input: unknown } | { inputs: unknown[] } | { serializedInput: unknown });
 
 export function getInput(opts: GetInputOptions) {
+  if ('serializedInput' in opts) {
+    return opts.serializedInput;
+  }
   return 'input' in opts
     ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(

@@ -12,9 +12,9 @@ import type {
   Requester,
 } from './internals/httpUtils';
 import {
+  getBody,
   getUrl,
   httpRequest,
-  jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import {
@@ -41,7 +41,9 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
   };
 
-const universalRequester: Requester = (opts) => {
+const universalRequester = (
+  opts: Extract<Parameters<Requester>[0], { input: unknown }>,
+) => {
   if ('input' in opts) {
     const { input } = opts;
     if (isFormData(input)) {
@@ -72,7 +74,32 @@ const universalRequester: Requester = (opts) => {
     }
   }
 
-  return jsonHttpRequester(opts);
+  const { input, ...requestOpts } = opts;
+  const serializedInput = opts.transformer.input.serialize(input);
+  if (isFormData(serializedInput)) {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+      throw new Error(
+        'FormData from serializer is only supported for mutations',
+      );
+    }
+
+    return httpRequest({
+      ...requestOpts,
+      serializedInput,
+      // The browser will set this automatically and include the boundary= in it
+      contentTypeHeader: undefined,
+      getUrl,
+      getBody: () => serializedInput,
+    });
+  }
+
+  return httpRequest({
+    ...requestOpts,
+    serializedInput,
+    contentTypeHeader: 'application/json',
+    getUrl,
+    getBody,
+  });
 };
 
 /**
