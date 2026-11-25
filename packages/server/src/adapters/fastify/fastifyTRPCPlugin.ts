@@ -78,9 +78,15 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       _done(null, body);
     },
   );
-  fastify.removeContentTypeParser('multipart/form-data');
-  fastify.addContentTypeParser(
+  // tRPC streams these bodies itself. Fastify has no parser for them, so it
+  // would answer 415 before the request reached tRPC
+  const streamedContentTypes = [
     'multipart/form-data',
+    'application/octet-stream',
+  ];
+  fastify.removeContentTypeParser(streamedContentTypes);
+  fastify.addContentTypeParser(
+    streamedContentTypes,
     {},
     function (_, body, _done) {
       _done(null, body);
