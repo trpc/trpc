@@ -564,8 +564,8 @@ And without TanStack Query, pass the client: `experimental_load(client, postQuer
 
 - **An `experimental_query()` is a prefetch entry**, and an `experimental_infiniteQuery()` a prefetch infinite entry, with its `initialCursor` and `getNextPageParam`. Name its key in [`wait`](#wait) to wait for it.
 - **For TanStack Query's options**, such as `staleTime`, use `prefetchEntry()` and the others. `experimental_load()` reads those too, and leaves the options out.
-- **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data.
-- **The request is the same**, whichever loads it.
+- **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data to build the entry's handle. A fetch or ensure entry in the callback is [still waited for](#without-waiting).
+- **The request is the same**, whichever loads it, when both have to fetch every query. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the author's call, with the id filled in.
 - **`null` skips an entry**, as `skipToken` does: its handle is `undefined`.
 - **An `experimental_perItem()` that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. Each reads the item and the load's entries only: an entry per item of a list in an item, an entry in the object that reads another one, and an entry built with `experimental_dataOf(entry, (data) => entry)`, load with `experimental_load()` only.
 
@@ -950,7 +950,7 @@ export async function AuthorSection(props: { slug: string }) {
 }
 ```
 
-- **The author's query is built from the post this load has**, so it is there when `HydrateClient` renders, and its key matches the post that crosses with it. A post that the cache has resolves the load at once, and a post that is on its way, from the page's load, is waited for. No request goes out twice.
+- **The author's query is built from the post this load has**, so it is there when `HydrateClient` renders, and its key matches the post that crosses with it, unless another load writes another post under the same key in between. `HydrateClient` sends the post the cache has as it renders: if a refetch in the meantime brings a post with another `authorId`, the author that crosses is the earlier post's, and the browser asks for the new one by itself. A post that the cache has resolves the load at once, and a post that is on its way, from the page's load, is waited for. No request goes out twice.
 - **Don't wait with `queryClient.ensureQueryData()` instead.** It gives a stale post at once, while the page's load fetches the post again and builds the author's query only from that fetch. `HydrateClient` would render before the author's query exists.
 
 ## Errors {#errors}
@@ -992,8 +992,9 @@ if (results.post.status === 'error') {
 }
 ```
 
-`loadHandlesSettled()` still rejects in three cases:
+`loadHandlesSettled()` still rejects in four cases:
 
+- **What you pass it isn't a load it can start**, before any entry starts: `wait` names an `experimental_perItem()` entry or a group, a value isn't an entry, an entry was built with a proxy for another `QueryClient`, or an entry reads the data of one that isn't in the load.
 - **A prefetch entry's request fails and another entry needs its data** for its handle or its result: it reads the data in its input, or it is a fetch or ensure entry in an `experimental_dataOf(entry, (data) => entry)` callback. A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry in the callback doesn't start, and the load resolves with its unfinished handle. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
 - **An entry that reads no other entry throws while the load starts it**, such as from a `staleTime` function, whatever its kind, [as above](#errors).
 - **A query is interrupted rather than failing.** If `queryClient.cancelQueries()` cancels the fetch of an ensure entry the cache has no data for, the load rejects with TanStack Query's `CancelledError`, which `isCancelledError()` checks. An error with a `digest`, such as Next.js's `headers()` throws in a static render, is rethrown as it is.

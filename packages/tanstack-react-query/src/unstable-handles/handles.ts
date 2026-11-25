@@ -266,7 +266,10 @@ export function loadHandles<
  * but the load still resolves, with that entry's unfinished handle. A prefetch
  * entry that nothing reads can fail without making it reject. A throw while it
  * starts an entry that reads no other entry, such as from
- * a `staleTime` function, still rejects, whatever the entry's kind.
+ * a `staleTime` function, still rejects, whatever the entry's kind. So does
+ * what isn't a load it can start, before any entry starts: such as a `wait`
+ * that names an `experimental_perItem()` entry, or an entry that reads one
+ * that isn't in the load.
  *
  * An interruption still rejects, as it does with `loadHandles()`: a cancelled
  * query, such as an ensure entry's uncached fetch that `cancelQueries()` stops,

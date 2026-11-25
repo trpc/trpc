@@ -177,7 +177,7 @@ const author = await res.author;
 - **Each promise settles when its own query is done.** One that fails rejects by itself: the other keys keep their data. A promise that you don't read raises no unhandled rejection.
 - **A query that another reads is loaded too**, also when it isn't in what you pass.
 - **Descriptions go together.** An object of them is a group: `experimental_load(client, { page: postQueries(client, opts), nav: navQueries(client) })` is one request, and `res.page.post` is a promise.
-- **`experimental_dataOf(post, (it) => entry)`**, with a callback, builds an entry from the data too. It loads the same way here. It matters to [TanStack Query](/docs/client/tanstack-react-query/nested-queries#without-waiting), whose load then doesn't wait for the data.
+- **`experimental_dataOf(post, (it) => entry)`**, with a callback, builds an entry from the data too. It loads the same way here. It matters to [TanStack Query](/docs/client/tanstack-react-query/nested-queries#without-waiting), whose load then doesn't wait for the data to build the entry's handle: the handle is unfinished. It doesn't change how the entry itself waits: a prefetch entry, such as an `experimental_query()`, isn't waited for, and a fetch or ensure entry is, as always.
 
 It sends the request of [What goes over the wire](#wire):
 
@@ -343,7 +343,7 @@ const [handles, data] = await loadHandles(
 ```
 
 - **Each `experimental_query()` is a prefetch entry**, and each key in [`wait`](/docs/client/tanstack-react-query/nested-queries#wait) an ensure entry: the load waits for its data, and `data` has it.
-- **The request is the same.** A link that pipelines sends it as one, whichever loads it.
+- **The request is the same when both have to fetch every query.** A link that pipelines sends it as one, whichever loads it. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the author's call.
 
 ## One request {#one-request}
 
