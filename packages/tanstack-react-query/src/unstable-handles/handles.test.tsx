@@ -747,6 +747,22 @@ describe('loading', () => {
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
+  test('rejects with what reading an entry throws, also when that is `null`', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const entries = {
+      post: prefetchEntry(trpc.post.byId, { id: '1' }),
+      get author(): never {
+        // oxlint-disable-next-line no-throw-literal
+        throw null;
+      },
+    };
+    for (const load of [loadHandles, loadHandlesSettled]) {
+      await expect(load(trpc, entries)).rejects.toBeNull();
+    }
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+
   test("rejects an entry built with another QueryClient's proxy", async () => {
     await using resource = ctx();
     const a = makeServerProxy(resource);

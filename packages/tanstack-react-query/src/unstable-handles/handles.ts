@@ -9,6 +9,7 @@ import { queryClientOf, readProxy, readRoot } from './entry';
 import { TRPCEntryError } from './entryError';
 import { isServerEnvironment } from './handle';
 import { beginEntries, handlesOfLoads, settledOf, startEntries } from './load';
+import { attemptNow } from './outcome';
 import { describeEntries } from './plan';
 import { toTanStackEntries } from './shared';
 import type {
@@ -25,7 +26,7 @@ import type {
 /**
  * The entries of a load, as TanStack Query entries of the root proxy. A
  * proxy that isn't the root throws, as it always has; entries it can't read
- * make the load reject
+ * are a failed outcome, whatever was thrown, which makes the load reject
  */
 function readLoad(opts: {
   trpc: unknown;
@@ -34,19 +35,16 @@ function readLoad(opts: {
   wait: readonly string[] | undefined;
 }) {
   const root = readRoot(opts.trpc, opts.fn);
-  try {
-    return {
-      queryClient: queryClientOf(root),
-      entries: toTanStackEntries({
+  return {
+    queryClient: queryClientOf(root),
+    entries: attemptNow(() =>
+      toTanStackEntries({
         root,
         entries: opts.entries,
         wait: opts.wait ?? [],
       }),
-      error: null,
-    };
-  } catch (error) {
-    return { queryClient: queryClientOf(root), entries: {}, error };
-  }
+    ),
+  };
 }
 
 export {
@@ -199,12 +197,12 @@ export function loadHandles<
     entries,
     wait: opts?.wait,
   });
-  if (load.error !== null) {
-    return Promise.reject(load.error);
+  if (!load.entries.ok) {
+    return Promise.reject(load.entries.error);
   }
   return startEntries({
     queryClient: load.queryClient,
-    entries: load.entries,
+    entries: load.entries.data,
     settle: false,
   }) as Promise<any>;
 }
@@ -271,12 +269,12 @@ export function loadHandlesSettled<
     entries,
     wait: opts?.wait,
   });
-  if (load.error !== null) {
-    return Promise.reject(load.error);
+  if (!load.entries.ok) {
+    return Promise.reject(load.entries.error);
   }
   return startEntries({
     queryClient: load.queryClient,
-    entries: load.entries,
+    entries: load.entries.data,
     settle: true,
   }) as Promise<any>;
 }
