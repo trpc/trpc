@@ -22,6 +22,14 @@ import type {
   TRPCClient,
   TRPCLink,
 } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
+import type { OperationReads } from '@trpc/client/unstable-internals';
+import {
+  createOperationPipeline,
+  isPipelineTaken,
+  pipelineContext,
+  readsContext,
+} from '@trpc/client/unstable-internals';
 import type { AnyRouter, TRPCDefaultErrorShape } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { tap } from '@trpc/server/observable';
@@ -1594,6 +1602,24 @@ describe.each([
     await expect(res.failing).rejects.toThrow('no feed');
   });
 
+  test("an infinite query's `pageParams` has the cursor of an input that is an instance of a class, as it is sent", async () => {
+    await using ctx = setup({ pipelining: true });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+    class FeedInput {
+      constructor(public cursor: number) {}
+    }
+
+    const res = experimental_load(c, {
+      feed: infiniteQuery(c.post.feed, new FeedInput(2)),
+    });
+
+    expect(await res.feed).toMatchObject({
+      pages: [{ items: posts.slice(2) }],
+      pageParams: [2],
+    });
+  });
+
   test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
     await using ctx = setup({ pipelining: true });
     using _quiet = quietWarnings();
@@ -1679,6 +1705,65 @@ describe('a `splitLink` that sends a query and one that reads it to different li
     expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
   });
 
+  test('a link that pipelines takes one that reads it, and puts it in the request of what it reads only if it has that request', async () => {
+    await using ctx = setupSplit({ dependent: 'pipelining' });
+    const untyped = getUntypedClient(ctx.client);
+    // As `loadHandles()` sends them: the query, then one that reads it,
+    // through the links, with what it reads in its context
+    const post = createOperationPipeline();
+    const sentPost = untyped.query(
+      'post.bySlug',
+      { slug: 'a' },
+      { context: pipelineContext(post) },
+    );
+    const send = (path: string) => {
+      const pipeline = createOperationPipeline();
+      const reads: OperationReads = {
+        reads: {
+          each: null,
+          reads: [
+            { kind: 'whole', to: ['id'], from: post, path: ['authorId'] },
+          ],
+        },
+        perItem: false,
+        // The untyped client's result is `unknown`
+        resolve: () =>
+          sentPost.then((it) => ({
+            id: isObject(it) ? it['authorId'] : undefined,
+          })),
+        known: () => null,
+      };
+      const abort = new AbortController();
+      const sent = untyped
+        .query(
+          path,
+          { id: undefined },
+          {
+            signal: abort.signal,
+            context: { ...pipelineContext(pipeline), ...readsContext(reads) },
+          },
+        )
+        .catch((error: unknown) => error);
+      return { pipeline, abort, sent };
+    };
+
+    // The `splitLink` sends `author.byId` to another link than the post's
+    const author = send('author.byId');
+    expect(isPipelineTaken(post)).toBe(true);
+    expect(isPipelineTaken(author.pipeline)).toBe(true);
+    expect(author.pipeline.attached).toBeNull();
+    author.abort.abort();
+
+    // And `team.byId` to the post's
+    const team = send('team.byId');
+    expect(isPipelineTaken(team.pipeline)).toBe(true);
+    expect(team.pipeline.attached).not.toBeNull();
+
+    await sentPost;
+    expect(await team.sent).toEqual({ id: 'ada', name: 'Team ada' });
+    expect(pathsOf(ctx)).toEqual(['/post.bySlug,team.byId']);
+  });
+
   test("one that reads it gets its input filled in, through a link that doesn't pipeline", async () => {
     await using ctx = setupSplit({ dependent: 'httpLink' });
     const c = ctx.client;
@@ -1691,6 +1776,46 @@ describe('a `splitLink` that sends a query and one that reads it to different li
 
     expect(await res.author).toEqual({ id: 'ada', teamId: 'team-ada' });
     expect(pathsOf(ctx)).toEqual(['/post.bySlug', '/author.byId']);
+  });
+
+  test("an item's run that failed is not sent again through a link that doesn't pipeline", async () => {
+    const { appRouter, calls } = createRouter();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          splitLink({
+            // An author's query with its `id` filled in goes by `httpLink`
+            condition: (op) =>
+              op.path === 'author.byId' &&
+              isObject(op.input) &&
+              typeof op.input['id'] === 'string',
+            true: httpLink({ url: clientOpts.httpUrl }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 3 });
+    const authors = await experimental_load(c, {
+      authors: perItem(dataOf(list).items, (it) =>
+        query(c.author.byId, { id: it.authorId }),
+      ),
+    }).authors;
+
+    await expect(authors[2]).rejects.toThrow('no author');
+    expect(await authors[0]).toMatchObject({ id: 'ada' });
+    // Without a link that retries, its failure is final: it ran once
+    expect(calls.mock.calls).toEqual([
+      ['author', 'ada'],
+      ['author', 'bob'],
+      ['author', 'missing'],
+    ]);
   });
 });
 

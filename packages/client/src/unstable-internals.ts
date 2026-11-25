@@ -2,6 +2,7 @@ export * from './internals/transformer';
 export * from './links/internals/subscriptions';
 export {
   createOperationPipeline,
+  isPipelineTaken,
   pipeCall,
   pipelineContext,
   readPipelinedRun,
@@ -31,3 +32,5 @@ export {
   readInputRefs,
 } from './queries/entry';
 export type { QueryEntryState } from './queries/entry';
+export { readsContext } from './links/internals/pipelineContext';
+export type { OperationReads } from './links/internals/pipelineContext';

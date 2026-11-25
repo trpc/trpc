@@ -2,7 +2,7 @@ import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { expect, test, vi } from 'vitest';
 
-import { appRouter } from './-server/router.ts';
+import { appRouter, runs } from './-server/router.ts';
 import {
   createLog,
   endpoint,
@@ -185,4 +185,23 @@ test('a request whose fetch rejects ends in the log', async () => {
   await expect(res.post).rejects.toThrow('Failed to fetch');
   expect(log.get().requests).toHaveLength(1);
   expect(log.get().requests[0]!.doneMs).not.toBeNull();
+});
+
+test('a query keeps counting its runs while many other loads have run', async () => {
+  const caller = appRouter.createCaller({});
+  runs.clear();
+  // As many counters as the server keeps
+  await Promise.all(
+    Array.from({ length: 5000 }, (_, index) =>
+      caller.post.bySlug({
+        failTimes: 0,
+        session: `other-${index}`,
+        slug: 'x',
+      }),
+    ),
+  );
+  const input = { failTimes: 1, session: `test-${++sessions}`, slug: 'x' };
+
+  await expect(caller.post.bySlug(input)).rejects.toThrow('run 1');
+  expect(await caller.post.bySlug(input)).toMatchObject({ run: 2 });
 });
