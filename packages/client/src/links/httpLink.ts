@@ -41,9 +41,9 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
   };
 
-const universalRequester = (
+const universalRequester = async (
   opts: Extract<Parameters<Requester>[0], { input: unknown }>,
-) => {
+): Promise<HTTPResult> => {
   if ('input' in opts) {
     const { input } = opts;
     if (isFormData(input)) {

@@ -1,14 +1,20 @@
 // https://github.com/trpc/trpc/issues/7180
 // @vitest-environment node
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import { httpLink } from '@trpc/client';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
+import { httpLink, retryLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
 function setup(
-  opts: { allowMethodOverride?: boolean; methodOverride?: 'POST' } = {},
+  opts: {
+    allowMethodOverride?: boolean;
+    methodOverride?: 'POST';
+    retryDelayMs?: number;
+  } = {},
 ) {
+  const retryDelayMs = opts.retryDelayMs;
   const serialize = vi.fn((input: unknown) => {
     if (typeof input === 'object' && input !== null && 'text' in input) {
       const formData = new FormData();
@@ -43,6 +49,14 @@ function setup(
     },
     client: ({ httpUrl }) => ({
       links: [
+        ...(retryDelayMs === undefined
+          ? []
+          : [
+              retryLink({
+                retry: ({ attempts }) => attempts < 2,
+                retryDelayMs: () => retryDelayMs,
+              }),
+            ]),
         httpLink({
           url: httpUrl,
           fetch: fetchSpy,
@@ -84,7 +98,9 @@ test('still sends direct FormData without invoking the serializer', async () => 
   });
 
   expect(serialize).not.toHaveBeenCalled();
-  const [, request] = fetchSpy.mock.calls[0]!;
+  const call = fetchSpy.mock.calls[0];
+  if (!call) throw new Error('fetch was not called');
+  const [, request] = call;
   expect(request?.body).toBeInstanceOf(FormData);
   expect(request?.headers).not.toHaveProperty('content-type');
 });
@@ -127,8 +143,35 @@ test('allows serializer-produced FormData for a query overridden to POST', async
   });
 
   expect(serialize).toHaveBeenCalledTimes(1);
-  const [, request] = fetchSpy.mock.calls[0]!;
+  const call = fetchSpy.mock.calls[0];
+  if (!call) throw new Error('fetch was not called');
+  const [, request] = call;
   expect(request?.method).toBe('POST');
   expect(request?.body).toBeInstanceOf(FormData);
   expect(request?.headers).not.toHaveProperty('content-type');
 });
+
+test.each([0, 25])(
+  'serializer exceptions reach observer.error on retry with a %i ms delay',
+  async (retryDelayMs) => {
+    using timers = fakeTimersResource();
+    const { ctx, fetchSpy, serialize } = setup({ retryDelayMs });
+    await using _ctx = ctx;
+    const formData = new FormData();
+    formData.set('text', 'hello');
+    serialize.mockReturnValueOnce(formData).mockImplementationOnce(() => {
+      throw new Error('serializer failed on retry');
+    });
+    fetchSpy.mockRejectedValueOnce(new Error('first request failed'));
+
+    const result = ctx.client.echo.mutate({ text: 'hello' });
+    const rejection = expect(result).rejects.toThrow(
+      'serializer failed on retry',
+    );
+    await timers.runAllTimersAsync();
+
+    await rejection;
+    expect(serialize).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  },
+);
