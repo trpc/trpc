@@ -4,6 +4,7 @@ import {
   createTRPCClient,
   experimental_dataOf as dataOf,
   experimental_infiniteQuery as infiniteQuery,
+  experimental_isPipelineFallback,
   experimental_load,
   experimental_perItem as perItem,
   experimental_pipelining,
@@ -12,6 +13,7 @@ import {
   httpBatchLink,
   httpBatchStreamLink,
   httpLink,
+  retryLink,
   splitLink,
 } from '@trpc/client';
 import type {
@@ -1811,6 +1813,65 @@ describe('a `splitLink` that sends a query and one that reads it to different li
     await expect(authors[2]).rejects.toThrow('no author');
     expect(await authors[0]).toMatchObject({ id: 'ada' });
     // Without a link that retries, its failure is final: it ran once
+    expect(calls.mock.calls).toEqual([
+      ['author', 'ada'],
+      ['author', 'bob'],
+      ['author', 'missing'],
+    ]);
+  });
+
+  test("an item's run that failed is not retried through a link that doesn't pipeline, also after a `retryLink`: it never saw the error", async () => {
+    const { appRouter, calls } = createRouter();
+    /** The paths and errors `retry` retried */
+    const retried: [path: string, error: unknown][] = [];
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          retryLink({
+            // As the docs have it: an operation that was aborted, such as
+            // one the load sends again with its input filled in, or a
+            // fallback, isn't retried
+            retry: (opts) => {
+              const retry =
+                !opts.op.signal?.aborted &&
+                !experimental_isPipelineFallback(opts.error) &&
+                opts.attempts < 2;
+              if (retry) {
+                retried.push([opts.op.path, opts.error]);
+              }
+              return retry;
+            },
+          }),
+          splitLink({
+            // An author's query with its `id` filled in goes by `httpLink`
+            condition: (op) =>
+              op.path === 'author.byId' &&
+              isObject(op.input) &&
+              typeof op.input['id'] === 'string',
+            true: httpLink({ url: clientOpts.httpUrl }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+
+    const list = query(c.post.list, { limit: 3 });
+    const authors = await experimental_load(c, {
+      authors: perItem(dataOf(list).items, (it) =>
+        query(c.author.byId, { id: it.authorId }),
+      ),
+    }).authors;
+
+    await expect(authors[2]).rejects.toThrow('no author');
+    expect(await authors[0]).toMatchObject({ id: 'ada' });
+    // Nothing was retried: the item's failure never reached `retryLink`,
+    // and the operations the load aborted to send again were aborted
+    expect(retried).toEqual([]);
     expect(calls.mock.calls).toEqual([
       ['author', 'ada'],
       ['author', 'bob'],

@@ -144,7 +144,10 @@ export const fallbacks = /* @__PURE__ */ new WeakSet<object>();
  * it:
  *
  * ```ts
- * retry: (opts) => !experimental_isPipelineFallback(opts.error) && opts.attempts < 3
+ * retry: (opts) =>
+ *   !opts.op.signal?.aborted &&
+ *   !experimental_isPipelineFallback(opts.error) &&
+ *   opts.attempts < 3
  * ```
  */
 export function isPipelineFallback(error: unknown): boolean {
