@@ -1726,7 +1726,11 @@ describe('a `splitLink` that sends a query and one that reads it to different li
           ],
         },
         perItem: false,
-        resolve: () => sentPost.then((it) => ({ id: it.authorId })),
+        // The untyped client's result is `unknown`
+        resolve: () =>
+          sentPost.then((it) => ({
+            id: isObject(it) ? it['authorId'] : undefined,
+          })),
         known: () => null,
       };
       const abort = new AbortController();

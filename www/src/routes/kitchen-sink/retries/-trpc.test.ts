@@ -193,7 +193,11 @@ test('a query keeps counting its runs while many other loads have run', async ()
   // As many counters as the server keeps
   await Promise.all(
     Array.from({ length: 5000 }, (_, index) =>
-      caller.post.bySlug({ failTimes: 0, session: `other-${index}`, slug: 'x' }),
+      caller.post.bySlug({
+        failTimes: 0,
+        session: `other-${index}`,
+        slug: 'x',
+      }),
     ),
   );
   const input = { failTimes: 1, session: `test-${++sessions}`, slug: 'x' };
