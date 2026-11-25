@@ -9,7 +9,6 @@ export {
 } from './links/internals/pipeline';
 export type {
   OperationPipeline,
-  PipelinedCall,
   PipelineSource,
 } from './links/internals/pipeline';
 export {
