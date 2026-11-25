@@ -48,6 +48,8 @@ interface ProcedureInfo {
   path: string;
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
+  /** `undefined` is a valid input, so a call may leave the input out. */
+  inputOptional: boolean;
   outputSchema: SchemaObject | null;
   errorSchema: SchemaObject | null;
   description?: string;
@@ -1061,6 +1063,20 @@ function isVoidLikeInput(inputType: Type | null): boolean {
   return isUnionOfVoids;
 }
 
+/** Whether `undefined` is among the values an input type accepts. */
+function acceptsUndefined(inputType: Type | null): boolean {
+  if (!inputType) {
+    return false;
+  }
+  return (
+    hasFlag(inputType, TypeFlags.Undefined) ||
+    (inputType.isUnionType() &&
+      inputType
+        .getTypes()
+        .some((member) => hasFlag(member, TypeFlags.Undefined)))
+  );
+}
+
 interface ProcedureDef {
   defType: Type;
   typeName: string;
@@ -1290,6 +1306,7 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     path: def.path,
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema,
+    inputOptional: acceptsUndefined(resolvedInputType),
     outputSchema,
     errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
@@ -1696,12 +1713,15 @@ function buildProcedureOperation(
     return operation;
   }
 
+  // tRPC clients send no `?input=` and no body when the input is `undefined`
+  const inputRequired = !proc.inputOptional;
+
   if (method === 'get') {
     operation.parameters = [
       {
         name: 'input',
         in: 'query',
-        required: true,
+        required: inputRequired,
         // FIXME: OAS 3.1.1 says a parameter MUST use either schema+style OR content, not both.
         // style should be removed here, but hey-api requires it to generate a correct query serializer.
         style: 'deepObject',
@@ -1710,7 +1730,7 @@ function buildProcedureOperation(
     ];
   } else {
     operation.requestBody = {
-      required: true,
+      required: inputRequired,
       content: { 'application/json': { schema: proc.inputSchema } },
     };
   }

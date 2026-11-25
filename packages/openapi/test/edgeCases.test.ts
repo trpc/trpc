@@ -401,6 +401,17 @@ describe('generateOpenAPIDocument default options', () => {
     expect(param.content?.['application/json']?.schema).toBeDefined();
   });
 
+  it('does not require the query input of a procedure whose input is optional', async () => {
+    const doc = await getDoc();
+    // A client may omit the input; it then sends no `input` query parameter.
+    expect(getParameter(doc, 'simpleCases.optional')?.required).toBe(false);
+  });
+
+  it('does not require the query input of a procedure whose input is nullish', async () => {
+    const doc = await getDoc();
+    expect(getParameter(doc, 'simpleCases.nullish')?.required).toBe(false);
+  });
+
   it('puts mutation input as requestBody for POST', async () => {
     const doc = await getDoc();
     const requestBody = getRequestBody(doc, 'user.create', 'post');

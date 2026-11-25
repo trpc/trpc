@@ -4640,7 +4640,7 @@
           {
             "name": "input",
             "in": "query",
-            "required": true,
+            "required": false,
             "style": "deepObject",
             "content": {
               "application/json": {
@@ -4716,7 +4716,7 @@
           {
             "name": "input",
             "in": "query",
-            "required": true,
+            "required": false,
             "style": "deepObject",
             "content": {
               "application/json": {
