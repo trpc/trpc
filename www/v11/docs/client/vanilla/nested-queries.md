@@ -597,7 +597,7 @@ A query that reads another's data then waits for that data, fills in its input i
 - **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
 
-A request that fails as a whole, such as on a network error, is no such case. The query it reads was in that request, and fails too, so there is no data to fill in. If no link sends the request again, the query rejects with that error. With a link that [retries](#retries), it goes in the request of the next attempt.
+A request that fails as a whole, such as on a network error, is no such case. The query it reads was in that request, and fails too, so there is no data to fill in. If no link sends the request again, the query rejects with that error. With a link that [retries](#retries), it goes in the request of the next attempt if that request has every query it reads, and else waits for them, as [Retries](#retries) says.
 
 With TanStack Query, some of these work differently: see [When the list is fetched again](/docs/client/tanstack-react-query/nested-queries#later-fetches).
 
