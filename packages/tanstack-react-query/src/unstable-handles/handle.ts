@@ -24,6 +24,7 @@ import type {
   UnusedSkipTokenTRPCQueryOptionsOut,
 } from '../internals/queryOptions';
 import type {
+  AnyTRPCQueryKey,
   ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
@@ -650,13 +651,11 @@ export function withItemQueries(opts: {
               // prefix: the item's query is under the prefix of the proxy
               // that built the items' entry, where a row reads it
               const key = readQueryKey(fromList.queryKey);
-              const built = {
-                ...fromList,
-                queryKey:
-                  queries.prefix === undefined
-                    ? [key.path, key.args]
-                    : [[queries.prefix], key.path, key.args],
-              };
+              const queryKey: AnyTRPCQueryKey =
+                queries.prefix === undefined
+                  ? [key.path, key.args]
+                  : [[queries.prefix], key.path, key.args];
+              const built = { ...fromList, queryKey };
               // With the QueryClient's defaults: `build()` alone hashes the
               // key without its default `queryKeyHashFn`, which can throw,
               // or name another query than the prefetch's. The prefetch

@@ -4388,7 +4388,7 @@ describe.each([
     const failed = results.authors[1];
     const error = failed?.status === 'error' ? failed.error : null;
     expect(isTRPCEntryError(error)).toBe(true);
-    expect(String(error?.cause)).toMatch(/BigInt/);
+    expect(error?.cause.message).toMatch(/BigInt/);
     // The first row's author is from the list's request: none of its own
     expect(results.authors[0]).toMatchObject({
       status: 'success',
@@ -7098,7 +7098,9 @@ describe('experimental_useHandles', () => {
     // the props, which React may hold on to after the component leaves, and
     // not a key, which V8 may hold on to as an object's shape
     const current: { session: symbol | null } = { session: Symbol('session') };
-    const session = new WeakRef(current.session!);
+    // The ES2022 lib that the repo types with has no symbol as a weak key,
+    // which Node takes since v20
+    const session = new WeakRef(current.session! as unknown as object);
     const seen: unknown[] = [];
     function Card() {
       const context = { session: current.session };

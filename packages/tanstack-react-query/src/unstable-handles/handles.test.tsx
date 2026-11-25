@@ -753,7 +753,6 @@ describe('loading', () => {
     const entries = {
       post: prefetchEntry(trpc.post.byId, { id: '1' }),
       get author(): never {
-        // oxlint-disable-next-line no-throw-literal
         throw null;
       },
     };
