@@ -363,6 +363,12 @@ It is a feature of the client and the server, not of TanStack Query, so it has i
 
 An entry with a `trpc.context` of its own takes no part: a link may route by that context. It loads in a request of its own, and so does an entry that reads its data.
 
+Your links see each entry's query, as they see each query of `experimental_load()`:
+
+- **An entry that reads another's data has blanks in its input**: the author's `op.input` is `{ id: undefined }` until the server fills it in. A link that reads `op.input` sees the blank, and `experimental_inputOf(op)` gives the input filled in. See [What your links see](/docs/client/vanilla/nested-queries#links).
+- **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, such as another backend's, it isn't put in the post's request. It goes by itself through its own link, with its input filled in, once the post's data is there.
+- **A link that [retries](/docs/client/vanilla/nested-queries#retries) sees each query too.** If the post's request fails as a whole and `retryLink` sends it again, the author's query goes in the retry's request, and the entry uses that result: the author runs once.
+
 ## The load doesn't wait {#without-waiting}
 
 `experimental_dataOf(entry, (data) => entry)` builds an entry from another entry's data. The load doesn't wait for that data. This is the form [In short](#gist) uses.
@@ -705,6 +711,7 @@ Content-Type: application/json
 - **Only the item's part of an input is new.** What an item's input reads besides the item, such as the whole list or another entry, stays as it was in the first load. That is the input the items' handles have, so each row still finds its query.
 - **Without one request, nothing is added to the list's request.** A row's query loads when the row reads it, in a batch with the other rows'.
 - **If the server refuses the items' call**, such as for one of its [limits](/docs/client/vanilla/nested-queries#limits), the list arrives without the items' data. Then every row's query is fetched as soon as the list arrives, in a batch, whether its row renders or not.
+- **The items' call goes through your links**, as the list does. If a `splitLink` sends it to another link than the list's, it isn't in the list's request. Through a link that pipelines, every row's query is fetched through that link as soon as the list arrives; through one that doesn't, a row's query loads when the row reads it. If the list's request fails as a whole and a link retries it, the items' call goes in the retry's request.
 - **Not with a `trpc.context` of its own.** `fromHandle(trpc, handles.posts, { trpc: { context } })` with a non-empty `context` fetches the list alone, since a link may route by that context. Each row's query loads when the row reads it.
 
 ## Entries next to components {#groups}
