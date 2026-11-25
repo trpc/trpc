@@ -40,7 +40,7 @@ import {
   isObject,
   makeResource,
 } from '@trpc/server/unstable-core-do-not-import';
-import superjson from 'superjson';
+import superjson, { SuperJSON } from 'superjson';
 import { z } from 'zod';
 
 interface Post {
@@ -1622,6 +1622,61 @@ describe.each([
     });
   });
 
+  test("an infinite query's `pageParams` has the cursor of a whole input read of another entry that is an instance of a class, as it is sent", async () => {
+    class FeedInput {
+      constructor(public cursor: number) {}
+    }
+    // A transformer that keeps the class, so the input is one on the client
+    const transformer = new SuperJSON();
+    transformer.registerClass(FeedInput, 'FeedInput');
+    const t = initTRPC.create({ transformer });
+    const appRouter = t.router({
+      start: t.procedure.query(() => new FeedInput(2)),
+      feed: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().nullish(),
+            direction: z.enum(['forward', 'backward']).optional(),
+          }),
+        )
+        .query((opts) => ({
+          cursor: opts.input.cursor ?? null,
+          nextCursor: null,
+        })),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: { allowWholeValues: true } },
+      client: (clientOpts) => ({
+        links: [
+          scenario.link({
+            url: clientOpts.httpUrl,
+            transformer,
+            experimental_pipelining: experimental_pipelining(),
+          }),
+        ],
+      }),
+    });
+    using _quiet = quietWarnings();
+    const c = ctx.client;
+
+    const start = query(c.start);
+    const res = experimental_load(c, {
+      start,
+      feed: infiniteQuery(c.feed, dataOf(start)),
+      // An instance goes as it is, with its own cursor
+      withInitial: infiniteQuery(c.feed, dataOf(start), { initialCursor: 1 }),
+    });
+
+    expect(await res.feed).toMatchObject({
+      pages: [{ cursor: 2 }],
+      pageParams: [2],
+    });
+    expect(await res.withInitial).toMatchObject({
+      pages: [{ cursor: 2 }],
+      pageParams: [2],
+    });
+  });
+
   test("an infinite query's `pageParams` has the cursor read of another entry", async () => {
     await using ctx = setup({ pipelining: true });
     using _quiet = quietWarnings();
@@ -1877,6 +1932,64 @@ describe('a `splitLink` that sends a query and one that reads it to different li
       ['author', 'bob'],
       ['author', 'missing'],
     ]);
+  });
+
+  test("an item a link that doesn't pipeline takes doesn't change how its siblings retry", async () => {
+    const t = initTRPC.create();
+    /** The runs of each item, by its id */
+    const runs = new Map<string, number>();
+    const appRouter = t.router({
+      list: t.procedure.query(() => ({ items: [{ id: 'x' }, { id: 'y' }] })),
+      // Each item fails on its first run
+      item: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        const run = (runs.get(opts.input.id) ?? 0) + 1;
+        runs.set(opts.input.id, run);
+        if (run === 1) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `${opts.input.id} failed`,
+          });
+        }
+        return { id: opts.input.id, run };
+      }),
+    });
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          retryLink({
+            retry: (opts) =>
+              !opts.op.signal?.aborted &&
+              !experimental_isPipelineFallback(opts.error) &&
+              opts.attempts < 2,
+          }),
+          splitLink({
+            // Only item `x`, once its `id` is filled in, goes by `httpLink`
+            condition: (op) =>
+              op.path === 'item' &&
+              isObject(op.input) &&
+              op.input['id'] === 'x',
+            true: httpLink({ url: clientOpts.httpUrl }),
+            false: httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+
+    const list = query(c.list);
+    const items = await experimental_load(c, {
+      items: perItem(dataOf(list).items, (it) => query(c.item, { id: it.id })),
+    }).items;
+
+    // `x` went by `httpLink`, which never saw its failure: it is final
+    await expect(items[0]).rejects.toThrow('x failed');
+    // `y` stays on the link that pipelines, which `retryLink` retries by
+    expect(await items[1]).toEqual({ id: 'y', run: 2 });
+    expect(Object.fromEntries(runs)).toEqual({ x: 1, y: 2 });
   });
 });
 
