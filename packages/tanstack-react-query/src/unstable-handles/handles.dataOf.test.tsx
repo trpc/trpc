@@ -1,3 +1,5 @@
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { testReactResource } from '../../test/__helpers';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
@@ -28,8 +30,6 @@ import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
 import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
-import { setFlagsFromString } from 'node:v8';
-import { runInNewContext } from 'node:vm';
 import * as React from 'react';
 import superjson from 'superjson';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -2659,6 +2659,10 @@ describe('a list fetch that streams its items', () => {
     await vi.waitFor(() => {
       expect(u0Runs()).toBe(runsBefore + 1);
     });
+    const replacementRun = resource.held.mock.calls
+      .filter(([id]) => id === 'u0')
+      .at(-1)?.[1];
+    expect(replacementRun).not.toBe(staleRun);
 
     releaser.release();
     await vi.waitFor(() => {
@@ -2666,11 +2670,9 @@ describe('a list fetch that streams its items', () => {
     });
 
     // The second refetch's result, not the first's, and no request of its own
-    expect(resource.queryClient.getQueryData(authorKey)).toMatchObject({
+    expect(resource.queryClient.getQueryData(authorKey)).toEqual({
       id: 'u0',
-    });
-    expect(resource.queryClient.getQueryData(authorKey)).not.toMatchObject({
-      run: staleRun,
+      run: replacementRun,
     });
     expect(u0Runs()).toBe(runsBefore + 1);
   });
@@ -4372,16 +4374,26 @@ describe.each([
     const trpc = resource.optionsProxyClient;
 
     const posts = ensureEntry(trpc.post.paged, {});
-    await loadHandles(trpc, {
+    const [, results] = await loadHandlesSettled(trpc, {
       posts,
       authors: experimental_perItem(experimental_dataOf(posts).items, (post) =>
-        prefetchEntry(trpc.author.byId, { id: post.authorId }),
+        ensureEntry(trpc.author.byId, { id: post.authorId }),
       ),
     });
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
+    // The second row fails, with what its key can't hold
+    expect(results.authors).toHaveLength(2);
+    const failed = results.authors[1];
+    const error = failed?.status === 'error' ? failed.error : null;
+    expect(isTRPCEntryError(error)).toBe(true);
+    expect(String(error?.cause)).toMatch(/BigInt/);
     // The first row's author is from the list's request: none of its own
+    expect(results.authors[0]).toMatchObject({
+      status: 'success',
+      data: { id: 'u0' },
+    });
     expect(
       resource.queryClient.getQueryData(
         trpc.author.byId.queryKey({ id: 'u0' }),
@@ -5633,6 +5645,10 @@ describe.each([
       // its items load
       expect(handles.post.experimental_perItem).toHaveLength(1);
       resource.calls.mockClear();
+      backendB.calls.mockClear();
+      // What the first load cached is gone: what is there next is the
+      // refetch's
+      resource.queryClient.removeQueries({ queryKey: trpc.team.pathKey() });
       await resource.queryClient.fetchQuery({
         ...fromHandle(trpc, handles.post),
         staleTime: 0,
@@ -5644,6 +5660,29 @@ describe.each([
       expect(resource.calls.mock.calls).toEqual([
         ['post.bySlug', { slug: 'hello' }],
       ]);
+      if (scenario.linkB === 'pipelining') {
+        // B ran the items again, as the post came
+        expect(backendB.calls.mock.calls).toHaveLength(2);
+        expect(backendB.calls.mock.calls).toEqual(
+          expect.arrayContaining([
+            ['team.byId', { id: 't1' }],
+            ['team.byId', { id: 't2' }],
+          ]),
+        );
+      } else {
+        // A link that doesn't pipeline loads no item with the post: the
+        // row that reads its item loads it from B
+        expect(backendB.calls).not.toHaveBeenCalled();
+        await resource.queryClient.fetchQuery(
+          fromHandle(
+            trpc,
+            experimental_handleOfItem(handles.teams, { id: 't2' }),
+          ),
+        );
+        expect(backendB.calls.mock.calls).toEqual([
+          ['team.byId', { id: 't2' }],
+        ]);
+      }
       expect(
         resource.queryClient.getQueryData(
           trpc.team.byId.queryKey({ id: 't2' }),

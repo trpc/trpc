@@ -379,9 +379,7 @@ function describeKeys(
     .map(
       (key) =>
         [
-          typeof key === 'symbol'
-            ? describeSymbol(key, ids)
-            : `string:${key}`,
+          typeof key === 'symbol' ? describeSymbol(key, ids) : `string:${key}`,
           describe(object[key]),
         ] as const,
     )
@@ -463,11 +461,7 @@ function describeValue(
     // Symbol keys too: a link can route by them, at any level
     return [
       'object',
-      describeKeys(
-        value,
-        (member) => describeValue(member, inside, ids),
-        ids,
-      ),
+      describeKeys(value, (member) => describeValue(member, inside, ids), ids),
     ];
   }
   try {
@@ -489,11 +483,7 @@ function describeContext(
   if (context === null) {
     return null;
   }
-  return describeKeys(
-    context,
-    (member) => describeValue(member, [], ids),
-    ids,
-  );
+  return describeKeys(context, (member) => describeValue(member, [], ids), ids);
 }
 
 /**
