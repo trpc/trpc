@@ -178,7 +178,7 @@ const author = await res.author;
 ```
 
 - **It returns at once**, with a promise for every key.
-- **Each promise settles when its own query is done.** A query that fails rejects only its own promise. The other keys keep their data.
+- **Each promise settles when its own query is done.** A query that fails rejects its own promise and the promises of the queries that read it, with its error. The other keys keep their data.
 - **A promise you don't read raises no unhandled rejection.**
 - **A query that another reads loads too**, even when it isn't in what you pass.
 - **Descriptions nest.** `experimental_load(client, { page: postQueries(client, opts), nav: navQueries(client) })` is one request, and `res.page.post` is a promise.
@@ -418,7 +418,7 @@ Its `pipe`, decoded, has the blanks of each call that has any:
 }
 ```
 
-Its response has a result for every call, by index, like any batch:
+Its response, decoded, has a result for every call, by index, like any batch. `httpBatchStreamLink` streams each result as it settles, and `httpBatchLink` sends them as one JSON array:
 
 ```json
 [
