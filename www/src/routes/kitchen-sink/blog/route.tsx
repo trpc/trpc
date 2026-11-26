@@ -13,7 +13,7 @@ import {
 import {
   experimental_dataOf,
   experimental_perItem,
-  type experimental_inferHandles,
+  experimental_handleOfItem,
   loadHandles,
   prefetchEntry,
   prefetchInfiniteEntry,
@@ -23,7 +23,11 @@ import { Suspense, useState } from 'react';
 
 import { pageHead } from '~/seo.ts';
 
-import { PostList, PostListSkeleton } from './-components/post-list.tsx';
+import {
+  AuthorName,
+  PostList,
+  PostListSkeleton,
+} from './-components/post-list.tsx';
 import { RequestMeter } from './-components/request-meter.tsx';
 import {
   BlogPreloadProvider,
@@ -72,8 +76,6 @@ function postListEntries(trpc: TRPC) {
   } satisfies TRPCLoadEntries;
 }
 
-/** What the list's loader gives its components */
-export type PostListHandles = experimental_inferHandles<typeof postListEntries>;
 
 /**
  * The showcase's own query client, for its pages alone: the rest of the
@@ -208,7 +210,19 @@ function BlogFrame() {
                 data-scroll-restoration-id="blog-posts"
               >
                 <Suspense fallback={<PostListSkeleton />}>
-                  <PostList handles={data.handles} />
+                  <PostList
+                    posts={data.handles.posts}
+                    // The post gives the handle of its author's query, also
+                    // for a post on a page that loaded after the loader ran
+                    author={(post) => (
+                      <AuthorName
+                        author={experimental_handleOfItem(
+                          data.handles.authors,
+                          post,
+                        )}
+                      />
+                    )}
+                  />
                 </Suspense>
               </aside>
             </div>

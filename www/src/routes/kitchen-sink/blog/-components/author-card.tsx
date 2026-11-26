@@ -13,31 +13,27 @@ import {
 } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
-  experimental_handleOfItem,
   fromHandle,
   type inferInfiniteQueryHandle,
+  type inferQueryHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense } from 'react';
+import type { ReactNode } from 'react';
 
-import type { PostPageHandles } from '../$slug.tsx';
 import { usePostLink } from '../-links.ts';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevFallback, DevNote } from './note.tsx';
 import { useBlogPreload } from './settings.tsx';
 
 /**
- * The author of a post, and what else their team wrote. The author's id is in
- * the post, and the team's id is in the author, so the card reads the post
- * first: the handles of its own queries are finished with the data they are
- * built from.
+ * An author, and what the page puts under them: the page passes the author's
+ * handle, finished with the post it read, and the team's posts as children
  */
-export function AuthorCard(props: { readonly handles: PostPageHandles }) {
+export function AuthorCard(props: {
+  readonly author: inferQueryHandle<TRPC['blog']['authorById']>;
+  readonly children: ReactNode;
+}) {
   const trpc = useTRPC();
-  const { handles } = props;
-  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
-  const authorQuery = useSuspenseQuery(
-    fromHandle(trpc, experimental_handleOfItem(handles.author, postQuery.data)),
-  );
+  const authorQuery = useSuspenseQuery(fromHandle(trpc, props.author));
   const author = authorQuery.data;
 
   return (
@@ -74,27 +70,24 @@ export function AuthorCard(props: { readonly handles: PostPageHandles }) {
         <p className="mb-2 text-sm font-medium">
           More from the {author.teamId} team
         </p>
-        {/* The list loads after the author, whose team it needs, so it has a
-            boundary of its own: the card shows without it */}
-        <Suspense
-          fallback={
-            <DevFallback className="h-28 w-full">
-              waiting for <code>blog.posts</code>. Its team id is in the author:
-              the server fills it in, in the same request.
-            </DevFallback>
-          }
-        >
-          <MoreFromTeam
-            posts={experimental_handleOfItem(handles.moreFromTeam, author)}
-            exceptSlug={postQuery.data.slug}
-          />
-        </Suspense>
+        {props.children}
       </CardContent>
     </Card>
   );
 }
 
-function MoreFromTeam(props: {
+/** The team's list while it loads, under the author */
+export function MoreFromTeamFallback() {
+  return (
+    <DevFallback className="h-28 w-full">
+      waiting for <code>blog.posts</code>. Its team id is in the author: the
+      server fills it in, in the same request.
+    </DevFallback>
+  );
+}
+
+/** What else the author's team wrote, without the post the page shows */
+export function MoreFromTeam(props: {
   readonly posts: inferInfiniteQueryHandle<TRPC['blog']['posts']>;
   /** The post the page shows, which the list leaves out */
   readonly exceptSlug: string;

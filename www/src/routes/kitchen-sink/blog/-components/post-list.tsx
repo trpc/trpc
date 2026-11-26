@@ -5,15 +5,16 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import type { inferRouterOutputs } from '@trpc/server';
 import {
-  experimental_handleOfItem,
   fromHandle,
+  type inferInfiniteQueryHandle,
   type inferQueryHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
-import { Suspense, useEffect, useRef } from 'react';
+import { type ReactNode, Suspense, useEffect, useRef } from 'react';
 
 import { formatDate } from '../-date.ts';
-import type { PostListHandles } from '../route.tsx';
+import type { AppRouter } from '../-server/router.ts';
 import { type TRPC, useTRPC } from '../-trpc.ts';
 import { DevNote, DevNoteText } from './note.tsx';
 import { usePostLink } from '../-links.ts';
@@ -38,17 +39,22 @@ export function PostListSkeleton() {
   );
 }
 
+type ListedPost = inferRouterOutputs<AppRouter>['blog']['posts']['items'][number];
+
 /**
- * Every post, newest first, with an author for every post. Scrolling to its
- * end loads the next page, and an author for every post on it, in one
- * request. The open post's row is highlighted.
+ * Every post, newest first. Each row shows what `author` renders for its
+ * post. Scrolling to its end loads the next page, in one request with what
+ * the page loads for every post on it. The open post's row is highlighted.
  */
-export function PostList(props: { readonly handles: PostListHandles }) {
+export function PostList(props: {
+  readonly posts: inferInfiniteQueryHandle<TRPC['blog']['posts']>;
+  readonly author: (post: ListedPost) => ReactNode;
+}) {
   const trpc = useTRPC();
   const preload = useBlogPreload();
   const postLink = usePostLink();
   const postsQuery = useSuspenseInfiniteQuery(
-    fromHandle(trpc, props.handles.posts, {
+    fromHandle(trpc, props.posts, {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }),
   );
@@ -132,14 +138,7 @@ export function PostList(props: { readonly handles: PostListHandles }) {
                     </DevNoteText>
                   }
                 >
-                  {/* The post gives the handle of its author's query, also for
-                      a post on a page that loaded after the loader ran */}
-                  <AuthorName
-                    author={experimental_handleOfItem(
-                      props.handles.authors,
-                      post,
-                    )}
-                  />
+                  {props.author(post)}
                 </Suspense>
               </span>
               {' · '}
@@ -173,7 +172,8 @@ export function PostList(props: { readonly handles: PostListHandles }) {
   );
 }
 
-function AuthorName(props: {
+/** A post's author, by the handle of their query */
+export function AuthorName(props: {
   readonly author: inferQueryHandle<TRPC['blog']['authorById']>;
 }) {
   const trpc = useTRPC();

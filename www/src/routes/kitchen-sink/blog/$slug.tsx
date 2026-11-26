@@ -15,6 +15,7 @@ import {
 } from '@tanstack/react-router';
 import {
   experimental_dataOf,
+  experimental_handleOfItem,
   type experimental_inferHandles,
   fromHandle,
   type inferQueryHandle,
@@ -27,7 +28,11 @@ import { Skeleton } from '@shared/ui/components/skeleton';
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import { Suspense, useEffect } from 'react';
 
-import { AuthorCard } from './-components/author-card.tsx';
+import {
+  AuthorCard,
+  MoreFromTeam,
+  MoreFromTeamFallback,
+} from './-components/author-card.tsx';
 import { DevNote, noteTextClass, SeeItYourself } from './-components/note.tsx';
 import { useBlogPreload } from './-components/settings.tsx';
 import { formatDate } from './-date.ts';
@@ -67,8 +72,8 @@ function postPageEntries(trpc: TRPC, opts: { readonly slug: string }) {
   } satisfies TRPCLoadEntries;
 }
 
-/** What the post page's loader gives its components */
-export type PostPageHandles = experimental_inferHandles<typeof postPageEntries>;
+/** What the post page's loader gives the page */
+type PostPageHandles = experimental_inferHandles<typeof postPageEntries>;
 
 export const Route = createFileRoute('/kitchen-sink/blog/$slug')({
   loader: async (opts) => {
@@ -101,7 +106,7 @@ function PostPage() {
         <Post post={data.handles.post} />
       </Suspense>
       <Suspense fallback={<AuthorCardSkeleton />}>
-        <AuthorCard handles={data.handles} />
+        <PostAuthor handles={data.handles} />
       </Suspense>
       <SeeItYourself>
         <p>
@@ -183,6 +188,32 @@ function PostSkeleton() {
         URL, and didn’t wait for it.
       </p>
     </div>
+  );
+}
+
+/**
+ * The author's id is in the post, and the team's id is in the author: this
+ * reads each, and finishes the next handle with it. The card and the list
+ * get the handle of their own query only
+ */
+function PostAuthor(props: { readonly handles: PostPageHandles }) {
+  const trpc = useTRPC();
+  const { handles } = props;
+  const post = useSuspenseQuery(fromHandle(trpc, handles.post)).data;
+  const authorHandle = experimental_handleOfItem(handles.author, post);
+  // The card's query: read here too, for the team's id
+  const author = useSuspenseQuery(fromHandle(trpc, authorHandle)).data;
+  return (
+    <AuthorCard author={authorHandle}>
+      {/* The list loads after the author, whose team it needs, so it has a
+          boundary of its own: the card shows without it */}
+      <Suspense fallback={<MoreFromTeamFallback />}>
+        <MoreFromTeam
+          posts={experimental_handleOfItem(handles.moreFromTeam, author)}
+          exceptSlug={post.slug}
+        />
+      </Suspense>
+    </AuthorCard>
   );
 }
 
