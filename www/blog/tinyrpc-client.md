@@ -222,7 +222,7 @@ We'll first create a helper function for creating recursive proxies - `createRec
 
 > [!NOTE] Info
 >
-> This is almost the exact implementation used in production, with the exception that we aren't handling some edge cases. [See for yourself](https://github.com/trpc/trpc/blob/f6d113b3aa64ac07533a727fbf81774e8de81e67/packages/server/src/unstable-core-do-not-import/createProxy.ts#L19-L81)!
+> This is almost the exact implementation used in production, with the exception that we aren't handling some edge cases. [See for yourself](https://github.com/trpc/trpc/blob/main/packages/server/src/unstable-core-do-not-import/createProxy.ts)!
 
 ```ts twoslash
 interface ProxyCallbackOptions {
