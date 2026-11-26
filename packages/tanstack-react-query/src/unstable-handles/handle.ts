@@ -1,5 +1,6 @@
 import type {
   FetchQueryOptions,
+  Query,
   QueryClient,
   QueryFunction,
   QueryFunctionContext,
@@ -140,6 +141,8 @@ export function warnIfNotHydrated(
 }
 
 export const watchedHydrations = new WeakSet<Promise<unknown>>();
+/** The options of the latest read of each watched promise's query */
+const hydrationReads = new WeakMap<Promise<unknown>, any>();
 
 /**
  * A query dehydrated as pending that later rejects reaches the browser as a
@@ -156,10 +159,13 @@ export function refetchRejectedHydration(
   }
   // With the QueryClient's defaults, which can disable it too
   const defaulted = queryClient.defaultQueryOptions(options);
-  const enabled =
-    typeof defaulted.enabled === 'function'
-      ? defaulted.enabled
-      : () => defaulted.enabled;
+  const isDisabled = (
+    read: typeof defaulted,
+    query: Query<any, any, any, any>,
+  ) =>
+    (typeof read.enabled === 'function'
+      ? read.enabled(query)
+      : read.enabled) === false;
   // By the hash the defaults give it: an exact `find()` hashes the key with
   // each cached query's own hash, which can throw, such as for a bigint
   const query = queryClient.getQueryCache().get(defaulted.queryHash);
@@ -168,14 +174,20 @@ export function refetchRejectedHydration(
     !query ||
     !promise ||
     query.state.data !== undefined ||
-    query.state.fetchStatus === 'idle' ||
-    enabled(query) === false ||
-    watchedHydrations.has(promise)
+    query.state.fetchStatus === 'idle'
   ) {
+    return;
+  }
+  // A later read, such as a rerender with `enabled: false`, decides
+  // whether the watcher refetches
+  hydrationReads.set(promise, options);
+  if (isDisabled(defaulted, query) || watchedHydrations.has(promise)) {
     return;
   }
   watchedHydrations.add(promise);
   promise.catch((error: unknown) => {
+    const read = hydrationReads.get(promise);
+    const latest = queryClient.defaultQueryOptions(read);
     if (
       isTRPCClientError(error) ||
       isCancelledError(error) ||
@@ -183,7 +195,7 @@ export function refetchRejectedHydration(
       // which a refetch would replace
       query.state.data !== undefined ||
       query.state.fetchStatus !== 'idle' ||
-      enabled(query) === false
+      isDisabled(latest, query)
     ) {
       return;
     }
@@ -194,10 +206,10 @@ export function refetchRejectedHydration(
     const refetch =
       type === 'infinite'
         ? queryClient.fetchInfiniteQuery({
-            ...options,
-            retry: defaulted.retry ?? 3,
+            ...read,
+            retry: latest.retry ?? 3,
           })
-        : query.fetch(defaulted);
+        : query.fetch(latest);
     refetch.catch(() => {
       // surfaces through the query's state
     });

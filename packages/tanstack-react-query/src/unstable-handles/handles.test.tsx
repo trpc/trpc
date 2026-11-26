@@ -1396,6 +1396,25 @@ describe('runtime', () => {
       expect(t.resource.calls).toHaveBeenCalledTimes(1);
     });
 
+    test('a read that is disabled after an enabled one is not refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const handle = t.handle as inferQueryHandle<TRPC['flaky']>;
+      // A rerender of the same read with `enabled: false`
+      fromHandle(browserTrpc, handle);
+      const options = fromHandle(browserTrpc, handle, { enabled: false });
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryState(options.queryKey)?.status).toBe('error'),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
+    });
+
     test('an enabled read after a disabled one is refetched', async () => {
       await using t = await setup('flaky');
       t.hydrateBrowser(t.state);
