@@ -10,8 +10,8 @@
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "oxlint src",
     "typecheck": "tsc",
-    "test-dev": "start-server-and-test 'tsx src/server' 2022 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
+    "test-dev": "start-server-and-test 'tsx src/server' tcp:2022 'tsx src/client'",
+    "test-start": "start-server-and-test 'node dist/server' tcp:2022 'node dist/client'"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -30,7 +30,7 @@
     "npm-run-all2": "catalog:",
     "oxlint": "^1.92.0",
     "oxlint-tsgolint": "^7.0.2006",
-    "start-server-and-test": "^1.12.0",
+    "start-server-and-test": "catalog:",
     "tsx": "^4.23.15",
     "typescript": "^5.9.2",
     "wait-port": "^1.1.0"

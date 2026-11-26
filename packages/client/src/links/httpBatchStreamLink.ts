@@ -41,6 +41,8 @@ export type HTTPBatchStreamLinkOptions<TRoot extends AnyClientTypes> =
 
 type BatchStreamOperation = Operation & {
   releaseSignal: () => void;
+  /** Aborts the op's signal once its response has nothing left to stream */
+  settle: () => void;
 };
 
 /**
@@ -155,6 +157,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             deserialize: (data) =>
               resolvedOpts.transformer.output.deserialize(data),
             onError: () => abortController.abort(),
+            // An op with nothing left to stream must not hold the batch open.
+            onSettled: (settled) => batchOps[Number(settled.key)]?.settle(),
             formatError(opts) {
               const error = opts.error as TRPCErrorShape;
               return TRPCClientError.from({
@@ -215,6 +219,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           ...op,
           signal,
           releaseSignal: cleanup,
+          settle: () => ac.abort(),
         });
 
         let isDone = false;

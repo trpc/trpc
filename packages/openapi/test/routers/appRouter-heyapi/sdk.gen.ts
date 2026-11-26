@@ -348,12 +348,12 @@ export class RecursiveTypes extends HeyApiClient {
 }
 
 export class SimpleCases extends HeyApiClient {
-  public nullish<ThrowOnError extends boolean = false>(options: Options<SimpleCasesNullishData, ThrowOnError>): RequestResult<SimpleCasesNullishResponses, SimpleCasesNullishErrors, ThrowOnError> {
-    return (options.client ?? this.client).get<SimpleCasesNullishResponses, SimpleCasesNullishErrors, ThrowOnError>({ url: '/simpleCases.nullish', ...options });
+  public nullish<ThrowOnError extends boolean = false>(options?: Options<SimpleCasesNullishData, ThrowOnError>): RequestResult<SimpleCasesNullishResponses, SimpleCasesNullishErrors, ThrowOnError> {
+    return (options?.client ?? this.client).get<SimpleCasesNullishResponses, SimpleCasesNullishErrors, ThrowOnError>({ url: '/simpleCases.nullish', ...options });
   }
 
-  public optional<ThrowOnError extends boolean = false>(options: Options<SimpleCasesOptionalData, ThrowOnError>): RequestResult<SimpleCasesOptionalResponses, SimpleCasesOptionalErrors, ThrowOnError> {
-    return (options.client ?? this.client).get<SimpleCasesOptionalResponses, SimpleCasesOptionalErrors, ThrowOnError>({ url: '/simpleCases.optional', ...options });
+  public optional<ThrowOnError extends boolean = false>(options?: Options<SimpleCasesOptionalData, ThrowOnError>): RequestResult<SimpleCasesOptionalResponses, SimpleCasesOptionalErrors, ThrowOnError> {
+    return (options?.client ?? this.client).get<SimpleCasesOptionalResponses, SimpleCasesOptionalErrors, ThrowOnError>({ url: '/simpleCases.optional', ...options });
   }
 
   public nullable<ThrowOnError extends boolean = false>(options: Options<SimpleCasesNullableData, ThrowOnError>): RequestResult<SimpleCasesNullableResponses, SimpleCasesNullableErrors, ThrowOnError> {

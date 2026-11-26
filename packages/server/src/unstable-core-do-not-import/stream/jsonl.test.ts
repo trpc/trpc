@@ -1153,3 +1153,38 @@ test('regression: a promise inside a value that resolves after the stream is can
     ]),
   );
 });
+
+test('calls onSettled once every streamed part under a head key has closed', async () => {
+  const late = createDeferred<number>();
+  const end = createDeferred();
+  const data = {
+    0: Promise.resolve({ deferred: late.promise }),
+    1: Promise.resolve({
+      iterable: (async function* () {
+        yield 1;
+        await end.promise;
+      })(),
+    }),
+    2: 'plain',
+  };
+  const settled: string[] = [];
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: jsonlStreamProducer({ data }),
+    abortController: new AbortController(),
+    onSettled: (opts) => settled.push(opts.key),
+  });
+  expect(head[2]).toBe('plain');
+  const [zero, one] = await Promise.all([head[0], head[1]]);
+  expect(settled).toEqual(['2']);
+
+  late.resolve(42);
+  expect(await zero.deferred).toBe(42);
+  await vi.waitFor(() => expect(settled).toEqual(['2', '0']));
+
+  for await (const item of one.iterable) {
+    expect(item).toBe(1);
+    break;
+  }
+  await vi.waitFor(() => expect(settled).toEqual(['2', '0', '1']));
+  end.resolve();
+});
