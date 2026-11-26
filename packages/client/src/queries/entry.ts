@@ -20,8 +20,9 @@ import { dataPath, itemPathOf } from './path';
  * Describing queries, apart from loading them: `experimental_query()` and
  * the functions beside it build plain values that say what to load and what
  * each input reads of another query's data. `experimental_load()` loads them
- * with a client, and `loadHandles()` of `@trpc/tanstack-react-query` loads
- * them into a `QueryClient`. The description is the same for both.
+ * with a client. The entries of `@trpc/tanstack-react-query`, such as
+ * `prefetchEntry()`, are such values too, with a verb for its `loadHandles()`:
+ * this loads them as it loads any query.
  */
 
 export type QueryEntryType = 'query' | 'infinite';
@@ -453,7 +454,7 @@ function queryEntry(opts: {
 /**
  * A query to load. Its input, or any value inside it, can be data of another
  * entry, from `experimental_dataOf()`. Creating it starts nothing: load it
- * with `experimental_load()`, or with TanStack Query's `loadHandles()`.
+ * with `experimental_load()`.
  *
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries
