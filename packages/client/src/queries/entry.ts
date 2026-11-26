@@ -20,10 +20,7 @@ import { dataPath, itemPathOf } from './path';
  * Describing queries, apart from loading them: `experimental_query()` and
  * the functions beside it build plain values that say what to load and what
  * each input reads of another query's data. `experimental_load()` loads them
- * with a client. An entry of another package that has a `QueryEntryState`
- * under `queryEntryState` is such a value too, and loads as any query: the
- * entries of `@trpc/tanstack-react-query`, such as `prefetchEntry()`, have
- * one beside the verb for its `loadHandles()`.
+ * with a client.
  */
 
 export type QueryEntryType = 'query' | 'infinite';
