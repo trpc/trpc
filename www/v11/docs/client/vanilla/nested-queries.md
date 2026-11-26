@@ -178,7 +178,8 @@ const author = await res.author;
 ```
 
 - **It returns at once**, with a promise for every key.
-- **Each promise settles when its own query is done.** A query that fails rejects its own promise and the promises of the queries that read it, with its error. The other keys keep their data.
+- **Each promise settles when its own query is done.** A query that fails rejects its own promise. The queries that read it can't run, and reject with its error. The other keys keep their data.
+- **A query that ran keeps its own result.** A source can fail while its response is serialized, after the server ran what reads it.
 - **A promise you don't read raises no unhandled rejection.**
 - **A query that another reads loads too**, even when it isn't in what you pass.
 - **Descriptions nest.** `experimental_load(client, { page: postQueries(client, opts), nav: navQueries(client) })` is one request, and `res.page.post` is a promise.
