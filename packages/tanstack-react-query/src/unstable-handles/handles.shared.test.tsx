@@ -12,7 +12,6 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy } from '..';
 import {
   ensureEntry,
   experimental_dataOf,
@@ -28,6 +27,7 @@ import type {
   experimental_TRPCQueryHandlePerItem,
   inferQueryHandle,
 } from '.';
+import type { TRPCOptionsProxy } from '..';
 
 function createAppRouter() {
   const t = initTRPC.create();

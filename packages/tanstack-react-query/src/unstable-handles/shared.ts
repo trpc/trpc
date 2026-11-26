@@ -81,7 +81,9 @@ export function toTanStackEntries(
         );
       }
       queryEntry(returned);
-      return same ?? { [perItemState]: { entry: returned, list: perItem.list } };
+      return (
+        same ?? { [perItemState]: { entry: returned, list: perItem.list } }
+      );
     }
     return Object.fromEntries(
       Object.entries(returned).map(([key, member]) => [
