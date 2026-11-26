@@ -175,6 +175,15 @@ function isOptionalSymbol(sym: TsSymbol): boolean {
   return (sym.flags & SymbolFlags.Optional) !== 0;
 }
 
+/**
+ * Whether `type` is or includes `undefined` or `void`. JSON drops a property
+ * set to `undefined`, so such a property may be missing from the payload.
+ */
+function includesUndefined(type: Type): boolean {
+  const members = type.isUnionType() ? type.getTypes() : [type];
+  return members.some((m) => hasFlag(m, TypeFlags.Undefined | TypeFlags.Void));
+}
+
 // ---------------------------------------------------------------------------
 // JSON Schema conversion — shared state
 // ---------------------------------------------------------------------------
@@ -904,7 +913,11 @@ function convertPlainObject(
     }
 
     properties[prop.name] = propSchema;
-    if (!isOptionalSymbol(prop) && !hasFunctionMember(propType)) {
+    if (
+      !isOptionalSymbol(prop) &&
+      !includesUndefined(propType) &&
+      !hasFunctionMember(propType)
+    ) {
       required.push(prop.name);
     }
   }
