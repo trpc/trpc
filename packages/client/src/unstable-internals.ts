@@ -13,7 +13,6 @@ export type {
 } from './links/internals/pipeline';
 export {
   blankInput,
-  createEntryDataRef,
   entryDataRefOf,
   replaceEntryDataRefs,
 } from './queries/dataRef';
@@ -21,7 +20,6 @@ export type { EntryDataRef, EntryInputRef } from './queries/dataRef';
 export { itemPathOf } from './queries/path';
 export type { DataPath, ItemPath, RequestPath } from './queries/path';
 export {
-  fromDataState,
   fromDataStateOf,
   isReplaced,
   perItemState,

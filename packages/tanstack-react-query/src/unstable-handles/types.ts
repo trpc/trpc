@@ -9,7 +9,6 @@ import type {
   experimental_InfiniteQueryEntry,
   experimental_PerItemEntry,
   experimental_QueryEntry,
-  experimental_QueryProcedure,
 } from '@trpc/client';
 import type { coerceAsyncIterableToArray } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -17,11 +16,8 @@ import type {
   DecorateQueryProcedure,
 } from '../internals/createOptionsProxy';
 import type {
-  DefaultFeatureFlags,
   ExtractCursorType,
-  FeatureFlags,
   ResolverDef,
-  TRPCQueryKeyWithPrefix,
   TRPCQueryBaseOptions,
 } from '../internals/types';
 import type { TRPCEntryError } from './entryError';
