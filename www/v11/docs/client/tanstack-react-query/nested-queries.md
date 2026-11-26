@@ -38,7 +38,7 @@ Everything on this page is experimental, and may change in a minor release. The 
 
 Nothing here changes how your app works until you use it. `loadHandles()` behaves as before for entries without `experimental_dataOf()`, and the server and the links behave as before without their options.
 
-`experimental_dataOf()` and `experimental_perItem()` are `@trpc/client`'s, and this package exports them too. A plain client loads these entries as well: see [One description for both clients](#shared).
+`experimental_dataOf()` and `experimental_perItem()` are `@trpc/client`'s, and this package exports them too.
 :::
 
 ```twoslash include dq-router
@@ -456,64 +456,6 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
 
-## One description for both clients {#shared}
-
-`loadHandles()` takes TanStack Query entries: `prefetchEntry()`, `ensureEntry()`, `fetchEntry()` and their infinite forms. A plain client's [`experimental_load()`](/docs/client/vanilla/nested-queries#without-tanstack-query) loads them too, as it loads its own `experimental_query()`. So one description serves both:
-
-```twoslash include dq-shared-entries
-// @filename: post-page.tsx
-import {
-  ensureEntry,
-  experimental_dataOf,
-  prefetchEntry,
-} from '@trpc/tanstack-react-query/unstable-handles';
-import type { TRPC } from '~/trpc/client';
-
-export function postEntries(trpc: TRPC, opts: { slug: string }) {
-  const post = ensureEntry(trpc.post.bySlug, { slug: opts.slug });
-  return {
-    post,
-    author: prefetchEntry(trpc.author.byId, {
-      id: experimental_dataOf(post).authorId,
-    }),
-  };
-}
-```
-
-```ts twoslash title='post-page.tsx'
-// @include: dq-router
-// @include: dq-trpc
-// @include: dq-shared-entries
-import { trpc } from '~/trpc/server';
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
-import type { AppRouter } from '~/server/router';
-declare const slug: string;
-const client = createTRPCClient<AppRouter>({
-  links: [httpBatchStreamLink({ url: 'http://localhost:3000' })],
-});
-// ---cut---
-import { experimental_load } from '@trpc/client';
-import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
-
-// ...postEntries(), from above
-
-// In a loader: the verbs say how each query starts
-const [handles, data] = await loadHandles(trpc, postEntries(trpc, { slug }));
-data.post.title;
-//        ^?
-
-// Without TanStack Query's cache: a promise for every key
-const res = experimental_load(client, postEntries(trpc, { slug }));
-const author = await res.author;
-```
-
-- **The verbs are for `loadHandles()`.** `experimental_load()` loads every entry the same way, as a promise, and leaves TanStack Query's options, such as `staleTime`, out.
-- **A bare `experimental_query()` isn't an entry of `loadHandles()`.** It says nothing of how the query starts: it is a type error, and the load rejects. That holds in a group, an `experimental_perItem()` and an `experimental_dataOf(entry, (data) => entry)` callback too.
-- **The request is the same**, whichever loads it, when both have to fetch every query. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the author's call, with the id filled in.
-- **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data to build the entry's handle. A fetch or ensure entry in the callback is [still waited for](#without-waiting).
-- **`null` skips an entry**, as `skipToken` does: its handle is `undefined`.
-- **An `experimental_perItem()` that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. Each reads the item and the load's entries only: an entry per item of a list in an item, an entry in the object that reads another one, and an entry built with `experimental_dataOf(entry, (data) => entry)`, load with `experimental_load()` only.
-
 ## A query for every item {#entry-per-item}
 
 A list often needs a query for every row: the author of every post. Without help, that is one round trip for the list, and one more for the rows.
@@ -621,6 +563,7 @@ function AuthorName(props: {
 - **For nothing to fetch, return an entry with `skipToken`**: `() => prefetchEntry(trpc.author.byId, skipToken)`. Every item then has a disabled entry. `experimental_handleOfItem(handle, item)` gives a handle with `skipped: true`, whose query `useQuery` reads as idle: `'pending'`, unless the cache has data for its key. No call goes to the server, and it takes nothing from `maxBatchSize`.
 - **The callback can't skip one item and not another.** It runs once, on a stand-in, so it can't read an item's data to decide. A procedure that takes `null` can answer for an item that has nothing.
 - **The entry is a query entry.** An infinite entry for every item isn't supported.
+- **A callback that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. `null` for a key skips it: its handle is `undefined`. Each entry reads the item and the load's entries only: an entry per item of a list in an item, an entry in the object that reads another one, and an entry built with `experimental_dataOf(entry, (data) => entry)`, load with `experimental_load()` only.
 - **With [one request](#one-request), it is one call**, which the server runs once for every item it found. Every run validates its input, and has its own result or error.
 - **`maxBatchSize` counts every run.** A request's calls and the items they run for can't be more than it together. If they are, the server runs the call for none of the list's items, and each item asks by itself.
 - **A request fills in 100,000 characters of JSON by default.** Each run gets its own copy of what it reads, and of the rest of its input. A run that would go over it fails by itself. See [Limits](/docs/client/vanilla/nested-queries#limits).

@@ -422,6 +422,7 @@ export const postRoute = createRoute({
 
 - Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
 - It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
+- `null` in place of an entry does the same: `isAdmin ? prefetchEntry(…) : null`.
 - Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Nested queries](#nested-queries).
 
 Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.post.byId, skipToken)`, or `prefetchInfiniteEntry` the same way. Nothing starts, and the entry still has a handle:
