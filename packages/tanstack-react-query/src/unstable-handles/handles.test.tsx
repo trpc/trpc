@@ -777,16 +777,14 @@ describe('loading', () => {
     expect(a.queryClient.getQueryCache().getAll()).toHaveLength(0);
   });
 
-  test("rejects an entry built with another QueryClient's proxy, also when the load waits for it", async () => {
+  test("rejects an entry built with another QueryClient's proxy, also one the load waits for", async () => {
     await using resource = ctx();
     const a = makeServerProxy(resource);
     const b = makeServerProxy(resource);
     await expect(
-      loadHandles(
-        a.trpc,
-        { post: prefetchEntry(b.trpc.post.byId, { id: '1' }) },
-        { wait: ['post'] },
-      ),
+      loadHandles(a.trpc, {
+        post: ensureEntry(b.trpc.post.byId, { id: '1' }),
+      }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[Error: The entry for "post" was built with a proxy for another QueryClient than the root proxy that loads it]`,
     );

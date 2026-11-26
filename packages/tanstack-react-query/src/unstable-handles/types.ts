@@ -299,8 +299,6 @@ export interface experimental_TRPCInfiniteQueryHandlePerItem<
 export interface TRPCLoadEntries {
   [key: string]:
     | AnyTRPCEntry
-    | experimental_QueryEntry<any, any>
-    | experimental_InfiniteQueryEntry<any, any>
     | typeof skipToken
     | null
     | experimental_TRPCEntryPerItem<any, any>
@@ -573,110 +571,26 @@ export type inferInfiniteQueryHandle<
  */
 export type experimental_inferHandles<
   TEntries extends TRPCLoadEntries | ((...args: any[]) => TRPCLoadEntries),
-  /** The feature flags of the proxy that loads a description, such as `keyPrefix` */
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 > = HandlesOf<
-  experimental_WithWait<
-    TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries,
-    [],
-    TFeatureFlags
+  LoadedEntries<
+    TEntries extends (...args: any[]) => infer TResult ? TResult : TEntries
   >
 >;
 
 export type HandleType = 'query' | 'infinite';
 
-/**
- * The feature flags of an options proxy, read from its keys: a description
- * loaded with it has its key prefix
- */
-export type FeatureFlagsOf<TProxy> = TProxy extends {
-  pathKey: () => infer TKey;
-}
-  ? [TKey] extends [TRPCQueryKeyWithPrefix]
-    ? { keyPrefix: true }
-    : DefaultFeatureFlags
-  : DefaultFeatureFlags;
-
-/**
- * The `ResolverDef` of a procedure that a description's entry was built
- * with, loaded by a proxy with `TFeatureFlags`
- */
-type DefOfProcedure<
-  TProcedure,
-  TFeatureFlags extends FeatureFlags,
-> = TProcedure extends {
-  '~types': {
-    input: infer TInput;
-    output: infer TOutput;
-    errorShape: infer TErrorShape;
-  };
-}
-  ? {
-      input: TInput;
-      output: TOutput;
-      transformer: boolean;
-      errorShape: TErrorShape;
-      featureFlags: TFeatureFlags;
-    }
-  : TProcedure extends experimental_QueryProcedure<infer TInput, infer TOutput>
-    ? {
-        input: TInput;
-        output: TOutput;
-        transformer: boolean;
-        errorShape: any;
-        featureFlags: TFeatureFlags;
-      }
-    : never;
-
-/** An entry as the load has it: one of a description is a prefetch entry, or an ensure entry if waited for */
-type LoadedEntry<
-  TEntry,
-  TWaited extends boolean,
-  TFeatureFlags extends FeatureFlags,
-> =
-  TEntry extends experimental_QueryEntry<infer TProcedure, any>
-    ? TRPCQueryEntry<
-        DefOfProcedure<TProcedure, TFeatureFlags>,
-        TWaited extends true ? 'ensure' : 'prefetch'
-      >
-    : TEntry extends experimental_InfiniteQueryEntry<infer TProcedure, any>
-      ? TRPCInfiniteQueryEntry<
-          DefOfProcedure<TProcedure, TFeatureFlags>,
-          TWaited extends true ? 'ensure' : 'prefetch'
-        >
-      : TEntry extends TRPCQueryEntry<infer TDef, infer TKind>
-        ? TRPCQueryEntry<
-            TDef,
-            TWaited extends true
-              ? TKind extends 'prefetch'
-                ? 'ensure'
-                : TKind
-              : TKind
-          >
-        : TEntry extends TRPCInfiniteQueryEntry<infer TDef, infer TKind>
-          ? TRPCInfiniteQueryEntry<
-              TDef,
-              TWaited extends true
-                ? TKind extends 'prefetch'
-                  ? 'ensure'
-                  : TKind
-                : TKind
-            >
-          : TEntry extends experimental_FromDataEntry<infer TInner, infer TData>
-            ? experimental_FromDataEntry<
-                LoadedEntry<TInner, TWaited, TFeatureFlags>,
-                TData
-              >
-            : TEntry extends experimental_PerItemEntry<
-                  infer TInner,
-                  infer TItem
-                >
-              ? LoadedPerItem<TInner, TItem, TFeatureFlags>
-              : TEntry extends typeof skipToken | null
-                ? typeof skipToken
-                : TEntry extends TRPCLoadEntries
-                  ? experimental_WithWait<TEntry, [], TFeatureFlags>
-                  : TEntry;
+/** An entry as the load has it: `null` is `skipToken`, and a group's entries are each as the load has them */
+type LoadedEntry<TEntry> = TEntry extends
+  | AnyTRPCEntry
+  | experimental_FromDataEntry<any, any>
+  ? TEntry
+  : TEntry extends experimental_PerItemEntry<infer TInner, infer TItem>
+    ? LoadedPerItem<TInner, TItem>
+    : TEntry extends typeof skipToken | null
+      ? typeof skipToken
+      : TEntry extends TRPCLoadEntries
+        ? LoadedEntries<TEntry>
+        : TEntry;
 
 /**
  * An entry per item as the load has it: what the callback returned for an
@@ -684,129 +598,36 @@ type LoadedEntry<
  * An entry built from the data of another loads with `experimental_load()`
  * only
  */
-type LoadedPerItem<
-  TReturn,
-  TItem,
-  TFeatureFlags extends FeatureFlags,
-> = TReturn extends null
+type LoadedPerItem<TReturn, TItem> = TReturn extends null
   ? typeof skipToken
   : TReturn extends experimental_FromDataEntry<any, any>
     ? never
-    : TReturn extends
-          | experimental_QueryEntry<any, any>
-          | experimental_InfiniteQueryEntry<any, any>
-          | AnyTRPCEntry
-      ? experimental_PerItemEntry<
-          LoadedEntry<TReturn, false, TFeatureFlags>,
-          TItem
-        >
-      : {
-          [TKey in keyof TReturn]: LoadedPerItem<
-            TReturn[TKey],
-            TItem,
-            TFeatureFlags
-          >;
-        };
+    : TReturn extends AnyTRPCEntry
+      ? experimental_PerItemEntry<TReturn, TItem>
+      : { [TKey in keyof TReturn]: LoadedPerItem<TReturn[TKey], TItem> };
 
-/** Whether a type is one string, not a union of them */
-type IsOneKey<TKey, TAll = TKey> = TKey extends unknown
-  ? [TAll] extends [TKey]
-    ? true
-    : false
-  : never;
-
-/**
- * The keys a fixed `wait` list has for sure: each place's that can be only
- * that key. A place of `'post' | 'author'` may be either
- */
-type SureKeys<TWait extends readonly string[]> = {
-  [TIndex in keyof TWait]: [IsOneKey<TWait[TIndex]>] extends [true]
-    ? TWait[TIndex]
-    : never;
-}[number];
-
-/**
- * Whether a `wait` list has a key: `true` if every list of its type has it,
- * and `boolean` if one may not, such as a list of any length or one with a
- * place that may be another key
- */
-type WaitsFor<TWait extends readonly string[], TKey> = TWait extends unknown
-  ? TKey extends TWait[number]
-    ? number extends TWait['length']
-      ? boolean
-      : TKey extends SureKeys<TWait>
-        ? true
-        : boolean
-    : false
-  : never;
-
-/**
- * An entry as the load has it, waited for or not. For `boolean`, either:
- * then its data may be there
- */
-type LoadedAs<
-  TEntry,
-  TWaited extends boolean,
-  TFeatureFlags extends FeatureFlags,
-> = TWaited extends true
-  ? LoadedEntry<TEntry, true, TFeatureFlags>
-  : LoadedEntry<TEntry, false, TFeatureFlags>;
-
-/**
- * A load's entries as TanStack Query entries: each entry of a description,
- * from `experimental_query()` and the like, is a prefetch entry, and the
- * entry of each key in the `wait` list an ensure entry. A description's
- * entry has the key prefix of the proxy that loads it, by its `TFeatureFlags`
- */
-export type experimental_WithWait<
-  TEntries,
-  TWait extends readonly string[],
-  TFeatureFlags extends FeatureFlags,
-> = {
-  [TKey in keyof TEntries]: LoadedAs<
-    TEntries[TKey],
-    WaitsFor<TWait, TKey>,
-    TFeatureFlags
-  >;
+/** A load's entries as the load has them, by key */
+export type LoadedEntries<TEntries> = {
+  [TKey in keyof TEntries]: LoadedEntry<TEntries[TKey]>;
 };
 
-/** A key whose entry is of one query, which a load can wait for */
-export type experimental_WaitableKey<TEntries> = {
-  [TKey in keyof TEntries & string]: TEntries[TKey] extends
-    | AnyTRPCEntry
-    | experimental_QueryEntry<any, any>
-    | experimental_InfiniteQueryEntry<any, any>
-    | experimental_FromDataEntry<any, any>
-    ? TKey
-    : never;
-}[keyof TEntries & string];
-
 /**
- * The `wait` list of a load's options, as its type has it. Options whose
- * `wait` may be absent may wait for none of its keys: their data may be
- * there
+ * A load's entries with `never` in place of each bare query of the client,
+ * from `experimental_query()` or `experimental_infiniteQuery()`, also in an
+ * entry per item or one built from data: `loadHandles()` takes TanStack
+ * Query entries, which say how their query starts. The index signature of a
+ * group can't tell, as such a query has symbol keys only
  */
-export type WaitOf<TOpts> = TOpts extends {
-  wait: infer TWait extends readonly string[];
-}
-  ? TWait
-  : TOpts extends { wait?: infer TWait }
-    ? Extract<TWait, readonly string[]> | []
-    : [];
-
-/**
- * Options of `loadHandles()` and `loadHandlesSettled()`
- * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#wait
- */
-export interface TRPCLoadOptions<
-  TEntries,
-  TWait extends readonly experimental_WaitableKey<TEntries>[],
-> {
-  /**
-   * The keys of the entries to wait for, as if each were an ensure entry: the
-   * load resolves once they have data, `data` has it, and an entry that reads
-   * them with `experimental_dataOf()` gets a finished handle. A list whose
-   * keys aren't known, such as one of any length, has its data as optional
-   */
-  wait?: TWait;
-}
+export type TanStackEntriesOnly<TValue> = TValue extends
+  | experimental_QueryEntry<any, any>
+  | experimental_InfiniteQueryEntry<any, any>
+  ? never
+  : TValue extends AnyTRPCEntry | typeof skipToken | null
+    ? TValue
+    : TValue extends experimental_FromDataEntry<infer TInner, infer TData>
+      ? experimental_FromDataEntry<TanStackEntriesOnly<TInner>, TData>
+      : TValue extends experimental_PerItemEntry<infer TInner, infer TItem>
+        ? experimental_PerItemEntry<TanStackEntriesOnly<TInner>, TItem>
+        : TValue extends object
+          ? { [TKey in keyof TValue]: TanStackEntriesOnly<TValue[TKey]> }
+          : TValue;

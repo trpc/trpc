@@ -1,187 +1,52 @@
 import { skipToken } from '@tanstack/react-query';
-import type {
-  EntryDataRef,
-  QueryEntryState,
-} from '@trpc/client/unstable-internals';
+import type { EntryDataRef } from '@trpc/client/unstable-internals';
 import {
-  createEntryDataRef,
   entryDataRefOf,
-  fromDataState,
   fromDataStateOf,
   perItemState,
   perItemStateOf,
   queryEntryStateOf,
 } from '@trpc/client/unstable-internals';
-import type { EntryState, ProxyContext } from './entry';
-import { entry, entryStateOf } from './entry';
-import type { TRPCEntryKind } from './types';
+import { entryStateOf } from './entry';
 import { isPlainObject } from './utils';
 
 /**
- * A load's entries as TanStack Query entries, before anything reads them:
- * each entry of a description, from `experimental_query()` and the like,
- * becomes a prefetch entry of the root proxy, and each entry whose key is in
- * `wait` an ensure entry. Every `experimental_dataOf()` value then reads the
- * entry that took the place of the one it was built with, so the rest of a
- * load sees TanStack Query entries only. An entry that changes nothing stays
- * the object it was.
+ * A load's entries as the load reads them, before anything starts: each query
+ * is a TanStack Query entry, from `prefetchEntry()`, `fetchEntry()`,
+ * `ensureEntry()` and the like, as a bare `experimental_query()` says nothing
+ * of how to start it. `null` is `skipToken`, and what an entry per item
+ * returns for an item is an entry per item of each entry in it, in a group of
+ * the same keys. An entry that changes nothing stays the object it was.
  */
-export function toTanStackEntries(opts: {
-  root: ProxyContext;
-  entries: Record<string, unknown>;
-  /** The keys whose entries the load waits for */
-  wait: readonly string[];
-}): Record<string, unknown> {
-  /**
-   * The entries of the keys in `wait`. Only to choose which of an entry's
-   * two forms another entry reads: a key is waited for by its name, not by
-   * its entry, which another key can have too
-   */
-  const waited = new Set<object>();
-  for (const key of opts.wait) {
-    const value = opts.entries[key];
-    if (!queryEntryStateOf(value) && !fromDataStateOf(value)) {
+export function toTanStackEntries(
+  entries: Record<string, unknown>,
+): Record<string, unknown> {
+  function queryEntry(value: object): object {
+    if (!entryStateOf(value)) {
+      const shared = queryEntryStateOf(value);
+      const fn =
+        shared?.type === 'infinite'
+          ? 'prefetchInfiniteEntry()`, `ensureInfiniteEntry()` or `fetchInfiniteEntry()'
+          : 'prefetchEntry()`, `ensureEntry()` or `fetchEntry()';
       throw new Error(
-        `\`wait\` names "${key}", which is no entry of one query: only such an entry can be waited for`,
+        `\`loadHandles()\` loads TanStack Query entries: build the query for "${shared?.path.join('.')}" with \`${fn}\`, which say how it starts`,
       );
-    }
-    waited.add(value as object);
-  }
-  /**
-   * Each entry as the load has it, by whether it is waited for: a key that
-   * isn't in `wait` and one that is can have the same entry
-   */
-  const entries = {
-    waited: new Map<object, object>(),
-    not: new Map<object, object>(),
-  };
-  const refs = new Map<EntryDataRef, EntryDataRef>();
-
-  function refFor(ref: EntryDataRef): EntryDataRef {
-    let mapped = refs.get(ref);
-    if (!mapped) {
-      // The form a waited key has, if one has it: its data is there first
-      const source = entryFor(ref.entry, waited.has(ref.entry));
-      const itemOf = ref.itemOf && refFor(ref.itemOf);
-      mapped =
-        source === ref.entry && itemOf === ref.itemOf
-          ? ref
-          : { ...ref, entry: source, itemOf };
-      refs.set(ref, mapped);
-    }
-    return mapped;
-  }
-
-  /** An input, with each `experimental_dataOf()` value reading the new entries */
-  function inputFor(value: unknown): unknown {
-    const ref = entryDataRefOf(value);
-    if (ref) {
-      const mapped = refFor(ref);
-      return mapped === ref ? value : createEntryDataRef(mapped);
-    }
-    if (Array.isArray(value)) {
-      const items = value.map(inputFor);
-      return items.every((item, index) => item === value[index])
-        ? value
-        : items;
-    }
-    if (isPlainObject(value)) {
-      const entries = Object.entries(value).map(
-        ([key, item]) => [key, item, inputFor(item)] as const,
-      );
-      return entries.every(([, item, mapped]) => item === mapped)
-        ? value
-        : Object.fromEntries(entries.map(([key, , mapped]) => [key, mapped]));
     }
     return value;
   }
 
-  function procedureAt(path: readonly string[]) {
-    return path.reduce<any>(
-      (procedure, key) => procedure[key],
-      opts.root.proxy,
-    );
-  }
-
-  /** A TanStack Query entry with what it reads of the new entries */
-  function rebuilt(opts: {
-    value: object;
-    state: EntryState | null;
-    shared: QueryEntryState;
-    kind: TRPCEntryKind;
-  }): object {
-    const { state, shared, kind } = opts;
-    const input = inputFor(shared.input);
-    if (state?.kind === kind && input === state.input) {
-      return opts.value;
-    }
-    const sharedOpts =
-      shared.type === 'infinite'
-        ? {
-            ...(shared.initialCursor !== undefined
-              ? { initialCursor: shared.initialCursor }
-              : {}),
-            ...(shared.getNextPageParam
-              ? { getNextPageParam: shared.getNextPageParam }
-              : {}),
-          }
-        : {};
-    return entry({
-      fn:
-        state?.fn ??
-        (shared.type === 'infinite'
-          ? 'experimental_infiniteQuery'
-          : 'experimental_query'),
-      type: shared.type,
-      kind,
-      // A TanStack Query entry keeps its proxy: the load checks that it is
-      // the root's
-      procedure: state ? state.procedure : procedureAt(shared.path),
-      input,
-      opts: state
-        ? state.opts
-        : {
-            ...sharedOpts,
-            ...(shared.context ? { trpc: { context: shared.context } } : {}),
-          },
-    });
-  }
-
-  function entryFor(value: object, isWaited: boolean): object {
-    const done = isWaited ? entries.waited : entries.not;
-    const existing = done.get(value);
-    if (existing) {
-      return existing;
-    }
-    let result: object;
+  function entryFor(value: object): object {
     const fromData = fromDataStateOf(value);
     const perItem = perItemStateOf(value);
-    const shared = queryEntryStateOf(value);
     if (fromData) {
-      const inner = entryFor(fromData.entry, isWaited);
-      const source = entryFor(fromData.source, waited.has(fromData.source));
-      result =
-        inner === fromData.entry && source === fromData.source
-          ? value
-          : { [fromDataState]: { entry: inner, source } };
-    } else if (perItem) {
-      result =
-        perItem.entry !== null &&
-        (queryEntryStateOf(perItem.entry) || fromDataStateOf(perItem.entry))
-          ? perItemFor(perItem.entry, perItem, value)
-          : perItemFor(perItem.entry, perItem, null);
-    } else if (shared) {
-      const state = entryStateOf(value) ?? null;
-      const kind: TRPCEntryKind =
-        isWaited && (state?.kind ?? 'prefetch') === 'prefetch'
-          ? 'ensure'
-          : (state?.kind ?? 'prefetch');
-      result = rebuilt({ value, state, shared, kind });
-    } else {
-      result = value;
+      entryFor(fromData.entry);
+      entryFor(fromData.source);
+      return value;
     }
-    done.set(value, result);
-    return result;
+    if (perItem) {
+      return perItemFor(perItem.entry, perItem, value);
+    }
+    return queryEntryStateOf(value) ? queryEntry(value) : value;
   }
 
   /**
@@ -193,7 +58,7 @@ export function toTanStackEntries(opts: {
   function perItemFor(
     returned: object | null,
     perItem: { entry: object | null; list: EntryDataRef },
-    /** The entry per item itself, kept as it is if nothing changes */
+    /** The entry per item itself, kept as it is if it has one query */
     same: object | null,
   ): object {
     if (returned === null) {
@@ -215,29 +80,18 @@ export function toTanStackEntries(opts: {
           '`loadHandles()` loads a query per item, not an infinite query',
         );
       }
-      const inner = entryFor(returned, false);
-      const list = refFor(perItem.list);
-      return same && inner === perItem.entry && list === perItem.list
-        ? same
-        : { [perItemState]: { entry: inner, list } };
+      queryEntry(returned);
+      return same ?? { [perItemState]: { entry: returned, list: perItem.list } };
     }
     return Object.fromEntries(
       Object.entries(returned).map(([key, member]) => [
         key,
-        perItemFor(
-          member as object | null,
-          { entry: member as object | null, list: perItem.list },
-          null,
-        ),
+        perItemFor(member as object | null, perItem, null),
       ]),
     );
   }
 
-  function tree(
-    values: Record<string, unknown>,
-    /** The keys of `values` that are in `wait`: of the top level only */
-    waitedKeys: readonly string[],
-  ): Record<string, unknown> {
+  function tree(values: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(
       Object.entries(values).map(([key, value]) => {
         if (value === null) {
@@ -255,12 +109,12 @@ export function toTanStackEntries(opts: {
           fromDataStateOf(value) ||
           perItemStateOf(value)
         ) {
-          return [key, entryFor(value, waitedKeys.includes(key))];
+          return [key, entryFor(value)];
         }
-        return [key, isPlainObject(value) ? tree(value, []) : value];
+        return [key, isPlainObject(value) ? tree(value) : value];
       }),
     );
   }
 
-  return tree(opts.entries, opts.wait);
+  return tree(entries);
 }

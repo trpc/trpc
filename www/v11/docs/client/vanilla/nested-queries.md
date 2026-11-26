@@ -8,7 +8,7 @@ parent: "client/vanilla"
 order: 47
 ---
 
-`experimental_query()` and the functions beside it say what to load, and `experimental_load()` loads it: several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release. The same description [loads with TanStack Query](#tanstack-query) too.
+`experimental_query()` and the functions beside it say what to load, and `experimental_load()` loads it: several queries where one reads another's data, such as a post, its author and more posts from the author's team, as one request. The server fills in each input from the data it has. It is experimental and may change in a minor release. With TanStack Query, [its entries](#tanstack-query) load here too.
 
 [See it in the kitchen sink](/kitchen-sink/nested): posts, their authors and the authors' teams in one request, or without pipelining to compare.
 
@@ -137,7 +137,7 @@ function postQueries(
 
 - **`experimental_query(procedure, input)` names a query.** It starts nothing: it is a plain value.
 - **`experimental_dataOf(post)` is typed as the post's data, and holds none.** It records the part you read, such as `.authorId`, and the load fills it in. Pass it on as it is, as an input or anywhere inside one. Don't compute with it or branch on it.
-- **`trpc` is a client, or an options proxy of `@trpc/tanstack-react-query`.** `experimental_QueryProcedures<AppRouter>` takes either, so [the same function loads with TanStack Query](#tanstack-query).
+- **`trpc` is a client, or an options proxy of `@trpc/tanstack-react-query`.** `experimental_QueryProcedures<AppRouter>` takes either.
 - **It has queries only.** A mutation is a type error, and data that is a promise or a stream can't be read.
 
 #### 2. Load it {#load}
@@ -177,7 +177,7 @@ const author = await res.author;
 - **Each promise settles when its own query is done.** One that fails rejects by itself: the other keys keep their data. A promise that you don't read raises no unhandled rejection.
 - **A query that another reads is loaded too**, also when it isn't in what you pass.
 - **Descriptions go together.** An object of them is a group: `experimental_load(client, { page: postQueries(client, opts), nav: navQueries(client) })` is one request, and `res.page.post` is a promise.
-- **`experimental_dataOf(post, (it) => entry)`**, with a callback, builds an entry from the data too. It loads the same way here. It matters to [TanStack Query](/docs/client/tanstack-react-query/nested-queries#without-waiting), whose load then doesn't wait for the data to build the entry's handle: the handle is unfinished. It doesn't change how the entry itself waits: a prefetch entry, such as an `experimental_query()`, isn't waited for, and a fetch or ensure entry is, as always.
+- **`experimental_dataOf(post, (it) => entry)`**, with a callback, builds an entry from the data too. It loads the same way here. It matters to [TanStack Query](/docs/client/tanstack-react-query/nested-queries#without-waiting), whose load then doesn't wait for the data to build the entry's handle: the handle is unfinished. It doesn't change how the entry itself waits: a prefetch entry isn't waited for there, and a fetch or ensure entry is, as always.
 
 It sends the request of [What goes over the wire](#wire):
 
@@ -329,21 +329,20 @@ const data = await res.posts;
 - **`initialCursor` takes the place of the input's `cursor`.**
 - **`getNextPageParam` is for TanStack Query**, which fetches the next pages. `experimental_load()` doesn't.
 
-### Same description, TanStack Query {#tanstack-query}
+### TanStack Query's entries {#tanstack-query}
 
-A description doesn't care what loads it. With TanStack Query, pass the options proxy, and load it with [`loadHandles()`](/docs/client/tanstack-react-query/nested-queries#shared):
+`experimental_load()` also loads the entries of `@trpc/tanstack-react-query`: `prefetchEntry()`, `ensureEntry()`, `fetchEntry()` and their infinite forms. It loads them as it loads an `experimental_query()`, and leaves their verbs and TanStack Query's options out. So a description written with them loads with [`loadHandles()`](/docs/client/tanstack-react-query/nested-queries#shared) and here:
 
 ```ts
+// postEntries() builds its entries with `ensureEntry()` and `prefetchEntry()`
+const res = experimental_load(client, postEntries(trpc, { slug }));
+
 // In a loader
-const [handles, data] = await loadHandles(
-  trpc,
-  postQueries(trpc, { slug }),
-  { wait: ['post'] },
-);
+const [handles, data] = await loadHandles(trpc, postEntries(trpc, { slug }));
 ```
 
-- **Each `experimental_query()` is a prefetch entry**, and each key in [`wait`](/docs/client/tanstack-react-query/nested-queries#wait) an ensure entry: the load waits for its data, and `data` has it.
-- **The request is the same when both have to fetch every query.** A link that pipelines sends it as one, whichever loads it. `loadHandles()` reads what the cache already has: with a fresh post there, it sends the calls of the author and the team's posts, which reads the author.
+- **`loadHandles()` takes TanStack Query's entries only.** An `experimental_query()` says nothing of how its query starts: there, it is a type error.
+- **The request is the same when both have to fetch every query.** A link that pipelines sends it as one, whichever loads it. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the calls of the queries that aren't.
 
 ## One request {#one-request}
 

@@ -1,22 +1,24 @@
 import { testReactResource } from '../../test/__helpers';
 import {
+  experimental_infiniteQuery,
   experimental_load,
   experimental_pipelining,
+  experimental_query,
   experimental_settle,
   httpBatchStreamLink,
 } from '@trpc/client';
-import type { experimental_QueryProcedures, TRPCLink } from '@trpc/client';
+import type { TRPCLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
+import type { TRPCOptionsProxy } from '..';
 import {
   ensureEntry,
   experimental_dataOf,
   experimental_handleOfItem,
-  experimental_infiniteQuery,
   experimental_perItem,
-  experimental_query,
+  experimental_useHandles,
   fromHandle,
   loadHandles,
   prefetchEntry,
@@ -24,8 +26,7 @@ import {
 import type {
   experimental_inferHandles,
   experimental_TRPCQueryHandlePerItem,
-  TRPCInfiniteQueryHandle,
-  TRPCQueryHandle,
+  inferQueryHandle,
 } from '.';
 
 function createAppRouter() {
@@ -65,15 +66,19 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>['appRouter'];
 
-/** One description, for both loaders */
-function postPageQueries(
-  trpc: experimental_QueryProcedures<AppRouter>,
+/**
+ * One description, for both loaders: TanStack Query entries, whose verbs say
+ * how `loadHandles()` starts each query. `experimental_load()` loads them as
+ * it loads any query
+ */
+function postPageEntries(
+  trpc: TRPCOptionsProxy<AppRouter>,
   opts: { slug: string },
 ) {
-  const post = experimental_query(trpc.post.bySlug, { slug: opts.slug });
+  const post = ensureEntry(trpc.post.bySlug, { slug: opts.slug });
   return {
     post,
-    author: experimental_query(trpc.author.byId, {
+    author: prefetchEntry(trpc.author.byId, {
       id: experimental_dataOf(post).authorId,
     }),
   };
@@ -107,215 +112,103 @@ function pipeliningSetup() {
   return Object.assign(resource, { calls, requests });
 }
 
-describe('a description of queries', () => {
-  test('loads in `loadHandles()` as prefetch entries: the load waits only for what a handle needs', async () => {
+describe('a description of TanStack Query entries', () => {
+  test('loads in `loadHandles()` as its verbs say: `data` has the ensure entry', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
 
     const [handles, data] = await loadHandles(
       trpc,
-      postPageQueries(trpc, { slug: 'a' }),
+      postPageEntries(trpc, { slug: 'a' }),
     );
 
-    // The author's handle has the post's data in its input, so the load
-    // waited for the post, as for `prefetchEntry()` read without a callback
+    expect(data).toEqual({ post: { slug: 'a', authorId: 'u1' } });
+    expectTypeOf(data).toEqualTypeOf<{
+      post: { slug: string; authorId: string };
+    }>();
     expect(handles.author).toEqual({
       queryKey: [['author', 'byId'], { input: { id: 'u1' }, type: 'query' }],
       input: { id: 'u1' },
     });
-    expect(handles.post.input).toEqual({ slug: 'a' });
-    expect(data).toEqual({});
     expectTypeOf(handles.post).toEqualTypeOf<
-      TRPCQueryHandle<{
-        input: { slug: string };
-        output: { slug: string; authorId: string };
-        transformer: boolean;
-        errorShape: any;
-        featureFlags: { keyPrefix: false };
-      }>
+      inferQueryHandle<typeof trpc.post.bySlug>
     >();
   });
 
-  test('`wait` waits for an entry, as for an ensure entry, and `data` has it', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
+  test('loads with the client as any query: as promises, in one request, whatever its verbs', async () => {
+    await using resource = pipeliningSetup();
 
-    const [handles, data] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait: ['post'] },
+    const res = experimental_load(
+      resource.client,
+      postPageEntries(resource.optionsProxyClient, { slug: 'a' }),
     );
 
-    expect(data.post).toEqual({ slug: 'a', authorId: 'u1' });
-    expectTypeOf(data.post).toEqualTypeOf<{
-      slug: string;
-      authorId: string;
-    }>();
-    // @ts-expect-error -- not waited for
-    void data.author;
+    expect(await experimental_settle(res)).toEqual({
+      post: { slug: 'a', authorId: 'u1' },
+      author: { id: 'u1', teamId: 'team-u1' },
+    });
+    expectTypeOf(res.post).toEqualTypeOf<
+      Promise<{ slug: string; authorId: string }>
+    >();
+    // The links see an operation for each query, and the author goes in the
+    // post's request
+    expect(resource.requests).toEqual(['post.bySlug', 'author.byId']);
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('and with `loadHandles()`, in one request too', async () => {
+    await using resource = pipeliningSetup();
+    const trpc = resource.optionsProxyClient;
+
+    const [handles] = await loadHandles(
+      trpc,
+      postPageEntries(trpc, { slug: 'a' }),
+    );
+
     expect(handles.author.input).toEqual({ id: 'u1' });
+    // The author's query got its data from the post's request: this waits
+    // for it, and fetches nothing
+    expect(
+      await resource.queryClient.fetchQuery({
+        ...fromHandle(trpc, handles.author),
+        staleTime: Infinity,
+      }),
+    ).toEqual({ id: 'u1', teamId: 'team-u1' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('`wait` makes a prefetch entry an ensure entry', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
+  test('the client loads a TanStack Query entry next to its own queries', async () => {
+    await using resource = pipeliningSetup();
+    const trpc = resource.optionsProxyClient;
+    const post = ensureEntry(trpc.post.bySlug, { slug: 'c' });
 
-    const [, data] = await loadHandles(
-      trpc,
-      { post: prefetchEntry(trpc.post.bySlug, { slug: 'b' }) },
-      { wait: ['post'] },
-    );
-
-    expect(data.post).toEqual({ slug: 'b', authorId: 'u1' });
-  });
-
-  test('a `wait` list that may not have a key has its data as optional', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
-    const wait: ('post' | 'author')[] = ['post'];
-
-    const [, data] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait },
-    );
-    expect(data).toEqual({ post: { slug: 'a', authorId: 'u1' } });
-    expectTypeOf(data).toEqualTypeOf<{
-      post?: { slug: string; authorId: string };
-      author?: { id: string; teamId: string };
-    }>();
-
-    const either = Math.random() < 2 ? (['post'] as const) : [];
-    const [, some] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait: either },
-    );
-    expectTypeOf(some).toEqualTypeOf<{
-      post?: { slug: string; authorId: string };
-    }>();
-
-    const [, fixed] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait: ['post', 'author'] },
-    );
-    expectTypeOf(fixed).toEqualTypeOf<{
-      post: { slug: string; authorId: string };
-      author: { id: string; teamId: string };
-    }>();
-
-    // A place of a fixed list that may be either key has neither surely
-    const oneOf: ['post' | 'author'] = ['post'];
-    const [, oneOfData] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait: oneOf },
-    );
-    expect(oneOfData).toEqual({ post: { slug: 'a', authorId: 'u1' } });
-    expectTypeOf(oneOfData).toEqualTypeOf<{
-      post?: { slug: string; authorId: string };
-      author?: { id: string; teamId: string };
-    }>();
-
-    const [, both] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      { wait: ['post', Math.random() < 2 ? 'post' : 'author'] },
-    );
-    expectTypeOf(both).toEqualTypeOf<{
-      post: { slug: string; authorId: string };
-      author?: { id: string; teamId: string };
-    }>();
-
-    // Options whose `wait` may not be there
-    const opts: { wait?: readonly ['post'] } = {};
-    const [, maybe] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      opts,
-    );
-    expect(maybe).toEqual({});
-    expectTypeOf(maybe).toEqualTypeOf<{
-      post?: { slug: string; authorId: string };
-    }>();
-
-    const [, none] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-      {},
-    );
-    expectTypeOf(none).toEqualTypeOf<{}>();
-  });
-
-  test('`wait` waits for the keys it names only, also when they share an entry', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
-    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
-    const inner = experimental_query(trpc.author.byId, { id: 'u1' });
-    const wrapped = experimental_dataOf(post, () => inner);
-
-    for (const entries of [
-      { post, inner, wrapped },
-      { wrapped, inner, post },
-    ]) {
-      const [, data] = await loadHandles(trpc, entries, { wait: ['wrapped'] });
-      expect(data).toEqual({ wrapped: { id: 'u1', teamId: 'team-u1' } });
-    }
-  });
-
-  test('`wait` waits for the key it names only, when another key has the same entry', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
-    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
-    const author = experimental_query(trpc.author.byId, {
-      id: experimental_dataOf(post).authorId,
+    const res = experimental_load(resource.client, {
+      post,
+      author: experimental_query(resource.client.author.byId, {
+        id: experimental_dataOf(post).authorId,
+      }),
     });
 
-    for (const entries of [
-      { first: post, second: post, author },
-      { author, second: post, first: post },
-    ]) {
-      const [handles, data] = await loadHandles(trpc, entries, {
-        wait: ['first'],
-      });
-      expect(data).toEqual({ first: { slug: 'a', authorId: 'u1' } });
-      expect(handles.author.input).toEqual({ id: 'u1' });
-      expect(handles.second.input).toEqual({ slug: 'a' });
-    }
+    expect(await res.author).toEqual({ id: 'u1', teamId: 'team-u1' });
+    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
   });
 
-  test('`wait` names an entry of one query', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
-    const post = experimental_query(trpc.post.list, {});
-
-    await expect(
-      loadHandles(
-        trpc,
-        {
-          post,
-          authors: experimental_perItem(
-            experimental_dataOf(post).items,
-            (item) =>
-              experimental_query(trpc.author.byId, { id: item.authorId }),
-          ),
-        },
-        // @ts-expect-error -- an entry per item isn't one query
-        { wait: ['authors'] },
-      ),
-    ).rejects.toThrow(/`wait` names "authors"/);
+  test('`experimental_inferHandles` types the handles of a description', () => {
+    type Handles = experimental_inferHandles<typeof postPageEntries>;
+    expectTypeOf<NonNullable<Handles['author']['input']>>().toEqualTypeOf<{
+      id: string;
+    }>();
   });
 
   test("an entry built with a callback from the data doesn't make the load wait, and its handle is unfinished", async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
-    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'a' });
 
     const [handles] = await loadHandles(trpc, {
       post,
       author: experimental_dataOf(post, (it) =>
-        experimental_query(trpc.author.byId, { id: it.authorId }),
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
       ),
     });
 
@@ -335,42 +228,19 @@ describe('a description of queries', () => {
     ).toEqual({ id: 'u1', teamId: 'team-u1' });
   });
 
-  test('an entry per item of a description', async () => {
-    await using resource = setup();
-    const trpc = resource.optionsProxyServer;
-    const posts = experimental_query(trpc.post.list, {});
-
-    const [handles] = await loadHandles(trpc, {
-      posts,
-      authors: experimental_perItem(experimental_dataOf(posts).items, (post) =>
-        experimental_query(trpc.author.byId, { id: post.authorId }),
-      ),
-    });
-
-    const handle = experimental_handleOfItem(handles.authors, {
-      slug: 'p1',
-      authorId: 'u2',
-    });
-    expect(
-      await resource.queryClient.fetchQuery(fromHandle(trpc, handle)),
-    ).toEqual({ id: 'u2', teamId: 'team-u2' });
-  });
-
   test('an entry per item that returns an object loads as a group of entries per item, and `null` skips', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
-    const posts = experimental_query(trpc.post.list, {});
+    const posts = prefetchEntry(trpc.post.list, {});
     const isAdmin = false as boolean;
 
     const [handles] = await loadHandles(trpc, {
       posts,
       rows: experimental_perItem(experimental_dataOf(posts).items, (post) => ({
-        author: experimental_query(trpc.author.byId, { id: post.authorId }),
+        author: prefetchEntry(trpc.author.byId, { id: post.authorId }),
         none: null,
       })),
-      draft: isAdmin
-        ? experimental_query(trpc.post.bySlug, { slug: 'd' })
-        : null,
+      draft: isAdmin ? prefetchEntry(trpc.post.bySlug, { slug: 'd' }) : null,
     });
 
     expect(handles.draft).toBeUndefined();
@@ -380,12 +250,15 @@ describe('a description of queries', () => {
       authorId: 'u1',
     });
     expect(author.input).toEqual({ id: 'u1' });
+    expect(
+      await resource.queryClient.fetchQuery(fromHandle(trpc, author)),
+    ).toEqual({ id: 'u1', teamId: 'team-u1' });
   });
 
   test('an entry per item of a list in an item loads with the client only', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
-    const posts = experimental_query(trpc.post.list, {});
+    const posts = prefetchEntry(trpc.post.list, {});
 
     await expect(
       loadHandles(trpc, {
@@ -393,8 +266,7 @@ describe('a description of queries', () => {
         rows: experimental_perItem(experimental_dataOf(posts).items, () => ({
           authors: experimental_perItem(
             experimental_dataOf(posts).items,
-            (post) =>
-              experimental_query(trpc.author.byId, { id: post.authorId }),
+            (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
           ),
         })),
       }),
@@ -404,15 +276,15 @@ describe('a description of queries', () => {
   test('an entry per item built from the data of another loads with the client only', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
-    const posts = experimental_query(trpc.post.list, {});
-    const post = experimental_query(trpc.post.bySlug, { slug: 'a' });
+    const posts = prefetchEntry(trpc.post.list, {});
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'a' });
 
     const loading = loadHandles(trpc, {
       posts,
       post,
       authors: experimental_perItem(experimental_dataOf(posts).items, () =>
         experimental_dataOf(post, (it) =>
-          experimental_query(trpc.author.byId, { id: it.authorId }),
+          prefetchEntry(trpc.author.byId, { id: it.authorId }),
         ),
       ),
     });
@@ -424,121 +296,69 @@ describe('a description of queries', () => {
       id: expect.anything(),
     });
   });
+});
 
-  test('an infinite query of a description is an infinite entry, with its `getNextPageParam`', async () => {
+describe("a bare query of the client, which says nothing of how it starts, isn't an entry of `loadHandles()`", () => {
+  test('at the top level, or in a group', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
 
-    const [handles] = await loadHandles(
-      trpc,
-      {
-        posts: experimental_infiniteQuery(
-          trpc.post.list,
-          {},
-          { getNextPageParam: (page) => page.nextCursor },
-        ),
-      },
-      { wait: ['posts'] },
-    );
-
-    expectTypeOf(handles.posts).toMatchTypeOf<TRPCInfiniteQueryHandle<any>>();
-    const query = resource.queryClient.getQueryCache().find({
-      queryKey: handles.posts.queryKey,
-    });
-    expect(query?.state.data).toMatchObject({
-      pages: [{ nextCursor: 10 }],
-      pageParams: [undefined],
-    });
-  });
-
-  test('the same description loads with the client: as promises, in one request', async () => {
-    await using resource = pipeliningSetup();
-
-    const res = experimental_load(
-      resource.client,
-      postPageQueries(resource.client, { slug: 'a' }),
-    );
-
-    expect(await experimental_settle(res)).toEqual({
-      post: { slug: 'a', authorId: 'u1' },
-      author: { id: 'u1', teamId: 'team-u1' },
-    });
-    // The links see an operation for each query, and the author goes in the
-    // post's request
-    expect(resource.requests).toEqual(['post.bySlug', 'author.byId']);
-    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
-  });
-
-  test('and with `loadHandles()`, in one request too', async () => {
-    await using resource = pipeliningSetup();
-    const trpc = resource.optionsProxyClient;
-
-    const [handles] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-    );
-
-    expect(handles.author.input).toEqual({ id: 'u1' });
-    // The author's query got its data from the post's request: this waits
-    // for it, and fetches nothing
-    expect(
-      await resource.queryClient.fetchQuery({
-        ...fromHandle(trpc, handles.author),
-        staleTime: Infinity,
+    await expect(
+      loadHandles(trpc, {
+        // @ts-expect-error -- a TanStack Query entry says how it starts
+        post: experimental_query(trpc.post.bySlug, { slug: 'a' }),
       }),
-    ).toEqual({ id: 'u1', teamId: 'team-u1' });
-    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
-  });
-
-  test('a TanStack Query entry loads with the client too', async () => {
-    await using resource = pipeliningSetup();
-    const trpc = resource.optionsProxyClient;
-    const post = ensureEntry(trpc.post.bySlug, { slug: 'c' });
-
-    const res = experimental_load(resource.client, {
-      post,
-      author: experimental_query(resource.client.author.byId, {
-        id: experimental_dataOf(post).authorId,
+    ).rejects.toThrow(
+      'build the query for "post.bySlug" with `prefetchEntry()`, `ensureEntry()` or `fetchEntry()`',
+    );
+    await expect(
+      loadHandles(trpc, {
+        page: {
+          // @ts-expect-error -- in a group too
+          posts: experimental_infiniteQuery(trpc.post.list, {}),
+        },
       }),
-    });
-
-    expect(await res.author).toEqual({ id: 'u1', teamId: 'team-u1' });
-    expect(resource.onRequestSpy).toHaveBeenCalledTimes(1);
+    ).rejects.toThrow(
+      'build the query for "post.list" with `prefetchInfiniteEntry()`, `ensureInfiniteEntry()` or `fetchInfiniteEntry()`',
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
   });
 
-  test('`experimental_inferHandles` types the handles of a description', () => {
-    type Handles = experimental_inferHandles<typeof postPageQueries>;
-    expectTypeOf<NonNullable<Handles['author']['input']>>().toEqualTypeOf<{
-      id: string;
-    }>();
-  });
-
-  test('the handles of a description have the key prefix of the proxy that loads it', async () => {
-    const { appRouter } = createAppRouter();
-    await using resource = testReactResource(appRouter, { keyPrefix: 'blog' });
+  test('in an entry per item, or one built from data', async () => {
+    await using resource = setup();
     const trpc = resource.optionsProxyServer;
+    const posts = prefetchEntry(trpc.post.list, {});
 
-    const [handles] = await loadHandles(
-      trpc,
-      postPageQueries(trpc, { slug: 'a' }),
-    );
+    await expect(
+      loadHandles(trpc, {
+        posts,
+        // @ts-expect-error -- what an entry per item returns, too
+        authors: experimental_perItem(experimental_dataOf(posts).items, (it) =>
+          experimental_query(trpc.author.byId, { id: it.authorId }),
+        ),
+      }),
+    ).rejects.toThrow(/"author.byId" with `prefetchEntry\(\)`/);
+    await expect(
+      loadHandles(trpc, {
+        posts,
+        // @ts-expect-error -- and what a callback of the data returns
+        first: experimental_dataOf(posts, (it) =>
+          experimental_query(trpc.author.byId, { id: it.items[0]!.authorId }),
+        ),
+      }),
+    ).rejects.toThrow(/"author.byId" with `prefetchEntry\(\)`/);
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
 
-    expect(handles.post.queryKey).toEqual([
-      ['blog'],
-      ['post', 'bySlug'],
-      { input: { slug: 'a' }, type: 'query' },
-    ]);
-    expectTypeOf(handles.post.queryKey).toEqualTypeOf<
-      [
-        prefix: string[],
-        path: string[],
-        opts?: { input?: { slug: string }; type?: 'query' },
-      ]
-    >();
-    type Handles = experimental_inferHandles<
-      typeof postPageQueries,
-      { keyPrefix: true }
-    >;
-    expectTypeOf<Handles['post']>().toEqualTypeOf<typeof handles.post>();
+  test('`experimental_useHandles()` throws for it', () => {
+    const { appRouter } = createAppRouter();
+    const resource = testReactResource(appRouter);
+    const trpc = resource.optionsProxyServer;
+    expect(() =>
+      experimental_useHandles(trpc, {
+        // @ts-expect-error -- a TanStack Query entry says how it starts
+        post: experimental_query(trpc.post.bySlug, { slug: 'a' }),
+      }),
+    ).toThrow(/with `prefetchEntry\(\)`/);
   });
 });

@@ -13,37 +13,27 @@ import { attemptNow } from './outcome';
 import { describeEntries } from './plan';
 import { toTanStackEntries } from './shared';
 import type {
+  LoadedEntries,
+  TanStackEntriesOnly,
   TRPCLoadEntries,
   TRPCLoadedHandles,
-  TRPCLoadOptions,
   TRPCSettledHandles,
-  experimental_WaitableKey,
-  experimental_WithWait,
-  FeatureFlagsOf,
-  WaitOf,
 } from './types';
 
 /**
- * The entries of a load, as TanStack Query entries of the root proxy. A
- * proxy that isn't the root throws, as it always has; entries it can't read
- * are a failed outcome, whatever was thrown, which makes the load reject
+ * The entries of a load, as the load reads them. A proxy that isn't the root
+ * throws, as it always has; entries it can't read are a failed outcome,
+ * whatever was thrown, which makes the load reject
  */
 function readLoad(opts: {
   trpc: unknown;
   fn: string;
   entries: Record<string, unknown>;
-  wait: readonly string[] | undefined;
 }) {
   const root = readRoot(opts.trpc, opts.fn);
   return {
     queryClient: queryClientOf(root),
-    entries: attemptNow(() =>
-      toTanStackEntries({
-        root,
-        entries: opts.entries,
-        wait: opts.wait ?? [],
-      }),
-    ),
+    entries: attemptNow(() => toTanStackEntries(opts.entries)),
   };
 }
 
@@ -55,14 +45,9 @@ export {
   fetchInfiniteEntry,
   ensureInfiniteEntry,
 } from './entry';
-// The functions that describe what to load are the client's: the same
-// description loads with `loadHandles()` and with `experimental_load()`
-export {
-  experimental_dataOf,
-  experimental_infiniteQuery,
-  experimental_perItem,
-  experimental_query,
-} from '@trpc/client';
+// The client's: what reads another entry's data, and what loads for every
+// item of a list. Each query in them is a TanStack Query entry
+export { experimental_dataOf, experimental_perItem } from '@trpc/client';
 export { fromHandle, experimental_handleOfItem } from './handle';
 export type {
   TRPCQueryHandle,
@@ -76,7 +61,6 @@ export type {
   TRPCEntryKind,
   TRPCLoadEntries,
   TRPCLoadedHandles,
-  TRPCLoadOptions,
   TRPCSettledHandles,
   TRPCEntryResult,
   TRPCEntryOptions,
@@ -213,28 +197,11 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles
  */
-export function loadHandles<
-  TProxy extends DecorateRouterKeyable<any>,
-  TEntries extends TRPCLoadEntries,
-  const TOpts extends TRPCLoadOptions<
-    TEntries,
-    readonly experimental_WaitableKey<TEntries>[]
-  > = {},
->(
-  trpc: TProxy,
-  entries: TEntries,
-  opts?: TOpts,
-): Promise<
-  TRPCLoadedHandles<
-    experimental_WithWait<TEntries, WaitOf<TOpts>, FeatureFlagsOf<TProxy>>
-  >
-> {
-  const load = readLoad({
-    trpc,
-    fn: 'loadHandles',
-    entries,
-    wait: opts?.wait,
-  });
+export function loadHandles<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  entries: TEntries & TanStackEntriesOnly<TEntries>,
+): Promise<TRPCLoadedHandles<LoadedEntries<TEntries>>> {
+  const load = readLoad({ trpc, fn: 'loadHandles', entries });
   if (!load.entries.ok) {
     return Promise.reject(load.entries.error);
   }
@@ -267,9 +234,8 @@ export function loadHandles<
  * entry that nothing reads can fail without making it reject. A throw while it
  * starts an entry that reads no other entry, such as from
  * a `staleTime` function, still rejects, whatever the entry's kind. So does
- * what isn't a load it can start, before any entry starts: such as a `wait`
- * that names an `experimental_perItem()` entry, or an entry that reads one
- * that isn't in the load.
+ * what isn't a load it can start, before any entry starts: such as a bare
+ * `experimental_query()`, or an entry that reads one that isn't in the load.
  *
  * An interruption still rejects, as it does with `loadHandles()`: a cancelled
  * query, such as an ensure entry's uncached fetch that `cancelQueries()` stops,
@@ -288,28 +254,11 @@ export function loadHandles<
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
-export function loadHandlesSettled<
-  TProxy extends DecorateRouterKeyable<any>,
-  TEntries extends TRPCLoadEntries,
-  const TOpts extends TRPCLoadOptions<
-    TEntries,
-    readonly experimental_WaitableKey<TEntries>[]
-  > = {},
->(
-  trpc: TProxy,
-  entries: TEntries,
-  opts?: TOpts,
-): Promise<
-  TRPCSettledHandles<
-    experimental_WithWait<TEntries, WaitOf<TOpts>, FeatureFlagsOf<TProxy>>
-  >
-> {
-  const load = readLoad({
-    trpc,
-    fn: 'loadHandlesSettled',
-    entries,
-    wait: opts?.wait,
-  });
+export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  entries: TEntries & TanStackEntriesOnly<TEntries>,
+): Promise<TRPCSettledHandles<LoadedEntries<TEntries>>> {
+  const load = readLoad({ trpc, fn: 'loadHandlesSettled', entries });
   if (!load.entries.ok) {
     return Promise.reject(load.entries.error);
   }
@@ -361,18 +310,13 @@ export function loadHandlesSettled<
  */
 export const experimental_useHandles = useHandles;
 
-function useHandles<
-  TProxy extends DecorateRouterKeyable<any>,
-  TEntries extends TRPCLoadEntries,
->(
-  trpc: TProxy,
-  given: TEntries,
-): TRPCLoadedHandles<
-  experimental_WithWait<TEntries, [], FeatureFlagsOf<TProxy>>
->[0] {
+function useHandles<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  given: TEntries & TanStackEntriesOnly<TEntries>,
+): TRPCLoadedHandles<LoadedEntries<TEntries>>[0] {
   const root = readRoot(trpc, 'experimental_useHandles');
   const queryClient = queryClientOf(root);
-  const entries = toTanStackEntries({ root, entries: given, wait: [] });
+  const entries = toTanStackEntries(given);
   const loads = usedLoadsOf(queryClient);
   const { key, symbols } = describeEntries({
     queryClient,

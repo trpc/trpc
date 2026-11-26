@@ -38,7 +38,7 @@ Everything on this page is experimental, and may change in a minor release. The 
 
 Nothing here changes how your app works until you use it. `loadHandles()` behaves as before for entries without `experimental_dataOf()`, and the server and the links behave as before without their options.
 
-`experimental_dataOf()`, `experimental_perItem()` and `experimental_query()` are `@trpc/client`'s, and this package exports them too: a description loads with a plain client as well. See [One description for both clients](#shared).
+`experimental_dataOf()` and `experimental_perItem()` are `@trpc/client`'s, and this package exports them too. A plain client loads these entries as well: see [One description for both clients](#shared).
 :::
 
 ```twoslash include dq-router
@@ -382,7 +382,7 @@ Your links see each entry's query, as they see each query of `experimental_load(
 
 ## When the loader needs the data {#data-of}
 
-Sometimes the loader must have the post before the page renders: to answer with a 404, or to set the title. Then wait for the post with `ensureEntry` or `fetchEntry`, or name its key in [`wait`](#wait), and read its data in another entry's input with `experimental_dataOf(entry)`, without a callback.
+Sometimes the loader must have the post before the page renders: to answer with a 404, or to set the title. Then wait for the post with `ensureEntry` or `fetchEntry`, and read its data in another entry's input with `experimental_dataOf(entry)`, without a callback.
 
 ```ts twoslash
 // @include: dq-router
@@ -456,116 +456,61 @@ prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 - **The load waits for the data it reads**, whatever the kind of either entry, because a handle needs its input. To not wait, [use the callback](#without-waiting).
 - **If the value can be missing**, such as an optional `coverImageId`, the entry runs with a missing input. That fails its validation, unless the procedure takes a missing one. [Reshape the procedure](/docs/client/tanstack-react-query/handles#reshape-procedures) to take what is always there.
 
-## Wait for an entry {#wait}
-
-`wait` makes the load wait for the entries you name, as if each were an ensure entry. The entries themselves stay as they are, so the same function serves a loader that waits and one that doesn't:
-
-```ts twoslash title='post-page.tsx'
-// @include: dq-router
-// @include: dq-trpc
-// @include: dq-post-entries
-import { trpc } from '~/trpc/server';
-declare const slug: string;
-// ---cut---
-import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
-
-// ...postPageEntries(), from In short
-
-const [handles, data] = await loadHandles(
-  trpc,
-  postPageEntries(trpc, { slug }),
-  // To answer with a 404, or to set the title
-  { wait: ['post'] },
-);
-data.post.title;
-//        ^?
-```
-
-- **`data` has each entry you name**, typed, and the load rejects if one fails, as for an ensure entry. `loadHandlesSettled()` takes `wait` too, and has a result for each.
-- **It names keys of the object you pass**, of entries of one query: not a group, and not an `experimental_perItem()` entry. Another key is a type error.
-- **A list whose keys aren't known**, such as a `('post' | 'author')[]` variable, or a `['post' | 'author']` one, has its keys' data as optional in `data`: write the list inline to have it typed as there.
-- **An entry that reads a waited entry without a callback gets a finished handle**, as with `ensureEntry`. One built with a callback stays unfinished: the callback says not to wait.
-- **A fetch or ensure entry is waited for anyway.** Naming it changes nothing.
-
 ## One description for both clients {#shared}
 
-The functions that say what to load are `@trpc/client`'s: `experimental_query()`, `experimental_infiniteQuery()`, `experimental_dataOf()` and `experimental_perItem()`. This package exports the same functions. So one description loads with `loadHandles()` and with a plain client's [`experimental_load()`](/docs/client/vanilla/nested-queries#without-tanstack-query):
+`loadHandles()` takes TanStack Query entries: `prefetchEntry()`, `ensureEntry()`, `fetchEntry()` and their infinite forms. A plain client's [`experimental_load()`](/docs/client/vanilla/nested-queries#without-tanstack-query) loads them too, as it loads its own `experimental_query()`. So one description serves both:
 
-```twoslash include dq-shared-queries
+```twoslash include dq-shared-entries
 // @filename: post-page.tsx
 import {
+  ensureEntry,
   experimental_dataOf,
-  experimental_query,
-  type experimental_QueryProcedures,
-} from '@trpc/client';
-import type { AppRouter } from '~/server/router';
+  prefetchEntry,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import type { TRPC } from '~/trpc/client';
 
-function postQueries(
-  trpc: experimental_QueryProcedures<AppRouter>,
-  opts: { slug: string },
-) {
-  const post = experimental_query(trpc.post.bySlug, { slug: opts.slug });
+export function postEntries(trpc: TRPC, opts: { slug: string }) {
+  const post = ensureEntry(trpc.post.bySlug, { slug: opts.slug });
   return {
     post,
-    author: experimental_dataOf(post, (it) =>
-      experimental_query(trpc.author.byId, { id: it.authorId }),
-    ),
+    author: prefetchEntry(trpc.author.byId, {
+      id: experimental_dataOf(post).authorId,
+    }),
   };
 }
 ```
-
-```ts twoslash title='post-page.tsx'
-// @include: dq-router
-// @filename: post-page.tsx
-// ---cut---
-import {
-  experimental_dataOf,
-  experimental_query,
-  type experimental_QueryProcedures,
-} from '@trpc/client';
-import type { AppRouter } from '~/server/router';
-
-// A tRPC client and an options proxy are both `experimental_QueryProcedures`
-function postQueries(
-  trpc: experimental_QueryProcedures<AppRouter>,
-  opts: { slug: string },
-) {
-  const post = experimental_query(trpc.post.bySlug, { slug: opts.slug });
-  return {
-    post,
-    author: experimental_dataOf(post, (it) =>
-      experimental_query(trpc.author.byId, { id: it.authorId }),
-    ),
-  };
-}
-```
-
-In the page's loader, further down the same file, pass the options proxy:
 
 ```ts twoslash title='post-page.tsx'
 // @include: dq-router
 // @include: dq-trpc
-// @include: dq-shared-queries
+// @include: dq-shared-entries
 import { trpc } from '~/trpc/server';
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from '~/server/router';
 declare const slug: string;
+const client = createTRPCClient<AppRouter>({
+  links: [httpBatchStreamLink({ url: 'http://localhost:3000' })],
+});
 // ---cut---
+import { experimental_load } from '@trpc/client';
 import { loadHandles } from '@trpc/tanstack-react-query/unstable-handles';
 
-// ...postQueries(), from above
+// ...postEntries(), from above
 
-const [handles, data] = await loadHandles(trpc, postQueries(trpc, { slug }), {
-  wait: ['post'],
-});
-handles.author;
-//      ^?
+// In a loader: the verbs say how each query starts
+const [handles, data] = await loadHandles(trpc, postEntries(trpc, { slug }));
+data.post.title;
+//        ^?
+
+// Without TanStack Query's cache: a promise for every key
+const res = experimental_load(client, postEntries(trpc, { slug }));
+const author = await res.author;
 ```
 
-And without TanStack Query, pass the client: `experimental_load(client, postQueries(client, { slug }))` gives a promise for every key.
-
-- **An `experimental_query()` is a prefetch entry**, and an `experimental_infiniteQuery()` a prefetch infinite entry, with its `initialCursor` and `getNextPageParam`. Name its key in [`wait`](#wait) to wait for it.
-- **For TanStack Query's options**, such as `staleTime`, use `prefetchEntry()` and the others. `experimental_load()` reads those too, and leaves the options out.
-- **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data to build the entry's handle. A fetch or ensure entry in the callback is [still waited for](#without-waiting).
+- **The verbs are for `loadHandles()`.** `experimental_load()` loads every entry the same way, as a promise, and leaves TanStack Query's options, such as `staleTime`, out.
+- **A bare `experimental_query()` isn't an entry of `loadHandles()`.** It says nothing of how the query starts: it is a type error, and the load rejects. That holds in a group, an `experimental_perItem()` and an `experimental_dataOf(entry, (data) => entry)` callback too.
 - **The request is the same**, whichever loads it, when both have to fetch every query. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the author's call, with the id filled in.
+- **The callback form loads the same way with a plain client**: it matters only to `loadHandles()`, whose load then doesn't wait for the data to build the entry's handle. A fetch or ensure entry in the callback is [still waited for](#without-waiting).
 - **`null` skips an entry**, as `skipToken` does: its handle is `undefined`.
 - **An `experimental_perItem()` that returns an object** loads as a group: an entry per item for each key, and a handle per item for each, read with `experimental_handleOfItem()`. Each reads the item and the load's entries only: an entry per item of a list in an item, an entry in the object that reads another one, and an entry built with `experimental_dataOf(entry, (data) => entry)`, load with `experimental_load()` only.
 
@@ -786,7 +731,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 ```
 
 - **End an entries function with `satisfies TRPCLoadEntries`.** It checks the entries where you write them, and keeps a [`skipToken`](/docs/client/tanstack-react-query/handles#conditional-queries) a `skipToken`.
-- **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props. A [description](#shared) has no proxy of its own: with a [`keyPrefix`](/docs/client/tanstack-react-query/usage#keyPrefix), pass `{ keyPrefix: true }` second, for its keys.
+- **`experimental_inferHandles<typeof entries>`** is the type of the handles, for a component's props.
 - **In Next.js**, a server component can't call a function from a `'use client'` module. For a client component, move its entries function to a file of its own without `'use client'`, such as `author-card.entries.ts`, and import only the type of its entries into the component's file.
 - **A failed entry is named by its keys**: `authorCard.author`.
 
@@ -994,7 +939,7 @@ if (results.post.status === 'error') {
 
 `loadHandlesSettled()` still rejects in four cases:
 
-- **What you pass it isn't a load it can start**, before any entry starts: `wait` names an `experimental_perItem()` entry or a group, a value isn't an entry, an entry was built with a proxy for another `QueryClient`, or an entry reads the data of one that isn't in the load.
+- **What you pass it isn't a load it can start**, before any entry starts: a query is a bare `experimental_query()`, a value isn't an entry, an entry was built with a proxy for another `QueryClient`, or an entry reads the data of one that isn't in the load.
 - **A prefetch entry's request fails and another entry needs its data** for its handle or its result: it reads the data in its input, or it is a fetch or ensure entry in an `experimental_dataOf(entry, (data) => entry)` callback. A prefetch entry has no result to hold the error, so the load rejects with it. A prefetch entry in the callback doesn't start, and the load resolves with its unfinished handle. A prefetch entry that nothing reads can fail without making the load reject: the error shows where its handle is read.
 - **An entry that reads no other entry throws while the load starts it**, such as from a `staleTime` function, whatever its kind, [as above](#errors).
 - **A query is interrupted rather than failing.** If `queryClient.cancelQueries()` cancels the fetch of an ensure entry the cache has no data for, the load rejects with TanStack Query's `CancelledError`, which `isCancelledError()` checks. An error with a `digest`, such as Next.js's `headers()` throws in a static render, is rethrown as it is.
