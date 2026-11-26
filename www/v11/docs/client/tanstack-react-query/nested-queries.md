@@ -366,7 +366,7 @@ An entry with a `trpc.context` of its own takes no part: a link may route by tha
 Your links see each entry's query, as they see each query of `experimental_load()`:
 
 - **An entry that reads another's data has blanks in its input**: the author's `op.input` is `{ id: undefined }` until the server fills it in. A link that reads `op.input` sees the blank, and `experimental_inputOf(op)` gives the input filled in. See [What your links see](/docs/client/vanilla/nested-queries#links).
-- **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, such as another backend's, it isn't put in the post's request. It goes by itself through its own link, with its input filled in, once the post's data is there.
+- **Each query goes through the link your links pick for it, by the operation as it is sent.** If a `splitLink` sends the author's query to another link than the post's, such as another backend's, it isn't put in the post's request. It goes by itself through its own link, with its input filled in, once the post's data is there. A link that picks by a value the query reads, such as the author's id, sees the blank: send the blank to a link that doesn't pipeline, as in [routing by a value](/docs/client/vanilla/nested-queries#route-by-value). The query is then sent again with its id, and a query for every item loads each item by itself, to the link of its value.
 - **A link that [retries](/docs/client/vanilla/nested-queries#retries) sees each query too.** If the post's request fails as a whole and `retryLink` sends it again, the author's query goes in the retry's request, and the entry uses that result: the author runs once.
 
 ## The load doesn't wait {#without-waiting}
@@ -835,7 +835,7 @@ export function PostPage(props: { slug: string }) {
 
 - **It starts the entries once, for as long as the component is on the page.** Rendering again starts nothing. A page that a Suspense boundary above it hasn't shown yet keeps its load until 30 seconds after its queries settle.
 - **It starts them again when they change**, such as for another slug, and when the component comes back to the page. As in a loader, a prefetch entry whose data is fresh asks for nothing.
-- **Build the entries from values that stay the same from render to render**: props, the URL. They are compared by value, as query keys are: the procedure, the input, and the options that say how a query starts, such as `staleTime`. Which function an option is isn't compared. A function in `trpc.context` is, as a link may route by it: define it outside the component. An input that is new on every render, such as `new Date()`, starts the queries on every render.
+- **Build the entries from values that stay the same from render to render**: props, the URL. They are compared by value, as query keys are: the procedure, the input, and the options that say how a query starts, such as `staleTime`. Which function an option is isn't compared. A function in `trpc.context` is, as a link may route by it: define it outside the component. The order of an object's keys isn't, so don't route by it. An input that is new on every render, such as `new Date()`, starts the queries on every render.
 - **It is for a page without a loader.** Entries that a loader has started already get no second request, so the queries that depend on them have no request to go in.
 - **It returns the handles at once.** It waits for no data: the component that reads a handle does, in its Suspense boundary.
 - **With a link that [pipelines](/docs/client/vanilla/nested-queries#turn-on), it is one request**, as from a loader.
@@ -899,7 +899,7 @@ export default async function PostPage(props: {
 - **The author's query is on its way when `HydrateClient` renders**, so it crosses to the browser and streams in.
 - **To not hold the page back, put the load in a server component of its own**, in a Suspense boundary. The rest of the page shows first.
 - **There is no request to save.** The proxy calls the router directly, so nothing is pipelined on the server.
-- **A load of only prefetch entries waits for nothing**, so the page's `HydrateClient` has the first query only. Then the browser asks for the author by itself. To send it, load the post again in a server component further down, with an ensure entry, and render a `HydrateClient` there too:
+- **A load of only prefetch entries waits for nothing if no handle needs data**, as when each entry that reads another's data is built with a callback, `experimental_dataOf(post, (data) => …)`. An input that reads data without a callback, as the author's above, makes the load wait for that data, prefetch or not. Without waiting, the page's `HydrateClient` has the first query only, and the browser asks for the author by itself. To send it, load the post again in a server component further down, with an ensure entry, and render a `HydrateClient` there too:
 
 ```tsx twoslash title='app/posts/[slug]/author-section.tsx'
 // @include: dq-router

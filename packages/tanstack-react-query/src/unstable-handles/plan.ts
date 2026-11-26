@@ -368,7 +368,10 @@ function describeFunction(fn: object) {
 /**
  * An object's own keys, symbols too, each tagged so that no string key reads
  * like a symbol, with what `describe` makes of its value, in the order of
- * their tags
+ * their tags. Sorted, as TanStack Query hashes a query key's objects: the
+ * order of a plain object's keys tells no two descriptions apart, in an input
+ * or a context, so a link must not route by it. A Map's or a Set's members
+ * keep their order
  */
 function describeKeys(
   object: Readonly<Record<PropertyKey, unknown>>,

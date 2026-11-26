@@ -5692,6 +5692,88 @@ describe.each([
   },
 );
 
+test("a `splitLink` that picks a backend by a value of the input sends the blank to a link that doesn't pipeline: each item goes to the backend of its value", async () => {
+  /** Backend B, which has team `t2` */
+  const t = initTRPC.create();
+  const callsB = vi.fn();
+  const routerB = t.router({
+    team: t.router({
+      byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+        callsB('team.byId', opts.input);
+        return { id: opts.input.id, name: 'From B' };
+      }),
+    }),
+  });
+  await using resourceB = testReactResource(routerB);
+  const { appRouter, calls } = createAppRouter();
+  await using resource = testReactResource(appRouter, {
+    server: { experimental_allowPipelining: true },
+    client: (opts) => ({
+      links: [
+        splitLink({
+          // A blank until the post is there: the item's run is sent again
+          // with its id, which the condition below then sees
+          condition: (op) =>
+            op.path === 'team.byId' &&
+            (op.input as { id: string | undefined }).id === undefined,
+          true: httpLink({ url: opts.httpUrl }),
+          false: splitLink({
+            condition: (op) =>
+              op.path === 'team.byId' &&
+              (op.input as { id: string }).id === 't2',
+            true: httpLink({ url: resourceB.httpUrl }),
+            false: httpBatchStreamLink({
+              url: opts.httpUrl,
+              experimental_pipelining: experimental_pipelining(),
+            }),
+          }),
+        }),
+      ],
+    }),
+  });
+  const trpc = resource.optionsProxyClient;
+
+  const post = ensureEntry(trpc.post.bySlug, { slug: 'hello' });
+  const [handles, data] = await loadHandles(trpc, {
+    post,
+    teams: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
+      ensureEntry(trpc.team.byId, { id: tag.id }),
+    ),
+  });
+  expect(data.teams).toEqual([
+    { id: 't1', name: 'tRPC' },
+    { id: 't2', name: 'From B' },
+  ]);
+  expect(calls.mock.calls).toEqual([
+    ['post.bySlug', { slug: 'hello' }],
+    ['team.byId', { id: 't1' }],
+  ]);
+  expect(callsB.mock.calls).toEqual([['team.byId', { id: 't2' }]]);
+
+  // The post fetched again: its read loads no item, whose route the blank
+  // can't tell. The row that reads `t2` loads it from B
+  calls.mockClear();
+  callsB.mockClear();
+  resource.queryClient.removeQueries({ queryKey: trpc.team.pathKey() });
+  await resource.queryClient.fetchQuery({
+    ...fromHandle(trpc, handles.post),
+    staleTime: 0,
+  });
+  await vi.waitFor(() => {
+    expect(resource.queryClient.isFetching()).toBe(0);
+  });
+  expect(calls.mock.calls).toEqual([['post.bySlug', { slug: 'hello' }]]);
+  expect(
+    resource.queryClient.getQueryData(trpc.team.byId.queryKey({ id: 't2' })),
+  ).toBeUndefined();
+  await expect(
+    resource.queryClient.fetchQuery(
+      fromHandle(trpc, experimental_handleOfItem(handles.teams, { id: 't2' })),
+    ),
+  ).resolves.toEqual({ id: 't2', name: 'From B' });
+  expect(callsB.mock.calls).toEqual([['team.byId', { id: 't2' }]]);
+});
+
 describe.each([
   { name: 'httpBatchLink', link: httpBatchLink },
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },

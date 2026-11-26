@@ -343,7 +343,7 @@ const [handles, data] = await loadHandles(
 ```
 
 - **Each `experimental_query()` is a prefetch entry**, and each key in [`wait`](/docs/client/tanstack-react-query/nested-queries#wait) an ensure entry: the load waits for its data, and `data` has it.
-- **The request is the same when both have to fetch every query.** A link that pipelines sends it as one, whichever loads it. `loadHandles()` reads what the cache already has: with a fresh post there, it sends only the author's call.
+- **The request is the same when both have to fetch every query.** A link that pipelines sends it as one, whichever loads it. `loadHandles()` reads what the cache already has: with a fresh post there, it sends the calls of the author and the team's posts, which reads the author.
 
 ## One request {#one-request}
 
