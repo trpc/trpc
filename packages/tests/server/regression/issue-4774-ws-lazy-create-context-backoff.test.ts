@@ -19,8 +19,8 @@ const router = t.router({
 function setup(opts: {
   createContext: () => object;
   delayMs: number;
-  closeMs?: number;
-  url?: WebSocketClientOptions['url'];
+  closeMs: number;
+  url: WebSocketClientOptions['url'] | null;
 }) {
   const retryDelayMs = vi.fn<
     NonNullable<WebSocketClientOptions['retryDelayMs']>
@@ -33,10 +33,10 @@ function setup(opts: {
     wsClient: {
       lazy: {
         enabled: true,
-        closeMs: opts.closeMs ?? 0,
+        closeMs: opts.closeMs,
       },
       retryDelayMs,
-      ...(opts.url && { url: opts.url }),
+      ...(opts.url !== null && { url: opts.url }),
     },
     client(clientOpts) {
       return {
@@ -65,7 +65,12 @@ test('a query retried by retryLink waits for the backoff in lazy mode', async ()
   const createContext = vi.fn((): object => {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   });
-  await using ctx = setup({ createContext, delayMs: 10 });
+  await using ctx = setup({
+    createContext,
+    delayMs: 10,
+    closeMs: 0,
+    url: null,
+  });
   // cancel the query before the client closes, so `retryLink` doesn't send
   // it again during teardown
   const abortController = new AbortController();
@@ -93,7 +98,12 @@ test('a request made once the lazy client is idle again does not wait for an old
     if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
     return {};
   });
-  await using ctx = setup({ createContext, delayMs: 1_000 });
+  await using ctx = setup({
+    createContext,
+    delayMs: 1_000,
+    closeMs: 0,
+    url: null,
+  });
 
   await expect(
     ctx.client.greeting.query(undefined, { context: { retry: false } }),
@@ -126,7 +136,13 @@ test('a request made once the lazy client is idle again does not join a reconnec
     if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
     return {};
   });
-  await using ctx = setup({ createContext, delayMs: 1_000 });
+  // longer than the test timeout, so joining the old reconnect fails the test
+  await using ctx = setup({
+    createContext,
+    delayMs: 60_000,
+    closeMs: 0,
+    url: null,
+  });
 
   const abortController = new AbortController();
   ctx.client.greeting
@@ -154,7 +170,12 @@ test('a request waiting out the backoff before the lazy client goes idle shows c
     if (isRejecting) throw new TRPCError({ code: 'UNAUTHORIZED' });
     return {};
   });
-  await using ctx = setup({ createContext, delayMs: 100, closeMs: 1_000 });
+  await using ctx = setup({
+    createContext,
+    delayMs: 100,
+    closeMs: 1_000,
+    url: null,
+  });
 
   await expect(
     ctx.client.greeting.query(undefined, { context: { retry: false } }),
