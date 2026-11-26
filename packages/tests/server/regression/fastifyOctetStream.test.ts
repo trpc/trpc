@@ -63,3 +63,41 @@ test('a binary input over maxBodySize is rejected', async () => {
     httpStatus: 413,
   });
 });
+
+// Replacing the app's own parser would drop its `bodyLimit` on tRPC routes
+test("the app's own octet-stream parser and bodyLimit are kept", async () => {
+  const instance = fastify({ bodyLimit: 1024 });
+  instance.addContentTypeParser(
+    'application/octet-stream',
+    { parseAs: 'buffer' },
+    (_, body, done) => done(null, body),
+  );
+  instance.register(fastifyTRPCPlugin, {
+    prefix: '/trpc',
+    trpcOptions: { router },
+  });
+  const url = await instance.listen({ port: 0 });
+  await using $ = makeAsyncResource(
+    {
+      client: createTRPCClient<typeof router>({
+        links: [httpLink({ url: `${url}/trpc` })],
+      }),
+    },
+    () => instance.close(),
+  );
+
+  const small = new Blob([new Uint8Array([0, 1, 255])], {
+    type: 'application/octet-stream',
+  });
+  expect(await $.client.upload.mutate(small)).toEqual([0, 1, 255]);
+
+  const res = await fetch(`${url}/trpc/upload`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/octet-stream' },
+    body: new Uint8Array(10_000),
+  });
+  expect(res.status).toBe(413);
+  expect(await res.json()).toMatchObject({
+    code: 'FST_ERR_CTP_BODY_TOO_LARGE',
+  });
+});

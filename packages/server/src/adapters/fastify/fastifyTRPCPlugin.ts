@@ -78,20 +78,26 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       _done(null, body);
     },
   );
-  // tRPC streams these bodies itself. Fastify has no parser for them, so it
-  // would answer 415 before the request reached tRPC
-  const streamedContentTypes = [
-    'multipart/form-data',
-    'application/octet-stream',
-  ];
-  fastify.removeContentTypeParser(streamedContentTypes);
+  fastify.removeContentTypeParser('multipart/form-data');
   fastify.addContentTypeParser(
-    streamedContentTypes,
+    'multipart/form-data',
     {},
     function (_, body, _done) {
       _done(null, body);
     },
   );
+  // Fastify has no octet-stream parser, so it would answer 415 before the
+  // request reached tRPC. Keep the app's own parser, and its `bodyLimit`, if
+  // it registered one
+  if (!fastify.hasContentTypeParser('application/octet-stream')) {
+    fastify.addContentTypeParser(
+      'application/octet-stream',
+      {},
+      function (_, body, _done) {
+        _done(null, body);
+      },
+    );
+  }
 
   let prefix = opts.prefix ?? '';
 
