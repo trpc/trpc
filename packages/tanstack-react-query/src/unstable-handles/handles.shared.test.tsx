@@ -25,10 +25,12 @@ import {
 } from '.';
 import type {
   experimental_inferHandles,
+  experimental_inferInfiniteQueryHandleOfItem,
+  experimental_inferQueryHandleOfItem,
   experimental_TRPCQueryHandlePerItem,
   inferQueryHandle,
 } from '.';
-import type { TRPCOptionsProxy } from '..';
+import type { inferOutput, TRPCOptionsProxy } from '..';
 
 function createAppRouter() {
   const t = initTRPC.create();
@@ -227,6 +229,62 @@ describe('a description of TanStack Query entries', () => {
     expect(
       await resource.queryClient.fetchQuery(fromHandle(trpc, finished)),
     ).toEqual({ id: 'u1', teamId: 'team-u1' });
+  });
+
+  test('`experimental_inferQueryHandleOfItem` and `experimental_inferInfiniteQueryHandleOfItem` type unfinished handles by procedure', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    type TRPC = typeof trpc;
+    const post = prefetchEntry(trpc.post.bySlug, { slug: 'a' });
+    const posts = prefetchEntry(trpc.post.list, {});
+    const entries = {
+      post,
+      posts,
+      author: experimental_dataOf(post, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+      teamPosts: experimental_dataOf(post, () =>
+        prefetchInfiniteEntry(trpc.post.list, {}),
+      ),
+      authors: experimental_perItem(experimental_dataOf(posts).items, (it) =>
+        prefetchEntry(trpc.author.byId, { id: it.authorId }),
+      ),
+    };
+    type Handles = experimental_inferHandles<typeof entries>;
+    type Post = inferOutput<TRPC['post']['bySlug']>;
+
+    expectTypeOf<Handles['author']>().toEqualTypeOf<
+      experimental_inferQueryHandleOfItem<TRPC['author']['byId'], Post>
+    >();
+    expectTypeOf<Handles['teamPosts']>().toEqualTypeOf<
+      experimental_inferInfiniteQueryHandleOfItem<TRPC['post']['list'], Post>
+    >();
+    expectTypeOf<Handles['authors']>().toEqualTypeOf<
+      experimental_inferQueryHandleOfItem<
+        TRPC['author']['byId'],
+        inferOutput<TRPC['post']['list']>['items'][number]
+      >
+    >();
+
+    // A component that takes it, typed by procedure only, finishes it
+    function finish(props: {
+      author: experimental_inferQueryHandleOfItem<TRPC['author']['byId'], Post>;
+      post: Post;
+    }) {
+      return experimental_handleOfItem(props.author, props.post);
+    }
+    const [handles] = await loadHandles(trpc, {
+      post,
+      author: entries.author,
+    });
+    const finished = finish({
+      author: handles.author,
+      post: { slug: 'a', authorId: 'u1' },
+    });
+    expectTypeOf(finished).toEqualTypeOf<
+      inferQueryHandle<TRPC['author']['byId']>
+    >();
+    expect(finished.input).toEqual({ id: 'u1' });
   });
 
   test('an entry per item that returns an object loads as a group of entries per item, and `null` skips', async () => {

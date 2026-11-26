@@ -554,6 +554,51 @@ export type inferInfiniteQueryHandle<
     : never;
 
 /**
+ * The unfinished handle of a query procedure, whose input needs `TItem` to be
+ * finished: from `experimental_dataOf(entry, (data) => entry)`, where
+ * `TItem` is that entry's data, or from `experimental_perItem()`, where it is
+ * an item of the list. For typing the props of a component that finishes it
+ * with `experimental_handleOfItem(handle, item)`.
+ * @example
+ * ```ts
+ * type AuthorOfPost = experimental_inferQueryHandleOfItem<
+ *   TRPC['author']['byId'],
+ *   inferOutput<TRPC['post']['bySlug']>
+ * >;
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#without-waiting
+ */
+export type experimental_inferQueryHandleOfItem<
+  TProcedure extends DecorateQueryProcedure<any>,
+  TItem,
+> =
+  TProcedure extends DecorateQueryProcedure<infer TDef>
+    ? experimental_TRPCQueryHandlePerItem<TDef, TItem>
+    : never;
+
+/**
+ * The unfinished handle of an infinite query procedure, whose input needs
+ * `TItem`, the data of the entry it was built from, to be finished. For
+ * typing the props of a component that finishes it with
+ * `experimental_handleOfItem(handle, item)`.
+ * @example
+ * ```ts
+ * type TeamPostsOfAuthor = experimental_inferInfiniteQueryHandleOfItem<
+ *   TRPC['post']['list'],
+ *   inferOutput<TRPC['author']['byId']>
+ * >;
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#without-waiting
+ */
+export type experimental_inferInfiniteQueryHandleOfItem<
+  TProcedure extends DecorateInfiniteQueryProcedure<any>,
+  TItem,
+> =
+  TProcedure extends DecorateInfiniteQueryProcedure<infer TDef>
+    ? experimental_TRPCInfiniteQueryHandlePerItem<TDef, TItem>
+    : never;
+
+/**
  * The handles of a component's entries, for typing its props. Takes the entries,
  * or the function that builds them.
  * @example

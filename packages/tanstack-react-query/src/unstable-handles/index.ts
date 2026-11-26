@@ -33,5 +33,7 @@ export type {
   TRPCInfiniteEntryOptions,
   inferQueryHandle,
   inferInfiniteQueryHandle,
+  experimental_inferQueryHandleOfItem,
+  experimental_inferInfiniteQueryHandleOfItem,
   experimental_inferHandles,
 } from './handles';
