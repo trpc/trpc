@@ -486,7 +486,7 @@ Each query is an operation of its own, and goes through your links. The batch li
 - **The post's context says what went with it**: `op.context['~pipeline'].calls` has the path of each.
 - **A failure passes through your links**, so [a link that retries](#retries) retries the query that failed.
 - **`headers()` gets the queries of the request**, not what the server runs in it.
-- **Each query goes through the link your links pick for it.** If a `splitLink` sends the author's query to another link than the post's, it isn't put in the post's request: it goes by itself through its own link, with its input filled in, once the post's data is there.
+- **Each query goes through the link your links pick for it, by the operation as it is sent.** If a `splitLink` sends the author's query to another link than the post's, it isn't put in the post's request: it goes by itself through its own link, with its input filled in, once the post's data is there. A link that picks by a value the query reads sees the blank: see [routing by a value](#route-by-value).
 
 A link that doesn't pipeline never sends a blank. The load aborts the author's operation with `op.signal` as such a link takes it, and sends the query again with its input filled in, once the post's data is there. A terminating link of your own should stop when `op.signal` aborts, as the links of `@trpc/client` do. A link that wants the filled-in input sooner, such as one that logs it, gets it from `experimental_inputOf(op)`, once those queries have their data. That is for the operation of one query. The operation of a query for every item stands for a run per item, each with an input of its own: `experimental_inputOf(op)` resolves to `undefined` for it, once the data its runs read is there. A run that asks by itself is an operation of its own, with its input.
 
@@ -514,6 +514,50 @@ export const inputLoggerLink: TRPCLink<AppRouter> =
     return next(op);
   };
 ```
+
+#### Routing by a value of the input {#route-by-value}
+
+A `splitLink` that sends some authors to another backend, by their id, can't pick a backend for `{ id: undefined }`. Send the blank to a link that doesn't pipeline. The load aborts it there and sends the query again with its id, which your condition then routes:
+
+```ts twoslash title='client.ts'
+// @include: dq-router
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchStreamLink,
+  httpLink,
+  splitLink,
+} from '@trpc/client';
+import type { AppRouter } from '~/server/router';
+
+const idOf = (input: unknown) => (input as { id?: string } | undefined)?.id;
+
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      // A blank until the post's data is there
+      condition: (op) =>
+        op.path === 'author.byId' && idOf(op.input) === undefined,
+      true: httpLink({ url: 'http://localhost:3000' }),
+      false: splitLink({
+        condition: (op) =>
+          op.path === 'author.byId' &&
+          idOf(op.input)?.startsWith('eu-') === true,
+        true: httpLink({ url: 'http://eu.localhost:3000' }),
+        false: httpBatchStreamLink({
+          url: 'http://localhost:3000',
+          experimental_pipelining: experimental_pipelining(),
+        }),
+      }),
+    }),
+  ],
+});
+```
+
+- **The author then isn't in the post's request.** It waits for the post, as without pipelining: no link can know a route that depends on a value before the server has it.
+- **Route a query for every item the same way.** Its runs each go by themselves, with their own input, to the link of their value.
 
 ### Retries {#retries}
 

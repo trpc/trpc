@@ -1991,6 +1991,79 @@ describe('a `splitLink` that sends a query and one that reads it to different li
     expect(await items[1]).toEqual({ id: 'y', run: 2 });
     expect(Object.fromEntries(runs)).toEqual({ x: 1, y: 2 });
   });
+
+  test("a `splitLink` that picks a backend by a value of the input sends the blank to a link that doesn't pipeline: the query goes to the backend of its value", async () => {
+    const t = initTRPC.create();
+    const callsB = vi.fn();
+    const routerB = t.router({
+      author: {
+        byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+          callsB(opts.input.id);
+          return { id: opts.input.id, teamId: 'from-b' };
+        }),
+      },
+    });
+    await using backendB = testServerAndClientResource(routerB);
+    const { appRouter, calls } = createRouter();
+    await using ctx = testServerAndClientResource(appRouter, {
+      server: { experimental_allowPipelining: true },
+      client: (clientOpts) => ({
+        links: [
+          splitLink({
+            // A blank until the post is there: the load sends the query
+            // again with its id, which the condition below then sees
+            condition: (op) =>
+              op.path === 'author.byId' &&
+              isObject(op.input) &&
+              op.input['id'] === undefined,
+            true: httpLink({ url: clientOpts.httpUrl }),
+            false: splitLink({
+              condition: (op) =>
+                op.path === 'author.byId' &&
+                isObject(op.input) &&
+                op.input['id'] === 'bob',
+              true: httpLink({ url: backendB.httpUrl }),
+              false: httpBatchStreamLink({
+                url: clientOpts.httpUrl,
+                experimental_pipelining: experimental_pipelining(),
+              }),
+            }),
+          }),
+        ],
+      }),
+    });
+    const c = ctx.client;
+
+    const postA = query(c.post.bySlug, { slug: 'a' });
+    const postB = query(c.post.bySlug, { slug: 'b' });
+    const res = experimental_load(c, {
+      postA,
+      postB,
+      authorA: query(c.author.byId, { id: dataOf(postA).authorId }),
+      authorB: query(c.author.byId, { id: dataOf(postB).authorId }),
+    });
+
+    expect(await res.authorA).toEqual({ id: 'ada', teamId: 'team-ada' });
+    expect(await res.authorB).toEqual({ id: 'bob', teamId: 'from-b' });
+    expect(calls.mock.calls).toEqual([['author', 'ada']]);
+    expect(callsB.mock.calls).toEqual([['bob']]);
+
+    // A query for every item: each run goes by itself, to its value's backend
+    calls.mockClear();
+    callsB.mockClear();
+    const list = query(c.post.list, { limit: 2 });
+    const authors = await experimental_load(c, {
+      authors: perItem(dataOf(list).items, (it) =>
+        query(c.author.byId, { id: it.authorId }),
+      ),
+    }).authors;
+    expect(await Promise.all(authors)).toEqual([
+      { id: 'ada', teamId: 'team-ada' },
+      { id: 'bob', teamId: 'from-b' },
+    ]);
+    expect(calls.mock.calls).toEqual([['author', 'ada']]);
+    expect(callsB.mock.calls).toEqual([['bob']]);
+  });
 });
 
 test('a query that asks by itself reads a `Date` in two places of the data as one `Date`', async () => {
