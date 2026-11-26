@@ -380,40 +380,42 @@ type PostPageHandles = experimental_inferHandles<typeof postPageEntries>;
 export function Post(props: { handles: PostPageHandles }) {
   const trpc = useTRPC();
   const { handles } = props;
-  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
-  // The author's id is in the post
-  const author = experimental_handleOfItem(handles.author, postQuery.data);
+  const post = useSuspenseQuery(fromHandle(trpc, handles.post)).data;
   return (
     <article>
-      <h1>{postQuery.data.title}</h1>
+      <h1>{post.title}</h1>
       <Suspense fallback="Loading…">
-        <AuthorCard author={author} />
-      </Suspense>
-      <Suspense fallback="Loading…">
-        <MoreFromTeam author={author} posts={handles.moreFromTeam} />
+        {/* The author's id is in the post */}
+        <PostAuthor
+          author={experimental_handleOfItem(handles.author, post)}
+          teamPosts={handles.moreFromTeam}
+        />
       </Suspense>
     </article>
   );
 }
 
-// The team's id is in the author
-function MoreFromTeam(props: {
+function PostAuthor(props: {
   author: inferQueryHandle<TRPC['author']['byId']>;
-  posts: PostPageHandles['moreFromTeam'];
+  teamPosts: PostPageHandles['moreFromTeam'];
 }) {
   const trpc = useTRPC();
-  const authorQuery = useSuspenseQuery(fromHandle(trpc, props.author));
+  const author = useSuspenseQuery(fromHandle(trpc, props.author)).data;
   return (
-    <TeamPosts
-      posts={experimental_handleOfItem(props.posts, authorQuery.data)}
-    />
+    <>
+      <AuthorCard author={props.author} />
+      <Suspense fallback="Loading…">
+        {/* The team's id is in the author */}
+        <TeamPosts posts={experimental_handleOfItem(props.teamPosts, author)} />
+      </Suspense>
+    </>
   );
 }
 ```
 
-- **The page finishes each handle where the data is.** `PostPageHandles` stays in the page's file. The components get finished handles.
-- **Each part shows when its query loads**: the post, then the author, then the team's posts. Give each its own Suspense boundary. With [one request](#one-request) over `httpBatchLink`, they all arrive at once.
-- **The components send no request of their own.** Each query is already on its way when its component asks for it. `AuthorCard` and `MoreFromTeam` read the same author query. As with any query, data older than `staleTime` refetches in the background: set `staleTime` above 0, as [the setup guides do](/docs/client/tanstack-react-query/handles#invalidation-and-staleness).
+- **The page finishes each handle where the data is.** `PostPageHandles` stays in the page's file, and so does `PostAuthor`, the small component that reads the author and finishes the team's handle. `AuthorCard` and `TeamPosts` take finished handles, typed from their procedures, so any page can use them.
+- **Each part shows when its query loads**: the post, then the author, then the team's posts. Each waits in its own Suspense boundary, inside the one of the data it reads. With [one request](#one-request) over `httpBatchLink`, they all arrive at once.
+- **The components send no request of their own.** Each query is already on its way when its component asks for it. `PostAuthor` and `AuthorCard` read the same author query. As with any query, data older than `staleTime` refetches in the background: set `staleTime` above 0, as [the setup guides do](/docs/client/tanstack-react-query/handles#invalidation-and-staleness).
 - **A finished handle is an ordinary handle.** It reads the same cache entry as `trpc.author.byId.queryOptions({ id: 'u1' })`.
 
 Then [turn on one request](/docs/client/vanilla/nested-queries#turn-on). Without it, the same code works, with one round trip per step.

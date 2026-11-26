@@ -103,10 +103,7 @@ function PostPage() {
     <HydrationBoundary state={data.dehydrated}>
       <AllPostsLink />
       <Suspense fallback={<PostSkeleton />}>
-        <Post post={data.handles.post} />
-      </Suspense>
-      <Suspense fallback={<AuthorCardSkeleton />}>
-        <PostAuthor handles={data.handles} />
+        <Post handles={data.handles} />
       </Suspense>
       <SeeItYourself>
         <p>
@@ -192,25 +189,26 @@ function PostSkeleton() {
 }
 
 /**
- * The author's id is in the post, and the team's id is in the author: this
- * reads each, and finishes the next handle with it. The card and the list
- * get the handle of their own query only
+ * The team's id is in the author: this reads the author, which `Post`
+ * finished with the post, and finishes the list's handle with it. The card
+ * and the list get the handle of their own query only
  */
-function PostAuthor(props: { readonly handles: PostPageHandles }) {
+function PostAuthor(props: {
+  readonly author: inferQueryHandle<TRPC['blog']['authorById']>;
+  readonly teamPosts: PostPageHandles['moreFromTeam'];
+  readonly exceptSlug: string;
+}) {
   const trpc = useTRPC();
-  const { handles } = props;
-  const post = useSuspenseQuery(fromHandle(trpc, handles.post)).data;
-  const authorHandle = experimental_handleOfItem(handles.author, post);
   // The card's query: read here too, for the team's id
-  const author = useSuspenseQuery(fromHandle(trpc, authorHandle)).data;
+  const author = useSuspenseQuery(fromHandle(trpc, props.author)).data;
   return (
-    <AuthorCard author={authorHandle}>
+    <AuthorCard author={props.author}>
       {/* The list loads after the author, whose team it needs, so it has a
           boundary of its own: the card shows without it */}
       <Suspense fallback={<MoreFromTeamFallback />}>
         <MoreFromTeam
-          posts={experimental_handleOfItem(handles.moreFromTeam, author)}
-          exceptSlug={post.slug}
+          posts={experimental_handleOfItem(props.teamPosts, author)}
+          exceptSlug={props.exceptSlug}
         />
       </Suspense>
     </AuthorCard>
@@ -223,14 +221,37 @@ function AuthorCardSkeleton() {
       <Skeleton className="h-48 w-full rounded-xl" />
       <p className={noteTextClass}>
         <span className="font-medium">Suspense: </span>
-        waiting for the post, then <code>blog.authorById</code>. The author’s id
-        is in the post: the server reads it there, in the same request.
+        waiting for <code>blog.authorById</code>. The author’s id is in the
+        post: the server reads it there, in the same request.
       </p>
     </div>
   );
 }
 
-function Post(props: {
+/**
+ * The post, and its author once the post is there: the author's id is in the
+ * post, so this finishes the author's handle with it. The post doesn't wait
+ * for the author
+ */
+function Post(props: { readonly handles: PostPageHandles }) {
+  const trpc = useTRPC();
+  const { handles } = props;
+  const post = useSuspenseQuery(fromHandle(trpc, handles.post)).data;
+  return (
+    <>
+      <PostArticle post={handles.post} />
+      <Suspense fallback={<AuthorCardSkeleton />}>
+        <PostAuthor
+          author={experimental_handleOfItem(handles.author, post)}
+          teamPosts={handles.moreFromTeam}
+          exceptSlug={post.slug}
+        />
+      </Suspense>
+    </>
+  );
+}
+
+function PostArticle(props: {
   readonly post: inferQueryHandle<TRPC['blog']['postBySlug']>;
 }) {
   const trpc = useTRPC();

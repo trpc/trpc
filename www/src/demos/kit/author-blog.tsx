@@ -260,38 +260,63 @@ function MoreOf(props: {
 }
 
 /**
- * The author's handle needs the post's data, and the team's posts' handle
- * needs the author's. Both queries are in the cache, or on their way, by the time
- * their data is read here.
+ * The team's posts' handle needs the author's data: this reads the author,
+ * finished with the post, and finishes the list's handle with it. The query
+ * is in the cache, or on its way, by the time its data is read here.
  */
-function AuthorOf(props: { readonly handles: PostPageHandles }) {
+function AuthorOf(props: {
+  readonly author: inferQueryHandle<TRPC['author']['byId']>;
+  readonly more: PostPageHandles['more'];
+  readonly postId: number;
+}) {
   const trpc = useTRPC();
-  const { handles } = props;
-  const postQuery = useSuspenseQuery(fromHandle(trpc, handles.post));
-  const authorQuery = useSuspenseQuery(
-    fromHandle(trpc, experimental_handleOfItem(handles.author, postQuery.data)),
-  );
+  const author = useSuspenseQuery(fromHandle(trpc, props.author)).data;
   return (
     <>
-      <AuthorCard author={authorQuery.data} />
-      <Suspense fallback={<MoreSkeleton postId={postQuery.data.id} />}>
+      <AuthorCard author={author} />
+      <Suspense fallback={<MoreSkeleton postId={props.postId} />}>
         <MoreOf
-          author={authorQuery.data.name}
-          more={experimental_handleOfItem(handles.more, authorQuery.data)}
-          postId={postQuery.data.id}
+          author={author.name}
+          more={experimental_handleOfItem(props.more, author)}
+          postId={props.postId}
         />
       </Suspense>
     </>
   );
 }
 
+/**
+ * The author's handle needs the post's data: this reads the post, which the
+ * article reads too, and finishes the author's handle with it
+ */
+function AuthorOfPost(props: {
+  readonly post: inferQueryHandle<TRPC['post']['byId']>;
+  readonly author: PostPageHandles['author'];
+  readonly more: PostPageHandles['more'];
+}) {
+  const trpc = useTRPC();
+  const post = useSuspenseQuery(fromHandle(trpc, props.post)).data;
+  return (
+    <AuthorOf
+      author={experimental_handleOfItem(props.author, post)}
+      more={props.more}
+      postId={post.id}
+    />
+  );
+}
+
 function ArticleFromHandles(props: { readonly handles: PostPageHandles }) {
   const id = usePostId();
+  const { handles } = props;
   return (
     <ArticleLayout
       author={
         <Suspense fallback={<AuthorAndMoreSkeleton postId={id} />}>
-          <AuthorOf handles={props.handles} />
+          <AuthorOfPost
+            author={handles.author}
+            more={handles.more}
+            post={handles.post}
+          />
         </Suspense>
       }
       post={
