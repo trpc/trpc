@@ -39,7 +39,8 @@ export function PostListSkeleton() {
   );
 }
 
-type ListedPost = inferRouterOutputs<AppRouter>['blog']['posts']['items'][number];
+type ListedPost =
+  inferRouterOutputs<AppRouter>['blog']['posts']['items'][number];
 
 /**
  * Every post, newest first. Each row shows what `author` renders for its

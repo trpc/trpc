@@ -370,7 +370,7 @@ import type {
   inferQueryHandle,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
-import { useTRPC, type TRPC } from '~/trpc/client';
+import { useTRPC } from '~/trpc/client';
 import { AuthorCard, TeamPosts } from './components';
 
 // ...postPageEntries(), from step 1

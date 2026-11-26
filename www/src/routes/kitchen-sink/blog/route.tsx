@@ -76,7 +76,6 @@ function postListEntries(trpc: TRPC) {
   } satisfies TRPCLoadEntries;
 }
 
-
 /**
  * The showcase's own query client, for its pages alone: the rest of the
  * site has none. Its pages hydrate it from their loaders' data. The
