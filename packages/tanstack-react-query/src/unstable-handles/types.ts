@@ -608,6 +608,25 @@ export type LoadedEntries<TEntries> = {
 };
 
 /**
+ * What an entry per item's callback returns, with `never` in place of an
+ * infinite entry and a bare query of the client: an item has one query
+ * entry, or a group of them
+ */
+type PerItemEntriesOnly<TReturn> = TReturn extends
+  | experimental_QueryEntry<any, any>
+  | experimental_InfiniteQueryEntry<any, any>
+  | TRPCInfiniteQueryEntry<any, any>
+  ? never
+  : TReturn extends
+        | TRPCQueryEntry<any, any>
+        | experimental_FromDataEntry<any, any>
+        | null
+    ? TReturn
+    : TReturn extends object
+      ? { [TKey in keyof TReturn]: PerItemEntriesOnly<TReturn[TKey]> }
+      : TReturn;
+
+/**
  * A load's entries with `never` in place of each bare query of the client,
  * from `experimental_query()` or `experimental_infiniteQuery()`, also in an
  * entry per item or one built from data: `loadHandles()` takes TanStack
@@ -623,7 +642,7 @@ export type TanStackEntriesOnly<TValue> = TValue extends
     : TValue extends experimental_FromDataEntry<infer TInner, infer TData>
       ? experimental_FromDataEntry<TanStackEntriesOnly<TInner>, TData>
       : TValue extends experimental_PerItemEntry<infer TInner, infer TItem>
-        ? experimental_PerItemEntry<TanStackEntriesOnly<TInner>, TItem>
+        ? experimental_PerItemEntry<PerItemEntriesOnly<TInner>, TItem>
         : TValue extends object
           ? { [TKey in keyof TValue]: TanStackEntriesOnly<TValue[TKey]> }
           : TValue;

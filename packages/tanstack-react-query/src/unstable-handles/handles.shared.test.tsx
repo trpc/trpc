@@ -21,6 +21,7 @@ import {
   fromHandle,
   loadHandles,
   prefetchEntry,
+  prefetchInfiniteEntry,
 } from '.';
 import type {
   experimental_inferHandles,
@@ -255,6 +256,40 @@ describe('a description of TanStack Query entries', () => {
     ).toEqual({ id: 'u1', teamId: 'team-u1' });
   });
 
+  test('an entry per item is of a query, not an infinite query, also in a group', async () => {
+    await using resource = setup();
+    const trpc = resource.optionsProxyServer;
+    const posts = prefetchEntry(trpc.post.list, {});
+
+    await expect(
+      loadHandles(trpc, {
+        posts,
+        // @ts-expect-error -- an infinite entry for every item isn't supported
+        lists: experimental_perItem(experimental_dataOf(posts).items, () =>
+          prefetchInfiniteEntry(trpc.post.list, {}),
+        ),
+      }),
+    ).rejects.toThrow('not an infinite query');
+    await expect(
+      loadHandles(trpc, {
+        posts,
+        // @ts-expect-error -- nor in a group
+        rows: experimental_perItem(experimental_dataOf(posts).items, () => ({
+          list: prefetchInfiniteEntry(trpc.post.list, {}),
+        })),
+      }),
+    ).rejects.toThrow('not an infinite query');
+    // An infinite entry can be the list's source
+    const pages = prefetchInfiniteEntry(trpc.post.list, {});
+    await loadHandles(trpc, {
+      pages,
+      authors: experimental_perItem(
+        experimental_dataOf(pages).pages.flatMap((page) => page.items),
+        (post) => prefetchEntry(trpc.author.byId, { id: post.authorId }),
+      ),
+    });
+  });
+
   test('an entry per item of a list in an item loads with the client only', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
@@ -350,9 +385,8 @@ describe("a bare query of the client, which says nothing of how it starts, isn't
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
-  test('`experimental_useHandles()` throws for it', () => {
-    const { appRouter } = createAppRouter();
-    const resource = testReactResource(appRouter);
+  test('`experimental_useHandles()` throws for it', async () => {
+    await using resource = setup();
     const trpc = resource.optionsProxyServer;
     expect(() =>
       experimental_useHandles(trpc, {
