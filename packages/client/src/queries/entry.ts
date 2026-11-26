@@ -20,9 +20,10 @@ import { dataPath, itemPathOf } from './path';
  * Describing queries, apart from loading them: `experimental_query()` and
  * the functions beside it build plain values that say what to load and what
  * each input reads of another query's data. `experimental_load()` loads them
- * with a client. The entries of `@trpc/tanstack-react-query`, such as
- * `prefetchEntry()`, are such values too, with a verb for its `loadHandles()`:
- * this loads them as it loads any query.
+ * with a client. An entry of another package that has a `QueryEntryState`
+ * under `queryEntryState` is such a value too, and loads as any query: the
+ * entries of `@trpc/tanstack-react-query`, such as `prefetchEntry()`, have
+ * one beside the verb for its `loadHandles()`.
  */
 
 export type QueryEntryType = 'query' | 'infinite';
@@ -31,9 +32,10 @@ export type QueryEntryType = 'query' | 'infinite';
 export const queryEntryState = Symbol('trpc.queryEntry');
 
 /**
- * What a description says of a query: the shared part of an entry. An entry
- * of another package, such as a `prefetchEntry()` of TanStack Query, has it
- * too, so it can be read with `experimental_dataOf()` and loaded anywhere.
+ * What a description says of a query: the shared part of an entry, under
+ * `queryEntryState`. An entry of another package that has it there, such as
+ * a `prefetchEntry()` of TanStack Query, can be read with
+ * `experimental_dataOf()` and loaded anywhere: nothing else of it is read.
  * @internal
  */
 export interface QueryEntryState {
