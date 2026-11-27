@@ -24,11 +24,10 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import type { Operation, TRPCLink } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import type { AnyRouter, experimental_PipelinePolicy } from '@trpc/server';
+import { experimental_pipelineBudget, initTRPC, TRPCError } from '@trpc/server';
 import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
-import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import superjson from 'superjson';
@@ -270,7 +269,7 @@ const pipeliningCtx = (ctxOpts: {
   /** The server's `maxBatchSize` */
   maxBatchSize: number | undefined;
   /** The server's `experimental_allowPipelining` */
-  allowPipelining: true | experimental_PipeliningOptions;
+  allowPipelining: true | experimental_PipelinePolicy;
   /** The links before the batch link */
   before: TRPCLink<AnyRouter>[];
 }) => {
@@ -3288,7 +3287,7 @@ describe.each([
       latency: 0,
       maxBatchSize: undefined,
       // It reads a list of ids, a whole value
-      allowPipelining: { allowWholeValues: true },
+      allowPipelining: experimental_pipelineBudget({ allowWholeValues: true }),
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -3938,7 +3937,7 @@ describe.each([
       latency: 0,
       maxBatchSize: undefined,
       // It reads a list of ids, a whole value
-      allowPipelining: { allowWholeValues: true },
+      allowPipelining: experimental_pipelineBudget({ allowWholeValues: true }),
       before: [],
     });
     const trpc = resource.optionsProxyClient;
@@ -6200,7 +6199,11 @@ describe('a transformer that keeps what JSON drops', () => {
     });
     await using resource = testReactResource(appRouter, {
       // The cursor the server fills in is an object
-      server: { experimental_allowPipelining: { allowWholeValues: true } },
+      server: {
+        experimental_allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
       client: (opts) => ({
         links: [
           httpBatchLink({

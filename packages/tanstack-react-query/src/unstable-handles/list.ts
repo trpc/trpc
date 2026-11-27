@@ -123,7 +123,7 @@ export function itemsAt(data: unknown, itemPath: ItemPath): ListItem[] {
   if (at === -1) {
     return [{ indexes: [], path: itemPath as string[] }];
   }
-  const list = readPipelinePath(data, itemPath.slice(0, at), null);
+  const list = readPipelinePath(data, itemPath.slice(0, at));
   if (!Array.isArray(list)) {
     return [];
   }

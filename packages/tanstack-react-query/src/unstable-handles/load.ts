@@ -211,7 +211,7 @@ function optionsFrom(
         fromItem && view.item
           ? [...view.item.path, ...ref.path.slice(leaf.itemDepth)]
           : ref.path;
-      return readPipelinePath(view.data.get(ref.entry), path, null);
+      return readPipelinePath(view.data.get(ref.entry), path);
     },
     pipeline: null,
   });

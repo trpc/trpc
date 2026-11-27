@@ -272,11 +272,7 @@ function finishInput(
 ) {
   return unfinished.itemInputs.reduce(
     (input, itemInput) =>
-      withInputAt(
-        input,
-        itemInput.to,
-        readPipelinePath(item, itemInput.path, null),
-      ),
+      withInputAt(input, itemInput.to, readPipelinePath(item, itemInput.path)),
     unfinished.input,
   );
 }
@@ -646,11 +642,11 @@ export function withItemQueries(opts: {
           if (!isCurrent()) {
             return;
           }
-          const listData = readPipelinePath(data, queries.list, null);
+          const listData = readPipelinePath(data, queries.list);
           for (const [index, element] of Array.isArray(listData)
             ? listData.entries()
             : []) {
-            const item = readPipelinePath(element, [...queries.itemRead], null);
+            const item = readPipelinePath(element, [...queries.itemRead]);
             // A row whose query can't start, such as for an input no query
             // key can hold, fails by itself: the row that reads it gets that
             // error, and the others load
