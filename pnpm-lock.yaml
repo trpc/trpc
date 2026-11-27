@@ -7640,8 +7640,8 @@ packages:
   '@rspack/lite-tapable@1.1.0':
     resolution: {integrity: sha512-E2B0JhYFmVAwdDiG14+DW0Di4Ze4Jg10Pc4/lILUrd5DRCaklduz2OvJ5HYQ6G+hd+WTzqQb3QnDNfK4yvAFYw==}
 
-  '@rvf/set-get@7.0.1':
-    resolution: {integrity: sha512-GkTSn9K1GrTYoTUqlUs36k6nJnzjQaFBTTEIqUYmzBcsGsoJM8xG7EAx2WLHWAA4QzFjcwWUSHQ3vM3Fbw50Tg==}
+  '@rvf/set-get@7.0.4':
+    resolution: {integrity: sha512-1QZ3hRXB0ftyaszFwTgLYzW+Ydeffz5tPPqEYeX88okTBiZXXWmavNIL/jjXX/Q/s9oj1NAJ5veqNuPYzbg4mg==}
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -19244,7 +19244,7 @@ snapshots:
   '@rspack/lite-tapable@1.1.0':
     optional: true
 
-  '@rvf/set-get@7.0.1': {}
+  '@rvf/set-get@7.0.4': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
 
@@ -29098,12 +29098,12 @@ snapshots:
 
   zod-form-data@2.0.8(zod@3.25.76):
     dependencies:
-      '@rvf/set-get': 7.0.1
+      '@rvf/set-get': 7.0.4
       zod: 3.25.76
 
   zod-form-data@3.0.1(zod@4.6.7):
     dependencies:
-      '@rvf/set-get': 7.0.1
+      '@rvf/set-get': 7.0.4
       zod: 4.6.7
 
   zod@3.25.76: {}
