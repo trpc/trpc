@@ -849,14 +849,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 read: (sent) => sent.json,
                 error: (failure) => {
                   const error = getTRPCErrorFromUnknown(failure.cause);
-                  opts.onError?.({
-                    error,
-                    path: call.path,
-                    input: failure.input,
-                    ctx: ctxManager.valueOrUndefined(),
-                    type: proc._def.type,
-                    req: opts.req,
-                  });
+                  try {
+                    opts.onError?.({
+                      error,
+                      path: call.path,
+                      input: failure.input,
+                      ctx: ctxManager.valueOrUndefined(),
+                      type: proc._def.type,
+                      req: opts.req,
+                    });
+                  } catch {
+                    // A throwing `onError` doesn't fail the run's error: the
+                    // run keeps it, and nothing waits on what it threw
+                  }
                   return {
                     error,
                     shape: pipelinedErrorShape({

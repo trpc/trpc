@@ -36,7 +36,10 @@ function createRouter(opts: {
    * first time it is read, and a `BigInt` each time after
    */
   changing: boolean;
+  /** What a run that succeeds waits for, so it arrives after one that fails */
+  released?: Promise<void>;
 }) {
+  const { released } = opts;
   const t = initTRPC.create({
     errorFormatter: ({ shape, error }) => {
       if (opts.changing && error.code === 'NOT_FOUND') {
@@ -69,7 +72,7 @@ function createRouter(opts: {
           throw new TRPCError({ code: 'NOT_FOUND' });
         }
         // Arrives after the one that fails
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await (released ?? new Promise((resolve) => setTimeout(resolve, 10)));
         return { id: opts.input.id };
       }),
   });
@@ -103,14 +106,23 @@ const authorOfEachTag = {
 };
 
 test('a run whose error JSON cannot carry fails by itself in a stream: the runs after it still arrive', async () => {
+  using gate = gateResource();
   const res = await send({
-    router: createRouter({ big: allButInternal, changing: false }),
+    router: createRouter({
+      big: allButInternal,
+      changing: false,
+      released: gate.promise,
+    }),
     paths: 'post,author',
     pipe: { 1: authorOfEachTag },
     streams: true,
     allowPipelining: true,
   });
-  const text = await res.text();
+  const stream = streamReader(res);
+  // The second run waits until the first run's error has arrived
+  await stream.until('INTERNAL_SERVER_ERROR', 1);
+  gate.resolve();
+  const text = await stream.until(null, 0);
 
   // The first run's error, and the second run's result after it
   expect(text).toContain('INTERNAL_SERVER_ERROR');

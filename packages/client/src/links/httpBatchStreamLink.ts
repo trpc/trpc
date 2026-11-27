@@ -182,7 +182,13 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             async (key): Promise<HTTPResult> => {
               let json: TRPCResponse = await Promise.resolve(head[key]);
 
-              if ('result' in json) {
+              // A slot that is `null` or missing is no envelope: it goes on
+              // as it is, as `httpBatchLink` gives it
+              if (
+                typeof json === 'object' &&
+                json !== null &&
+                'result' in json
+              ) {
                 /**
                  * Not very pretty, but we need to unwrap nested data as promises
                  * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
