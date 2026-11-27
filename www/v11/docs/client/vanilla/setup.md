@@ -12,9 +12,10 @@ skill:
   type: core
   requires:
     - server-setup
-  description: Create a vanilla tRPC client with createTRPCClient({ router:
-    routerType<AppRouter>(), links }) and a terminating link such as httpBatchLink, import AppRouter with `import
-    type`, set dynamic auth headers, and put the transformer on links (not the
+  description: Create a vanilla tRPC client with createTRPCClient, passing
+    the router type as router routerType<AppRouter>() and a terminating link
+    such as httpBatchLink, import AppRouter with `import type`, set dynamic
+    auth headers, and put the transformer on links (not the
     client constructor). Infer types with inferRouterInputs and
     inferRouterOutputs, handle TRPCClientError with try/catch or safe(), and
     abort calls with an AbortSignal.
