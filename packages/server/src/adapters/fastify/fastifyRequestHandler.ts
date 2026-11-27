@@ -31,9 +31,9 @@ export type FastifyHandlerOptions<
 > = HTTPBaseHandlerOptions<TRouter, TRequest> & {
   /**
    * The largest request body, in bytes. A larger one gets a
-   * `PAYLOAD_TOO_LARGE` error. It applies to bodies tRPC streams, such as
-   * `multipart/form-data`; JSON bodies are read by Fastify, so limit them
-   * with Fastify's `bodyLimit`.
+   * `PAYLOAD_TOO_LARGE` error. It applies to bodies tRPC streams:
+   * `multipart/form-data` and `application/octet-stream`. JSON bodies are
+   * read by Fastify, so limit them with Fastify's `bodyLimit`.
    */
   maxBodySize?: number;
 } & NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;

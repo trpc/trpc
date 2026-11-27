@@ -206,6 +206,24 @@ export class WsClient {
   private async open() {
     this.allowReconnect = true;
     if (this.reconnecting) return this.reconnecting;
+    // In lazy mode nothing reconnects after the server rejects a connection,
+    // so the next request, e.g. one sent again by `retryLink`, opens the next
+    // one. It waits for the backoff too. `close()` forgets the rejection, so a
+    // request made once the client is idle again connects at once.
+    if (this.connectionRejected) {
+      // No socket is open while the request waits.
+      if (this.connectionState.get().state !== 'connecting') {
+        callUserCallback(() =>
+          this.connectionState.next({
+            type: 'state',
+            state: 'connecting',
+            error: null,
+          }),
+        );
+      }
+      this.reconnect(null);
+      return this.reconnecting;
+    }
     this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
       callUserCallback(() =>
@@ -238,6 +256,10 @@ export class WsClient {
    */
   public async close() {
     this.allowReconnect = false;
+    this.connectionRejected = false;
+    this.reconnecting = null;
+    const nextConnection = this.nextConnection;
+    this.nextConnection = null;
     this.replacementError = null;
     this.retiredConnection = null;
     this.inactivityTimeoutEnabled = false;
@@ -263,7 +285,7 @@ export class WsClient {
     }
 
     await Promise.all(requestsToAwait).catch(() => null);
-    this.nextConnection?.ws?.close();
+    nextConnection?.ws?.close();
     await this.activeConnection.close().catch(() => null);
 
     callUserCallback(() =>
@@ -403,8 +425,9 @@ export class WsClient {
    * error, e.g. because `createContext` threw. The server closes the socket
    * right after, so the reconnect that follows carries on with the backoff
    * instead of starting over at attempt 0. Cleared again when the socket
-   * receives a result, which proves the connection was accepted. Also set
-   * on a keepAlive pong timeout when the socket never received anything.
+   * receives a result, which proves the connection was accepted, and by
+   * `close()`. Also set on a keepAlive pong timeout when the socket never
+   * received anything.
    * @see https://github.com/trpc/trpc/issues/4774
    */
   private connectionRejected = false;
@@ -437,10 +460,14 @@ export class WsClient {
     }
     if (this.reconnecting) return;
 
+    // `close()` drops a reconnect that's still running, so a later `open()`
+    // doesn't wait for it.
+    const isCurrent = () =>
+      this.allowReconnect && this.reconnecting === reconnecting;
     const tryReconnect = async (attemptIndex: number) => {
       try {
         await sleep(this.reconnectRetryDelay(attemptIndex));
-        if (this.allowReconnect) {
+        if (isCurrent()) {
           const next = this.createConnection();
           this.nextConnection = next;
           try {
@@ -454,10 +481,10 @@ export class WsClient {
             await next.close().catch(() => null);
             throw error;
           } finally {
-            this.nextConnection = null;
+            if (this.nextConnection === next) this.nextConnection = null;
           }
 
-          if (this.allowReconnect) {
+          if (isCurrent()) {
             // Read only now: losing the active socket while `next` opened may
             // have restored the one it replaced.
             const previous = this.activeConnection;
@@ -470,17 +497,17 @@ export class WsClient {
             await next.close();
           }
         }
-        this.reconnecting = null;
+        if (this.reconnecting === reconnecting) this.reconnecting = null;
       } catch (error) {
         const closedError = new TRPCWebSocketClosedError({
           message: 'Initialization error',
           cause: error,
         });
-        if (this.allowReconnect && this.activeConnection.isOpen()) {
+        if (isCurrent() && this.activeConnection.isOpen()) {
           // The old socket keeps serving every request, so this is shown only
           // once it closes.
           this.replacementError = closedError;
-        } else if (this.allowReconnect) {
+        } else if (isCurrent()) {
           callUserCallback(() =>
             this.connectionState.next({
               type: 'state',
@@ -493,9 +520,10 @@ export class WsClient {
       }
     };
 
-    this.reconnecting = tryReconnect(
+    const reconnecting = tryReconnect(
       this.connectionRejected ? this.connectionAttemptIndex + 1 : 0,
     );
+    this.reconnecting = reconnecting;
   }
 
   /**
@@ -641,7 +669,11 @@ export class WsClient {
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
-    this.connectionRejected = false;
+    // A socket from a reconnect that `close()` abandoned says nothing about
+    // the connection the client now uses.
+    if (ws === this.activeConnection.ws || ws === this.nextConnection?.ws) {
+      this.connectionRejected = false;
+    }
 
     /**
      * Fails the queries and mutations sent on `ws`. Its subscriptions are
@@ -700,7 +732,11 @@ export class WsClient {
 
     ws.addEventListener('open', () => {
       run(async () => {
-        if (this.lazyMode) {
+        // A socket from a reconnect that `close()` abandoned changes neither
+        // the state nor the inactivity timeout.
+        const isLive =
+          ws === this.activeConnection.ws || ws === this.nextConnection?.ws;
+        if (this.lazyMode && isLive) {
           this.inactivityTimeoutEnabled = true;
           this.startInactivityTimeout();
         }
@@ -710,6 +746,7 @@ export class WsClient {
         // A socket opened to replace one that's still open changes nothing
         // the subscribers can see until `handOff()` puts it in use.
         if (
+          !isLive ||
           this.connectionState.get().state === 'pending' ||
           (ws !== this.activeConnection.ws && this.activeConnection.isOpen())
         ) {

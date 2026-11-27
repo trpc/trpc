@@ -86,6 +86,18 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       _done(null, body);
     },
   );
+  // Fastify has no octet-stream parser, so it would answer 415 before the
+  // request reached tRPC. Keep the app's own parser, and its `bodyLimit`, if
+  // it registered one
+  if (!fastify.hasContentTypeParser('application/octet-stream')) {
+    fastify.addContentTypeParser(
+      'application/octet-stream',
+      {},
+      function (_, body, _done) {
+        _done(null, body);
+      },
+    );
+  }
 
   let prefix = opts.prefix ?? '';
 
