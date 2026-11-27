@@ -89,19 +89,16 @@ export interface ResponseEsque {
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 
 /**
- * The `context` calls take on a client created with a type argument:
- * anything.
- * @internal
- */
-export type ClientContext = Record<string, unknown>;
-
-/**
  * The options of a call made with the client, such as
  * `client.post.byId.query(input, opts)`. `TContext` is what the client's
  * links read, when it was created with `router: routerType<AppRouter>()`.
  * @public
  */
-export interface TRPCProcedureOptions<TContext extends object = ClientContext> {
+// The default is written out, not aliased, so declaration files that name
+// a client's type don't need a reference to an internal alias.
+export interface TRPCProcedureOptions<
+  TContext extends object = Record<string, unknown>,
+> {
   /**
    * Context for the links, such as a flag a `splitLink` reads.
    * @see https://trpc.io/docs/client/links#managing-context

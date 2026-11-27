@@ -23,7 +23,7 @@ import type {
   TRPCSubscriptionWithoutCallbacks,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
-import type { ClientContext, TRPCProcedureOptions } from './internals/types';
+import type { TRPCProcedureOptions } from './internals/types';
 import type {
   inferLinksContext,
   inferLinksUnsupported,
@@ -61,7 +61,7 @@ const untypedClientSymbol = Symbol.for('trpc_untypedClient');
  **/
 export type TRPCClient<
   TRouter extends AnyRouter,
-  TContext extends object = ClientContext,
+  TContext extends object = Record<string, unknown>,
   TUnsupported extends ProcedureType = never,
 > = DecoratedProcedureRecord<
   {
@@ -96,7 +96,7 @@ type coerceAsyncGeneratorToIterable<T> =
  */
 export type Resolver<
   TDef extends TRPCResolverDef,
-  TContext extends object = ClientContext,
+  TContext extends object = Record<string, unknown>,
 > = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions<TContext>,
@@ -111,7 +111,7 @@ export type Resolver<
  */
 export type SubscriptionResolver<
   TDef extends TRPCResolverDef,
-  TContext extends object = ClientContext,
+  TContext extends object = Record<string, unknown>,
 > = {
   (
     input: TDef['input'],
