@@ -94,6 +94,24 @@ function markdownFiles(dir: string): ReadonlyArray<string> {
     );
 }
 
+/**
+ * The anchor of a member's heading in `page`. TypeDoc numbers a member's
+ * anchor after a parameter of the same name, which has no heading of its
+ * own: an inherited `cause` links to `#cause-1`. The page's one heading of
+ * that name is `#cause`.
+ */
+function memberAnchor(page: string, hash: string) {
+  const numbered = /^#([\w$]+)-\d+$/.exec(hash);
+  if (!numbered) {
+    return hash;
+  }
+  const name = numbered[1] ?? '';
+  const headings = page.match(
+    new RegExp(`^#{2,6} ${name.replaceAll('$', '\\$')}\\??$`, 'gm'),
+  );
+  return headings?.length === 1 ? `#${name}` : hash;
+}
+
 /** Writes the pages under `to`, and returns how many. */
 export function convertReference(options: {
   readonly from: string;
@@ -129,7 +147,14 @@ export function convertReference(options: {
           return match;
         }
         const link = posix.relative(posix.dirname(slug), `${targetSlug}.md`);
-        return `](${link}${hash ?? ''})`;
+        const anchor =
+          hash === undefined
+            ? ''
+            : memberAnchor(
+                readFileSync(join(options.from, resolved), 'utf8'),
+                hash,
+              );
+        return `](${link}${anchor})`;
       },
     );
     const parent = referenceParent(slug, slugs);
