@@ -5,7 +5,7 @@ import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../TRPCClientError';
-import type { Operation, TRPCLink } from './types';
+import type { Operation, OperationContext, TRPCLink } from './types';
 
 /**
  * The `context` fields `retryLink` reads from each call.
@@ -53,7 +53,11 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
  */
 export function retryLink<TInferrable extends InferrableClientTypes>(
   opts: RetryLinkOptions<TInferrable>,
-): TRPCLink<TInferrable, { context: RetryLinkContext }> {
+): TRPCLink<
+  TInferrable,
+  // `retry` is given the operation, so may read any field
+  { context: OperationContext & RetryLinkContext }
+> {
   // initialized config
   return () => {
     // initialized in app

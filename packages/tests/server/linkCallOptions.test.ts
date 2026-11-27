@@ -8,7 +8,9 @@ import type {
 import {
   createTRPCClient,
   httpBatchLink,
+  httpLink,
   httpSubscriptionLink,
+  localLink,
   loggerLink,
   retryLink,
   routerType,
@@ -64,7 +66,10 @@ test('`context: { retry: false }` skips retryLink for that call', async () => {
 });
 
 test('calls take the context their links declare', () => {
-  const traceLink: TRPCLink<AppRouter, { context: { traceId?: string } }> =
+  const { appRouter } = factory();
+  // a declared field is optional even when declared as required, since a
+  // call can leave out its options
+  const traceLink: TRPCLink<AppRouter, { context: { traceId: string } }> =
     () => (opts) => {
       expectTypeOf(opts.op.context).toEqualTypeOf<Record<string, unknown>>();
       return opts.next(opts.op);
@@ -73,30 +78,30 @@ test('calls take the context their links declare', () => {
     router: routerType<AppRouter>(),
     links: [
       traceLink,
-      loggerLink(),
-      retryLink({ retry: () => true }),
-      httpBatchLink({ url: 'http://localhost' }),
+      localLink({ router: appRouter, createContext: async () => ({}) }),
     ],
   });
 
   expectTypeOf<ContextOf<typeof client.flaky.mutate>>().toEqualTypeOf<{
     traceId?: string;
-    retry?: false;
   }>();
+  expectTypeOf(client).toExtend<TRPCClient<AppRouter>>();
 
   void (() => {
-    void client.flaky.mutate('a', { context: { traceId: '1', retry: false } });
+    void client.flaky.mutate('a');
+    void client.flaky.mutate('a', { context: { traceId: '1' } });
     // @ts-expect-error -- no link reads `nope`
     void client.flaky.mutate('a', { context: { nope: 1 } });
-    // @ts-expect-error -- `retry` only takes `false`
-    void client.flaky.mutate('a', { context: { retry: true } });
+    // @ts-expect-error -- `traceId` is a string
+    void client.flaky.mutate('a', { context: { traceId: 1 } });
   });
 });
 
 test('no context when no link reads one', () => {
+  const { appRouter } = factory();
   const client = createTRPCClient({
     router: routerType<AppRouter>(),
-    links: [loggerLink(), httpBatchLink({ url: 'http://localhost' })],
+    links: [localLink({ router: appRouter, createContext: async () => ({}) })],
   });
   expectTypeOf<
     ContextOf<typeof client.flaky.mutate>
@@ -106,6 +111,32 @@ test('no context when no link reads one', () => {
     void client.flaky.mutate('a', { context: {} });
     // @ts-expect-error -- no link reads `foo`
     void client.flaky.mutate('a', { context: { foo: 1 } });
+  });
+});
+
+test('links that give the operation to a callback may read any context', () => {
+  // `headers({ op })`, `eventSourceOptions({ op })`, `enabled(op)` and
+  // `retry({ op })` are user code that can read any field
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      loggerLink({
+        enabled: (opts) =>
+          opts.direction === 'down' || opts.context['skipLog'] !== true,
+      }),
+      retryLink({ retry: () => true }),
+      httpLink({
+        url: 'http://localhost',
+        headers: ({ op }) => ({ authorization: String(op.context['token']) }),
+      }),
+    ],
+  });
+  void (() => {
+    void client.flaky.mutate('a', {
+      context: { token: 't', skipLog: true, retry: false },
+    });
+    // @ts-expect-error -- declared fields stay typed
+    void client.flaky.mutate('a', { context: { retry: true } });
   });
 });
 
@@ -125,7 +156,24 @@ test('a link that declares nothing may read any context', () => {
     void client.flaky.mutate('a', { context: { retry: 1 } });
   });
 
-  // so does a `links` array typed as `TRPCLink<AppRouter>[]`
+  // so does an inline link with no type at all
+  const inline = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      () =>
+        ({ op, next }) =>
+          next(op),
+      localLink({
+        router: factory().appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
+  });
+  void (() => {
+    void inline.flaky.mutate('a', { context: { traceId: '1' } });
+  });
+
+  // and a `links` array typed as `TRPCLink<AppRouter>[]`
   const links: TRPCLink<AppRouter>[] = [
     httpBatchLink({ url: 'http://localhost' }),
   ];
@@ -189,7 +237,12 @@ test('the client still fits where integrations take TRPCClient<AppRouter>', () =
 
   const noContext = createTRPCClient({
     router: routerType<AppRouter>(),
-    links: [httpBatchLink({ url: 'http://localhost' })],
+    links: [
+      localLink({
+        router: factory().appRouter,
+        createContext: async () => ({}),
+      }),
+    ],
   });
   expectTypeOf(noContext).toExtend<TRPCClient<AppRouter>>();
 });
