@@ -8,7 +8,7 @@ parent: "client/tanstack-react-query"
 order: 53
 ---
 
-Handles help you avoid request waterfalls. The loader, or server component, **reads the URL once**, starts every query the page needs, and passes each component a reference to its query as a prop.
+Handles help you avoid request waterfalls. The loader, or server component, **reads the URL once**, starts every query the page needs, and passes each component a reference to its query as a prop. A page without a loader does the same [in its component](#without-a-loader).
 
 - A **handle** is a query's key and input. It holds no data.
 - The component reads the query from it, fully typed, without naming the procedure or repeating its input.
@@ -347,7 +347,7 @@ data.comments;
 
 - Building an entry starts nothing. The load starts every entry before it waits for any, so their order doesn't matter.
 - `handles` has a handle for each entry. Return it from the loader, or pass it on as props.
-- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component that renders before anything loaded its query reads it with `useSuspenseQuery(trpc.x.queryOptions(input))`.
+- In a client component, don't call `loadHandles` during render: each render would start the entries again. Server components can. A client component calls [`useLoadHandles`](#without-a-loader) instead.
 
 #### Using the data in a loader {#loader-data}
 
@@ -376,7 +376,8 @@ Load handles where the code can wait:
 | ------------------------------ | -------------------------- | --------------------------------------- |
 | TanStack Start, TanStack Router | Route loaders             | The proxy in your router context        |
 | Next.js App Router             | Server components          | The server proxy from `trpc/server.tsx` |
-| A SPA without loaders          | Event handlers, such as a link's hover | `useTRPC()`                 |
+| A page without a loader        | The page's component, with [`useLoadHandles`](#without-a-loader) | `useTRPC()`       |
+| Anywhere in the browser        | Event handlers, such as a link's hover | `useTRPC()`                 |
 
 #### Conditional queries {#conditional-queries}
 
@@ -464,6 +465,121 @@ Options:
 - In a browser loader, prefer `ensureEntry`: a fetch entry holds up the navigation until the refetch is done.
 - TanStack Router shows a visited page with its last loader data while the loader reruns. To wait, set `defaultStaleReloadMode`, or a loader's [`staleReloadMode`](https://tanstack.com/router/latest/docs/guide/data-loading#choosing-background-vs-blocking-stale-reloads), to `'blocking'`.
 - In server components, ensure and fetch behave the same: the request's `QueryClient` starts empty.
+
+## Without a loader {#without-a-loader}
+
+`useLoadHandles(trpc, entries)` is the alternative to a loader, for a page that has none: a single-page app whose router has no loaders, a Next.js page that is a client component, or a dialog that loads its own data. Call it at the top of the page's component. It starts every entry, once, and returns the handles at once:
+
+```tsx twoslash title='post-page.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: post-page.tsx
+// ---cut---
+// ---collapse---
+import {
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  useLoadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { Suspense } from 'react';
+import { Comments } from '~/components/comments';
+import { Post } from '~/components/post';
+import { useTRPC } from '~/trpc/client';
+// ---/collapse---
+
+export function PostPage(props: { id: string }) {
+  const trpc = useTRPC();
+  const handles = useLoadHandles(trpc, {
+//                ^^^^^^^^^^^^^^
+    post: prefetchEntry(trpc.post.byId, { id: props.id }),
+    comments: prefetchInfiniteEntry(trpc.post.comments, { postId: props.id }),
+  });
+  return (
+    <Suspense fallback={<p>Loading…</p>}>
+      <Post post={handles.post} />
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
+      </Suspense>
+    </Suspense>
+  );
+}
+```
+
+- Every query starts when the page renders. Without it, a component that renders only once its parent has data starts its own query late.
+- It returns handles, not data, and waits for nothing. The components that read the handles wait in their Suspense boundaries.
+- Once the page is on the screen, rendering again starts nothing. It starts the entries again when they change, such as with another id, when the page comes back after it left, and when it renders again before it got on the screen, such as after a Suspense boundary above it waited. As with a loader that runs again, a query that is loading or has fresh data asks for nothing. Entries are compared by procedure, input and the options that say how the query starts, such as `staleTime`.
+- The entry's kind still says how the query starts: an ensure entry uses cached data, a fetch entry fetches unless the data is fresh. Nothing waits for them, so when a request fails, the reading component's error boundary gets the error. Rendering doesn't start a failed query again: resetting the boundary retries it.
+
+#### Inputs from the URL {#without-a-loader-url}
+
+Build the entries from what a loader would have had: the URL.
+
+- **Read search params with your router's hook**, such as `useSearchParams()` in Next.js, not from component state. A filter in the URL survives a reload, the back button and a shared link. One in state is lost with each of them, and changing it starts the load again all the same.
+- **An id can come as a prop**, when a server component or the route passes the page its params. They come from the URL too.
+
+```tsx twoslash title='app/posts/[id]/post-page.tsx'
+// @include: handles-router
+// @include: handles-trpc
+// @include: handles-components
+// @filename: next-navigation.d.ts
+declare module 'next/navigation' {
+  export function useSearchParams(): URLSearchParams;
+}
+// @filename: app/posts/[id]/post-page.tsx
+// ---cut---
+'use client';
+
+// ---collapse---
+import {
+  prefetchEntry,
+  prefetchInfiniteEntry,
+  useLoadHandles,
+} from '@trpc/tanstack-react-query/unstable-handles';
+import { useSearchParams } from 'next/navigation';
+import { Comments } from '~/components/comments';
+import { Post } from '~/components/post';
+import { useTRPC } from '~/trpc/client';
+// ---/collapse---
+
+// `/posts/1?comments=50`. The page, a server component, passes `id` from its params
+export function PostPage(props: { id: string }) {
+  const trpc = useTRPC();
+  const limit = Number(useSearchParams().get('comments') ?? 20);
+  const handles = useLoadHandles(trpc, {
+    post: prefetchEntry(trpc.post.byId, { id: props.id }),
+    comments: prefetchInfiniteEntry(trpc.post.comments, {
+      postId: props.id,
+      limit,
+    }),
+  });
+  return (
+    <>
+      <Post post={handles.post} />
+      <Comments comments={handles.comments} />
+    </>
+  );
+}
+```
+
+How it compares with a loader:
+
+|                       | `loadHandles` in a loader or server component | `useLoadHandles` in the page's component |
+| --------------------- | --------------------------------------------- | ---------------------------------------- |
+| Queries start         | With the navigation, before the page's code   | When the page renders                    |
+| Waits for data        | For ensure and fetch entries                  | Never                                    |
+| Data for a title or a redirect | In `data`                            | None: read it in a component             |
+| When a request fails  | The load rejects, for ensure and fetch entries | The reading component's error boundary  |
+
+Use a loader when your framework has one: its queries start sooner. The components that read the handles are the same either way, so a page can move to a loader later without changing them.
+
+#### In place of a server component's load {#without-a-loader-nextjs}
+
+In the Next.js App Router, a client component that calls `useLoadHandles` still renders on the server. Its queries start with the request, and the HTML streams in as they settle, as with a server component that calls `loadHandles`. The difference is in the browser:
+
+- The browser's cache starts empty, so the hook fetches every query again as the page hydrates. To send the server's results to the browser instead, wrap the app in TanStack Query's [`ReactQueryStreamedHydration`](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#experimental-streaming-without-prefetching-in-nextjs).
+- On a client-side navigation, the queries start once the page's code renders in the browser, not with the server's response.
+- Turning off server rendering for the component, with `next/dynamic` and `ssr: false`, also stops the second fetch, but then no query starts until the page's code loads in the browser.
 
 ## Start every query from the URL {#url-as-input}
 
