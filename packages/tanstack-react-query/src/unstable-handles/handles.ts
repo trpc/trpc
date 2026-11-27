@@ -264,14 +264,19 @@ export function useLoadHandles<
         toHandle(state.options, state.type),
       ]),
     );
-    return { key, handles: handles as TRPCLoadedHandles<TEntries>[0] };
+    return {
+      key,
+      queryClient,
+      handles: handles as TRPCLoadedHandles<TEntries>[0],
+    };
   };
   // Kept while the component is on the page. A component that renders again
   // before it is on the page has none, and starts the entries again, as a
   // loader that runs again does: a query that is loading or has fresh data
   // asks for nothing
   const [load, setLoad] = React.useState(start);
-  if (load.key === key) {
+  // Another `QueryClient`'s cache has none of the queries
+  if (load.key === key && load.queryClient === queryClient) {
     return load.handles;
   }
   const next = start();

@@ -1,5 +1,6 @@
 import { testReactResource } from '../../test/__helpers';
 import {
+  QueryClient,
   skipToken,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
@@ -24,6 +25,7 @@ import type {
   TRPCLoadEntries,
 } from '.';
 import type { TRPCOptionsProxy } from '..';
+import { createTRPCOptionsProxy } from '..';
 
 const ctx = () => {
   const t = initTRPC.create();
@@ -394,6 +396,36 @@ describe('useLoadHandles', () => {
     ).toEqual([false, true, true, true, false]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
+    });
+  });
+
+  test('the same entries for another QueryClient start again, in its cache', async () => {
+    await using resource = ctx();
+    const other = new QueryClient();
+    const otherTrpc = createTRPCOptionsProxy({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient: other,
+    });
+    const seen: unknown[] = [];
+    function Page(props: { trpc: TRPC }) {
+      seen.push(
+        useLoadHandles(props.trpc, {
+          post: prefetchEntry(props.trpc.post.bySlug, { slug: 'hello' }),
+        }),
+      );
+      return null;
+    }
+    const utils = resource.renderApp(
+      <Page trpc={resource.optionsProxyServer} />,
+    );
+    const first = seen.at(-1);
+    resource.rerenderApp(utils, <Page trpc={otherTrpc} />);
+    expect(seen.at(-1)).not.toBe(first);
+    await vi.waitFor(() => {
+      expect(
+        other.getQueryData(otherTrpc.post.bySlug.queryKey({ slug: 'hello' })),
+      ).toEqual({ title: 'Post hello' });
     });
   });
 
