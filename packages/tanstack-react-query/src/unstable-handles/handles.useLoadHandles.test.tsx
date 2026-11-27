@@ -175,6 +175,56 @@ describe('useLoadHandles', () => {
     ]);
   });
 
+  test('a key can be `skipToken` on some renders and an entry on others, as in a loader', async () => {
+    await using resource = ctx();
+    const seen: Record<string, unknown>[] = [];
+    function PostPage(props: { tab: 'post' | 'draft' }) {
+      const trpc = resource.useTRPC();
+      const handles = useLoadHandles(trpc, {
+        post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
+        draft:
+          props.tab === 'draft'
+            ? prefetchEntry(trpc.post.bySlug, { slug: 'draft' })
+            : skipToken,
+      });
+      expectTypeOf(handles.draft).toEqualTypeOf<
+        inferQueryHandle<TRPC['post']['bySlug']> | undefined
+      >();
+      seen.push(handles);
+      return null;
+    }
+    const utils = resource.renderApp(<PostPage tab="post" />);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    // Skipped: no handle, and nothing started for it
+    expect(Object.keys(seen.at(-1)!)).toEqual(['post']);
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+    ]);
+
+    resource.rerenderApp(utils, <PostPage tab="draft" />);
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(seen.at(-1)!['draft']).toEqual({
+      queryKey: [
+        ['post', 'bySlug'],
+        { input: { slug: 'draft' }, type: 'query' },
+      ],
+      input: { slug: 'draft' },
+    });
+    // The load starts again, as a loader whose deps change does: the draft,
+    // and the post, whose data is stale
+    expect(resource.calls.mock.calls.slice(1)).toEqual([
+      ['post.bySlug', { slug: 'hello' }],
+      ['post.bySlug', { slug: 'draft' }],
+    ]);
+
+    resource.rerenderApp(utils, <PostPage tab="post" />);
+    expect(Object.keys(seen.at(-1)!)).toEqual(['post']);
+  });
+
   test("a failed fetch or ensure entry doesn't throw from the page: its reader's error boundary has the error", async () => {
     await using resource = ctx();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
