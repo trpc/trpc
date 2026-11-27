@@ -1,5 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
-import type { TRPCRequestOptions } from '@trpc/client';
+import type { OperationContext, TRPCRequestOptions } from '@trpc/client';
 
 /**
  * Turn a set of optional properties into required
@@ -56,6 +56,14 @@ export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
 >;
 
 /**
+ * A `context` that takes any field also takes what `OperationContext` is
+ * augmented with, as `trpc.context` always did. A strict one stays as is.
+ * @internal
+ */
+export type withOperationContext<TContext extends object> =
+  string extends keyof TContext ? OperationContext & TContext : TContext;
+
+/**
  * tRPC options for a single query or mutation, passed as `trpc`.
  * `TLinkContext` is the `context` the client's links read, when it was
  * created with `router: routerType<AppRouter>()`.
@@ -70,7 +78,7 @@ export interface TRPCReactRequestOptions<
    * Context for the links, such as a flag a `splitLink` reads.
    * @see https://trpc.io/docs/client/links#managing-context
    */
-  context?: TLinkContext;
+  context?: withOperationContext<TLinkContext>;
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */

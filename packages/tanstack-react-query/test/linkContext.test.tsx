@@ -18,6 +18,12 @@ import * as React from 'react';
 import { expect, expectTypeOf, test, vi } from 'vitest';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
+declare module '@trpc/client' {
+  interface OperationContext {
+    augmentedFlag?: boolean;
+  }
+}
+
 function factory() {
   const calls = { query: vi.fn(), mutation: vi.fn() };
   const t = initTRPC.create();
@@ -109,6 +115,11 @@ test('other clients keep taking any context', () => {
   for (const trpc of [legacy, untyped, server, explicit]) {
     trpc.flakyQuery.queryOptions(undefined, {
       trpc: { context: { anything: 1 } },
+    });
+    // fields added to `OperationContext` stay typed, as before
+    trpc.flakyQuery.queryOptions(undefined, {
+      // @ts-expect-error -- `augmentedFlag` is a boolean
+      trpc: { context: { augmentedFlag: 'yes' } },
     });
   }
 });
