@@ -517,7 +517,7 @@ Build the entries from what a loader would have had: the URL.
 
 - **Read search params with your router's hook**, such as `useSearchParams()` in Next.js, not from component state. A filter in the URL survives a reload, the back button and a shared link. One in state is lost with each of them, and changing it starts the load again all the same.
 - **An id can come as a prop**, when a server component or the route passes the page its params. They come from the URL too.
-- **`useSearchParams()` needs a `<Suspense>` above it on a statically rendered route**, or the build fails. `app/posts/[id]` renders dynamically, so it needs none here.
+- **`useSearchParams()` needs a `<Suspense>` above it on a prerendered route**, or the build fails. `app/posts/[id]` renders dynamically while it has no `generateStaticParams()`. With one, wrap `<PostPage>` in a `<Suspense>` in the page.
 
 ```tsx twoslash title='app/posts/[id]/post-page.tsx'
 // @include: handles-router
