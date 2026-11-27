@@ -522,6 +522,14 @@ How it compares with a loader:
 
 Use a loader when your framework has one: its queries start sooner. The components that read the handles are the same either way, so a page can move to a loader later without changing them.
 
+#### In place of a server component's load {#without-a-loader-nextjs}
+
+In the Next.js App Router, a client component that calls `useLoadHandles` still renders on the server. Its queries start with the request, and the HTML streams in as they settle, as with a server component that calls `loadHandles`. The difference is in the browser:
+
+- The browser's cache starts empty, so the hook fetches every query again as the page hydrates. To send the server's results to the browser instead, wrap the app in TanStack Query's [`ReactQueryStreamedHydration`](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#experimental-streaming-without-prefetching-in-nextjs).
+- On a client-side navigation, the queries start once the page's code renders in the browser, not with the server's response.
+- Turning off server rendering for the component, with `next/dynamic` and `ssr: false`, also stops the second fetch, but then no query starts until the page's code loads in the browser.
+
 ## Start every query from the URL {#url-as-input}
 
 A loader runs before anything renders, and all it has is the URL: params, search params and, on the server, the session. If every input comes from those, every request starts with the navigation.
