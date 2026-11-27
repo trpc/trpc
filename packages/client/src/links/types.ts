@@ -161,8 +161,12 @@ type UnionToIntersection<TUnion> = (
 
 type IsAny<TType> = 0 extends 1 & TType ? true : false;
 
-type inferLinkDecl<TLink> = TLink extends { readonly '~decl'?: infer $Decl }
-  ? NonNullable<$Decl>
+// A function with no `~decl`, such as an inline `() => ({ op, next }) =>
+// next(op)`, declares nothing either.
+type inferLinkDecl<TLink> = TLink extends unknown
+  ? '~decl' extends keyof TLink
+    ? NonNullable<TLink['~decl' & keyof TLink]>
+    : LinkDecl
   : never;
 
 type inferDeclContext<TDecl> = TDecl extends unknown
@@ -199,7 +203,8 @@ export type inferLinksContext<TLinks extends readonly unknown[]> =
   > extends infer $Context
     ? keyof $Context extends never
       ? NoLinkReadsContext
-      : Simplify<$Context>
+      : // optional: a call can leave out its options altogether
+        Simplify<Partial<$Context>>
     : never;
 
 type inferDeclUnsupported<TDecl> =

@@ -20,7 +20,7 @@ import {
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import type { Operation, TRPCLink } from './types';
+import type { Operation, OperationContext, TRPCLink } from './types';
 
 /**
  * Options for {@link httpBatchStreamLink}. Takes the same options as
@@ -53,7 +53,11 @@ type BatchStreamOperation = Operation & {
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
   opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter, { context: {}; unsupported: 'subscription' }> {
+): TRPCLink<
+  TRouter,
+  // its `headers` callback is given the operations, so may read any field
+  { context: OperationContext; unsupported: 'subscription' }
+> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
   const maxItems = opts.maxItems ?? Infinity;
