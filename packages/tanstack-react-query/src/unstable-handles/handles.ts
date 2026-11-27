@@ -347,19 +347,25 @@ export function useLoadHandles<TEntries extends TRPCLoadEntries>(
     };
     used = load;
     keepLoad(loads, key, load);
-    // A component that never got on the page keeps nothing. One that is on
-    // the page lets go of it as it leaves, and no timer holds it, or its
-    // symbols, after that. On a server, the request's `QueryClient` goes with
-    // the request
-    void Promise.all(started.allLoads.map(settledOf)).then(() => {
-      if (!isServerEnvironment() && load.mounts === 0) {
-        setTimeout(() => {
-          if (load.mounts === 0 && loads.byKey.get(key) === load) {
-            dropLoad(loads, key);
-          }
-        }, USED_LOAD_KEPT_MS);
-      }
-    });
+    Promise.all(started.allLoads.map(settledOf))
+      // A component that never got on the page keeps nothing. One that is on
+      // the page lets go of it as it leaves, and no timer holds it, or its
+      // symbols, after that. A server renders the component but runs no
+      // effect, so nothing is ever on the page there: the request's
+      // `QueryClient` goes with the request, and a timer would only hold it
+      // longer
+      .finally(() => {
+        if (!isServerEnvironment() && load.mounts === 0) {
+          setTimeout(() => {
+            if (load.mounts === 0 && loads.byKey.get(key) === load) {
+              dropLoad(loads, key);
+            }
+          }, USED_LOAD_KEPT_MS);
+        }
+      })
+      .catch(() => {
+        // Surfaces where the handle is read
+      });
   }
   const load = used;
   React.useEffect(() => {
