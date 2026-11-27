@@ -7,6 +7,18 @@ import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { Operation, TRPCLink } from './types';
 
+/**
+ * The `context` fields `retryLink` reads from each call.
+ * @public
+ */
+export interface RetryLinkContext {
+  /**
+   * `false` skips retrying this call, whatever `retry` returns.
+   * @example client.post.create.mutate(input, { context: { retry: false } })
+   */
+  retry?: false;
+}
+
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The retry function
@@ -35,13 +47,13 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 
 /**
  * Retries failed operations. Subscriptions resume from the last tracked event
- * id.
+ * id. A call can opt out with `context: { retry: false }`.
  *
  * @see https://trpc.io/docs/client/links/retryLink
  */
 export function retryLink<TInferrable extends InferrableClientTypes>(
   opts: RetryLinkOptions<TInferrable>,
-): TRPCLink<TInferrable> {
+): TRPCLink<TInferrable, { context: RetryLinkContext }> {
   // initialized config
   return () => {
     // initialized in app
@@ -79,11 +91,13 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 
           const subscription = callOpts.next(op).subscribe({
             error(error) {
-              const shouldRetry = opts.retry({
-                op,
-                attempts,
-                error,
-              });
+              const shouldRetry =
+                op.context['retry'] !== false &&
+                opts.retry({
+                  op,
+                  attempts,
+                  error,
+                });
               if (disposed) {
                 return;
               }

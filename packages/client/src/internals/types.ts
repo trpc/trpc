@@ -88,19 +88,25 @@ export interface ResponseEsque {
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 
-type ClientContext = Record<string, unknown>;
+/**
+ * The `context` calls take on a client created with a type argument:
+ * anything.
+ * @internal
+ */
+export type ClientContext = Record<string, unknown>;
 
 /**
  * The options of a call made with the client, such as
- * `client.post.byId.query(input, opts)`.
+ * `client.post.byId.query(input, opts)`. `TContext` is what the client's
+ * links read, when it was created with `router: routerType<AppRouter>()`.
  * @public
  */
-export interface TRPCProcedureOptions {
+export interface TRPCProcedureOptions<TContext extends object = ClientContext> {
   /**
    * Context for the links, such as a flag a `splitLink` reads.
    * @see https://trpc.io/docs/client/links#managing-context
    */
-  context?: ClientContext;
+  context?: TContext;
   /**
    * Aborts the call. With `httpBatchLink`, the request is only aborted once
    * every call in its batch is, so an aborted call can still get a result.

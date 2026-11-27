@@ -79,7 +79,7 @@ export function httpSubscriptionLink<
     inferClientTypes<TInferrable>,
     TEventSource
   >,
-): TRPCLink<TInferrable> {
+): TRPCLink<TInferrable, { context: {}; unsupported: 'query' | 'mutation' }> {
   const transformer = getTransformer(opts.transformer);
   const pathSeparator = resolvePathSeparator(opts.pathSeparator);
 

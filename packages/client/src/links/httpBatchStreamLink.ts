@@ -53,7 +53,7 @@ type BatchStreamOperation = Operation & {
  */
 export function httpBatchStreamLink<TRouter extends AnyRouter>(
   opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: {}; unsupported: 'subscription' }> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
   const maxItems = opts.maxItems ?? Infinity;
