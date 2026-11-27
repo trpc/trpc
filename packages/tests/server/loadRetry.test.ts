@@ -15,7 +15,7 @@ import {
 } from '@trpc/client';
 import type { TRPCLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { experimental_pipelineBudget, initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 /**
@@ -82,7 +82,11 @@ describe.each([
     const retried = vi.fn();
     let fetches = 0;
     const ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: { allowWholeValues: true } },
+      server: {
+        experimental_allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
       client: (clientOpts) => ({
         links: [
           ...(opts.attempts === null

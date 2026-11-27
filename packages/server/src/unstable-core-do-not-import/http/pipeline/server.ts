@@ -4,48 +4,40 @@ import { createDeferred } from '../../stream/utils/createDeferred';
 import type { Deferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isAsyncIterable, isObject } from '../../utils';
-import type { experimental_PipeliningOptions } from '../types';
+import type {
+  experimental_PipelineEvent,
+  experimental_PipelinePolicy,
+  experimental_PipelineVerdict,
+} from './policy';
+import {
+  experimental_pipelineBudget,
+  experimental_TRPCPipelineRefusal,
+} from './policy';
 import type {
   PipelineCallReads,
   PipelineErrorEnvelope,
   PipelineErrorMark,
   PipelineFrame,
-  PipelineLimits,
   PipelineList,
   PipelinePath,
 } from './wire';
 import {
   pipelineErrorEnvelope,
   pipelineFrameOf,
-  pipelineLimitDefaults,
   readPipelinePath,
 } from './wire';
 
 /**
- * The limits a handler's `experimental_allowPipelining` sets, or `null` if it
+ * The policy a handler's `experimental_allowPipelining` sets, or `null` if it
  * doesn't accept pipelined batches
  */
-export function pipelineLimitsOf(
-  option: boolean | experimental_PipeliningOptions | undefined,
-): PipelineLimits | null {
+export function pipelinePolicyOf(
+  option: boolean | experimental_PipelinePolicy | undefined,
+): experimental_PipelinePolicy | null {
   if (!option) {
     return null;
   }
-  if (option === true) {
-    // A copy: what a handler's request does to it changes no other's
-    return { ...pipelineLimitDefaults };
-  }
-  return {
-    maxValueLength:
-      option.maxValueLength ?? pipelineLimitDefaults.maxValueLength,
-    maxReadsPerCall:
-      option.maxReadsPerCall ?? pipelineLimitDefaults.maxReadsPerCall,
-    maxFillSize: option.maxFillSize ?? pipelineLimitDefaults.maxFillSize,
-    maxDepth: option.maxDepth ?? pipelineLimitDefaults.maxDepth,
-    allowWholeValues:
-      option.allowWholeValues ?? pipelineLimitDefaults.allowWholeValues,
-    maxRuns: option.maxRuns ?? pipelineLimitDefaults.maxRuns,
-  };
+  return option === true ? experimental_pipelineBudget() : option;
 }
 
 /** The `pipe` of a request that has no body, not yet checked */
@@ -404,24 +396,14 @@ export function pipelineDecodedInput(value: unknown): PipelineDecodedInput {
 }
 
 /**
- * The errors of what the server won't fill in: over its limits, or into an
- * input it can't send as the client would. A call refused with one before
- * any of its runs ran can be asked for by itself: they are about what the
- * server fills in, not about what a client sends
- */
-const refusalErrors = new WeakSet<TRPCError>();
-
-/**
  * A call refused as its input doesn't come back through the transformer of
  * inputs as the client sent it: see `comesBackAsSent`
  */
 function cannotSendAsTheClient() {
-  const error = new TRPCError({
-    code: 'BAD_REQUEST',
+  return new experimental_TRPCPipelineRefusal({
+    reason: 'transformer',
     message: `This call's input doesn't come back through the input transformer as the client sent it, so the server can't fill it in`,
   });
-  refusalErrors.add(error);
-  return error;
 }
 
 /**
@@ -430,12 +412,10 @@ function cannotSendAsTheClient() {
  * see `writesBackAs`
  */
 function cannotSendValueAsTheClient() {
-  const error = new TRPCError({
-    code: 'BAD_REQUEST',
+  return new experimental_TRPCPipelineRefusal({
+    reason: 'transformer',
     message: `A value this call reads doesn't come back through the input transformer as it was written, so the server can't fill it in`,
   });
-  refusalErrors.add(error);
-  return error;
 }
 
 /**
@@ -536,21 +516,12 @@ function spend(budget: PipelineBudget, count: number) {
   return taken.lease;
 }
 
-/** A call refused for going over one of the server's limits */
-function overLimit(message: string) {
-  const error = new TRPCError({ code: 'BAD_REQUEST', message });
-  refusalErrors.add(error);
-  return error;
-}
-
 /** A call refused for having more runs than `maxBatchSize` allows */
-function overBatchSize() {
-  const error = new TRPCError({
-    code: 'BAD_REQUEST',
-    message: `A call for every item exceeds the maximum batch size`,
+function overBatchSize(message: string) {
+  return new experimental_TRPCPipelineRefusal({
+    reason: 'maxBatchSize',
+    message,
   });
-  refusalErrors.add(error);
-  return error;
 }
 
 /**
@@ -729,6 +700,8 @@ function leftOut(value: unknown) {
 
 /** What the server needs of a batch's call to fill in its input */
 export interface PipelineServerCall {
+  /** The procedure's path */
+  path: string;
   /** The input as the request has it */
   getRawInput: () => Promise<unknown>;
   /** The input, once it has been read */
@@ -883,15 +856,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    */
   inputOf: (index: number) => Promise<PipelineCallInput>;
   /**
-   * The most runs of a call the batch may have, or `null` for any number. A
-   * call for every item runs once for each item. Of two such calls that are
-   * over it together, the one whose list is ready first runs.
+   * The most runs of a call the batch may have: the server's `maxBatchSize`.
+   * A call for every item runs once for each item. Of two such calls that
+   * are over it together, the one whose list is ready first runs.
    */
-  maxRuns: number | null;
-  /** What the server lets the batch make it do */
-  limits: PipelineLimits;
+  maxRuns: number;
+  /** What the server's policy says of each event of the batch */
+  allow: (event: experimental_PipelineEvent) => experimental_PipelineVerdict;
 }) {
-  const { limits } = opts;
   /** How a run went, settled once: its data, or that it has none to read */
   type RunOutcome = { ok: true; data: RunData } | { ok: false };
   /** A run of a call, as the calls that read it see it */
@@ -903,6 +875,8 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   /** A call, as the calls that read its data see it */
   interface Source {
     index: number;
+    /** The procedure's path */
+    path: string;
     /** Its place in its chain of reads: 1 for a call that reads none */
     depth: number;
     /** The items it runs for, or `null` if it runs once */
@@ -925,22 +899,31 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    * is ready. A call that doesn't run gives its places back.
    */
   const runs = createPipelineBudget({
-    limit: Math.min(limits.maxRuns, opts.maxRuns ?? Infinity),
+    limit: opts.maxRuns,
     refuse: (total) =>
-      opts.maxRuns !== null && total > opts.maxRuns
-        ? overBatchSize()
-        : overLimit(
-            `This call would make the batch run ${total} times, more than \`maxRuns\` (${limits.maxRuns}) allows`,
-          ),
-  });
-  /** What the batch fills in: see `fill` */
-  const fills = createPipelineBudget({
-    limit: limits.maxFillSize,
-    refuse: () =>
-      overLimit(
-        `What this call fills in goes over \`maxFillSize\` (${limits.maxFillSize} characters of JSON for the batch)`,
+      overBatchSize(
+        `This call would make the batch run ${total} times, more than \`maxBatchSize\` (${opts.maxRuns}) allows`,
       ),
   });
+  /**
+   * What the policy says of an event: `null` if it allows it, else what
+   * makes the error of its refusal, a new one for each that gets it. What
+   * the policy throws is the error of what the event is of, as a procedure's
+   * own error is: a client doesn't ask for it again
+   */
+  function refusalBy(
+    event: experimental_PipelineEvent,
+  ): (() => TRPCError) | null {
+    let verdict: experimental_PipelineVerdict;
+    try {
+      verdict = opts.allow(event);
+    } catch (cause) {
+      return () => errorOfOwn(cause);
+    }
+    return verdict === true
+      ? null
+      : () => new experimental_TRPCPipelineRefusal(verdict);
+  }
   /**
    * The errors of calls refused for going over a limit before any of their
    * runs ran, as the call's outcome: see `markOf`
@@ -948,7 +931,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   const refusedBeforeRunning = new WeakSet<TRPCError>();
   /** Notes why a call doesn't run, before any of its runs ran */
   const notRunBecause = (cause: unknown) => {
-    if (cause instanceof TRPCError && refusalErrors.has(cause)) {
+    if (cause instanceof experimental_TRPCPipelineRefusal) {
       refusedBeforeRunning.add(cause);
     }
   };
@@ -959,6 +942,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   const sent = opts.calls.map((call, index) => {
     const source: Source = {
       index,
+      path: call.path,
       depth: 1,
       frame: null,
       runs: createDeferred<PlacesNode<Run>>(),
@@ -1002,15 +986,14 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }
   /** Why a call is refused before it reads anything, if it is */
   function refusalOf(source: Source, reads: PipelineCallReads<Source>) {
-    if (reads.reads.length > limits.maxReadsPerCall) {
-      return overLimit(
-        `This call reads ${reads.reads.length} values, more than \`maxReadsPerCall\` (${limits.maxReadsPerCall}) allows`,
-      );
-    }
-    if (source.depth > limits.maxDepth) {
-      return overLimit(
-        `This call is ${source.depth} calls deep in a chain, more than \`maxDepth\` (${limits.maxDepth}) allows`,
-      );
+    const refusal = refusalBy({
+      kind: 'call',
+      path: source.path,
+      depth: source.depth,
+      reads: reads.reads.length,
+    });
+    if (refusal) {
+      return refusal();
     }
     if (source.framesDiffer) {
       return invalidPipe(
@@ -1019,41 +1002,58 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     }
     return null;
   }
-  const wholeValueRefused = () =>
-    overLimit(
-      `A value this call reads is an object or an array, and \`allowWholeValues\` is false`,
-    );
-  const valueTooLong = () =>
-    overLimit(
-      `A value this call reads is longer than \`maxValueLength\` (${limits.maxValueLength} characters of JSON) allows`,
-    );
   /**
    * A value as a call gets it written into its input: its JSON, serialized
    * once through the transformer of inputs, as a client would send it. The
    * value it was read from isn't read again, so what its getters, its
-   * `toJSON` or a proxy give is read once. The limits measure this JSON, and
-   * the input is decoded from it: see `fill`. `undefined` for what JSON
-   * writes nothing for. Refused first if it is an object or an array and
-   * `allowWholeValues` is false, as it was read
+   * `toJSON` or a proxy give is read once. The input is decoded from it: see
+   * `fill`. `undefined` for what JSON writes nothing for. The policy hears of
+   * it first, and it is serialized only if the policy reads its length or
+   * allows it, so a value refused for being an object isn't serialized
    */
   function asWritten(value: unknown): string | undefined {
-    if (
-      !limits.allowWholeValues &&
-      typeof value === 'object' &&
-      value !== null
-    ) {
-      throw new Refused(wholeValueRefused);
+    /** Its JSON once it is serialized, or what serializing it threw */
+    const written: {
+      outcome:
+        | { ok: true; json: string | undefined }
+        | { ok: false; cause: unknown }
+        | null;
+    } = { outcome: null };
+    const write = () => {
+      if (!written.outcome) {
+        try {
+          written.outcome = {
+            ok: true,
+            json: JSON.stringify(opts.transformer.input.serialize(value)),
+          };
+        } catch (cause) {
+          written.outcome = { ok: false, cause };
+        }
+      }
+      if (!written.outcome.ok) {
+        throw written.outcome.cause;
+      }
+      return written.outcome.json;
+    };
+    const refusal = refusalBy({
+      kind: 'value',
+      whole: typeof value === 'object' && value !== null,
+      get length() {
+        return lengthOf(write());
+      },
+    });
+    // What JSON can't carry fails each run that reads it, whatever the
+    // policy did with what it threw
+    if (written.outcome && !written.outcome.ok) {
+      throw written.outcome.cause;
     }
-    return JSON.stringify(opts.transformer.input.serialize(value));
+    if (refusal) {
+      throw new Refused(refusal);
+    }
+    return write();
   }
   /** How long a value is as it is written: its JSON. Nothing for none */
   const lengthOf = (json: string | undefined) => json?.length ?? 0;
-  /** Checks a value, as it is written, before it goes into an input */
-  function checkValue(json: string | undefined) {
-    if (lengthOf(json) > limits.maxValueLength) {
-      throw valueTooLong();
-    }
-  }
   /**
    * What the transformer of inputs reads from JSON, as it reads a request's
    * input: once for each JSON, and what it gives is read by nothing but what
@@ -1066,30 +1066,16 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
   }
   /**
    * The value at `path` in `data`, for a call to read, as it is written: see
-   * `asWritten`. Refused before it makes a list of items that would be
-   * refused: the list is as long as the one it is of, which can be long
+   * `asWritten`
    */
   function readValue(
     data: unknown,
     path: PipelinePath,
   ): Read<string | undefined> {
-    let room = limits.maxValueLength;
     try {
       return {
         ok: true,
-        value: asWritten(
-          readPipelinePath(data, path, (length) => {
-            if (!limits.allowWholeValues) {
-              throw new Refused(wholeValueRefused);
-            }
-            // At least its brackets, and a `,` between each two of its items.
-            // An item that is a list counts for itself as it is made
-            room -= Math.max(length + 1, 2);
-            if (room < 0) {
-              throw new Refused(valueTooLong);
-            }
-          }),
-        ),
+        value: asWritten(readPipelinePath(data, path)),
       };
     } catch (cause) {
       return {
@@ -1216,17 +1202,18 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     /**
      * The items the lists of this level have together. A place is made for
      * each, for a level of a list of lists too, which no call may run for:
-     * they count against `maxRuns` all the same
+     * they count against `maxBatchSize` all the same
      */
     const placed = createPipelineBudget({
-      limit: limits.maxRuns,
+      limit: opts.maxRuns,
       refuse: (total) =>
-        overLimit(
-          `The lists at one level have ${total} items together, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+        overBatchSize(
+          `The lists at one level have ${total} items together, more than \`maxBatchSize\` (${opts.maxRuns}) allows`,
         ),
     });
     const tooMany = (length: number) => {
-      const error = tooLong(length);
+      const error =
+        tooLong(length) ?? refusalBy({ kind: 'list', length })?.() ?? null;
       if (error) {
         return error;
       }
@@ -1237,13 +1224,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
     const listIn = async (place: Place) => {
       if (inItem) {
         // A level after the first: its list is in the item of the one before
-        return readPipelinePath(place.item, inItem, null);
+        return readPipelinePath(place.item, inItem);
       }
       const data = await dataOf(list.from, place.indexes);
       if (!data.ok) {
         throw data.error();
       }
-      return readPipelinePath(data.value, list.path, null);
+      return readPipelinePath(data.value, list.path);
     };
     return mapPlaces(before, async (place): Promise<PlacesNode<Place>> => {
       try {
@@ -1305,22 +1292,21 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
    * each of its items, whatever else the batch has
    */
   function tooLong(length: number) {
-    if (opts.maxRuns !== null && length > opts.maxRuns) {
-      return overBatchSize();
-    }
-    return length > limits.maxRuns
-      ? overLimit(
-          `A list has ${length} items, more than \`maxRuns\` (${limits.maxRuns}) allows`,
+    return length > opts.maxRuns
+      ? overBatchSize(
+          `A list has ${length} items, more than \`maxBatchSize\` (${opts.maxRuns}) allows`,
         )
       : null;
   }
 
   /**
-   * The input of a run: the call's own, with what it reads written in. It
-   * takes what it fills in from what the batch may fill in only once the
-   * input is made: a run whose input can't be made takes none.
+   * The input of a run: the call's own, with what it reads written in. The
+   * policy hears how much it fills in once the input is made: of a run whose
+   * input can't be made, it hears nothing.
    */
   async function fill(run: {
+    /** The procedure's path */
+    path: string;
     /** The call's input, as the client sent it and as it was read */
     base: PipelineCallInput;
     reads: PipelineCallReads<Source>;
@@ -1349,30 +1335,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         return value.value;
       }),
     );
-    // Nothing waits from here to where it takes, so nothing else takes from
-    // what the batch may fill in in between
-    const room = fills.room();
-    let size = 0;
-    /**
-     * Counts a part of what it fills in. Throws once that is more than there
-     * is room for: the rest isn't measured
-     */
-    const charge = (length: number) => {
-      size += length;
-      if (size > room) {
-        // More than is left, so this throws
-        spend(fills, size);
-      }
-    };
     // What the client sent, and each value, decoded from its JSON once:
     // nothing decoded is measured
     let input = decoded(run.base.sent.json);
-    for (const [at, read] of run.reads.reads.entries()) {
+    let read = 0;
+    for (const [at, it] of run.reads.reads.entries()) {
       const json = values[at];
-      checkValue(json);
-      if (!run.perItem) {
-        charge(lengthOf(json));
-      }
+      read += lengthOf(json);
       const value = decoded(json);
       // Written into the input, it is decoded again with the rest of it: as
       // a client sends it only if it comes back as it was written
@@ -1382,22 +1351,27 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       ) {
         throw cannotSendValueAsTheClient();
       }
-      input = writePipelinePath({ input, to: read.to, value });
+      input = writePipelinePath({ input, to: it.to, value });
     }
     // The input as a client sends it filled in: serialized once, all of it,
     // so what is not there is `null` in a list and left out of an object
     // where JSON makes it so, and decoded once from that, as any request's
     // input is. It is a value of its own too, so a call that changes its
     // input in place changes nothing that another call, or another run,
-    // reads. A run for every item counts all of it, with the keys its values
-    // are written under. A call that runs once counts at least what its
-    // input grew by
+    // reads. A run for every item fills in all of it, with the keys its
+    // values are written under. A call that runs once fills in its values,
+    // or what its input grew by if that is more
     const sent = lengthOf(run.base.sent.json);
-    const read = size;
-    input = overTheWire(opts.transformer.input, input, (length) =>
-      charge(run.perItem ? length : Math.max(0, length - sent - read)),
-    );
-    spend(fills, size);
+    input = overTheWire(opts.transformer.input, input, (length) => {
+      const refusal = refusalBy({
+        kind: 'run',
+        path: run.path,
+        filled: run.perItem ? length : Math.max(read, length - sent),
+      });
+      if (refusal) {
+        throw refusal();
+      }
+    });
     return input;
   }
 
@@ -1465,7 +1439,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
       };
       /** Notes why a list or a run of it can't run */
       const noteFailure = (cause: unknown) => {
-        if (!(cause instanceof TRPCError && refusalErrors.has(cause))) {
+        if (!(cause instanceof experimental_TRPCPipelineRefusal)) {
           ruleOut();
         }
       };
@@ -1476,7 +1450,13 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
         const end = (async (): Promise<RunEnd> => {
           let input: unknown;
           try {
-            input = await fill({ base, reads, place, perItem: true });
+            input = await fill({
+              path: source.path,
+              base,
+              reads,
+              place,
+              perItem: true,
+            });
           } catch (cause) {
             // It doesn't run, and gives back its place
             lease.giveBack(1);
@@ -1628,6 +1608,7 @@ export function pipelineCalls<TCall extends PipelineServerCall>(opts: {
           throw refusal;
         }
         const input = await fill({
+          path: source.path,
           base: await inputToFill(source),
           reads,
           place: { indexes: [], item: null },

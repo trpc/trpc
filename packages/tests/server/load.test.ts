@@ -17,7 +17,6 @@ import {
   splitLink,
 } from '@trpc/client';
 import type {
-  experimental_PipeliningLinkOptions,
   experimental_QueryEntry,
   experimental_QueryProcedures,
   OperationContext,
@@ -32,8 +31,12 @@ import {
   pipelineContext,
   readsContext,
 } from '@trpc/client/unstable-internals';
-import type { AnyRouter, TRPCDefaultErrorShape } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import type {
+  AnyRouter,
+  experimental_PipelinePolicy,
+  TRPCDefaultErrorShape,
+} from '@trpc/server';
+import { experimental_pipelineBudget, initTRPC, TRPCError } from '@trpc/server';
 import { tap } from '@trpc/server/observable';
 import {
   createDeferred,
@@ -156,8 +159,9 @@ describe.each([
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
 ] as const)('$name', (scenario) => {
   function setup(opts: {
-    pipelining: boolean | experimental_PipeliningLinkOptions;
-    allowWholeValues?: boolean;
+    pipelining: boolean;
+    /** The server's, `true` if not given */
+    allowPipelining?: experimental_PipelinePolicy;
   }) {
     const { appRouter, gates, calls } = createRouter();
     /** The operations the client sends, as a link before the batch link sees them */
@@ -170,9 +174,7 @@ describe.each([
     };
     const ctx = testServerAndClientResource(appRouter, {
       server: {
-        experimental_allowPipelining: opts.allowWholeValues
-          ? { allowWholeValues: true }
-          : true,
+        experimental_allowPipelining: opts.allowPipelining ?? true,
       },
       client: (clientOpts) => ({
         links: [
@@ -180,9 +182,7 @@ describe.each([
           scenario.link({
             url: clientOpts.httpUrl,
             experimental_pipelining: opts.pipelining
-              ? experimental_pipelining(
-                  opts.pipelining === true ? undefined : opts.pipelining,
-                )
+              ? experimental_pipelining()
               : undefined,
           }),
         ],
@@ -628,7 +628,12 @@ describe.each([
       ]);
     }
     {
-      await using ctx = setup({ pipelining: true, allowWholeValues: true });
+      await using ctx = setup({
+        pipelining: true,
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      });
       const c = ctx.client;
       const list = query(c.post.list, { limit: 2 });
       const res = experimental_load(c, {
@@ -827,8 +832,11 @@ describe.each([
     }
   });
 
-  test('a call over a limit of the link resolves from a request of its own', async () => {
-    await using ctx = setup({ pipelining: { maxDepth: 2 } });
+  test("a call the server's policy refuses before it runs resolves from a request of its own", async () => {
+    await using ctx = setup({
+      pipelining: true,
+      allowPipelining: experimental_pipelineBudget({ maxDepth: 2 }),
+    });
     const c = ctx.client;
 
     const post = query(c.post.bySlug, { slug: 'a' });
@@ -838,22 +846,25 @@ describe.each([
     });
 
     expect((await res.team).id).toBe('team-ada');
+    // The link plans with the default `maxDepth`, 3: the server refuses the
+    // third call, and it asks by itself
     expect(requestsOf(ctx).map((it) => it.path)).toEqual([
-      '/post.bySlug,author.byId',
+      '/post.bySlug,author.byId,team.byId',
       '/team.byId',
     ]);
   });
 
-  /** A client and server whose `maxRuns` is `maxRuns` */
-  function setupMaxRuns(maxRuns: number) {
+  /** A client and server whose `maxBatchSize` is `maxBatchSize` */
+  function setupMaxBatchSize(maxBatchSize: number) {
     const { appRouter, calls } = createRouter();
     const ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: { maxRuns } },
+      server: { experimental_allowPipelining: true, maxBatchSize },
       client: (clientOpts) => ({
         links: [
           scenario.link({
             url: clientOpts.httpUrl,
-            experimental_pipelining: experimental_pipelining({ maxRuns }),
+            maxItems: maxBatchSize,
+            experimental_pipelining: experimental_pipelining(),
           }),
         ],
       }),
@@ -861,8 +872,8 @@ describe.each([
     return Object.assign(ctx, { calls });
   }
 
-  test("a list whose runs would go over the server's `maxRuns` loads, and its items' queries are asked for by themselves", async () => {
-    await using ctx = setupMaxRuns(2);
+  test("a list whose runs would go over the server's `maxBatchSize` loads, and its items' queries are asked for by themselves", async () => {
+    await using ctx = setupMaxBatchSize(2);
     using _quiet = quietWarnings();
     const c = ctx.client;
 
@@ -891,9 +902,9 @@ describe.each([
     ]);
   });
 
-  test("an inner list whose runs would go over the server's `maxRuns` rejects its items with its error: they are not asked for by themselves", async () => {
+  test("an inner list whose runs would go over the server's `maxBatchSize` rejects its items with its error: they are not asked for by themselves", async () => {
     // The pages, and the runs for the two items of the first page
-    await using ctx = setupMaxRuns(3);
+    await using ctx = setupMaxBatchSize(3);
     const c = ctx.client;
 
     const pages = query(c.post.pages);
@@ -914,7 +925,7 @@ describe.each([
   });
 
   test('the error of a run that ran rejects its item: its query is not asked for again', async () => {
-    await using ctx = setupMaxRuns(4);
+    await using ctx = setupMaxBatchSize(4);
     const c = ctx.client;
 
     const list = query(c.post.list, { limit: 3 });
@@ -1549,7 +1560,9 @@ describe.each([
     async (opts) => {
       await using ctx = setup({
         pipelining: true,
-        allowWholeValues: opts.allowWholeValues,
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: opts.allowWholeValues,
+        }),
       });
       using _quiet = quietWarnings();
       const c = ctx.client;
@@ -1645,7 +1658,11 @@ describe.each([
         })),
     });
     await using ctx = testServerAndClientResource(appRouter, {
-      server: { experimental_allowPipelining: { allowWholeValues: true } },
+      server: {
+        experimental_allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
       client: (clientOpts) => ({
         links: [
           scenario.link({

@@ -465,7 +465,7 @@ export const client = createTRPCClient<AppRouter>({
 - **`httpBatchLink` works too**, but its response waits for the slowest call. The promises of one request resolve together; a query that asks by itself resolves later, with its own response. In development, the client warns once.
 - **The code that calls `experimental_load()` doesn't change.**
 - **It saves round trips only in a load over HTTP.** A link that [doesn't pipeline](#fallback) sends each query as before.
-- **`true` sets the default [limits](#limits).** They allow ids, slugs, cursors and [a query for every item](#per-item). To write an object or a list into an input, such as `{ tags: it.tags }`, set [`allowWholeValues`](#limit-whole-values).
+- **`true` sets the default [limits](#limits).** They allow ids, slugs, cursors and [a query for every item](#per-item). To write an object or a list into an input, such as `{ tags: it.tags }`, pass `experimental_pipelineBudget({ allowWholeValues: true })`. A [policy of your own](#policy) decides what else to allow.
 
 ### What goes over the wire {#wire}
 
@@ -722,8 +722,8 @@ Sometimes a query that reads another's data can't go in that query's request. It
 
 - **The query it reads doesn't go through a batch link with `experimental_pipelining`**, such as `httpLink` or `wsLink`.
 - **It doesn't fit in that request**, within `maxURLLength` and `maxItems`.
-- **It would go over the link's [limits](#limits)**: it reads more than `maxReadsPerCall` values (16 by default), is more than `maxDepth` calls deep in its chain (3), or would make the request more than `maxRuns` calls (100).
-- **The server refused it before it ran**, for one of its [limits](#limits), such as a list whose runs would go over `maxRuns`.
+- **The default [limits](#limits) would refuse it**: it reads more than 16 values, or is more than 3 calls deep in its chain.
+- **The server refused it before it ran**, for its [limits](#limits) or [policy](#policy), such as a list whose runs would go over `maxBatchSize`.
 - **It reads an item the list doesn't have**, such as one that went missing between the two reads.
 
 A request that fails as a whole, such as on a network error, isn't one of these cases. The query it reads was in that request and failed too, so there is no data to fill in. Without a link that sends the request again, the query rejects with that error. With a link that [retries](#retries), it goes in the next attempt's request if that request has every query it reads, and otherwise waits for them.
@@ -732,71 +732,117 @@ With TanStack Query, some of these work differently: see [When the list is fetch
 
 ## Limits {#limits}
 
-A call that reads another's data makes the server copy that data into its input. `true` turns pipelining on with limits that keep this small. To set them, pass an object; any you leave out keep their default:
+A call that reads another's data makes the server copy that data into its input, and a call for every item runs once per item. `true` turns pipelining on with `experimental_pipelineBudget()`: limits that keep this small. To change some, pass it the ones you want; the rest keep their default:
 
 ```ts twoslash title='server.ts'
 // @include: dq-router
 // @filename: server.ts
 // ---cut---
+import { experimental_pipelineBudget } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from '~/server/router';
 
 createHTTPServer({
   router: appRouter,
   maxBatchSize: 50,
-  experimental_allowPipelining: {
-    maxValueLength: 1024,
-    maxReadsPerCall: 16,
-    maxFillSize: 100_000,
-    maxDepth: 4,
+  experimental_allowPipelining: experimental_pipelineBudget({
+    maxDepth: 2,
     allowWholeValues: true,
-    maxRuns: 100,
+  }),
+}).listen(3000);
+```
+
+- **[`maxBatchSize`](#limit-runs) caps the runs**: 100 for a pipelined request if you don't set it.
+- **The link has no limits to set.** It plans with the defaults, so a server with the defaults takes every call it sends. Set its `maxItems` to `maxBatchSize` or lower. It is 100 by default with `experimental_pipelining`.
+
+The server refuses a call over a limit with a `BAD_REQUEST` that says why:
+
+```
+This call is 3 calls deep in a chain, more than `maxDepth` (2) allows
+```
+
+- **Only that call fails.** The calls that read its data fail with a `PRECONDITION_FAILED`, as when it fails for any other reason. The rest of the request runs.
+- **Except a request with more calls than `maxBatchSize` allows**, which fails as a whole.
+- **A call refused before it runs asks by itself**, as in [the fallback](#fallback), and its query gets the data. A server with a lower `maxDepth` than the link's 3 costs a request for each call past it, not an error.
+- **A list whose runs would go over `maxBatchSize` runs for none of its items.** The list loads, and its items' queries ask by themselves.
+- **A refused run fails by itself.** Its item's query gets the error, as it would get the procedure's own. The call's other runs can still run.
+- **Data still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
+
+### A policy of your own {#policy}
+
+`experimental_allowPipelining` also takes a function. The server calls it once for each pipelined request, after `createContext`, with the request's `info` and `ctx`. It returns a function that the server calls before each step of the request. That function returns `true` to allow the step, or a reason to refuse it:
+
+```ts twoslash title='server.ts'
+// @include: dq-router
+// @filename: server.ts
+// ---cut---
+import { experimental_pipelineBudget } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from '~/server/router';
+
+createHTTPServer({
+  router: appRouter,
+  experimental_allowPipelining: (opts) => {
+    // Once for each request: `opts.ctx` is its context
+    const budget = experimental_pipelineBudget({ allowWholeValues: true })(
+      opts,
+    );
+    return (event) => {
+      if (event.kind === 'call' && event.path.startsWith('admin.')) {
+        return { reason: 'admin', message: 'Ask for admin data by itself' };
+      }
+      return budget(event);
+    };
   },
 }).listen(3000);
 ```
 
-The link doesn't ask the server for its limits. It plans with the default `maxReadsPerCall`, `maxDepth` and `maxRuns`, so it never sends a call that a server with the defaults would refuse for its reads, its depth or the number of calls in the request. If you change them on the server, up or down, set the link's to the same or lower, and its `maxItems` to `maxBatchSize` or lower:
+The steps it hears of, each before the server does it:
 
-```ts twoslash title='client.ts'
+| `event.kind` | When | What it has | The budget checks |
+| --- | --- | --- | --- |
+| `'call'` | A call that reads other calls' data, before it reads any | `path`, `depth`, `reads` | `maxDepth`, `maxReadsPerCall` |
+| `'list'` | A list that a call for every item runs for, before any of its items | `length` | nothing: `maxBatchSize` does |
+| `'value'` | A value a call reads, before it is written into an input | `whole`, `length` | `allowWholeValues`, `maxValueLength` |
+| `'run'` | A run, its input filled in, before its procedure runs | `path`, `filled` | `maxFillSize` |
+
+- **Keep counts in the outer function.** It runs once for each request, so what you count there is that request's.
+- **`length` is measured when you read it.** A policy that refuses an object without reading its `length` measures nothing.
+- **`maxBatchSize` still caps the runs**, whatever the policy says.
+- **What the policy throws** fails the call with that error, as a procedure's own error does. Its query doesn't ask again.
+
+### Why a call was refused {#refusals}
+
+The error of a refusal is an `experimental_TRPCPipelineRefusal`: a `TRPCError` with the `reason`. The budget's reasons are the names of its limits, such as `'maxDepth'`. `'maxBatchSize'` is for too many runs, and `'transformer'` for an input the server can't fill in as the client would send it. Count them in `onError`:
+
+```ts twoslash title='server.ts'
 // @include: dq-router
-// @filename: client.ts
+// @filename: server.ts
+declare const metrics: {
+  increment: (name: string, tags: Record<string, string>) => void;
+};
 // ---cut---
-import {
-  createTRPCClient,
-  experimental_pipelining,
-  httpBatchStreamLink,
-} from '@trpc/client';
-import type { AppRouter } from '~/server/router';
+import { experimental_TRPCPipelineRefusal } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from '~/server/router';
 
-export const client = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchStreamLink({
-      url: 'http://localhost:3000',
-      maxItems: 50,
-      experimental_pipelining: experimental_pipelining({
-        maxReadsPerCall: 16,
-        maxDepth: 4,
-        maxRuns: 100,
-      }),
-    }),
-  ],
-});
+createHTTPServer({
+  router: appRouter,
+  experimental_allowPipelining: true,
+  onError({ error, path }) {
+    if (error instanceof experimental_TRPCPipelineRefusal) {
+      metrics.increment('pipeline.refused', {
+        reason: error.reason,
+        path: path ?? 'unknown',
+      });
+    }
+  },
+}).listen(3000);
 ```
 
-The server refuses a call over a limit with a `BAD_REQUEST` that names the limit and its value:
+A call refused before it runs asks by itself, so its query still gets the data. A count of refusals shows the requests that took an extra round trip.
 
-```
-This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
-```
-
-- **Only that call fails.** The calls that read its data fail with a `PRECONDITION_FAILED`, as when it fails for any other reason. The rest of the request runs.
-- **Except a request with more calls than `maxRuns` allows**, which fails as a whole.
-- **A call refused before it runs asks by itself**, as in [the fallback](#fallback), and its query gets the data.
-- **A list whose runs would go over `maxRuns` runs for none of its items.** The list loads, and its items' queries ask by themselves.
-- **A refused run fails by itself.** Its item's query gets the error, as it would get the procedure's own. The call's other runs can still run.
-- **The server checks `maxReadsPerCall` and `maxDepth` before the call runs**, and the others once the data it reads has arrived, before its procedure runs.
-- **Matching limits on the link don't prevent the second kind**, as the link can't see that data before it sends the call: a value longer than `maxValueLength`, fills over `maxFillSize`, a whole value without `allowWholeValues`, or a list whose runs go over `maxRuns`.
-- **Data still to come can't be read.** With `httpBatchStreamLink`, a call whose data streams, or holds a promise, sends it in parts. A call that reads it gets an `UNSUPPORTED_MEDIA_TYPE`.
+### The budget's limits {#budget}
 
 #### What a value is {#limit-terms}
 
@@ -809,15 +855,15 @@ This call is 4 calls deep in a chain, more than `maxDepth` (3) allows
 The longest chain of reads: 3 by default. A query that reads nothing is 1. A call is 1 more than the deepest call it reads, counting the call its list is in. `post.bySlug` → `author.byId` → `post.list`, the post page above, is 3.
 
 - **Why 3:** a page rarely needs more steps, and every step waits for the one before it.
-- **Raise it** for a page that really chains more, and set the link's `maxDepth` to the same.
 - **Lower it to 2** to allow one step: the author of a post, but not the author's team.
+- **Raising it doesn't make the link chain deeper.** The link plans with 3, and sends a deeper call when the data it reads arrives.
 
 #### `maxReadsPerCall` {#limit-reads}
 
-The most values one call reads: 16 by default.
+The most values one call reads: 16 by default. It counts the values in one input, not the runs: a call for every item of 50 items that reads `it.authorId` reads 1.
 
 - **Why 16:** an input usually reads one or two values, such as an id and a cursor.
-- **Raise it** for an input built from many parts of other data, and set the link's `maxReadsPerCall` to the same.
+- **The link plans with 16**, so it sends a call with more by itself, once the data it reads arrives.
 
 #### `maxValueLength` {#limit-value-length}
 
@@ -841,28 +887,26 @@ The most a request fills in, in characters of JSON: 100,000 by default. It count
 - **Why 100,000:** the other limits keep a call small. This one keeps the whole request small, as it can have many calls, and a call can run for many items.
 - **Raise it** with `maxValueLength` or `allowWholeValues`, if your requests fill in more.
 
-#### `maxRuns` {#limit-runs}
+#### `maxBatchSize` {#limit-runs}
 
-The most times a request runs a procedure: 100 by default. Each call is one run; a call for every item is one run per item, counted when its list is ready.
+The most times a pipelined request runs a procedure: [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size), or 100 if you don't set it. Each call is one run; a call for every item is one run per item, counted when its list is ready. A request that isn't pipelined has no cap without it, as before.
 
 - **A list whose runs would go over it runs for none of its items**, and their queries ask by themselves.
 - **Of two lists that would go over it together**, the one that is ready first runs.
 - **In a list of lists, each inner list counts by itself.** The queries of the items of an inner list that goes over get a `BAD_REQUEST`.
-- **The lists at one level of a list of lists count together**, even when no call runs for their items, as each item of a level takes a place before anything runs. So a middle level wider than `maxRuns` is refused, even when its leaves would fit.
+- **The lists at one level of a list of lists count together**, even when no call runs for their items, as each item of a level takes a place before anything runs. So a middle level wider than `maxBatchSize` is refused, even when its leaves would fit.
 - **Why 100:** a call for every item runs once per item of a list the server reads, not one the client sends. Without a cap, a short request for a long list could run a procedure many thousands of times.
-- **Raise it** for pages that load a query for every item of long lists.
-- **`maxBatchSize` caps it too**, if it is lower.
-- **A request with more calls than it allows fails as a whole**, with a `BAD_REQUEST`, as one over `maxBatchSize` does. The link adds no call that would go over its own `maxRuns`, 100 by default. Set it to the server's or lower, and the link's `maxItems` to `maxBatchSize` or lower if that is set.
+- **A request with more calls than it allows fails as a whole.** Set the link's `maxItems` to it or lower, so the link adds no call that would go over.
 
 #### How they add up {#limits-together}
 
 At most, a call for every item fills in, for every run, `maxReadsPerCall` values of up to `maxValueLength` each, plus the rest of its input copied into the run. With a `maxBatchSize` of 50 and the defaults, that is 50 × 16 × 1,024 characters: over 800,000. `maxFillSize` keeps what the server fills in to 100,000, whatever the other limits are. It doesn't count the input the client sends with a call that runs once.
 
-`maxRuns` caps how many times a request runs a procedure. [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size) caps how many calls it has, and those runs too, if it is lower. The other limits cap how much each run carries.
+`maxBatchSize` caps how many times a request runs a procedure. The other limits cap how much each run carries.
 
 #### Like a GraphQL query cost limit {#limits-graphql}
 
-A GraphQL server often gives a query a cost, from its depth and the size of its lists, and refuses a query over a budget. These limits are the same idea as separate caps: `maxDepth` limits depth, `maxRuns` caps the runs, and the others cap what each call carries. Each is a plain count, so you don't give every procedure a cost. A call over one is refused by itself, not the whole request, unless the request has more calls than `maxRuns`.
+A GraphQL server often gives a query a cost, from its depth and the size of its lists, and refuses a query over a budget. The budget is the same idea as separate caps: `maxDepth` limits depth, `maxBatchSize` caps the runs, and the others cap what each call carries. Each is a plain count, so you don't give every procedure a cost. To give them one, [write a policy](#policy) that adds up a cost from each `'run'`.
 
 ## Good to know {#good-to-know}
 
@@ -882,9 +926,9 @@ A GraphQL server often gives a query a cost, from its depth and the size of its 
 
 Such a request does what the browser could do in two. Each call validates its input and runs its middleware, and the server only reads data it sends back in the same response.
 
-- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs once per item of a list the server returned, and `maxBatchSize` counts every run of a request. Without it, [`maxRuns`](#limit-runs) still caps the runs, at 100 by default.
-- **Set the link's `maxItems` to it or lower**, and the link's `maxRuns` to the server's if you change it. A request with more calls than either allows fails as a whole, including the query it belongs to.
-- **Keep the [limits](#limits) low.** By default a call reads at most 16 values of up to 1,024 characters of JSON, each a string, number, boolean or `null`; a chain of reads is at most 3 calls deep; and a request fills in at most 100,000 characters. A call or run over a limit is refused, and fails by itself.
+- **Set [`maxBatchSize`](/docs/client/links/httpBatchLink#limiting-batch-size).** A call for every item runs once per item of a list the server returned, and [`maxBatchSize`](#limit-runs) counts every run of a request. Without it, a pipelined request runs at most 100.
+- **Set the link's `maxItems` to it or lower.** A request with more calls than the server allows fails as a whole, including the query it belongs to.
+- **Keep the [limits](#limits) low.** By default a call reads at most 16 values of up to 1,024 characters of JSON, each a string, number, boolean or `null`; a chain of reads is at most 3 calls deep; and a request fills in at most 100,000 characters. A call or run over a limit is refused, and fails by itself. [Count refusals](#refusals) to see what your pages hit.
 - **A value in a promise or a stream can't be read.** Its type has no such path. Without types, a call that reads it, or any other part of the data it is in, gets an `UNSUPPORTED_MEDIA_TYPE` before its procedure validates its input.
 - **In a response that doesn't stream**, a call whose data is a stream fails, and the calls that read it don't run.
 

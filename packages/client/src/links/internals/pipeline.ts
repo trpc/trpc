@@ -7,7 +7,6 @@ import type {
   PipelinedBatchPlan,
   PipelineErrorMark,
   PipelineFrame,
-  PipelineLimits,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
@@ -15,9 +14,10 @@ import {
   isObject,
   pipelinedBatchBody,
   pipelinedBatchUrl,
+  pipelineBudgetDefaults,
   pipelineFrameOf,
-  pipelineLimitDefaults,
   pipelineMarkOf,
+  pipelineMaxBatchSizeDefault,
   planPipelinedBatch,
   transformResult,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -115,8 +115,6 @@ export interface OperationPipeline {
    * as the operation's request goes.
    */
   open: boolean;
-  /** The limits of the server, as the link that opens it says */
-  limits: ClientPipelineLimits;
   /**
    * Whether the response of the link that opens it streams, so that each
    * call, and each run of one, settles by itself. `null` until a link opens it
@@ -157,12 +155,6 @@ export interface OperationPipeline {
   /** What a link that serializes an operation's context gets: it has no cycles */
   toJSON: () => unknown;
 }
-
-/** What a client keeps to of a server's limits, so the server takes its calls */
-type ClientPipelineLimits = Pick<
-  PipelineLimits,
-  'maxReadsPerCall' | 'maxDepth' | 'maxRuns'
->;
 
 /** What a call reads the data of: an operation, or another call */
 export type PipelineSource = OperationPipeline | PipelinedCall;
@@ -296,7 +288,6 @@ export function createOperationPipeline(): OperationPipeline {
   const sent = createDeferred<readonly string[]>();
   const pipeline: OperationPipeline = {
     open: false,
-    limits: pipelineLimitDefaults,
     streams: null,
     link: null,
     calls: [],
@@ -344,7 +335,12 @@ export function pipeCall(opts: {
     opts.reads.reads.find((read) => read.kind === 'whole')?.from ??
     null;
   const owner = first && (isCall(first) ? first.owner : first);
-  if (!owner || opts.reads.reads.length > owner.limits.maxReadsPerCall) {
+  // The default policy's limits: a call over them would be refused, so it
+  // waits for what it reads and goes by itself
+  if (
+    !owner ||
+    opts.reads.reads.length > pipelineBudgetDefaults.maxReadsPerCall
+  ) {
     return null;
   }
   const sources: PipelineSource[] = [
@@ -380,7 +376,7 @@ export function pipeCall(opts: {
       depth = Math.max(depth, source.depth + 1);
     }
   }
-  if (depth > owner.limits.maxDepth) {
+  if (depth > pipelineBudgetDefaults.maxDepth) {
     return null;
   }
   const settled = createDeferred<PipelinedCallSettled>();
@@ -662,34 +658,6 @@ export interface PipeliningLoader<TOp> {
     ops: TOp[],
     request?: PipelinedBatch['request'],
   ) => ReturnType<BatchLoader<TOp, HTTPResult>['fetch']>;
-}
-
-/**
- * What a client keeps to of the server's `experimental_allowPipelining`
- * limits. A call that would go over one isn't pipelined: it waits for the
- * data it reads, and goes in a request of its own.
- *
- * Experimental: it may change in a minor release.
- * @see https://trpc.io/docs/client/vanilla/nested-queries#limits
- */
-export interface experimental_PipeliningLinkOptions {
-  /**
-   * The server's `maxReadsPerCall`, or a lower number
-   * @default 16
-   */
-  maxReadsPerCall?: number;
-  /**
-   * The server's `maxDepth`, or a lower number
-   * @default 3
-   */
-  maxDepth?: number;
-  /**
-   * The server's `maxRuns`, or a lower number: the most calls a pipelined
-   * request has. A server refuses a request with more as a whole, so the
-   * link adds no call that would go over it
-   * @default 100
-   */
-  maxRuns?: number;
 }
 
 /**
@@ -1086,19 +1054,12 @@ function sentOp(
  * Experimental: it may change in a minor release.
  * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
  */
-export function experimental_pipelining(
-  opts?: experimental_PipeliningLinkOptions,
-): experimental_Pipelining {
-  const limits: ClientPipelineLimits = {
-    maxReadsPerCall:
-      opts?.maxReadsPerCall ?? pipelineLimitDefaults.maxReadsPerCall,
-    maxDepth: opts?.maxDepth ?? pipelineLimitDefaults.maxDepth,
-    maxRuns: opts?.maxRuns ?? pipelineLimitDefaults.maxRuns,
-  };
+export function experimental_pipelining(): experimental_Pipelining {
   return (linkOpts, streams) => {
     const link: PipeliningLink = {
       ...resolveHTTPLinkOptions(linkOpts),
-      maxItems: linkOpts.maxItems ?? Infinity,
+      // The server's `maxBatchSize` for a pipelined batch, if it sets none
+      maxItems: linkOpts.maxItems ?? pipelineMaxBatchSizeDefault,
       maxURLLength: linkOpts.maxURLLength ?? Infinity,
       streams,
     };
@@ -1112,7 +1073,7 @@ export function experimental_pipelining(
           .filter((call) => call.state.status === 'waiting'),
         fits: (next) => {
           const sent = [...ops, ...next.calls];
-          if (sent.length > Math.min(link.maxItems, limits.maxRuns)) {
+          if (sent.length > link.maxItems) {
             return false;
           }
           // An input the transformer can't take before the server fills it
@@ -1142,7 +1103,6 @@ export function experimental_pipelining(
         // Only queries: the server makes no more calls in a mutation's request
         if (pipeline && op.type === 'query') {
           pipeline.open = true;
-          pipeline.limits = limits;
           pipeline.streams = link.streams;
           pipeline.link = link;
           // Each attempt has its own: an operation sent again sends its calls
@@ -1162,7 +1122,6 @@ export function experimental_pipelining(
         if (own && op.type === 'query') {
           // A link that pipelines has it, as it is sent: what reads it can
           // say what it reads
-          own.limits = limits;
           own.streams = link.streams;
           own.link = link;
         }

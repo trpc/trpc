@@ -3,6 +3,7 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { emptyObject, isObject, isPlainObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
+import type { experimental_PipelinePolicy } from './pipeline/policy';
 import {
   pipelineDecodedInput,
   pipelineSentInput,
@@ -10,8 +11,7 @@ import {
   pipeOfSearchParams,
 } from './pipeline/server';
 import type { PipelineSentInput } from './pipeline/server';
-import { pipelineBatch } from './pipeline/wire';
-import type { PipelineLimits } from './pipeline/wire';
+import { pipelineBatch, pipelineMaxBatchSizeDefault } from './pipeline/wire';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
@@ -49,7 +49,7 @@ type GetRequestInfoOptions = {
    * What a pipelined batch, `?batch=pipeline`, can make the server do, or
    * `null` if it isn't accepted: it is then a bad request
    */
-  pipelineLimits: PipelineLimits | null;
+  pipelinePolicy: experimental_PipelinePolicy | null;
 };
 
 type ContentTypeHandler = {
@@ -118,8 +118,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const batch = opts.searchParams.get('batch');
     // A batch whose calls read their inputs from each other's data
     const isPipelined = batch === pipelineBatch;
-    const { pipelineLimits } = opts;
-    if (isPipelined && !pipelineLimits) {
+    const { pipelinePolicy } = opts;
+    if (isPipelined && !pipelinePolicy) {
       // Before anything of it runs: its calls have holes in their inputs
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -128,7 +128,10 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       });
     }
     const isBatchCall = batch === '1' || isPipelined;
-    const maxBatchSize = opts.maxBatchSize;
+    // Each call of a pipelined batch is a run, and every run counts
+    const maxBatchSize = isPipelined
+      ? (opts.maxBatchSize ?? pipelineMaxBatchSizeDefault)
+      : opts.maxBatchSize;
 
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
     if (
@@ -139,18 +142,6 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batch call exceeds maximum size`,
-      });
-    }
-    // Each call is a run, so a pipelined batch with more of them than
-    // `maxRuns` would go over it before anything is filled in
-    if (
-      pipelineLimits &&
-      isPipelined &&
-      paths.length > pipelineLimits.maxRuns
-    ) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `The batch has ${paths.length} calls, more than \`maxRuns\` (${pipelineLimits.maxRuns}) allows`,
       });
     }
 
@@ -289,9 +280,9 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       signal: req.signal,
       url: opts.url,
       ...(isPipelined &&
-        pipelineLimits && {
+        pipelinePolicy && {
           experimental_pipeline: {
-            limits: pipelineLimits,
+            policy: pipelinePolicy,
             getPipe: async () => {
               // A GET has it in the URL. Any other request has it in its body,
               // beside the inputs

@@ -160,46 +160,27 @@ export interface PipeCall {
 export type PipelinePipe = Record<number, PipeCall>;
 
 /**
- * What a server lets a pipelined batch make it do. Each value a call reads is
- * copied into its input, so these keep what a small request can make the
- * server do in proportion to it. A call that goes over one is refused, and the
- * rest of the batch runs.
+ * The limits of `experimental_pipelineBudget()`, the policy of a server whose
+ * `experimental_allowPipelining` is `true`. Pipelining normally reads small
+ * values, such as ids, slugs and cursors. A client plans with
+ * `maxReadsPerCall` and `maxDepth`, so it sends no call that these refuse
+ * before it runs.
  */
-export interface PipelineLimits {
-  /** The longest value a call reads, in characters of JSON */
-  maxValueLength: number;
-  /** The most values one call reads */
-  maxReadsPerCall: number;
-  /**
-   * The most a batch fills in, in characters of JSON: every value written
-   * into an input, and the whole input of every run of a call for every item
-   */
-  maxFillSize: number;
-  /** The most calls in a chain of reads. A call that reads none is 1 */
-  maxDepth: number;
-  /** Whether a value a call reads can be an object or an array */
-  allowWholeValues: boolean;
-  /**
-   * The most runs a batch has: each of its calls, and a call for every item
-   * once for each item. `maxBatchSize` caps them too, if it is lower. The
-   * items of one level of a list of lists, together, can't be more than this
-   * either, whether or not a call runs for them
-   */
-  maxRuns: number;
-}
-
-/**
- * The limits of a server whose `experimental_allowPipelining` is `true`.
- * Pipelining normally reads small values, such as ids, slugs and cursors.
- */
-export const pipelineLimitDefaults: PipelineLimits = {
+export const pipelineBudgetDefaults = {
   maxValueLength: 1024,
   maxReadsPerCall: 16,
   maxFillSize: 100_000,
   maxDepth: 3,
   allowWholeValues: false,
-  maxRuns: 100,
 };
+
+/**
+ * The most runs a pipelined batch can have, if the server sets no
+ * `maxBatchSize`: each call that runs once, and a call for every item once
+ * for each item. A client sends no more calls than this in a pipelined batch,
+ * unless its `maxItems` says otherwise.
+ */
+export const pipelineMaxBatchSizeDefault = 100;
 
 /**
  * A value that a call reads of another, the same for each run that reads
@@ -380,15 +361,10 @@ export function hasOwn(value: unknown, key: string) {
 /**
  * Reads `path` in `value`, through own properties of objects and arrays only.
  * The client and the server read with this, so both get the same value.
- *
- * `beforeList` is told how long each list a `null` makes is, before anything
- * of it is made, and throws to make none of it: a list of a large list's
- * items is as large. `null` makes every list.
  */
 export function readPipelinePath(
   value: unknown,
   path: readonly (string | null)[],
-  beforeList: ((length: number) => void) | null,
 ): unknown {
   let current = value;
   for (const [index, segment] of path.entries()) {
@@ -396,9 +372,8 @@ export function readPipelinePath(
       if (!Array.isArray(current)) {
         return undefined;
       }
-      beforeList?.(current.length);
       const rest = path.slice(index + 1);
-      return current.map((item) => readPipelinePath(item, rest, beforeList));
+      return current.map((item) => readPipelinePath(item, rest));
     }
     if (!hasOwn(current, segment)) {
       return undefined;

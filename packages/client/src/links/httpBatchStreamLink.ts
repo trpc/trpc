@@ -2,7 +2,10 @@ import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
-import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
+import {
+  jsonlStreamConsumer,
+  pipelineMaxBatchSizeDefault,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import {
@@ -57,7 +60,11 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
-  const maxItems = opts.maxItems ?? Infinity;
+  // A server that pipelines takes at most this many calls, if it sets no
+  // `maxBatchSize`
+  const maxItems =
+    opts.maxItems ??
+    (opts.experimental_pipelining ? pipelineMaxBatchSizeDefault : Infinity);
 
   return () => {
     // Queries that read others' data, in the requests of what they read

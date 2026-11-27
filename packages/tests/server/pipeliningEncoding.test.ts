@@ -1,6 +1,6 @@
-import { initTRPC, TRPCError } from '@trpc/server';
+import type { experimental_PipelinePolicy } from '@trpc/server';
+import { experimental_pipelineBudget, initTRPC, TRPCError } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import type { experimental_PipeliningOptions } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
   makeResource,
@@ -84,13 +84,15 @@ async function send(opts: {
   paths: string;
   pipe: unknown;
   streams: boolean;
-  allowPipelining: true | experimental_PipeliningOptions;
+  allowPipelining: true | experimental_PipelinePolicy;
+  maxBatchSize?: number;
 }) {
   return fetchRequestHandler({
     endpoint: '/trpc',
     req: pipelined(opts),
     router: opts.router,
     experimental_allowPipelining: opts.allowPipelining,
+    maxBatchSize: opts.maxBatchSize,
   });
 }
 
@@ -158,22 +160,25 @@ test.each([
   {
     name: 'a call that runs once',
     pipe: { 1: authorOfPost },
-    allowPipelining: { maxReadsPerCall: 0 },
+    allowPipelining: experimental_pipelineBudget({ maxReadsPerCall: 0 }),
+    maxBatchSize: undefined,
   },
   {
     name: 'a call for every item',
     pipe: { 1: authorOfEachTag },
-    allowPipelining: { maxRuns: 2 },
+    allowPipelining: true as const,
+    maxBatchSize: 2,
   },
 ])(
   "keeps `pipeline: 'not-run'` beside the error of $name the server refused, when its shape is one JSON cannot carry",
-  async ({ pipe, allowPipelining }) => {
+  async ({ pipe, allowPipelining, maxBatchSize }) => {
     const res = await send({
       router: createRouter({ big: allButInternal, changing: false }),
       paths: 'post,author',
       pipe,
       streams: false,
       allowPipelining,
+      maxBatchSize,
     });
     const json = await res.json();
 
@@ -565,7 +570,9 @@ describe('what a pipelined stream sends, serialized once', () => {
         streams: true,
       }),
       router: unreadableRouterOf(gate.promise),
-      experimental_allowPipelining: { maxReadsPerCall: 0 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxReadsPerCall: 0,
+      }),
     });
     const text = await res.text();
 
@@ -639,7 +646,9 @@ describe('a call for every item whose every run a limit refuses', () => {
           .query((opts) => opts.input),
       }),
       // `{"id":"t1"}` is 11 characters of JSON
-      experimental_allowPipelining: { maxFillSize: 10 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxFillSize: 10,
+      }),
       onError,
     });
     const json = await res.json();
@@ -760,7 +769,9 @@ describe('an error shape whose `data` has a getter that throws', () => {
           .input(z.object({ id: z.string() }))
           .query((opts) => opts.input),
       }),
-      experimental_allowPipelining: { maxReadsPerCall: 0 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxReadsPerCall: 0,
+      }),
     });
     const json = await res.json();
 

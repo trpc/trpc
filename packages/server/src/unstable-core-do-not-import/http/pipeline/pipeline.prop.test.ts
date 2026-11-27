@@ -7,14 +7,14 @@
 import { fc, test } from '@fast-check/vitest';
 import { isObject } from '../../utils';
 import { encodePipelineReads, readPipelinedItem } from './client';
+import { experimental_pipelineBudget } from './policy';
 import {
   parsePipelineReads,
   pipelineCalls,
   pipelineDecodedInput,
   pipelineSentInput,
 } from './server';
-import type { PipelineCallReads, PipelineLimits, PipelinePipe } from './wire';
-import { pipelineLimitDefaults } from './wire';
+import type { PipelineCallReads, PipelinePipe } from './wire';
 
 const none = {
   serialize: (it: unknown) => it,
@@ -63,8 +63,7 @@ const batchArbitrary = fc.integer({ min: 1, max: 5 }).chain((count) =>
 test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
   'in any order the data arrives in, a batch runs no more than `maxRuns` procedures, fills in no more than `maxFillSize`, and every call ends',
   async (batch, s) => {
-    const limits: PipelineLimits = {
-      ...pipelineLimitDefaults,
+    const limits = {
       allowWholeValues: true,
       maxRuns: batch.maxRuns,
       maxFillSize: batch.maxFillSize,
@@ -104,6 +103,7 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
 
     const pipeline = pipelineCalls({
       calls: batch.calls.map((call) => ({
+        path: 'p',
         getRawInput: async () => ({ pad: 'p'.repeat(call.pad) }),
         result: () => undefined,
       })),
@@ -116,8 +116,19 @@ test.prop([batchArbitrary, fc.scheduler()], { numRuns: 300 })(
           decoded: pipelineDecodedInput(input),
         };
       },
-      maxRuns: null,
-      limits,
+      maxRuns: limits.maxRuns,
+      allow: experimental_pipelineBudget(limits)({
+        info: {
+          accept: null,
+          type: 'query',
+          isBatchCall: true,
+          calls: [],
+          connectionParams: null,
+          signal: new AbortController().signal,
+          url: null,
+        },
+        ctx: undefined,
+      }),
     });
     const results = pipeline.run({
       call: async (call, run) => {
