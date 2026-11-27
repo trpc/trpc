@@ -22,6 +22,7 @@ import {
   incomingMessageToRequest,
   type NodeHTTPCreateContextOption,
 } from '../node-http';
+import { mergeVary } from '../node-http/writeResponse';
 
 /** The options of the Fastify adapter's request handler. */
 export type FastifyHandlerOptions<
@@ -88,6 +89,13 @@ export async function fastifyRequestHandler<
       });
     },
   });
+
+  // Fastify replaces a header the reply already has with the Response's, so
+  // keep the `Vary: Origin` that a hook such as `@fastify/cors` set
+  const vary = opts.res.getHeader('vary');
+  if (vary !== undefined) {
+    res.headers.set('vary', mergeVary(vary, res.headers.get('vary')));
+  }
 
   await opts.res.send(res);
 }

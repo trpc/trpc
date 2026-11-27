@@ -59,6 +59,29 @@ export async function writeResponseBody(opts: {
     throw err;
   }
 }
+
+/**
+ * Joins `Vary` header values without repeating a field. A middleware such as
+ * `cors()` sets `Vary: Origin` before tRPC answers; replacing it with tRPC's
+ * own `Vary` would let a cache serve one origin's CORS headers to another.
+ * @internal
+ */
+export function mergeVary(
+  existing: number | string | string[] | undefined,
+  added: string | null,
+): string {
+  const values = [existing ?? [], added ?? []].flat().join(',');
+  const fields = new Map<string, string>();
+  for (const field of values.split(',')) {
+    const name = field.trim();
+    // field names are case-insensitive
+    if (name && !fields.has(name.toLowerCase())) {
+      fields.set(name.toLowerCase(), name);
+    }
+  }
+  return Array.from(fields.values()).join(', ');
+}
+
 /**
  * @internal
  */
@@ -76,7 +99,10 @@ export async function writeResponse(opts: {
   }
   for (const [key, value] of response.headers) {
     if (key.toLowerCase() === 'set-cookie') continue;
-    rawResponse.setHeader(key, value);
+    rawResponse.setHeader(
+      key,
+      key === 'vary' ? mergeVary(rawResponse.getHeader(key), value) : value,
+    );
   }
   const cookies = response.headers.getSetCookie();
   if (cookies.length > 0) {
