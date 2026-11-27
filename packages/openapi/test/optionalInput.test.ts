@@ -1,8 +1,14 @@
 import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { generateOpenAPIDocument } from '../src/generate';
+import type { Document } from '../src/types';
 import { memoize } from './memoize';
-import { getRequestBody } from './types';
+import {
+  getRequestBody,
+  requireProperty,
+  requireResponseSchema,
+  requireSchemaObject,
+} from './types';
 import { validateOpenApi } from './validateOpenApi';
 
 const routersDir = path.resolve(__dirname, 'routers');
@@ -11,15 +17,23 @@ const optionalInputRouterPath = path.resolve(
   'optionalInputRouter.ts',
 );
 
-describe('generateOpenAPIDocument optional procedure input', () => {
-  const getDoc = memoize(() =>
-    generateOpenAPIDocument(optionalInputRouterPath, {
-      exportName: 'OptionalInputRouter',
-      title: 'Optional Input API',
-      version: '1.0.0',
-    }),
-  );
+const getDoc = memoize(() =>
+  generateOpenAPIDocument(optionalInputRouterPath, {
+    exportName: 'OptionalInputRouter',
+    title: 'Optional Input API',
+    version: '1.0.0',
+  }),
+);
 
+function getResultObject(doc: Document, procPath: string) {
+  const envelope = requireSchemaObject(
+    requireResponseSchema({ doc, procPath }),
+    doc,
+  );
+  return requireSchemaObject(requireProperty(envelope, 'result'), doc);
+}
+
+describe('generateOpenAPIDocument optional procedure input', () => {
   it('produces a valid OpenAPI document', async () => {
     const doc = await getDoc();
     const spec = JSON.stringify(doc, null, 2);
@@ -60,5 +74,24 @@ describe('generateOpenAPIDocument optional procedure input', () => {
     const doc = await getDoc();
     // `null` is sent as a body, so only `undefined` can make the input optional.
     expect(getRequestBody(doc, 'nullable')?.required).toBe(true);
+  });
+});
+
+describe('generateOpenAPIDocument optional procedure output', () => {
+  it('does not require the data of a response whose output is optional', async () => {
+    const doc = await getDoc();
+    // JSON drops a property set to `undefined`, so a procedure that returns
+    // nothing answers `{ "result": {} }`.
+    expect(getResultObject(doc, 'optionalOutput').required).toBeUndefined();
+  });
+
+  it('does not require the data of a response whose output is nullish', async () => {
+    const doc = await getDoc();
+    expect(getResultObject(doc, 'nullishOutput').required).toBeUndefined();
+  });
+
+  it('still requires the data of a response whose output is not optional', async () => {
+    const doc = await getDoc();
+    expect(getResultObject(doc, 'requiredOutput').required).toEqual(['data']);
   });
 });
