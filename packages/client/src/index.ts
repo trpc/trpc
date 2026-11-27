@@ -2,6 +2,7 @@
 
 export * from './createTRPCUntypedClient';
 export * from './createTRPCClient';
+export * from './routerType';
 export * from './getFetch';
 export * from './TRPCClientError';
 export * from './links';
