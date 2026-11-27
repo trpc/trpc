@@ -774,7 +774,7 @@ const startOptions = [
   // Whether there is one: without it, an infinite query loads no page after
   // its first, and a load with `pages` fails
   'getNextPageParam',
-] as const;
+] as const satisfies readonly (keyof TRPCInfiniteEntryOptions<ResolverDef>)[];
 
 /**
  * A start option as a string. `undefined` and `Infinity` have no JSON, and
@@ -788,67 +788,13 @@ function describeOption(value: unknown) {
 }
 
 /**
- * A first cursor as a value with JSON that no other cursor has. It isn't in
- * the query key, which the cache hashes, and JSON reads `undefined` as `null`,
- * `-0` as `0`, and has no bigint: a transformer can tell them apart. Each value
- * is tagged with its type, so that no value reads like another's tag.
+ * A first cursor as a string. It isn't in the query key, but it is in the
+ * handle. An app with a transformer can have a bigint in it, which has no JSON.
  */
-function describeCursor(value: unknown, within: readonly object[]): unknown {
-  switch (typeof value) {
-    case 'undefined':
-      return ['undefined'];
-    case 'bigint':
-      return ['bigint', String(value)];
-    case 'number':
-      // `NaN` and `Infinity` have no JSON either
-      return ['number', Object.is(value, -0) ? '-0' : String(value)];
-    case 'string':
-    case 'boolean':
-      return ['value', value];
-    case 'function':
-    case 'symbol':
-      return [typeof value];
-    case 'object':
-      break;
-  }
-  if (value === null) {
-    return ['value', null];
-  }
-  // A cursor that has itself in it ends where it goes back
-  const back = within.indexOf(value);
-  if (back !== -1) {
-    return ['circular', back];
-  }
-  const inside = [...within, value];
-  if (value instanceof Date) {
-    return ['date', String(value.getTime())];
-  }
-  if (Array.isArray(value)) {
-    return [
-      'array',
-      Array.from({ length: value.length }, (_, index) =>
-        index in value ? describeCursor(value[index], inside) : ['hole'],
-      ),
-    ];
-  }
-  const prototype = Object.getPrototypeOf(value);
-  if (prototype === Object.prototype || prototype === null) {
-    // Sorted, as the cache hashes a query key's objects
-    return [
-      'object',
-      Object.keys(value)
-        .sort()
-        .map((key) => [
-          key,
-          describeCursor((value as Record<string, unknown>)[key], inside),
-        ]),
-    ];
-  }
-  try {
-    return ['instance', hashKey([value])];
-  } catch {
-    return ['instance', describeOption(value)];
-  }
+function describeCursor(cursor: unknown) {
+  return JSON.stringify(cursor, (_, value: unknown) =>
+    typeof value === 'bigint' ? { bigint: String(value) } : value,
+  );
 }
 
 /**
@@ -908,7 +854,7 @@ export function useLoadHandles<
       // Not all of the options: `meta` can hold what has no JSON, or what is
       // new on every render
       startOptions.map((option) => describeOption(state.options[option])),
-      describeCursor(state.options.initialPageParam, []),
+      describeCursor(state.options.initialPageParam),
     ]),
   );
   const loads = usedLoadsOf(queryClient);
@@ -957,7 +903,7 @@ export function useLoadHandles<
       }
     };
   }, [load, queryClient, key]);
-  return load.handles as any;
+  return load.handles as TRPCLoadedHandles<TEntries>[0];
 }
 
 /**
