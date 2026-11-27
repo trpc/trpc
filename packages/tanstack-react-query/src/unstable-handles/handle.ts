@@ -1,4 +1,10 @@
-import type { QueryClient, QueryFunction } from '@tanstack/react-query';
+import type {
+  FetchInfiniteQueryOptions,
+  FetchQueryOptions,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+} from '@tanstack/react-query';
 import { hashKey, isCancelledError } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
 import type { DecorateRouterKeyable } from '../internals/createOptionsProxy';
@@ -10,12 +16,13 @@ import type {
   UnusedSkipTokenTRPCQueryOptionsIn,
   UnusedSkipTokenTRPCQueryOptionsOut,
 } from '../internals/queryOptions';
-import type { ResolverDef, TRPCQueryKey } from '../internals/types';
+import type { AnyTRPCQueryKey, ResolverDef } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import { optionsOf, queryClientOf, readProxy } from './entry';
 import type { ErrorOf } from './entryError';
 import type {
   AnyTRPCHandle,
+  EntryQueryOptions,
   HandleType,
   TRPCInfiniteQueryHandle,
   TRPCQueryHandle,
@@ -24,7 +31,7 @@ import type {
 const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
 
 function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
-  const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
+  const queryKey = handle?.queryKey as unknown as AnyTRPCQueryKey | undefined;
   if (!Array.isArray(queryKey)) {
     throw new Error(`${notAHandle}, got ${JSON.stringify(handle)}`);
   }
@@ -48,7 +55,7 @@ function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
   };
 }
 
-export function toHandle(options: any, type: HandleType) {
+export function toHandle(options: EntryQueryOptions, type: HandleType) {
   const input = readQueryKey(options.queryKey).args?.input;
   // Next.js rejects `undefined` in `getServerSideProps` / `getStaticProps` props
   const handle: Record<string, unknown> = {
@@ -67,10 +74,13 @@ function isServerEnvironment() {
 
 const warnedNotHydrated = new Set<string>();
 
+/** A query's function, of any page param: `warnIfNotHydrated()` passes it on */
+type AnyQueryFunction = QueryFunction<unknown, QueryKey, unknown>;
+
 function warnIfNotHydrated(
   path: readonly string[],
-  queryFn: QueryFunction<any, any, any>,
-): QueryFunction<any, any, any> {
+  queryFn: AnyQueryFunction,
+): AnyQueryFunction {
   return (context) => {
     if (isServerEnvironment()) {
       const queryHash = hashKey(context.queryKey);
@@ -99,8 +109,12 @@ const watchedHydrations = new WeakSet<Promise<unknown>>();
 function refetchRejectedHydration(
   queryClient: QueryClient,
   type: HandleType,
-  options: any,
+  entryOptions: EntryQueryOptions,
 ) {
+  // The options proxy built them for a query of this type
+  const options = entryOptions as unknown as FetchQueryOptions & {
+    enabled?: boolean | ((query: unknown) => boolean);
+  };
   const enabled =
     typeof options.enabled === 'function'
       ? options.enabled
@@ -140,7 +154,7 @@ function refetchRejectedHydration(
     const refetch =
       type === 'infinite'
         ? queryClient.fetchInfiniteQuery({
-            ...options,
+            ...(entryOptions as unknown as FetchInfiniteQueryOptions),
             retry: defaulted.retry ?? 3,
           })
         : query.fetch(defaulted);
@@ -150,11 +164,11 @@ function refetchRejectedHydration(
   });
 }
 
-function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
+function prepareHandleRead(opts: {
   queryClient: QueryClient;
   handle: ReturnType<typeof readHandle>;
-  options: TOptions;
-}): TOptions {
+  options: EntryQueryOptions;
+}): EntryQueryOptions {
   const { options } = opts;
   if (
     globalThis.process?.env?.['NODE_ENV'] !== 'production' &&
@@ -162,7 +176,7 @@ function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
   ) {
     options.queryFn = warnIfNotHydrated(
       opts.handle.path,
-      options.queryFn as QueryFunction<any, any, any>,
+      options.queryFn as AnyQueryFunction,
     );
   }
   refetchRejectedHydration(opts.queryClient, opts.handle.type, options);
@@ -222,7 +236,10 @@ export function fromHandle(
   }
   const procedure = handle.path
     .slice(ctx.path.length)
-    .reduce((level, segment) => level[segment], ctx.proxy);
+    .reduce<unknown>(
+      (level, segment) => (level as Record<string, unknown>)[segment],
+      ctx.proxy,
+    );
   const options = optionsOf(procedure, handle.type)(
     handle.input,
     handle.type === 'infinite'

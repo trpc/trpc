@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import { hashKey } from '@tanstack/react-query';
 import * as React from 'react';
 import type {
@@ -112,7 +113,7 @@ export function loadHandles<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
     entries,
     settle: false,
-  }) as Promise<any>;
+  }) as Promise<TRPCLoadedHandles<TEntries>>;
 }
 
 /**
@@ -147,8 +148,11 @@ export function loadHandlesSettled<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
     entries,
     settle: true,
-  }) as Promise<any>;
+  }) as Promise<TRPCSettledHandles<TEntries>>;
 }
+
+/** What `QueryClient.defaultQueryOptions()` takes: the options proxy built them */
+type QueryOptionsToDefault = Parameters<QueryClient['defaultQueryOptions']>[0];
 
 /** The options of an entry that say how its query starts */
 const startOptions = [
@@ -234,7 +238,9 @@ export function useLoadHandles<
           state.type,
           // As the cache hashes it, with the `queryKeyHashFn` it is set up
           // with: the keys it tells apart are other queries
-          queryClient.defaultQueryOptions(state.options).queryHash,
+          queryClient.defaultQueryOptions(
+            state.options as unknown as QueryOptionsToDefault,
+          ).queryHash,
           // Not all of the options: `meta` can hold what has no JSON, or what
           // is new on every render
           startOptions.map((option) => describeOption(state.options[option])),
@@ -270,16 +276,18 @@ export function useLoadHandles<
       handles: handles as TRPCLoadedHandles<TEntries>[0],
     };
   };
-  // Kept while the component is on the page. A component that renders again
-  // before it is on the page has none, and starts the entries again, as a
-  // loader that runs again does: a query that is loading or has fresh data
-  // asks for nothing
-  const [load, setLoad] = React.useState(start);
-  // Another `QueryClient`'s cache has none of the queries
-  if (load.key === key && load.queryClient === queryClient) {
-    return load.handles;
+  // Kept while the component is on the page, also through a render React
+  // throws away, as when a reader suspends to a boundary above the page. A
+  // component that renders again before it is on the page has none, and
+  // starts the entries again, as a loader that runs again does: a query that
+  // is loading or has fresh data asks for nothing
+  const loadRef = React.useRef<ReturnType<typeof start>>(null);
+  if (
+    loadRef.current?.key !== key ||
+    // Another `QueryClient`'s cache has none of the queries
+    loadRef.current.queryClient !== queryClient
+  ) {
+    loadRef.current = start();
   }
-  const next = start();
-  setLoad(next);
-  return next.handles;
+  return loadRef.current.handles;
 }

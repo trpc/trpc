@@ -268,6 +268,43 @@ describe('useLoadHandles', () => {
     ).toHaveLength(1);
   });
 
+  test('a page on the screen whose reader suspends to a boundary above it, with other entries, starts them once', async () => {
+    await using resource = ctx();
+    function PostPage(props: { slug: string }) {
+      const trpc = resource.useTRPC();
+      const handles = useLoadHandles(trpc, {
+        post: prefetchEntry(trpc.post.bySlug, { slug: props.slug }),
+      });
+      // No Suspense boundary of its own: React throws the render away
+      const post = useSuspenseQuery(fromHandle(trpc, handles.post));
+      return <p>{post.data.title}</p>;
+    }
+    const page = (slug: string) => (
+      <React.Suspense fallback={<p>loading</p>}>
+        <PostPage slug={slug} />
+      </React.Suspense>
+    );
+    const utils = resource.renderApp(page('hello'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post hello');
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    resource.calls.mockClear();
+
+    resource.rerenderApp(utils, page('other'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Post other');
+    });
+    await vi.waitFor(() => {
+      expect(resource.queryClient.isFetching()).toBe(0);
+    });
+    expect(resource.calls.mock.calls).toEqual([
+      ['post.bySlug', { slug: 'other' }],
+    ]);
+  });
+
   test('a query that failed is not started again by a page whose Suspense boundary is above it', async () => {
     await using resource = ctx();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
