@@ -176,6 +176,47 @@ You can set the context object's initial value for a particular operation by pro
 
 For an example use case, see [Disable batching for certain requests](/docs/client/links/splitLink#disable-batching-for-certain-requests).
 
+### Typing call options
+
+Create the client with `router: routerType<AppRouter>()` and the `context` each call takes is typed from the links. A link declares what it reads with the second type argument of `TRPCLink`. Built-in links declare theirs: [`retryLink`](./links/retryLink.md#skipping-retries-for-one-call) reads `retry`.
+
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  greeting: t.procedure.query(() => 'hello'),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import type { TRPCLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const traceLink: TRPCLink<AppRouter, { context: { traceId?: string } }> =
+  () =>
+  ({ op, next }) => {
+    console.log(op.context.traceId);
+    return next(op);
+  };
+
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
+  links: [traceLink, httpBatchLink({ url: 'http://localhost:3000' })],
+});
+
+await client.greeting.query(undefined, { context: { traceId: 'abc' } });
+// @errors: 2561
+await client.greeting.query(undefined, { context: { tracId: 'abc' } });
+```
+
+- A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any `context`. Declare `{ context: {} }` for a link that reads none.
+- A `splitLink` takes any field too, since its `condition` may read any.
+- Links also declare the operation types they can't carry. With only `httpBatchLink`, `.subscribe()` can't be called.
+- With `createTRPCClient<AppRouter>()`, calls take any `context`, as before.
+
 ## Common mistakes
 
 - **No terminating link at the end of the chain.** Calls fail with `No more links to execute - did you forget to add an ending link?`. Links listed after the terminating link never run, so put `loggerLink`, `retryLink` and your own links before it.

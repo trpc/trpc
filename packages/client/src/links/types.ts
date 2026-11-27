@@ -2,6 +2,8 @@ import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
   Maybe,
+  ProcedureType,
+  Simplify,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -116,11 +118,98 @@ export type OperationLink<
 }) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
+ * What a link declares about itself, for clients created with
+ * `createTRPCClient({ router: routerType<AppRouter>(), links })`.
+ * @see https://trpc.io/docs/client/links#typing-call-options
+ * @public
+ */
+export interface LinkDecl {
+  /**
+   * The fields the link reads from `op.context`. Calls can pass them, typed,
+   * as `.query(input, { context })`. `{}` declares that the link reads none.
+   */
+  context?: object;
+  /**
+   * The operation types the link can't carry, such as `'subscription'` for
+   * `httpBatchLink`. Their client methods can't be called.
+   */
+  unsupported?: ProcedureType;
+}
+
+/**
  * A link: a step every call goes through, such as logging or sending it
  * over HTTP. It's called once when the client is created.
+ *
+ * `TDecl` says what it reads from `op.context` and what it can't carry. A
+ * link that doesn't declare it may read any context.
  * @see https://trpc.io/docs/client/links#creating-a-custom-link
  * @public
  */
-export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime,
-) => OperationLink<TInferrable>;
+export type TRPCLink<
+  TInferrable extends InferrableClientTypes,
+  TDecl extends LinkDecl = LinkDecl,
+> = ((opts: TRPCClientRuntime) => OperationLink<TInferrable>) & {
+  /** Type-only: what the link declares. Never set. */
+  readonly '~decl'?: TDecl;
+};
+
+type UnionToIntersection<TUnion> = (
+  TUnion extends any ? (arg: TUnion) => void : never
+) extends (arg: infer TIntersection) => void
+  ? TIntersection
+  : never;
+
+type IsAny<TType> = 0 extends 1 & TType ? true : false;
+
+type inferLinkDecl<TLink> = TLink extends { readonly '~decl'?: infer $Decl }
+  ? NonNullable<$Decl>
+  : never;
+
+type inferDeclContext<TDecl> = TDecl extends unknown
+  ? // a link that declares nothing may read any context
+    LinkDecl extends TDecl
+    ? OperationContext
+    : TDecl extends { context: infer $Context }
+      ? $Context
+      : {}
+  : never;
+
+declare const noLinkReadsContext: unique symbol;
+
+/**
+ * The call options' `context` when no link reads one: passing any field is
+ * an error.
+ * @public
+ */
+export interface NoLinkReadsContext {
+  readonly [noLinkReadsContext]?: never;
+}
+
+/**
+ * The `context` calls can pass: the fields every link in `TLinks` reads,
+ * merged.
+ * @public
+ */
+export type inferLinksContext<TLinks extends readonly unknown[]> =
+  UnionToIntersection<
+    inferDeclContext<inferLinkDecl<TLinks[number]>>
+  > extends infer $Context
+    ? keyof $Context extends never
+      ? NoLinkReadsContext
+      : Simplify<$Context>
+    : never;
+
+type inferDeclUnsupported<TDecl> =
+  IsAny<TDecl> extends true
+    ? never
+    : TDecl extends { unsupported: infer $Unsupported extends ProcedureType }
+      ? $Unsupported
+      : never;
+
+/**
+ * The operation types a chain can't carry: those any link in `TLinks`
+ * declares it can't.
+ * @public
+ */
+export type inferLinksUnsupported<TLinks extends readonly unknown[]> =
+  inferDeclUnsupported<inferLinkDecl<TLinks[number]>>;

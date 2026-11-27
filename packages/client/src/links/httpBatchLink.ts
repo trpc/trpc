@@ -26,7 +26,7 @@ import type { Operation, TRPCLink } from './types';
  */
 export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: {}; unsupported: 'subscription' }> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
   const maxItems = opts.maxItems ?? Infinity;

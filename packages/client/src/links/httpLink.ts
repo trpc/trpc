@@ -82,7 +82,7 @@ const universalRequester: Requester = (opts) => {
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: {}; unsupported: 'subscription' }> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   return () => {
     return (operationOpts) => {
