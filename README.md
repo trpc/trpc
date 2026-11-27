@@ -20,9 +20,8 @@
   <a href="https://trpc.io/discord">
     <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
   </a>
-  <br />
-  <a href="https://twitter.com/trpcio">
-    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40trpcio&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
+  <a href="https://x.com/trpcio">
+    <img alt="Follow @trpcio on X" src="https://img.shields.io/badge/%40trpcio-000000?logo=x&logoColor=ffffff" />
   </a>
   <br />
   <br />
@@ -40,91 +39,40 @@
 
 ## Intro
 
-tRPC allows you to easily build & consume fully typesafe APIs without schemas or code generation.
+tRPC lets you build and consume fully typesafe APIs without schemas or code generation.
 
 ### Features
 
+- 🧙‍♂️&nbsp; Full static typesafety and autocompletion on the client, for inputs, outputs, and errors.
+- 🐎&nbsp; No code generation, runtime bloat, or build pipeline.
+- 🍃&nbsp; Zero dependencies and a tiny client-side footprint.
+- 🐻&nbsp; Easy to add to an existing project.
+- 🔋&nbsp; Adapters for Next.js, Express, Fastify, AWS Lambda, Fetch and more, plus TanStack Query integration. Not tied to React; see the [community add-ons](https://trpc.io/docs/community/awesome-trpc).
+- 🥃&nbsp; Subscriptions over SSE and WebSockets.
+- ⚡️&nbsp; Request batching: calls made at the same time are combined into one request.
 - ✅&nbsp; Well-tested and production ready.
-- 🧙‍♂️&nbsp; Full static typesafety & autocompletion on the client, for inputs, outputs, and errors.
-- 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
-- 🍃&nbsp; Light - tRPC has zero deps and a tiny client-side footprint.
-- 🐻&nbsp; Easy to add to your existing brownfield project.
-- 🔋&nbsp; Batteries included - React.js/Next.js/Express.js/Fastify adapters. _(But tRPC is not tied to React, and there are many [community adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for other libraries)_
-- 🥃&nbsp; Subscriptions support.
-- ⚡️&nbsp; Request batching - requests made at the same time can be automatically combined into one
-- 👀&nbsp; Quite a few examples in the [./examples](./examples)-folder
 
 ## Quickstart
 
-There are a few [examples](https://trpc.io/docs/example-apps) that you can use for playing out with tRPC or bootstrapping your new project. For example, if you want a Next.js app, you can use the full-stack Next.js example:
-
-**Quick start with a full-stack Next.js example:**
+Bootstrap a full-stack Next.js app from the [`next-prisma-starter`](./examples/next-prisma-starter) example:
 
 ```sh
-# yarn
-yarn create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# npm
 npx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# pnpm
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# bun
-bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
-
-# deno
-deno init --npm next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
-**👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
+Swap `npx create-next-app` for `pnpm create next-app`, `yarn create next-app` or `bunx create-next-app` if you prefer. More starters are in [`./examples`](./examples) and on the [example apps](https://trpc.io/docs/example-apps) page.
 
-## Star History
+**👉 Read the full documentation on [trpc.io](https://trpc.io/docs). 👈**
 
-<a href="https://star-history.dera.page/#trpc/trpc&type=Date"><img src="https://star-history.dera.page/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>
+## Contributing
 
-## Core Team
+Read the [Contributing Guidelines](./CONTRIBUTING.md) before opening an issue or PR; they cover the branching strategy and local setup. Questions are welcome on [Discord](https://trpc.io/discord).
 
-> Do you want to contribute? First, read the <a href="https://github.com/trpc/trpc/blob/main/CONTRIBUTING.md">Contributing Guidelines</a> before opening an issue or PR so you understand the branching strategy and local development environment. If you need any more guidance or want to ask more questions, feel free to write to us on <a href="https://trpc.io/discord">Discord</a>!
-
-### Project leads
-
-> The people who lead the API-design decisions and have the most active role in the development
-
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br />Alex / KATT</a></td>
-      <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4&s=100" width="100px;" alt=""/><br />Julius Marminge</a></td>
-      <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v=4&s=100" width="100px;" alt=""/><br />Nick Lucas</a></td>
-    </tr>
-  </tbody>
-</table>
-
-### Active contributors
-
-> People who actively help out improving the codebase by making PRs and reviewing code
-
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="https://github.com/hmatthieu"><img src="https://github.com/hmatthieu.png?v=4&s=100" width="100px;" alt=""/><br />Matthieu Hocquart</a></td>
-    </tr>
-  </tbody>
-</table>
-
-### Special shout-outs
-
-> Individuals who have made exceptional contributions to tRPC through code, documentation, community building, and other valuable efforts
-
-<table>
-  <tbody>
-    <tr>
-      <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=100" width="100px;" alt=""/><br />Theo Browne</a></td>
-      <td align="center"><a href="https://twitter.com/s4chinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br />Sachin Raja</a></td>
-    </tr>
-  </tbody>
-</table>
+<a href="https://github.com/trpc/trpc/graphs/contributors">
+  <p align="center">
+    <img width="720" src="https://contrib.rocks/image?repo=trpc/trpc" alt="A table of avatars from the project's contributors" />
+  </p>
+</a>
 
 ## Sponsors
 
@@ -181,19 +129,3 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <!-- oxfmt-ignore-end -->
 
 <!-- SPONSORS:LIST:END -->
-
-## All contributors ✨
-
-<a href="https://github.com/trpc/trpc/graphs/contributors">
-  <p align="center">
-    <img width="720" src="https://contrib.rocks/image?repo=trpc/trpc" alt="A table of avatars from the project's contributors" />
-  </p>
-</a>
-
----
-
-<a href="https://vercel.com/?utm_source=trpc&utm_campaign=oss">
-  <p align="center">
-    <img src="./www/public/img/powered-by-vercel.svg" alt="Powered by Vercel" title="Powered by Vercel">
-  </p>
-</a>
