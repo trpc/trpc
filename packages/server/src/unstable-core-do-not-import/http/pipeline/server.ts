@@ -3,7 +3,7 @@ import { isPromise } from '../../stream/jsonl';
 import { createDeferred } from '../../stream/utils/createDeferred';
 import type { Deferred } from '../../stream/utils/createDeferred';
 import type { CombinedDataTransformer } from '../../transformer';
-import { isAsyncIterable, isObject } from '../../utils';
+import { isAsyncIterable, isObject, isPlainObject } from '../../utils';
 import type {
   experimental_PipelineEvent,
   experimental_PipelinePolicy,
@@ -216,7 +216,8 @@ function writePipelinePath(opts: {
       configurable: true,
     };
     if (Array.isArray(target)) {
-      const copy = [...target];
+      // By index, as JSON reads it, whatever its iterator gives
+      const copy: unknown[] = Array.prototype.slice.call(target);
       Object.defineProperty(copy, key, replacement);
       return copy;
     }
@@ -310,6 +311,22 @@ type Read<TValue> =
 /** Thrown inside `readableData` for a part of the data that is still to come */
 class StillToCome extends Error {}
 
+/** Whether a stream would send it, or a property of it, in parts */
+const isStillToCome = (value: unknown) =>
+  isPromise(value) || isAsyncIterable(value);
+
+/**
+ * Whether a stream sends a part of `value` apart from the rest, as it finds
+ * them before the output transformer sees the data: `value` itself, or a
+ * property of it as a plain object
+ */
+function streamsInParts(value: unknown) {
+  return (
+    isStillToCome(value) ||
+    (isPlainObject(value) && Object.values(value).some(isStillToCome))
+  );
+}
+
 /**
  * A call's data as the client gets it, for the calls that read it. Not if
  * some of it is still to come, as a stream sends it: what JSON makes of that
@@ -322,13 +339,17 @@ function readableData(
   data: RunData,
 ): Read<unknown> {
   try {
+    // Before the transformer, which could write something else for it
+    if (data.kind === 'value' && streamsInParts(data.value)) {
+      throw new StillToCome();
+    }
     const json =
       data.kind === 'json'
         ? data.json
         : JSON.stringify(
             transformer.serialize(data.value),
             (_key, value: unknown) => {
-              if (isPromise(value) || isAsyncIterable(value)) {
+              if (isStillToCome(value)) {
                 throw new StillToCome();
               }
               return value;

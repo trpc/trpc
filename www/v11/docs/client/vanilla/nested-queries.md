@@ -61,9 +61,9 @@ export const appRouter = t.router({
       ),
   }),
   tag: t.router({
-    byIds: t.procedure
-      .input(z.object({ ids: z.array(z.string()) }))
-      .query(({ input }) => input.ids.map((id) => ({ id, name: id }))),
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => ({ id: input.id, name: input.id })),
   }),
 });
 export type AppRouter = typeof appRouter;
@@ -265,9 +265,9 @@ const res = experimental_load(client, {
       moreFromTeam: experimental_query(client.post.list, {
         teamId: experimental_dataOf(author).teamId,
       }),
-      // A list in the item: a list per post
+      // A list in the item: a list per post, in the same request
       tags: experimental_perItem(post.tags, (tag) =>
-        experimental_query(client.tag.byIds, { ids: [tag.id] }),
+        experimental_query(client.tag.byId, { id: tag.id }),
       ),
     };
   }),

@@ -1195,11 +1195,13 @@ export function experimental_pipelining(): experimental_Pipelining {
               // have read all of that data yet, so it waits a moment for it,
               // and no more: a slow call it reads doesn't hold its result
               const known = reads.perItem ? null : await knownSoon(reads);
-              if (known) {
-                fillOperation(op, known.input);
-              }
+              // An attempt let go of while it waited writes nothing to the
+              // operation, which a later attempt can have
               if (done || own.attached !== call) {
                 return;
+              }
+              if (known) {
+                fillOperation(op, known.input);
               }
               if (!settled.outcome.ok) {
                 fail(TRPCClientError.from(settled.outcome.error as Error));

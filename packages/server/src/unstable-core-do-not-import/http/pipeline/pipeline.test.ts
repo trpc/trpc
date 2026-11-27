@@ -1067,6 +1067,57 @@ describe('what a call reads', () => {
     });
   });
 
+  test('an array in an input keeps its other items, whatever its iterator gives', async () => {
+    const seen: string[] = [];
+    // It reads `ids` as an array whose iterator gives nothing: only its
+    // indexes have its items, as JSON reads them
+    const noIterator: CombinedDataTransformer = {
+      input: {
+        serialize: (it: unknown) => it,
+        deserialize: (it: unknown) =>
+          isObject(it) && Array.isArray(it['ids'])
+            ? {
+                ...it,
+                ids: Object.defineProperty([...it['ids']], Symbol.iterator, {
+                  value: function* () {
+                    // Nothing
+                  },
+                }),
+              }
+            : it,
+      },
+      output: transformers.none.output,
+    };
+    await using server = serve({
+      ...defaults,
+      transformer: noIterator,
+      fns: {
+        post: () => ({ authorId: 'ada' }),
+        echo: (input) => {
+          seen.push(JSON.stringify(input));
+          return null;
+        },
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      { ids: [null, 'keep'] },
+      reads(null, { to: ['ids', '0'], from: post, path: ['authorId'] }),
+    );
+
+    await send({
+      ...defaults,
+      transformer: noIterator,
+      url: server.url,
+      method: 'POST',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(seen).toEqual(['{"ids":["ada","keep"]}']);
+  });
+
   test('with a transformer that carries `undefined`, what is not there is `undefined`', async () => {
     const seen: unknown[] = [];
     await using server = serve({
@@ -3821,6 +3872,57 @@ describe('data that is still to come', () => {
 
     const res = await send({
       ...defaults,
+      url: server.url,
+      method: 'GET',
+      sent: [post],
+      calls: [reader],
+    });
+
+    expect(res.of(reader)).toEqual({
+      error: {
+        code: 'UNSUPPORTED_MEDIA_TYPE',
+        message: 'Cannot read the data of a stream-like response',
+      },
+    });
+    expect(echo).not.toHaveBeenCalled();
+  });
+
+  test('can not be read with an output transformer that writes something else for a promise: a stream sends the promise apart from what the transformer sees', async () => {
+    const echo = vi.fn(() => null);
+    // It writes `'pending'` for a promise, as a stream never lets it see one
+    const placeholders: CombinedDataTransformer = {
+      input: transformers.none.input,
+      output: {
+        serialize: (it: unknown) =>
+          isObject(it)
+            ? Object.fromEntries(
+                Object.entries(it).map(([key, value]) => [
+                  key,
+                  value instanceof Promise ? 'pending' : value,
+                ]),
+              )
+            : it,
+        deserialize: (it: unknown) => it,
+      },
+    };
+    await using server = serve({
+      ...defaults,
+      transformer: placeholders,
+      fns: {
+        post: () => ({ id: 'ada', later: Promise.resolve('soon') }),
+        echo,
+      },
+    });
+    const post = sent('post', undefined);
+    const reader = call(
+      'echo',
+      {},
+      reads(null, { to: ['later'], from: post, path: ['later'] }),
+    );
+
+    const res = await send({
+      ...defaults,
+      transformer: placeholders,
       url: server.url,
       method: 'GET',
       sent: [post],

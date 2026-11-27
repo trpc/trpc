@@ -943,6 +943,48 @@ describe.each([
     },
   );
 
+  test.runIf(scenario.link === httpBatchStreamLink)(
+    'a streamed answer with `null` for a call fails that call, as `httpBatchLink` does: it is no envelope, and the client had it',
+    async () => {
+      await using ctx = setup({
+        allowPipelining: true,
+        pipelining: true,
+        // The head of the stream with `null` for the second call
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const [head = '', ...rest] = (await res.text()).split('\n');
+          const line = JSON.parse(head) as Record<string, unknown>;
+          // superjson writes it under `json`
+          const values = (
+            scenario.transformer === 'superjson' ? line['json'] : line
+          ) as Record<string, unknown>;
+          values['1'] = [[null]];
+          return new Response([JSON.stringify(line), ...rest].join('\n'), {
+            status: res.status,
+            headers: res.headers,
+          });
+        },
+      });
+      const post = createOperationPipeline();
+      const postResult = ctx.untyped.query(
+        'post',
+        { slug: 'hello' },
+        { context: pipelineContext(post) },
+      );
+      const author = pipeCall({
+        path: 'author',
+        input: { id: undefined },
+        reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
+      });
+      assert(author);
+      expect(await postResult).toMatchObject({ slug: 'hello' });
+      await expect(author.result).rejects.toThrow(
+        'The server sent no result for a pipelined call',
+      );
+      expect(author.status).toBe('sent');
+    },
+  );
+
   test.runIf(scenario.link === httpBatchLink)(
     'an answer with `null` for an operation fails that operation alone: its calls keep their results, and nothing rejects unhandled',
     async () => {
@@ -1522,6 +1564,8 @@ describe('httpBatchStreamLink, when an operation fails', () => {
         ],
       }),
     });
+    // Let through before the server goes, also when an assertion fails
+    using _released = makeResource({}, () => release.resolve());
     const post = createOperationPipeline();
     const postResult = getUntypedClient(ctx.client).query('post', undefined, {
       context: pipelineContext(post),
@@ -4215,5 +4259,57 @@ describe('a policy of `experimental_allowPipelining`', () => {
       error: { message: 'Refused by `experimental_allowPipelining`: long' },
       pipeline: 'not-run',
     });
+  });
+});
+
+test('an `onError` that throws for a run of a response that does not stream leaves no rejection unhandled, while an earlier run is pending', async () => {
+  const t = initTRPC.create();
+  const slow = createDeferred<void>();
+  const router = t.router({
+    list: t.procedure.query(() => ({ items: ['slow', 'bad'] })),
+    echo: t.procedure.input(z.string()).query(async (opts) => {
+      if (opts.input === 'slow') {
+        await slow.promise;
+        return opts.input;
+      }
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }),
+  });
+  const unhandled = vi.fn();
+  process.on('unhandledRejection', unhandled);
+  using _off = makeResource({}, () => {
+    slow.resolve();
+    process.off('unhandledRejection', unhandled);
+  });
+  const reported = vi.fn(() => {
+    throw new Error('onError failed');
+  });
+
+  const response = fetchRequestHandler({
+    endpoint: '/trpc',
+    req: pipelinedGet({
+      paths: 'list,echo',
+      pipe: {
+        1: {
+          each: { from: 0, path: ['items'] },
+          reads: [{ to: [], path: [] }],
+        },
+      },
+    }),
+    router,
+    experimental_allowPipelining: true,
+    onError: reported,
+  });
+  // The run of `bad` has failed, and `slow` is still pending
+  await vi.waitFor(() => expect(reported).toHaveBeenCalled());
+  // A turn of the event loop, for Node to report a rejection nothing handles
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  slow.resolve();
+  const json = (await (await response).json()) as any[];
+
+  expect(unhandled).not.toHaveBeenCalled();
+  expect(json[1].items[0]).toEqual({ result: { data: 'slow' } });
+  expect(json[1].items[1]).toMatchObject({
+    error: { data: { code: 'NOT_FOUND' } },
   });
 });
