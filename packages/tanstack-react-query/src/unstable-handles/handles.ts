@@ -250,7 +250,21 @@ export function useLoadHandles<
       ]),
     ),
   ]);
-  const start = () => {
+  // Kept while the component is on the page, also through a render React
+  // throws away, as when a reader suspends to a boundary above the page. A
+  // component that renders again before it is on the page has none, and
+  // starts the entries again, as a loader that runs again does: a query that
+  // is loading or has fresh data asks for nothing
+  const loadRef = React.useRef<{
+    key: string;
+    queryClient: QueryClient;
+    handles: TRPCLoadedHandles<TEntries>[0];
+  }>(null);
+  if (
+    loadRef.current?.key !== key ||
+    // Another `QueryClient`'s cache has none of the queries
+    loadRef.current.queryClient !== queryClient
+  ) {
     Promise.all(
       states
         // Rendering doesn't start a query that failed again: its reader
@@ -271,24 +285,11 @@ export function useLoadHandles<
         toHandle(state.options, state.type),
       ]),
     );
-    return {
+    loadRef.current = {
       key,
       queryClient,
       handles: handles as TRPCLoadedHandles<TEntries>[0],
     };
-  };
-  // Kept while the component is on the page, also through a render React
-  // throws away, as when a reader suspends to a boundary above the page. A
-  // component that renders again before it is on the page has none, and
-  // starts the entries again, as a loader that runs again does: a query that
-  // is loading or has fresh data asks for nothing
-  const loadRef = React.useRef<ReturnType<typeof start>>(null);
-  if (
-    loadRef.current?.key !== key ||
-    // Another `QueryClient`'s cache has none of the queries
-    loadRef.current.queryClient !== queryClient
-  ) {
-    loadRef.current = start();
   }
   return loadRef.current.handles;
 }
