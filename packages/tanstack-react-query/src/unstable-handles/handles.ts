@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import { hashKey } from '@tanstack/react-query';
 import * as React from 'react';
 import type {
@@ -112,7 +113,7 @@ export function loadHandles<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
     entries,
     settle: false,
-  }) as Promise<any>;
+  }) as Promise<TRPCLoadedHandles<TEntries>>;
 }
 
 /**
@@ -147,8 +148,11 @@ export function loadHandlesSettled<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
     entries,
     settle: true,
-  }) as Promise<any>;
+  }) as Promise<TRPCSettledHandles<TEntries>>;
 }
+
+/** What `QueryClient.defaultQueryOptions()` takes: the options proxy built them */
+type QueryOptionsToDefault = Parameters<QueryClient['defaultQueryOptions']>[0];
 
 /** The options of an entry that say how its query starts */
 const startOptions = [
@@ -234,7 +238,9 @@ export function useLoadHandles<
           state.type,
           // As the cache hashes it, with the `queryKeyHashFn` it is set up
           // with: the keys it tells apart are other queries
-          queryClient.defaultQueryOptions(state.options).queryHash,
+          queryClient.defaultQueryOptions(
+            state.options as unknown as QueryOptionsToDefault,
+          ).queryHash,
           // Not all of the options: `meta` can hold what has no JSON, or what
           // is new on every render
           startOptions.map((option) => describeOption(state.options[option])),

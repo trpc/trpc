@@ -3,11 +3,12 @@ import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
 } from '../internals/createOptionsProxy';
-import type { ResolverDef, TRPCQueryKey } from '../internals/types';
+import type { AnyTRPCQueryKey, ResolverDef } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type {
   AnyTRPCEntry,
   EntryArgs,
+  EntryQueryOptions,
   HandleType,
   TRPCEntryKind,
   TRPCInfiniteEntryOptions,
@@ -20,7 +21,7 @@ const entryState = Symbol('trpc.handleEntry');
 export interface EntryState {
   kind: TRPCEntryKind;
   type: HandleType;
-  options: any;
+  options: EntryQueryOptions;
   /** The `QueryClient` of the proxy that built the entry */
   queryClient: QueryClient;
 }
@@ -40,7 +41,8 @@ export function readEntry(key: string, entry: AnyTRPCEntry): EntryState {
 }
 
 interface ProxyContext {
-  proxy: any;
+  /** The options proxy, or one of its routers or procedures */
+  proxy: unknown;
   path: string[];
   prefix: string | undefined;
 }
@@ -49,7 +51,7 @@ export function readProxy(proxy: unknown, fn: string): ProxyContext {
   const queryKey = (proxy as { queryKey?: unknown } | null)?.queryKey;
   if (Array.isArray(queryKey)) {
     throw new Error(
-      `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got a handle for \`${readQueryKey(queryKey as TRPCQueryKey<any>).path.join('.')}\``,
+      `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got a handle for \`${readQueryKey(queryKey as AnyTRPCQueryKey).path.join('.')}\``,
     );
   }
   if (typeof queryKey !== 'function') {
@@ -66,16 +68,21 @@ export function readProxy(proxy: unknown, fn: string): ProxyContext {
 }
 
 export function queryClientOf(ctx: ProxyContext): QueryClient {
-  return ctx.proxy['~queryClient']();
+  return (ctx.proxy as { '~queryClient': () => QueryClient })['~queryClient']();
 }
 
+/** The options builder of a procedure of the options proxy */
 export function optionsOf(
-  procedure: any,
+  procedure: unknown,
   type: HandleType,
-): (input: unknown, opts: unknown) => any {
+): (input: unknown, opts: unknown) => EntryQueryOptions {
+  const builders = procedure as Record<
+    'queryOptions' | 'infiniteQueryOptions',
+    (input: unknown, opts: unknown) => EntryQueryOptions
+  >;
   return type === 'infinite'
-    ? procedure.infiniteQueryOptions
-    : procedure.queryOptions;
+    ? builders.infiniteQueryOptions
+    : builders.queryOptions;
 }
 
 export function readRoot(trpc: unknown, fn: string) {
@@ -189,7 +196,12 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
+): TRPCInfiniteQueryEntry<TDef, 'prefetch'>;
+export function prefetchInfiniteEntry(
+  procedure: unknown,
+  input: unknown,
+  opts?: unknown,
+): unknown {
   return entry({
     fn: 'prefetchInfiniteEntry',
     type: 'infinite',
@@ -197,7 +209,7 @@ export function prefetchInfiniteEntry<TDef extends ResolverDef>(
     procedure,
     input,
     opts,
-  }) as any;
+  });
 }
 
 /**
@@ -208,7 +220,12 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'fetch'> {
+): TRPCInfiniteQueryEntry<TDef, 'fetch'>;
+export function fetchInfiniteEntry(
+  procedure: unknown,
+  input: unknown,
+  opts?: unknown,
+): unknown {
   return entry({
     fn: 'fetchInfiniteEntry',
     type: 'infinite',
@@ -216,7 +233,7 @@ export function fetchInfiniteEntry<TDef extends ResolverDef>(
     procedure,
     input,
     opts,
-  }) as any;
+  });
 }
 
 /**
@@ -227,7 +244,12 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
   procedure: DecorateInfiniteQueryProcedure<TDef>,
   input: TDef['input'],
   opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'ensure'> {
+): TRPCInfiniteQueryEntry<TDef, 'ensure'>;
+export function ensureInfiniteEntry(
+  procedure: unknown,
+  input: unknown,
+  opts?: unknown,
+): unknown {
   return entry({
     fn: 'ensureInfiniteEntry',
     type: 'infinite',
@@ -235,5 +257,5 @@ export function ensureInfiniteEntry<TDef extends ResolverDef>(
     procedure,
     input,
     opts,
-  }) as any;
+  });
 }

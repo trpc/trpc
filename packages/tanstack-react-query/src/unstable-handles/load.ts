@@ -1,4 +1,8 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type {
+  FetchInfiniteQueryOptions,
+  FetchQueryOptions,
+  QueryClient,
+} from '@tanstack/react-query';
 import { isCancelledError, skipToken } from '@tanstack/react-query';
 import { readQueryKey } from '../internals/utils';
 import type { EntryState } from './entry';
@@ -8,20 +12,23 @@ import { toHandle } from './handle';
 import type { TRPCLoadEntries } from './types';
 
 export function startEntry(queryClient: QueryClient, state: EntryState) {
-  const { options } = state;
+  // The options proxy built them for the query's type, as the `QueryClient`
+  // methods for that type take them
   if (state.type === 'infinite') {
+    const infinite = state.options as unknown as FetchInfiniteQueryOptions;
     switch (state.kind) {
       case 'prefetch':
-        return queryClient.prefetchInfiniteQuery(options);
+        return queryClient.prefetchInfiniteQuery(infinite);
       case 'ensure':
         return queryClient.ensureInfiniteQueryData({
-          ...options,
+          ...infinite,
           revalidateIfStale: true,
         });
       case 'fetch':
-        return queryClient.fetchInfiniteQuery(options);
+        return queryClient.fetchInfiniteQuery(infinite);
     }
   }
+  const options = state.options as unknown as FetchQueryOptions;
   switch (state.kind) {
     case 'prefetch':
       return queryClient.prefetchQuery(options);
@@ -112,13 +119,13 @@ export async function startEntries(opts: {
   );
 
   // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
-  const handles = Object.fromEntries(
+  const handles: Record<string, unknown> = Object.fromEntries(
     loads.map((load) => [
       load.key,
       toHandle(load.state.options, load.state.type),
     ]),
   );
-  const data = Object.fromEntries(
+  const data: Record<string, unknown> = Object.fromEntries(
     waited.map((load, index) => [load.key, results[index]]),
   );
   return [handles, data] as const;

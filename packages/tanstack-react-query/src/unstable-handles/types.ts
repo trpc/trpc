@@ -8,6 +8,7 @@ import type {
   DecorateQueryProcedure,
 } from '../internals/createOptionsProxy';
 import type {
+  AnyTRPCQueryKey,
   ExtractCursorType,
   ResolverDef,
   TRPCInfiniteData,
@@ -73,7 +74,9 @@ export interface TRPCInfiniteQueryHandle<
 }
 
 /** Any query or infinite query handle. */
-export type AnyTRPCHandle = TRPCQueryHandle<any> | TRPCInfiniteQueryHandle<any>;
+export type AnyTRPCHandle =
+  | TRPCQueryHandle<ResolverDef>
+  | TRPCInfiniteQueryHandle<ResolverDef>;
 
 /**
  * How `loadHandles` starts an entry's query, named after the
@@ -108,8 +111,8 @@ export interface TRPCInfiniteQueryEntry<
 
 /** Any query or infinite query entry. */
 export type AnyTRPCEntry =
-  | TRPCQueryEntry<any, any>
-  | TRPCInfiniteQueryEntry<any, any>;
+  | TRPCQueryEntry<ResolverDef, TRPCEntryKind>
+  | TRPCInfiniteQueryEntry<ResolverDef, TRPCEntryKind>;
 
 /**
  * What `loadHandles()` takes per key: an entry, or TanStack Query's
@@ -119,18 +122,18 @@ export type AnyTRPCEntry =
 export type TRPCLoadEntries = Record<string, AnyTRPCEntry | typeof skipToken>;
 
 type HandleOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any>
+  TEntry extends TRPCQueryEntry<infer TDef, TRPCEntryKind>
     ? TRPCQueryHandle<TDef>
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
+    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, TRPCEntryKind>
       ? TRPCInfiniteQueryHandle<TDef>
       : TEntry extends typeof skipToken
         ? undefined
         : never;
 
 type DataOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any>
+  TEntry extends TRPCQueryEntry<infer TDef, TRPCEntryKind>
     ? TDef['output']
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
+    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, TRPCEntryKind>
       ? TRPCInfiniteData<TDef['input'], TDef['output']>
       : never;
 
@@ -246,7 +249,11 @@ export type EntryArgs<TDef extends ResolverDef> =
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
  */
-export type inferQueryHandle<TProcedure extends DecorateQueryProcedure<any>> =
+export type inferQueryHandle<
+  // Not `ResolverDef`: a procedure's options take its own input, so another
+  // procedure's aren't assignable to them
+  TProcedure extends DecorateQueryProcedure<any>,
+> =
   TProcedure extends DecorateQueryProcedure<infer TDef>
     ? TRPCQueryHandle<TDef>
     : never;
@@ -263,3 +270,16 @@ export type inferInfiniteQueryHandle<
     : never;
 
 export type HandleType = 'query' | 'infinite';
+
+/**
+ * The options the options proxy builds for an entry, or for reading a handle.
+ * The proxy has no types here, so neither have they, but for what is read
+ */
+export interface EntryQueryOptions {
+  queryKey: AnyTRPCQueryKey;
+  queryFn?: unknown;
+  enabled?: unknown;
+  /** The first page's cursor, of an infinite query */
+  initialPageParam?: unknown;
+  [option: string]: unknown;
+}
