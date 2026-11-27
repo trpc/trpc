@@ -84,7 +84,7 @@ catalog:
   devalue: ^6.0.3
   valibot: ^1.5.0
   fastify: ^5.12.6
-  '@hey-api/openapi-ts': 0.0.0-next-20260930190945
+  '@hey-api/openapi-ts': 0.97.3
   '@fastify/websocket': ^11.3.7
   fastify-plugin: ^6.0.1
   next: ^16.4.5
