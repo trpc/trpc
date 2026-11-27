@@ -1,4 +1,8 @@
-import { RedirectType } from 'next/navigation';
+import {
+  notFound,
+  RedirectType,
+  redirect as nextRedirect,
+} from 'next/navigation';
 import { z } from 'zod';
 import { experimental_trpcMiddleware, initTRPC } from '../@trpc/server';
 import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
@@ -182,6 +186,98 @@ test('onError is called and a TRPCError is thrown when form data cannot be norma
     type: 'mutation',
     error: { code: 'INTERNAL_SERVER_ERROR' },
   });
+});
+
+test('onError is called and a TRPCError is thrown when createContext throws', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+  const cause = new Error('session lookup failed');
+
+  const proc = t.procedure
+    .experimental_caller(
+      nextAppDirCaller({
+        onError,
+        createContext: () => {
+          throw cause;
+        },
+      }),
+    )
+    .mutation(() => 'ok');
+
+  await expect((proc as any)({})).rejects.toMatchObject({
+    name: 'TRPCError',
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Failed to create context',
+    cause,
+  });
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0]).toMatchObject({
+    path: '',
+    type: 'mutation',
+    ctx: undefined,
+    input: undefined,
+    error: {
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to create context',
+    },
+  });
+});
+
+test('redirect() in createContext reaches Next.js', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+  // the error `redirect()` throws; Next.js redirects on its digest
+  let nextError: unknown;
+
+  const proc = t.procedure
+    .experimental_caller(
+      nextAppDirCaller({
+        onError,
+        createContext: () => {
+          try {
+            nextRedirect('/login');
+          } catch (cause) {
+            nextError = cause;
+            throw cause;
+          }
+        },
+      }),
+    )
+    .mutation(() => 'ok');
+
+  await expect((proc as any)({})).rejects.toBe(nextError);
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0].error.cause).toBe(nextError);
+});
+
+test('notFound() in createContext reaches Next.js', async () => {
+  const onError = vi.fn();
+  const t = initTRPC.create();
+  // the error `notFound()` throws; Next.js renders the not-found page on it
+  let nextError: unknown;
+
+  const proc = t.procedure
+    .experimental_caller(
+      nextAppDirCaller({
+        onError,
+        createContext: () => {
+          try {
+            notFound();
+          } catch (cause) {
+            nextError = cause;
+            throw cause;
+          }
+        },
+      }),
+    )
+    .query(() => 'ok');
+
+  await expect((proc as any)()).rejects.toBe(nextError);
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls[0]![0].error.cause).toBe(nextError);
 });
 
 test('form data cannot add properties to String.prototype', async () => {

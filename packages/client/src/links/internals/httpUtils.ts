@@ -137,9 +137,14 @@ export const getUrl: GetUrl = (opts) => {
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query' || opts.type === 'subscription') {
+  // a POST-overridden query sends its input in the body, so don't serialize
+  // it here: the requester may send it as is, e.g. FormData
+  if (
+    (opts.type === 'query' || opts.type === 'subscription') &&
+    opts.methodOverride !== 'POST'
+  ) {
     const input = getInput(opts);
-    if (input !== undefined && opts.methodOverride !== 'POST') {
+    if (input !== undefined) {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
   }
