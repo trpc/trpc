@@ -2,7 +2,7 @@
   "name": "@trpc/server",
   "type": "module",
   "sideEffects": false,
-  "version": "11.31.7",
+  "version": "11.31.8",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
