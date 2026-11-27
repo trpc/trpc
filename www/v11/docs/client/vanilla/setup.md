@@ -68,9 +68,7 @@ By using `import type` you ensure that the reference will be stripped at compile
 
 Create a tRPC client with the `createTRPCClient` method. Pass your router's type as `router: routerType<AppRouter>()`, and add a `links` array with a [terminating link](../links.md#the-terminating-link) pointing at your API. `routerType` does nothing at runtime, so no server code reaches the client. To learn more about tRPC links, [click here](../links.md).
 
-:::note
-`createTRPCClient<AppRouter>({ links })` still works but is deprecated. With `router:`, the client also types each call's `context` from what the links read. See [Typing call options](../links.md#typing-call-options).
-:::
+With `router:`, the client also types each call's `context` from what its links read. See [Typing call options](../links.md#typing-call-options).
 
 ```ts twoslash title='client.ts'
 // @filename: server.ts

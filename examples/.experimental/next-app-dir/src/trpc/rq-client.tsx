@@ -14,7 +14,9 @@ import { useState } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 import { createQueryClient, getUrl, transformer } from './shared';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {

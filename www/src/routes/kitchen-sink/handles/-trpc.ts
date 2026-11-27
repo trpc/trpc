@@ -17,7 +17,9 @@ import { appRouter, type AppRouter } from './-server/router.ts';
 
 export const endpoint = '/kitchen-sink/handles/api';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 const makeQueryClient = () =>

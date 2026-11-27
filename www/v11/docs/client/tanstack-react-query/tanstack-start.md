@@ -95,15 +95,16 @@ export function createQueryClient() {
 }
 
 // @filename: lib/trpc.ts
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink, routerType } from '@trpc/client';
 import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import type { AppRouter } from '~/server/routers/_app';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 export const makeTRPCClient = () =>
-  createTRPCClient<AppRouter>({
+  createTRPCClient({
+    router: routerType<AppRouter>(),
     links: [httpBatchStreamLink({ url: '/api/trpc', transformer: superjson })],
   });
 
@@ -132,7 +133,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy({
     client: trpcClient,
     queryClient,
   });
@@ -237,13 +238,14 @@ import {
   httpBatchStreamLink,
   localLink,
   type TRPCLink,
+  routerType,
 } from '@trpc/client';
 import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import { createContext } from '~/server/context';
 import { appRouter, type AppRouter } from '~/server/routers/_app';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 const getLinks = createIsomorphicFn()
@@ -259,7 +261,7 @@ const getLinks = createIsomorphicFn()
   ]);
 
 export const makeTRPCClient = () =>
-  createTRPCClient<AppRouter>({ links: getLinks() });
+  createTRPCClient({ router: routerType<AppRouter>(), links: getLinks() });
 ```
 
 The browser's link calls `/api/trpc`. Serve it from a [server route](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes) with the [fetch adapter](/docs/server/adapters/fetch):
@@ -345,7 +347,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy({
     client: trpcClient,
     queryClient,
   });

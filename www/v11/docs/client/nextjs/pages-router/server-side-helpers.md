@@ -153,9 +153,10 @@ import { QueryClient } from '@tanstack/react-query';
 export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: pages/posts/[id].tsx
 // ---cut---

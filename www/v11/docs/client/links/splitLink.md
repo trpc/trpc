@@ -42,7 +42,6 @@ import {
   httpLink,
   routerType,
   splitLink,
-  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 

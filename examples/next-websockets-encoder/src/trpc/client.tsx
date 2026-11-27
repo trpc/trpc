@@ -21,7 +21,9 @@ import { makeQueryClient } from './query-client';
 const WS_URL = 'ws://localhost:3001';
 const APP_URL = 'http://localhost:3000';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 let browserQueryClient: QueryClient | undefined;

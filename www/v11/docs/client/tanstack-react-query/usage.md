@@ -23,9 +23,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server/router';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.tsx
 // ---cut---
@@ -60,9 +61,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.tsx
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -115,9 +117,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -151,9 +154,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -195,9 +199,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useQuery, skipToken } from '@tanstack/react-query';
@@ -251,9 +256,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.tsx
 // ---cut---
@@ -285,9 +291,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -356,9 +363,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -382,9 +390,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -406,9 +415,10 @@ const appRouter = t.router({ someQuery: t.procedure.query(() => 'result') });
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -437,9 +447,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -468,9 +479,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useQueryClient } from '@tanstack/react-query';
@@ -511,9 +523,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -547,9 +560,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -585,9 +599,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -624,9 +639,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useQueryClient } from '@tanstack/react-query';
@@ -667,9 +683,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -703,9 +720,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -739,9 +757,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.tsx
 import { useTRPC } from './trpc';
@@ -811,10 +830,11 @@ export type AuthRouter = typeof authRouter;
 export type BillingRouter = typeof billingRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AuthRouter, BillingRouter } from './server';
-const auth = createTRPCContext<AuthRouter>();
-const billing = createTRPCContext<BillingRouter>();
+const auth = createTRPCContext({ router: routerType<AuthRouter>() });
+const billing = createTRPCContext({ router: routerType<BillingRouter>() });
 export const useTRPCAuth = auth.useTRPC;
 export const useTRPCBilling = billing.useTRPC;
 
@@ -845,26 +865,28 @@ export type AccountRouter = typeof accountRouter;
 
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, routerType } from '@trpc/client';
 import type { BillingRouter, AccountRouter } from '../server';
 // ---cut---
 // [...]
 
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext({ router: routerType<BillingRouter>(), keyPrefix: true });
 export const BillingProvider = billing.TRPCProvider;
 export const useBilling = billing.useTRPC;
 export const createBillingClient = () =>
-  createTRPCClient<BillingRouter>({
+  createTRPCClient({
+    router: routerType<BillingRouter>(),
     links: [
       /* ... */
     ],
   });
 
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext({ router: routerType<AccountRouter>(), keyPrefix: true });
 export const AccountProvider = account.TRPCProvider;
 export const useAccount = account.useTRPC;
 export const createAccountClient = () =>
-  createTRPCClient<AccountRouter>({
+  createTRPCClient({
+    router: routerType<AccountRouter>(),
     links: [
       /* ... */
     ],
@@ -883,14 +905,14 @@ export type AccountRouter = typeof accountRouter;
 
 // @filename: utils/trpc.ts
 import { createTRPCContext } from '@trpc/tanstack-react-query';
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, routerType } from '@trpc/client';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext({ router: routerType<BillingRouter>(), keyPrefix: true });
 export const BillingProvider = billing.TRPCProvider;
-export const createBillingClient = () => createTRPCClient<BillingRouter>({ links: [] });
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+export const createBillingClient = () => createTRPCClient({ router: routerType<BillingRouter>(), links: [] });
+const account = createTRPCContext({ router: routerType<AccountRouter>(), keyPrefix: true });
 export const AccountProvider = account.TRPCProvider;
-export const createAccountClient = () => createTRPCClient<AccountRouter>({ links: [] });
+export const createAccountClient = () => createTRPCClient({ router: routerType<AccountRouter>(), links: [] });
 
 // @filename: App.tsx
 // ---cut---
@@ -941,11 +963,12 @@ export type BillingRouter = typeof billingRouter;
 export type AccountRouter = typeof accountRouter;
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { BillingRouter, AccountRouter } from '../server';
-const billing = createTRPCContext<BillingRouter, { keyPrefix: true }>();
+const billing = createTRPCContext({ router: routerType<BillingRouter>(), keyPrefix: true });
 export const useBilling = billing.useTRPC;
-const account = createTRPCContext<AccountRouter, { keyPrefix: true }>();
+const account = createTRPCContext({ router: routerType<AccountRouter>(), keyPrefix: true });
 export const useAccount = account.useTRPC;
 
 // @filename: components/MyComponent.tsx
@@ -1021,9 +1044,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.ts
 import { useTRPC } from './trpc';
@@ -1053,9 +1077,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server/router';
-export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: component.tsx
 // ---cut---
@@ -1088,9 +1113,9 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
-import { createTRPCClient } from '@trpc/client';
+import { createTRPCClient, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-export const client = createTRPCClient<AppRouter>({ links: [] });
+export const client = createTRPCClient({ router: routerType<AppRouter>(), links: [] });
 
 // @filename: example.ts
 // ---cut---

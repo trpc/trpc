@@ -16,7 +16,7 @@ const trpcClient = createTRPCClient({
   links: [httpBatchLink({ url: 'http://localhost:2022' })],
 });
 
-export const trpc = createTRPCOptionsProxy<AppRouter>({
+export const trpc = createTRPCOptionsProxy({
   client: trpcClient,
   queryClient,
 });

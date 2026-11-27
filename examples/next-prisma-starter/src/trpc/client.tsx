@@ -23,7 +23,9 @@ import { makeQueryClient } from './query-client';
  * A provider and a strongly-typed `useTRPC()` hook from your `AppRouter` type signature
  * @see https://trpc.io/docs/v11/client/nextjs/app-router-setup#5-create-a-trpc-client-for-client-components
  */
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 /**
  * Types the query handles that pages pass to client components

@@ -218,7 +218,6 @@ await client.greeting.query(undefined, { context: { traceId: 123 } });
 - Declared fields are type-checked, and always optional.
 - A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any `context`. Declare `{ context: {} }` for a link that reads none. When every link reads none, passing a field is an error.
 - Links that hand the operation to your code, such as the HTTP links' `headers` or `retryLink`'s `retry`, declare only the fields added to `OperationContext`.
-- With the deprecated `createTRPCClient<AppRouter>()` form, calls take any `context`, as before.
 
 To pass a field that such a callback reads, add it to `OperationContext`:
 

@@ -17,7 +17,9 @@ import { useState } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 import { makeQueryClient } from './query-client';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 let browserQueryClient: QueryClient | undefined;
 function getQueryClient() {

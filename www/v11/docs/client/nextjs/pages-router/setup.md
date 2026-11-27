@@ -213,10 +213,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 ```
 
 ### 6. Configure `_app.tsx`
@@ -236,9 +237,10 @@ import { QueryClient } from '@tanstack/react-query';
 export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: pages/_app.tsx
 // ---cut---
@@ -298,9 +300,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: pages/index.tsx
 // ---cut---
@@ -357,7 +360,7 @@ In the `_app` from [step 6](#6-configure-_apptsx), change three things:
 
 | `@trpc/next`                                    | `@trpc/tanstack-react-query`                                                                                                           |
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `createTRPCNext<AppRouter>({ config })`         | `createTRPCContext<AppRouter>()`, plus a `createTRPCClient` with your links in `_app`                                                  |
+| `createTRPCNext<AppRouter>({ config })`         | `createTRPCContext({ router: routerType<AppRouter>() })`, plus a `createTRPCClient` with your links in `_app`                           |
 | `trpc.withTRPC(MyApp)`                          | `QueryClientProvider`, `TRPCProvider` and `HydrationBoundary` in `_app`, as in [step 6](#6-configure-_apptsx)                          |
 | `trpc.post.byId.useQuery(input)`                | `useQuery(trpc.post.byId.queryOptions(input))`, with `trpc` from `useTRPC()`                                                           |
 | `trpc.useUtils()`                               | `useQueryClient()` with `trpc.post.byId.queryKey()` or `queryFilter()`                                                                 |
