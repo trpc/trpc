@@ -67,7 +67,7 @@ In the example above, we add the `retryLink` before the `httpBatchLink`. The `re
 
 ## Skipping retries for one call
 
-Pass `context: { retry: false }` to skip retrying a call, whatever `retry` returns. With `router: routerType<AppRouter>()`, the field is typed.
+Pass `retry: false` to skip retrying a call, whatever the link's `retry` returns. It goes at the top level of the call's options on a client created with `router: routerType<AppRouter>()`; with `createTRPCClient<AppRouter>()`, pass `context: { retry: false }`.
 
 ```ts twoslash
 // @filename: server.ts
@@ -96,7 +96,7 @@ const client = createTRPCClient({
   ],
 });
 
-await client.createPost.mutate(undefined, { context: { retry: false } });
+await client.createPost.mutate(undefined, { retry: false });
 ```
 
 ## Options

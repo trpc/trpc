@@ -14,7 +14,7 @@ import type { Operation, OperationContext, TRPCLink } from './types';
 export interface RetryLinkContext {
   /**
    * `false` skips retrying this call, whatever `retry` returns.
-   * @example client.post.create.mutate(input, { context: { retry: false } })
+   * @example client.post.create.mutate(input, { retry: false })
    */
   retry?: false;
 }
@@ -47,7 +47,8 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 
 /**
  * Retries failed operations. Subscriptions resume from the last tracked event
- * id. A call can opt out with `context: { retry: false }`.
+ * id. A call can opt out with `retry: false` (`context: { retry: false }` on
+ * a client created with a type argument).
  *
  * @see https://trpc.io/docs/client/links/retryLink
  */

@@ -27,6 +27,7 @@ import type { TRPCProcedureOptions } from './internals/types';
 import type {
   inferLinksContext,
   inferLinksUnsupported,
+  ReservedCallOptions,
   TRPCLink,
 } from './links/types';
 import type { RouterType } from './routerType';
@@ -91,6 +92,33 @@ type coerceAsyncGeneratorToIterable<T> =
     : T;
 
 /**
+ * The fields a client's links declare by name, without index signatures or
+ * symbol keys: the ones calls can pass at the top level of their options.
+ * @internal
+ */
+type inferDeclaredContextFields<TContext extends object> = {
+  [
+    TKey in keyof TContext as TKey extends string
+      ? string extends TKey
+        ? never
+        : TKey
+      : never
+  ]: TContext[TKey];
+};
+
+/**
+ * The options of a call on the client. On a client created with
+ * `router: routerType<AppRouter>()`, the fields its links declare go at the
+ * top level, like v12: `{ retry: false, signal }`. `context` still takes
+ * them, and any field an undeclared link may read.
+ * @public
+ */
+export type TRPCCallOptions<TContext extends object = Record<string, unknown>> =
+  keyof inferDeclaredContextFields<TContext> extends never
+    ? TRPCProcedureOptions<TContext>
+    : inferDeclaredContextFields<TContext> & TRPCProcedureOptions<TContext>;
+
+/**
  * The `.query()` or `.mutate()` of a procedure on the client.
  * @internal
  */
@@ -99,7 +127,7 @@ export type Resolver<
   TContext extends object = Record<string, unknown>,
 > = (
   input: TDef['input'],
-  opts?: TRPCProcedureOptions<TContext>,
+  opts?: TRPCCallOptions<TContext>,
 ) => TRPCTaggedPromise<
   coerceAsyncGeneratorToIterable<TDef['output']>,
   TDef['errorShape']
@@ -116,12 +144,12 @@ export type SubscriptionResolver<
   (
     input: TDef['input'],
     opts: TRPCSubscriptionCallbacks<TDef['output'], TRPCClientError<TDef>> &
-      TRPCProcedureOptions<TContext>,
+      TRPCCallOptions<TContext>,
   ): Unsubscribable;
   <
-    TOpts extends TRPCProcedureOptions<TContext> &
+    TOpts extends TRPCCallOptions<TContext> &
       Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> =
-      TRPCProcedureOptions<TContext>,
+      TRPCCallOptions<TContext>,
   >(
     input: TDef['input'],
     opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
@@ -212,6 +240,49 @@ export const clientCallTypeToProcedureType = (
   return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
 };
 
+const reservedCallOptionKeys: ReadonlySet<string> = new Set<
+  keyof ReservedCallOptions
+>([
+  'signal',
+  'context',
+  'lastEventId',
+  'onStarted',
+  'onData',
+  'onError',
+  'onStopped',
+  'onComplete',
+  'onConnectionStateChange',
+]);
+
+/**
+ * Moves the fields a call passes at the top level of its options into
+ * `context`, over the ones it passes there.
+ */
+function withTopLevelContext(opts: unknown): unknown {
+  if (typeof opts !== 'object' || opts === null) {
+    return opts;
+  }
+  const callOpts: Record<string, unknown> = {};
+  const context: Record<string, unknown> = {};
+  let hasTopLevelContext = false;
+  for (const [key, value] of Object.entries(opts)) {
+    if (reservedCallOptionKeys.has(key)) {
+      callOpts[key] = value;
+    } else {
+      context[key] = value;
+      hasTopLevelContext = true;
+    }
+  }
+  if (!hasTopLevelContext) {
+    return opts;
+  }
+  callOpts['context'] = {
+    ...(callOpts['context'] as Record<string, unknown> | undefined),
+    ...context,
+  };
+  return callOpts;
+}
+
 /**
  * Wraps an untyped client in the typed proxy `createTRPCClient` returns.
  * @internal
@@ -219,13 +290,29 @@ export const clientCallTypeToProcedureType = (
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ): TRPCClient<TRouter> {
+  return createClientProxy(client, { topLevelContext: false });
+}
+
+/**
+ * The typed proxy. With `topLevelContext`, calls pass the fields their
+ * links declare at the top level of their options.
+ */
+function createClientProxy<TRouter extends AnyRouter>(
+  client: TRPCUntypedClient<TRouter>,
+  opts: { topLevelContext: boolean },
+): TRPCClient<TRouter> {
   const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     const pathCopy = [...path];
     const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
     const fullPath = pathCopy.join('.');
+    const [input, callOpts] = args;
+    const callArgs =
+      opts.topLevelContext && args.length > 1
+        ? [input, withTopLevelContext(callOpts)]
+        : args;
 
-    return (client[procedureType] as any)(fullPath, ...(args as any));
+    return (client[procedureType] as any)(fullPath, ...(callArgs as any));
   });
   return createFlatProxy<TRPCClient<TRouter>>((key) => {
     if (key === untypedClientSymbol) {
@@ -260,18 +347,15 @@ export type CreateTRPCClientWithRouterOptions<
 
 /**
  * Creates a typed client for a router. Pass the router's type with
- * `routerType`, and the links that send its calls. What the links declare
- * types each call's `context`.
+ * `routerType`, and the links that send its calls. Calls pass the fields
+ * the links declare at the top level of their options.
  * @example
  * ```ts
  * const client = createTRPCClient({
  *   router: routerType<AppRouter>(),
  *   links: [retryLink({ retry: () => true }), httpBatchLink({ url })],
  * });
- * const post = await client.post.byId.query(
- *   { id: '1' },
- *   { context: { retry: false } },
- * );
+ * const post = await client.post.byId.query({ id: '1' }, { retry: false });
  * ```
  * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
  */
@@ -310,8 +394,10 @@ export function createTRPCClient<TRouter extends AnyRouter>(
   const client = new TRPCUntypedClient<TRouter>({
     links: [...opts.links],
   });
-  const proxy = createTRPCClientProxy<TRouter>(client);
-  return proxy;
+  return createClientProxy(client, {
+    // only clients created with `router` take link fields at the top level
+    topLevelContext: 'router' in opts,
+  });
 }
 
 /**

@@ -118,6 +118,23 @@ export type OperationLink<
 }) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
+ * Call option names links can't declare as `context` fields: the client
+ * reads them itself.
+ * @public
+ */
+export interface ReservedCallOptions {
+  signal?: never;
+  context?: never;
+  lastEventId?: never;
+  onStarted?: never;
+  onData?: never;
+  onError?: never;
+  onStopped?: never;
+  onComplete?: never;
+  onConnectionStateChange?: never;
+}
+
+/**
  * What a link declares about itself, for clients created with
  * `createTRPCClient({ router: routerType<AppRouter>(), links })`.
  * @see https://trpc.io/docs/client/links#typing-call-options
@@ -125,10 +142,13 @@ export type OperationLink<
  */
 export interface LinkDecl {
   /**
-   * The fields the link reads from `op.context`. Calls can pass them, typed,
-   * as `.query(input, { context })`. `{}` declares that the link reads none.
+   * The fields the link reads from `op.context`. On a client created with
+   * `router: routerType<AppRouter>()`, calls pass them, typed, at the top
+   * level of their options: `.query(input, { retry: false })`. `{}`
+   * declares that the link reads none. The client's own option names are
+   * reserved ({@link ReservedCallOptions}).
    */
-  context?: object;
+  context?: object & ReservedCallOptions;
   /**
    * The operation types the link can't carry, such as `'subscription'` for
    * `httpBatchLink`. Their client methods can't be called.

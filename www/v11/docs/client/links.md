@@ -178,7 +178,7 @@ For an example use case, see [Disable batching for certain requests](/docs/clien
 
 ### Typing call options
 
-Create the client with `router: routerType<AppRouter>()` and the `context` each call takes is typed from the links. A link declares what it reads with the second type argument of `TRPCLink`. Built-in links declare theirs: [`retryLink`](./links/retryLink.md#skipping-retries-for-one-call) reads `retry`.
+Create the client with `router: routerType<AppRouter>()` and calls pass the fields their links read at the top level of their options, typed, like `{ retry: false }`. A link declares what it reads with the second type argument of `TRPCLink`. Built-in links declare theirs: [`retryLink`](./links/retryLink.md#skipping-retries-for-one-call) reads `retry`.
 
 ```ts twoslash
 // @filename: server.ts
@@ -207,16 +207,18 @@ const client = createTRPCClient({
   links: [traceLink, httpBatchLink({ url: 'http://localhost:3000' })],
 });
 
-await client.greeting.query(undefined, { context: { traceId: 'abc' } });
-// @errors: 2322
-await client.greeting.query(undefined, { context: { traceId: 123 } });
+await client.greeting.query(undefined, { traceId: 'abc' });
+// @errors: 2561
+await client.greeting.query(undefined, { tracId: 'abc' });
 ```
 
+- The fields reach links in `op.context`. `context` still takes them; a top-level field replaces the same one in `context`.
+- A link can't declare the call's own option names: `signal`, `context`, `lastEventId` and the subscription callbacks.
 - Declared fields are type-checked, and always optional.
-- A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any `context`. Declare `{ context: {} }` for a link that reads none. When every link reads none, passing a field is an error.
-- Links that hand the operation to your code may read any field too: the HTTP links (`headers`, `eventSourceOptions`), `loggerLink` (`enabled`, `logger`), `retryLink` (`retry`) and `splitLink` (`condition`).
+- A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any field in `context`. Declare `{ context: {} }` for a link that reads none.
+- Links that hand the operation to your code take any field in `context` too: the HTTP links (`headers`, `eventSourceOptions`), `loggerLink` (`enabled`, `logger`), `retryLink` (`retry`) and `splitLink` (`condition`).
 - Links also declare the operation types they can't carry. With only `httpBatchLink`, `.subscribe()` can't be called.
-- With `createTRPCClient<AppRouter>()`, calls take any `context`, as before.
+- With `createTRPCClient<AppRouter>()`, calls take any field in `context`, and only there, as before.
 
 ## Common mistakes
 

@@ -45,7 +45,7 @@ function factory() {
 }
 type AppRouter = ReturnType<typeof factory>['appRouter'];
 
-test('`context: { retry: false }` skips retryLink for that call', async () => {
+test('`{ retry: false }` at the top level skips retryLink for that call', async () => {
   const { appRouter, flakyCalls } = factory();
   await using ctx = testServerAndClientResource(appRouter);
   const client = createTRPCClient({
@@ -57,11 +57,71 @@ test('`context: { retry: false }` skips retryLink for that call', async () => {
   });
 
   await expect(
-    client.flaky.mutate('a', { context: { retry: false } }),
+    client.flaky.mutate('a', { retry: false }),
   ).rejects.toMatchObject({ data: { code: 'INTERNAL_SERVER_ERROR' } });
   expect(flakyCalls).toHaveBeenCalledTimes(1);
 
   expect(await client.flaky.mutate('b')).toBe('b');
+  expect(flakyCalls).toHaveBeenCalledTimes(2);
+});
+
+test('top-level fields reach `op.context`, over nested ones', async () => {
+  const { appRouter } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const seen: unknown[] = [];
+  const spyLink: TRPCLink<AppRouter, { context: { traceId?: string } }> =
+    () => (opts) => {
+      seen.push(opts.op.context);
+      return opts.next(opts.op);
+    };
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      spyLink,
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: httpSubscriptionLink({ url: ctx.httpUrl }),
+        false: httpBatchLink({ url: ctx.httpUrl }),
+      }),
+    ],
+  });
+
+  await client.flaky.mutate('a', { traceId: 'top' }).catch(() => null);
+  await client.flaky
+    .mutate('b', { traceId: 'top', context: { traceId: 'nested', other: 1 } })
+    .catch(() => null);
+  await client.flaky
+    .mutate('c', { context: { traceId: 'nested' } })
+    .catch(() => null);
+
+  const onData = vi.fn();
+  const sub = client.onEvent.subscribe(undefined, {
+    traceId: 'sub',
+    onData,
+  });
+  await vi.waitFor(() => expect(onData).toHaveBeenCalledWith(1));
+  sub.unsubscribe();
+
+  expect(seen).toEqual([
+    { traceId: 'top' },
+    { traceId: 'top', other: 1 },
+    { traceId: 'nested' },
+    { traceId: 'sub' },
+  ]);
+});
+
+test('the type argument form doesn’t move top-level fields', async () => {
+  const { appRouter, flakyCalls } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      retryLink({ retry: (opts) => opts.attempts < 3 }),
+      httpBatchLink({ url: ctx.httpUrl }),
+    ],
+  });
+
+  // ignored, as before: only `context` reaches the links
+  expect(await client.flaky.mutate('a', { retry: false } as never)).toBe('a');
   expect(flakyCalls).toHaveBeenCalledTimes(2);
 });
 
@@ -89,12 +149,28 @@ test('calls take the context their links declare', () => {
 
   void (() => {
     void client.flaky.mutate('a');
+    void client.flaky.mutate('a', { traceId: '1' });
+    // nested `context` still takes them
     void client.flaky.mutate('a', { context: { traceId: '1' } });
+    // @ts-expect-error -- no link reads `nope`
+    void client.flaky.mutate('a', { nope: 1 });
     // @ts-expect-error -- no link reads `nope`
     void client.flaky.mutate('a', { context: { nope: 1 } });
     // @ts-expect-error -- `traceId` is a string
+    void client.flaky.mutate('a', { traceId: 1 });
+    // @ts-expect-error -- `traceId` is a string
     void client.flaky.mutate('a', { context: { traceId: 1 } });
   });
+});
+
+test('links can’t declare the client’s own option names', () => {
+  // @ts-expect-error -- `signal` is the call's own option
+  type _Signal = TRPCLink<AppRouter, { context: { signal?: string } }>;
+  // @ts-expect-error -- `onData` is a subscription callback
+  type _OnData = TRPCLink<AppRouter, { context: { onData?: string } }>;
+  // @ts-expect-error -- `context` is the call's own option
+  type _Context = TRPCLink<AppRouter, { context: { context?: string } }>;
+  type _Fine = TRPCLink<AppRouter, { context: { traceId?: string } }>;
 });
 
 test('no context when no link reads one', () => {
@@ -109,6 +185,9 @@ test('no context when no link reads one', () => {
 
   void (() => {
     void client.flaky.mutate('a', { context: {} });
+    void client.flaky.mutate('a', { signal: new AbortController().signal });
+    // @ts-expect-error -- no link reads `foo`
+    void client.flaky.mutate('a', { foo: 1 });
     // @ts-expect-error -- no link reads `foo`
     void client.flaky.mutate('a', { context: { foo: 1 } });
   });
@@ -151,9 +230,12 @@ test('a link that declares nothing may read any context', () => {
     ],
   });
   void (() => {
+    void client.flaky.mutate('a', { retry: false });
     void client.flaky.mutate('a', { context: { anything: 1, retry: false } });
+    // @ts-expect-error -- undeclared fields go in `context`, not the top level
+    void client.flaky.mutate('a', { anything: 1 });
     // @ts-expect-error -- declared fields stay typed
-    void client.flaky.mutate('a', { context: { retry: 1 } });
+    void client.flaky.mutate('a', { retry: 1 });
   });
 
   // so does an inline link with no type at all
@@ -212,10 +294,17 @@ test('methods the links can’t carry can’t be called', () => {
   void (() => {
     // the condition may read anything; the branches' fields stay typed
     void split.flaky.mutate('a', {
-      context: { skipBatch: true, retry: false },
+      retry: false,
+      context: { skipBatch: true },
     });
     // @ts-expect-error -- `retry` only takes `false`
-    void split.flaky.mutate('a', { context: { retry: 1 } });
+    void split.flaky.mutate('a', { retry: 1 });
+    // subscriptions take them next to their callbacks, or without
+    split.onEvent.subscribe(undefined, { retry: false, onData: () => null });
+    const iterable = split.onEvent.subscribe(undefined, { retry: false });
+    expectTypeOf(iterable).toEqualTypeOf<AsyncIterableIterator<number>>();
+    // @ts-expect-error -- `retry` only takes `false`
+    split.onEvent.subscribe(undefined, { retry: 1, onData: () => null });
   });
 
   const onlySubscriptions = createTRPCClient({
