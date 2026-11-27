@@ -29,6 +29,16 @@ export const OptionalInputRouter = t.router({
   unknown: t.procedure
     .input(z.unknown())
     .mutation(({ input }) => String(input)),
+
+  requiredOutput: t.procedure.output(z.string()).query(() => 'name'),
+
+  optionalOutput: t.procedure
+    .output(z.string().optional())
+    .query(() => undefined),
+
+  nullishOutput: t.procedure
+    .output(z.string().nullish())
+    .query(() => undefined),
 });
 
 export type OptionalInputRouter = typeof OptionalInputRouter;

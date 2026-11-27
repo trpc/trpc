@@ -68,10 +68,7 @@
                         "data": {
                           "$ref": "#/components/schemas/User"
                         }
-                      },
-                      "required": [
-                        "data"
-                      ]
+                      }
                     }
                   },
                   "required": [

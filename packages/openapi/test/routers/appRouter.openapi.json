@@ -4619,10 +4619,7 @@
                             }
                           ]
                         }
-                      },
-                      "required": [
-                        "data"
-                      ]
+                      }
                     }
                   },
                   "required": [
@@ -4695,10 +4692,7 @@
                           },
                           "additionalProperties": false
                         }
-                      },
-                      "required": [
-                        "data"
-                      ]
+                      }
                     }
                   },
                   "required": [

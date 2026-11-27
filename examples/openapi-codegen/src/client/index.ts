@@ -48,6 +48,11 @@ async function main() {
   });
   console.log('User 1:', byIdResult.data?.result.data);
   assert.ok(byIdResult.data, 'byId response should have data');
+  // `byId` can return `undefined`, so `result.data` is optional
+  assert.ok(
+    byIdResult.data.result.data,
+    'byId response should have result.data',
+  );
   assert.equal(byIdResult.data.result.data.name, 'nick');
   assert.equal(byIdResult.data.result.data.id, '1');
   assert.ok(

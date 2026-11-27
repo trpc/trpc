@@ -89,7 +89,7 @@ export type UserByIdResponses = {
    */
   200: {
     result: {
-      data: User;
+      data?: User;
     };
   };
 };

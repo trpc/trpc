@@ -51,6 +51,8 @@ interface ProcedureInfo {
   /** `undefined` is a valid input, so a call may leave the input out. */
   inputOptional: boolean;
   outputSchema: SchemaObject | null;
+  /** `undefined` is a valid output, so the response may leave `data` out. */
+  outputOptional: boolean;
   errorSchema: SchemaObject | null;
   description?: string;
 }
@@ -1321,6 +1323,7 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     inputSchema,
     inputOptional: acceptsUndefined(resolvedInputType),
     outputSchema,
+    outputOptional: acceptsUndefined(outputType),
     errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
   });
@@ -1677,10 +1680,13 @@ const DEFAULT_ERROR_SCHEMA: SchemaObject = {
  *   `{ result: { data: T } }`
  *
  * When the procedure has no output the envelope is still present but
- * the `data` property is omitted.
+ * the `data` property is omitted. It is omitted too when the procedure
+ * returns `undefined`, so `data` is only required when its type rules
+ * that out.
  */
 function wrapInSuccessEnvelope(
   outputSchema: SchemaObject | null,
+  outputOptional: boolean,
 ): SchemaObject {
   const hasOutput = outputSchema !== null && isNonEmptySchema(outputSchema);
   const resultSchema: SchemaObject = {
@@ -1688,7 +1694,7 @@ function wrapInSuccessEnvelope(
     properties: {
       ...(hasOutput ? { data: outputSchema } : {}),
     },
-    ...(hasOutput ? { required: ['data'] } : {}),
+    ...(hasOutput && !outputOptional ? { required: ['data'] } : {}),
   };
   return {
     type: 'object',
@@ -1714,7 +1720,10 @@ function buildProcedureOperation(
         description: 'Successful response',
         content: {
           'application/json': {
-            schema: wrapInSuccessEnvelope(proc.outputSchema),
+            schema: wrapInSuccessEnvelope(
+              proc.outputSchema,
+              proc.outputOptional,
+            ),
           },
         },
       },

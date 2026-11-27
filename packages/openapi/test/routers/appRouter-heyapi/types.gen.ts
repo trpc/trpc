@@ -2538,7 +2538,7 @@ export type SimpleCasesNullishResponses = {
    */
   200: {
     result: {
-      data: {
+      data?: {
         name?: string | null;
       } | null;
     };
@@ -2575,7 +2575,7 @@ export type SimpleCasesOptionalResponses = {
    */
   200: {
     result: {
-      data: {
+      data?: {
         name?: string;
       };
     };
