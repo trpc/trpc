@@ -10,19 +10,26 @@ import {
   httpBatchStreamLink,
   retryLink,
 } from '@trpc/client';
-import type { experimental_PipeliningLinkOptions } from '@trpc/client';
 import type { PipelineSource } from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
   pipeCall,
   pipelineContext,
 } from '@trpc/client/unstable-internals';
-import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import type {
+  AnyRouter,
+  experimental_PipelineEvent,
+  experimental_PipelinePolicy,
+} from '@trpc/server';
+import {
+  experimental_pipelineBudget,
+  experimental_TRPCPipelineRefusal,
+  initTRPC,
+  TRPCError,
+} from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable } from '@trpc/server/observable';
 import type {
-  experimental_PipeliningOptions,
   PipelineCallReads,
   PipelinePath,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -30,7 +37,7 @@ import {
   createDeferred,
   isObject,
   makeResource,
-  pipelineLimitDefaults,
+  pipelineBudgetDefaults,
   readPipelinedItem,
 } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
@@ -157,7 +164,7 @@ describe.each([
 ] as const)('$name with $transformer transformer', (scenario) => {
   function setup(opts: {
     allowPipelining: boolean;
-    pipelining: boolean | experimental_PipeliningLinkOptions;
+    pipelining: boolean;
     methodOverride?: 'POST';
     maxItems?: number;
     maxURLLength?: number;
@@ -173,9 +180,9 @@ describe.each([
     const ctx = testServerAndClientResource(appRouter, {
       server: {
         // Some calls here read a whole value, such as a list of tags
-        experimental_allowPipelining: opts.allowPipelining && {
-          allowWholeValues: true,
-        },
+        experimental_allowPipelining:
+          opts.allowPipelining &&
+          experimental_pipelineBudget({ allowWholeValues: true }),
         allowMethodOverride: opts.methodOverride === 'POST',
       },
       client: (clientOpts) => ({
@@ -185,9 +192,7 @@ describe.each([
             url: clientOpts.httpUrl,
             transformer: clientOpts.transformer as any,
             experimental_pipelining: opts.pipelining
-              ? experimental_pipelining(
-                  opts.pipelining === true ? undefined : opts.pipelining,
-                )
+              ? experimental_pipelining()
               : undefined,
             methodOverride: opts.methodOverride,
             maxItems: opts.maxItems,
@@ -556,10 +561,11 @@ describe.each([
     ).toEqual(['/post,author', '/team']);
   });
 
-  test("a call that would make the request go over the link's `maxRuns` is not made: the server would refuse the whole request", async () => {
+  test("a call that would make the request go over the link's `maxItems` is not made: the server would refuse the whole request", async () => {
     await using ctx = setup({
       allowPipelining: true,
-      pipelining: { maxRuns: 2 },
+      pipelining: true,
+      maxItems: 2,
     });
 
     const post = createOperationPipeline();
@@ -589,6 +595,25 @@ describe.each([
       'The call did not fit in the request of what it reads',
     );
     expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('a link that pipelines sends at most 100 calls in a request without `maxItems`, as many as a server takes without `maxBatchSize`', async () => {
+    await using ctx = setup({ allowPipelining: true, pipelining: true });
+
+    const results = await Promise.all(
+      Array.from({ length: 101 }, () =>
+        ctx.untyped.query('post', { slug: 'hello' }),
+      ),
+    );
+
+    expect(results).toHaveLength(101);
+    expect(
+      ctx.onRequestSpy.mock.calls.map(
+        ([req]) => req.url?.split('?')[0]?.split(',').length,
+      ),
+      // The requests reach the server in either order
+    ).toEqual(expect.arrayContaining([100, 1]));
+    expect(ctx.onRequestSpy).toHaveBeenCalledTimes(2);
   });
 
   test('a call that fits in no request does not split the batch', async () => {
@@ -674,7 +699,7 @@ describe.each([
       pipeCall({
         path: 'author',
         input: { id: undefined },
-        reads: reads(pipelineLimitDefaults.maxReadsPerCall + 1),
+        reads: reads(pipelineBudgetDefaults.maxReadsPerCall + 1),
       }),
     ).toBeNull();
     // So many that counting how deep the call is could overflow the stack
@@ -688,7 +713,7 @@ describe.each([
     const author = pipeCall({
       path: 'author',
       input: { id: undefined },
-      reads: reads(pipelineLimitDefaults.maxReadsPerCall),
+      reads: reads(pipelineBudgetDefaults.maxReadsPerCall),
     });
     assert(author);
     await postResult;
@@ -701,12 +726,10 @@ describe.each([
     });
   });
 
-  test('a call deeper in a chain than a server takes is not added, unless the link raises it', async () => {
+  test('a call deeper in a chain than the default policy takes is not added', async () => {
     /** A chain of 4: post, author, team and team again. What the 4th is */
-    async function chain(
-      pipelining: true | experimental_PipeliningLinkOptions,
-    ) {
-      await using ctx = setup({ allowPipelining: true, pipelining });
+    async function chain() {
+      await using ctx = setup({ allowPipelining: true, pipelining: true });
       const post = createOperationPipeline();
       const postResult = ctx.untyped.query(
         'post',
@@ -734,12 +757,7 @@ describe.each([
       expect(await team.result).toEqual({ data: { id: 'team-of-u1' } });
       return fourth && (await fourth.result.catch((error: Error) => error));
     }
-    expect(await chain(true)).toBeNull();
-    // The server's `maxDepth` is 3, so it refuses it
-    expect(await chain({ maxDepth: 4 })).toMatchObject({
-      message:
-        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
-    });
+    expect(await chain()).toBeNull();
   });
 
   test('a call whose reads a server would refuse is not added: the request of what it reads goes without it', async () => {
@@ -1707,7 +1725,7 @@ describe('the `pipe` search param', () => {
     search: string,
     opts: {
       path: string;
-      allowPipelining: true | experimental_PipeliningOptions;
+      allowPipelining: true | experimental_PipelinePolicy;
     },
   ) {
     const { appRouter, calls } = createRouter('none');
@@ -1745,7 +1763,12 @@ describe('the `pipe` search param', () => {
           1: { reads: [{ to: ['ids'], from: 0, path: ['tags', null, 'id'] }] },
         }),
       )}`,
-      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
+      {
+        path: 'post,tags',
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
     );
     expect(res.json[1]).toEqual({ result: { data: ['t1', 't2'] } });
 
@@ -1756,7 +1779,12 @@ describe('the `pipe` search param', () => {
           1: { reads: [{ to: ['ids'], from: 0, path: ['slug', null, 'id'] }] },
         }),
       )}`,
-      { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
+      {
+        path: 'post,tags',
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
     );
     expect(notAnArray.json[1].error.data.code).toBe('BAD_REQUEST');
   });
@@ -1768,7 +1796,12 @@ describe('the `pipe` search param', () => {
     const each = (call: unknown) =>
       get(
         `input=${eachInput}&pipe=${encodeURIComponent(JSON.stringify({ 1: call }))}`,
-        { path: 'post,tags', allowPipelining: { allowWholeValues: true } },
+        {
+          path: 'post,tags',
+          allowPipelining: experimental_pipelineBudget({
+            allowWholeValues: true,
+          }),
+        },
       );
 
     const res = await each({
@@ -1875,13 +1908,13 @@ describe('the `pipe` search param', () => {
           })),
         },
       });
-    const within = await get(reads(pipelineLimitDefaults.maxReadsPerCall), {
+    const within = await get(reads(pipelineBudgetDefaults.maxReadsPerCall), {
       path: 'post,author',
       allowPipelining: true,
     });
     expect(within.json[1].result.data.id).toBe('u1');
 
-    const over = await get(reads(pipelineLimitDefaults.maxReadsPerCall + 1), {
+    const over = await get(reads(pipelineBudgetDefaults.maxReadsPerCall + 1), {
       path: 'post,author',
       allowPipelining: true,
     });
@@ -1889,7 +1922,7 @@ describe('the `pipe` search param', () => {
     expect(over.status).toBe(207);
     expect(over.json[0].result.data.slug).toBe('hello');
     expect(over.json[1].error).toMatchObject({
-      message: `This call reads ${pipelineLimitDefaults.maxReadsPerCall + 1} values, more than \`maxReadsPerCall\` (${pipelineLimitDefaults.maxReadsPerCall}) allows`,
+      message: `This call reads ${pipelineBudgetDefaults.maxReadsPerCall + 1} values, more than \`maxReadsPerCall\` (${pipelineBudgetDefaults.maxReadsPerCall}) allows`,
       data: { code: 'BAD_REQUEST' },
     });
     expect(over.calls).not.toHaveBeenCalled();
@@ -1905,7 +1938,10 @@ describe('the `pipe` search param', () => {
           ],
         },
       }),
-      { path: 'post,unread', allowPipelining: { maxReadsPerCall: 1 } },
+      {
+        path: 'post,unread',
+        allowPipelining: experimental_pipelineBudget({ maxReadsPerCall: 1 }),
+      },
     );
     expect(over.json[1].error).toMatchObject({
       message:
@@ -1976,13 +2012,16 @@ describe('the `pipe` search param', () => {
       });
     const raised = await get(reads(20), {
       path: 'post,author',
-      allowPipelining: { maxReadsPerCall: 20 },
+      allowPipelining: experimental_pipelineBudget({ maxReadsPerCall: 20 }),
     });
     expect(raised.json[1].result.data.id).toBe('u1');
 
     const lowered = await get(reads(2), {
       path: 'post,author',
-      allowPipelining: { maxReadsPerCall: 1, maxValueLength: 2 },
+      allowPipelining: experimental_pipelineBudget({
+        maxReadsPerCall: 1,
+        maxValueLength: 2,
+      }),
     });
     expect(lowered.json[1].error.message).toBe(
       'This call reads 2 values, more than `maxReadsPerCall` (1) allows',
@@ -1990,7 +2029,7 @@ describe('the `pipe` search param', () => {
     // `"u1"` is 4 characters of JSON
     const short = await get(reads(1), {
       path: 'post,author',
-      allowPipelining: { maxValueLength: 3 },
+      allowPipelining: experimental_pipelineBudget({ maxValueLength: 3 }),
     });
     expect(short.json[1].error.message).toBe(
       'A value this call reads is longer than `maxValueLength` (3 characters of JSON) allows',
@@ -1998,33 +2037,31 @@ describe('the `pipe` search param', () => {
     // Two of them are 8
     const small = await get(reads(2), {
       path: 'post,author',
-      allowPipelining: { maxFillSize: 6 },
+      allowPipelining: experimental_pipelineBudget({ maxFillSize: 6 }),
     });
     expect(small.json[1].error.message).toBe(
       'What this call fills in goes over `maxFillSize` (6 characters of JSON for the batch)',
     );
   });
 
-  test('a batch with more calls than `maxRuns` is a bad request, and none of it runs', async () => {
+  test('a pipelined batch with more calls than 100 is a bad request without `maxBatchSize`, and none of it runs', async () => {
     const batch = async (count: number) =>
       await get(
         `input=${encodeURIComponent('{}')}&pipe=${encodeURIComponent('{}')}`,
         {
           path: Array.from({ length: count }, () => 'unread').join(','),
-          allowPipelining: { maxRuns: 2 },
+          allowPipelining: true,
         },
       );
-    const within = await batch(2);
+    const within = await batch(100);
     expect(within.status).toBe(200);
-    expect(within.calls).toHaveBeenCalledTimes(2);
-    expect(within.json).toHaveLength(2);
+    expect(within.calls).toHaveBeenCalledTimes(100);
+    expect(within.json).toHaveLength(100);
 
-    const over = await batch(3);
+    const over = await batch(101);
     expect(over.status).toBe(400);
     expect(over.json).toMatchObject({
-      error: {
-        message: 'The batch has 3 calls, more than `maxRuns` (2) allows',
-      },
+      error: { message: 'Batch call exceeds maximum size' },
     });
     expect(over.calls).not.toHaveBeenCalled();
   });
@@ -2058,7 +2095,8 @@ describe('the `pipe` search param', () => {
     const over = await each(2);
     expect(over.json[0].result.data.slug).toBe('hello');
     expect(over.json[1].error).toMatchObject({
-      message: 'A call for every item exceeds the maximum batch size',
+      message:
+        'This call would make the batch run 3 times, more than `maxBatchSize` (2) allows',
       data: { code: 'BAD_REQUEST' },
     });
     // It ran for no item
@@ -2084,7 +2122,7 @@ describe('the `pipe` search param', () => {
     const json = await res.json();
     // The list and four items are over the limit. The list and two are not
     expect(json[1].error.message).toBe(
-      'A call for every item exceeds the maximum batch size',
+      'This call would make the batch run 5 times, more than `maxBatchSize` (4) allows',
     );
     expect(Object.keys(json[2].items)).toHaveLength(2);
     expect(calls).toHaveBeenCalledTimes(2);
@@ -2113,7 +2151,7 @@ describe('the `pipe` search param', () => {
     )}`;
     const res = await get(search, {
       path: 'post,post,post',
-      allowPipelining: { allowWholeValues: true },
+      allowPipelining: experimental_pipelineBudget({ allowWholeValues: true }),
     });
     expect(res.json[1].result.data.slug).toBe('u1');
     // Not `u1`: the first call's data is as it was sent
@@ -2136,7 +2174,12 @@ describe('the `pipe` search param', () => {
           },
         }),
       )}`,
-      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
+      {
+        path: 'post,stamp,tags',
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
     );
     expect(res.json[1].result.data).toBe(3);
     expect(res.json[2].result.data).toEqual(['t1', 't2']);
@@ -2165,7 +2208,12 @@ describe('the `pipe` search param', () => {
           },
         }),
       )}`,
-      { path: 'post,stamp,tags', allowPipelining: { allowWholeValues: true } },
+      {
+        path: 'post,stamp,tags',
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
     );
     expect(res.json[1]).toEqual({
       items: { 0: { result: { data: 3 } }, 1: { result: { data: 3 } } },
@@ -2348,7 +2396,12 @@ describe('the `pipe` search param', () => {
   test('a call still validates its input', async () => {
     const res = await get(
       pipe({ 1: { reads: [{ to: ['id'], from: 0, path: ['tags'] }] } }),
-      { path: 'post,author', allowPipelining: { allowWholeValues: true } },
+      {
+        path: 'post,author',
+        allowPipelining: experimental_pipelineBudget({
+          allowWholeValues: true,
+        }),
+      },
     );
     expect(res.json[1].error.data.code).toBe('BAD_REQUEST');
     expect(res.calls).not.toHaveBeenCalled();
@@ -2832,7 +2885,9 @@ describe('a call of a pipelined batch, on its own', () => {
       }),
       router,
       // `{"id":"t1"}` is 11 characters of JSON: no run fits
-      experimental_allowPipelining: { maxFillSize: 5 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxFillSize: 5,
+      }),
       responseMeta: (opts) => {
         meta.push({ data: opts.data, errors: opts.errors });
         return {};
@@ -3141,13 +3196,15 @@ describe('a call the server refuses before any of its runs ran', () => {
   });
   async function send(opts: {
     pipe: unknown;
-    allowPipelining: experimental_PipeliningOptions;
+    allowPipelining: true | experimental_PipelinePolicy;
+    maxBatchSize?: number;
   }) {
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
       req: pipelinedGet({ paths: 'list,author', pipe: opts.pipe }),
       router,
       experimental_allowPipelining: opts.allowPipelining,
+      maxBatchSize: opts.maxBatchSize,
     });
     return (await res.json()) as unknown[];
   }
@@ -3158,16 +3215,17 @@ describe('a call the server refuses before any of its runs ran', () => {
     },
   };
 
-  test("is marked `pipeline: 'not-run'` beside its error, not in the formatter's `data`, for a limit: a list with more runs than `maxRuns`", async () => {
+  test("is marked `pipeline: 'not-run'` beside its error, not in the formatter's `data`, for a limit: a list with more runs than `maxBatchSize`", async () => {
     const json = await send({
       pipe: eachAuthor,
-      allowPipelining: { maxRuns: 2 },
+      allowPipelining: true,
+      maxBatchSize: 2,
     });
 
     expect(json[1]).toEqual({
       error: {
         message:
-          'This call would make the batch run 3 times, more than `maxRuns` (2) allows',
+          'This call would make the batch run 3 times, more than `maxBatchSize` (2) allows',
         code: -32600,
         data: { custom: true },
       },
@@ -3178,7 +3236,7 @@ describe('a call the server refuses before any of its runs ran', () => {
   test('is marked for a value it reads that a limit refuses', async () => {
     const json = await send({
       pipe: { 1: { reads: [{ to: [], from: 0, path: ['items'] }] } },
-      allowPipelining: { allowWholeValues: false },
+      allowPipelining: experimental_pipelineBudget({ allowWholeValues: false }),
     });
 
     expect(json[1]).toMatchObject({
@@ -3198,7 +3256,7 @@ describe('a call the server refuses before any of its runs ran', () => {
           ],
         },
       },
-      allowPipelining: { maxReadsPerCall: 1 },
+      allowPipelining: experimental_pipelineBudget({ maxReadsPerCall: 1 }),
     });
 
     expect(json[1]).toMatchObject({
@@ -3210,7 +3268,8 @@ describe('a call the server refuses before any of its runs ran', () => {
   test('the error of a run that ran, or of a list inside the call, has no mark', async () => {
     const json = await send({
       pipe: eachAuthor,
-      allowPipelining: { maxRuns: 4 },
+      allowPipelining: true,
+      maxBatchSize: 4,
     });
 
     expect(json[1]).toEqual({
@@ -3227,7 +3286,7 @@ describe('a call the server refuses before any of its runs ran', () => {
     });
   });
 
-  test('a list of lists whose inner list goes over `maxRuns` has no mark: other lists of the call can run', async () => {
+  test('a list of lists whose inner list goes over `maxBatchSize` has no mark: other lists of the call can run', async () => {
     const lists = initTRPC.create();
     const res = await fetchRequestHandler({
       endpoint: '/trpc',
@@ -3246,7 +3305,8 @@ describe('a call the server refuses before any of its runs ran', () => {
         })),
         author: lists.procedure.input(z.unknown()).query((opts) => opts.input),
       }),
-      experimental_allowPipelining: { maxRuns: 3 },
+      experimental_allowPipelining: true,
+      maxBatchSize: 3,
     });
     const json = (await res.json()) as unknown[];
 
@@ -3264,7 +3324,7 @@ describe('a call the server refuses before any of its runs ran', () => {
       pipe: {
         1: { reads: [{ to: ['a', 'b'], from: 0, path: ['items'] }] },
       },
-      allowPipelining: { allowWholeValues: true },
+      allowPipelining: experimental_pipelineBudget({ allowWholeValues: true }),
     });
 
     expect(json[1]).toEqual({
@@ -3350,14 +3410,15 @@ describe('a call the server refuses before any of its runs ran', () => {
           return opts.input;
         }),
       }),
-      experimental_allowPipelining: { maxRuns: 3 },
+      experimental_allowPipelining: true,
+      maxBatchSize: 3,
     });
     const json = (await res.json()) as unknown[];
 
     expect(json[1]).toEqual({
       error: {
         message:
-          'This call would make the batch run 4 times, more than `maxRuns` (3) allows',
+          'This call would make the batch run 4 times, more than `maxBatchSize` (3) allows',
         code: -32600,
         data: expect.objectContaining({
           code: 'BAD_REQUEST',
@@ -3390,7 +3451,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         }),
       }),
       // `{"longField":"x"}` is 17 characters of JSON
-      experimental_allowPipelining: { maxFillSize: 16 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxFillSize: 16,
+      }),
     });
     const json = (await res.json()) as unknown[];
 
@@ -3426,7 +3489,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         author: lists.procedure.input(z.unknown()).query((opts) => opts.input),
       }),
       // Room for one run's input, not two
-      experimental_allowPipelining: { maxFillSize: 20 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxFillSize: 20,
+      }),
     });
     const json = (await res.json()) as unknown[];
 
@@ -3472,7 +3537,9 @@ describe('a call the server refuses before any of its runs ran', () => {
         }),
       }),
       // Room for the runs of `author`, not for a run of `copy`
-      experimental_allowPipelining: { maxFillSize: 16 },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        maxFillSize: 16,
+      }),
     });
     const json = (await res.json()) as unknown[];
 
@@ -3532,7 +3599,9 @@ describe('a value a call reads, with a getter that gives something else each tim
           return 'ran';
         }),
       }),
-      experimental_allowPipelining: { allowWholeValues: true },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        allowWholeValues: true,
+      }),
     });
     const json = (await res.json()) as unknown[];
 
@@ -3573,7 +3642,9 @@ describe('a value a call reads, with a `toJSON` of its own', () => {
           return 'ran';
         }),
       }),
-      experimental_allowPipelining: { allowWholeValues: true },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        allowWholeValues: true,
+      }),
     });
     return { json: (await res.json()) as unknown[], author };
   }
@@ -3639,7 +3710,9 @@ describe('a value a call reads, made of code that runs when it is read', () => {
           return 'ran';
         }),
       }),
-      experimental_allowPipelining: { allowWholeValues: true },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        allowWholeValues: true,
+      }),
     });
     return { json: (await res.json()) as unknown[], author };
   }
@@ -3707,7 +3780,9 @@ describe('a value a call reads, made of code that runs when it is read', () => {
           return 'ran';
         }),
       }),
-      experimental_allowPipelining: { allowWholeValues: true },
+      experimental_allowPipelining: experimental_pipelineBudget({
+        allowWholeValues: true,
+      }),
     });
     const json = (await res.json()) as unknown[];
 
@@ -3911,7 +3986,11 @@ describe.each([
           }),
       });
       const ctx = testServerAndClientResource(router, {
-        server: { experimental_allowPipelining: { allowWholeValues: false } },
+        server: {
+          experimental_allowPipelining: experimental_pipelineBudget({
+            allowWholeValues: false,
+          }),
+        },
         client: (clientOpts) => ({
           links: [
             scenario.link({
@@ -3967,3 +4046,174 @@ describe.each([
     });
   },
 );
+
+describe('a policy of `experimental_allowPipelining`', () => {
+  const t = initTRPC.context<{ user: string }>().create();
+  const router = t.router({
+    list: t.procedure.query(() => ({ items: [{ id: 'ada' }, { id: 'bob' }] })),
+    echo: t.procedure.input(z.unknown()).query((opts) => opts.input),
+    secret: t.procedure.input(z.unknown()).query((opts) => opts.input),
+  });
+  const eachItem = {
+    each: { from: 0, path: ['items'] },
+    reads: [{ to: ['id'], path: ['id'] }],
+  };
+  async function send(opts: {
+    paths: string;
+    pipe: unknown;
+    policy: experimental_PipelinePolicy<{ user: string }>;
+  }) {
+    const errors: { path: string | undefined; error: unknown }[] = [];
+    const res = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: pipelinedGet({ paths: opts.paths, pipe: opts.pipe }),
+      router,
+      createContext: () => ({ user: 'ada' }),
+      experimental_allowPipelining: opts.policy,
+      onError: ({ path, error }) => {
+        errors.push({ path, error });
+      },
+    });
+    return { json: (await res.json()) as any[], errors };
+  }
+
+  test('is called once for each batch, with its context, and hears of each event before its work', async () => {
+    const batches: { user: string | undefined; calls: number }[] = [];
+    const events: experimental_PipelineEvent[] = [];
+    const policy: experimental_PipelinePolicy<{ user: string }> = (opts) => {
+      batches.push({ user: opts.ctx?.user, calls: opts.info.calls.length });
+      return (event) => {
+        // `length` is measured as it is read
+        events.push(
+          event.kind === 'value'
+            ? { kind: 'value', whole: event.whole, length: event.length }
+            : event,
+        );
+        return true;
+      };
+    };
+
+    const { json } = await send({
+      paths: 'list,echo',
+      pipe: { 1: eachItem },
+      policy,
+    });
+
+    expect(json[1].items).toEqual({
+      0: { result: { data: { id: 'ada' } } },
+      1: { result: { data: { id: 'bob' } } },
+    });
+    expect(batches).toEqual([{ user: 'ada', calls: 2 }]);
+    expect(events.slice(0, 2)).toEqual([
+      { kind: 'call', path: 'echo', depth: 2, reads: 1 },
+      { kind: 'list', length: 2 },
+    ]);
+    // For each item: the value it reads, and its run with it filled in
+    const value = { kind: 'value', whole: false, length: 5 };
+    const run = { kind: 'run', path: 'echo', filled: 12 };
+    expect(events.slice(2)).toEqual(
+      expect.arrayContaining([value, value, run, run]),
+    );
+    expect(events).toHaveLength(6);
+  });
+
+  test('refuses a call with its reason: `onError` gets an `experimental_TRPCPipelineRefusal`, and a client can ask for the call by itself', async () => {
+    const { json, errors } = await send({
+      paths: 'list,secret',
+      pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['items'] }] } },
+      policy: () => (event) =>
+        event.kind === 'call' && event.path === 'secret'
+          ? { reason: 'secret', message: 'Not in a pipelined batch' }
+          : true,
+    });
+
+    expect(json[1]).toMatchObject({
+      error: {
+        message: 'Not in a pipelined batch',
+        data: { code: 'BAD_REQUEST' },
+      },
+      pipeline: 'not-run',
+    });
+    expect(errors).toHaveLength(1);
+    const [refused] = errors;
+    expect(refused?.path).toBe('secret');
+    expect(refused?.error).toBeInstanceOf(experimental_TRPCPipelineRefusal);
+    expect(refused?.error).toBeInstanceOf(TRPCError);
+    expect(refused?.error).toMatchObject({ reason: 'secret' });
+  });
+
+  test('a refusal without a message says the reason', async () => {
+    const { json } = await send({
+      paths: 'list,echo',
+      pipe: { 1: eachItem },
+      policy: () => (event) =>
+        event.kind === 'list' ? { reason: 'noLists' } : true,
+    });
+
+    expect(json[1]).toMatchObject({
+      error: {
+        message: 'Refused by `experimental_allowPipelining`: noLists',
+      },
+      pipeline: 'not-run',
+    });
+  });
+
+  test('refuses a run by itself: the runs before it ran', async () => {
+    let runs = 0;
+    const { json, errors } = await send({
+      paths: 'list,echo',
+      pipe: { 1: eachItem },
+      policy: () => (event) =>
+        event.kind === 'run' && ++runs > 1 ? { reason: 'oneRun' } : true,
+    });
+
+    expect(json[1].items[0]).toEqual({ result: { data: { id: 'ada' } } });
+    expect(json[1].items[1]).toMatchObject({
+      error: { data: { code: 'BAD_REQUEST' } },
+    });
+    expect(errors.map(({ error }) => error)).toEqual([
+      expect.objectContaining({ reason: 'oneRun' }),
+    ]);
+  });
+
+  test('what it throws fails the call with that error, which a client does not ask for again', async () => {
+    const { json } = await send({
+      paths: 'list,echo',
+      pipe: { 1: eachItem },
+      policy: () => (event) => {
+        if (event.kind === 'call') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'no' });
+        }
+        return true;
+      },
+    });
+
+    expect(json[1]).toEqual({
+      error: expect.objectContaining({
+        message: 'no',
+        data: expect.objectContaining({ code: 'FORBIDDEN' }),
+      }),
+    });
+  });
+
+  test('`experimental_pipelineBudget()` can be wrapped', async () => {
+    const { json } = await send({
+      paths: 'list,echo',
+      pipe: { 1: { reads: [{ to: ['id'], from: 0, path: ['items'] }] } },
+      policy: (opts) => {
+        const budget = experimental_pipelineBudget({ allowWholeValues: true })(
+          opts,
+        );
+        return (event) =>
+          event.kind === 'value' && event.length > 20
+            ? { reason: 'long' }
+            : budget(event);
+      },
+    });
+
+    expect(json[1]).toMatchObject({
+      error: { message: 'Refused by `experimental_allowPipelining`: long' },
+      pipeline: 'not-run',
+    });
+  });
+});

@@ -15,10 +15,7 @@ export {
   experimental_pipelining,
 } from './links/internals/pipeline';
 export { isPipelineFallback as experimental_isPipelineFallback } from './links/internals/pipelineContext';
-export type {
-  experimental_Pipelining,
-  experimental_PipeliningLinkOptions,
-} from './links/internals/pipeline';
+export type { experimental_Pipelining } from './links/internals/pipeline';
 
 // These are not public (yet) as we get this functionality from tanstack query
 // export * from './links/internals/dedupeLink';

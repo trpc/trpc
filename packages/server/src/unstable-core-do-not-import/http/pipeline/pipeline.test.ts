@@ -10,6 +10,7 @@ import { TRPCError } from '../../error/TRPCError';
 import { makeResource } from '../../stream/utils/disposable';
 import type { CombinedDataTransformer } from '../../transformer';
 import { isObject } from '../../utils';
+import type { TRPCRequestInfo } from '../types';
 import {
   deserializePipelinedItems,
   encodePipelineReads,
@@ -20,12 +21,14 @@ import {
   readPipelinedItem,
 } from './client';
 import type { PipelinedBatchPlan } from './client';
+import type { experimental_PipelineBudgetOptions } from './policy';
+import { experimental_pipelineBudget } from './policy';
 import {
   createPipelineSizeOf,
   parsePipelineReads,
   pipelineCalls,
   pipelineDecodedInput,
-  pipelineLimitsOf,
+  pipelinePolicyOf,
   pipelineSentInput,
   pipeOfBody,
   pipeOfSearchParams,
@@ -34,7 +37,6 @@ import type { PipelineRuns } from './server';
 import type {
   PipelineCallReads,
   PipelineErrorMark,
-  PipelineLimits,
   PipelineList,
   PipelinePath,
   PipeRead,
@@ -45,7 +47,8 @@ import {
   pipelineBatch,
   pipelineErrorEnvelope,
   pipelineFrameOf,
-  pipelineLimitDefaults,
+  pipelineBudgetDefaults,
+  pipelineMaxBatchSizeDefault,
   pipelineListLevels,
   pipelineMarkOf,
   readPipelinePath,
@@ -58,6 +61,30 @@ vi.mock('./wire', async (importOriginal) => {
 });
 
 // ---------- a server that is a map of functions ----------
+
+/**
+ * What a test server lets a batch make it do: the limits of the default
+ * policy, and the most runs, which a handler takes from its `maxBatchSize`
+ */
+type TestLimits = experimental_PipelineBudgetOptions & { maxRuns?: number };
+
+const testInfo: TRPCRequestInfo = {
+  accept: null,
+  type: 'query',
+  isBatchCall: true,
+  calls: [],
+  connectionParams: null,
+  signal: new AbortController().signal,
+  url: null,
+};
+
+/** What the default policy with `limits` says of each event of a batch */
+const allowOf = (limits: TestLimits) =>
+  experimental_pipelineBudget(limits)({ info: testInfo, ctx: undefined });
+
+/** The most runs of a batch: the lower of the two */
+const maxRunsOf = (maxRuns: number | null, limits: TestLimits) =>
+  Math.min(maxRuns ?? Infinity, limits.maxRuns ?? pipelineMaxBatchSizeDefault);
 
 type Fn = (input: any) => unknown;
 
@@ -115,7 +142,7 @@ function serve(opts: {
   maxRuns: number | null;
   /** Sends each call's result as a line of its own, when it is ready */
   stream: boolean;
-  limits: PipelineLimits;
+  limits: TestLimits;
 }) {
   return fetchServerResource(async (request) => {
     const url = new URL(request.url);
@@ -193,8 +220,8 @@ function serve(opts: {
             decoded: pipelineDecodedInput(it.input),
           };
         },
-        maxRuns: opts.maxRuns,
-        limits: opts.limits,
+        maxRuns: maxRunsOf(opts.maxRuns, opts.limits),
+        allow: allowOf(opts.limits),
       });
     } catch (cause) {
       return Response.json({ error: wireError(cause) }, { status: 400 });
@@ -598,7 +625,7 @@ function blog() {
 const defaults = {
   transformer: transformers.none,
   maxRuns: null,
-  limits: pipelineLimitDefaults,
+  limits: pipelineBudgetDefaults,
   stream: false,
   fits: () => true,
   onError: () => undefined,
@@ -607,8 +634,8 @@ const defaults = {
 } as const;
 
 /** For reads of objects and arrays, which a server takes only with `allowWholeValues` */
-const wholeValues: PipelineLimits = {
-  ...pipelineLimitDefaults,
+const wholeValues: TestLimits = {
+  ...pipelineBudgetDefaults,
   allowWholeValues: true,
 };
 
@@ -767,7 +794,7 @@ describe.each(['GET', 'POST'] as const)('over %s', (method) => {
     await using server = serve({
       ...defaults,
       // A chain of four: the post, its author, the team's posts, the first of them
-      limits: { ...pipelineLimitDefaults, maxDepth: 4 },
+      limits: { ...pipelineBudgetDefaults, maxDepth: 4 },
       fns,
     });
     const post = sent('post', { slug: 'orphan' });
@@ -1356,7 +1383,8 @@ describe('a call for every item', () => {
     expect(res.of(authorOfEach)).toEqual({
       error: {
         code: 'BAD_REQUEST',
-        message: 'A call for every item exceeds the maximum batch size',
+        message:
+          'This call would make the batch run 4 times, more than `maxBatchSize` (3) allows',
       },
       pipeline: 'not-run',
     });
@@ -1389,7 +1417,7 @@ describe('a call for every item', () => {
     expect(res.of(authorOfEach)).toEqual({
       error: {
         code: 'BAD_REQUEST',
-        message: 'A call for every item exceeds the maximum batch size',
+        message: 'A list has 3 items, more than `maxBatchSize` (2) allows',
       },
       pipeline: 'not-run',
     });
@@ -1557,7 +1585,8 @@ describe('a call for every item', () => {
     expect(res.of(ofShort)).toEqual({
       error: {
         code: 'BAD_REQUEST',
-        message: 'A call for every item exceeds the maximum batch size',
+        message:
+          'This call would make the batch run 7 times, more than `maxBatchSize` (5) allows',
       },
       pipeline: 'not-run',
     });
@@ -1858,12 +1887,12 @@ describe('a call for every item', () => {
     });
   });
 
-  test('every run of a list of lists counts, and a list that would go over `maxRuns` fails by itself', async () => {
+  test('every run of a list of lists counts, and a list that would go over `maxBatchSize` fails by itself', async () => {
     const echo = vi.fn((input: { n: number }) => input.n);
     await using server = serve({
       ...defaults,
       // The book, and the runs for the items of its first page
-      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      limits: { ...pipelineBudgetDefaults, maxRuns: 3 },
       fns: {
         book: () => ({ pages: [{ items: [1, 2] }, { items: [3] }] }),
         echo,
@@ -1896,7 +1925,7 @@ describe('a call for every item', () => {
           error: {
             code: 'BAD_REQUEST',
             message:
-              'This call would make the batch run 4 times, more than `maxRuns` (3) allows',
+              'This call would make the batch run 4 times, more than `maxBatchSize` (3) allows',
           },
         },
       },
@@ -1904,11 +1933,11 @@ describe('a call for every item', () => {
     expect(echo).toHaveBeenCalledTimes(2);
   });
 
-  test('the lists at a level of a list of lists count together against `maxRuns`, even when no call runs for their items: a call none of whose runs started is refused as a whole', async () => {
+  test('the lists at a level of a list of lists count together against `maxBatchSize`, even when no call runs for their items: a call none of whose runs started is refused as a whole', async () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
-      limits: { ...pipelineLimitDefaults, maxRuns: 4 },
+      limits: { ...pipelineBudgetDefaults, maxRuns: 4 },
       fns: {
         // Two lists of no items in each group: no run, but a place for each
         book: () => ({
@@ -1942,7 +1971,7 @@ describe('a call for every item', () => {
       error: {
         code: 'BAD_REQUEST',
         message:
-          'The lists at one level have 6 items together, more than `maxRuns` (4) allows',
+          'The lists at one level have 6 items together, more than `maxBatchSize` (4) allows',
       },
       pipeline: 'not-run',
     });
@@ -2022,7 +2051,7 @@ describe('a call for every item', () => {
       ...defaults,
       // The batch's three calls, but not `groups` and the three runs of
       // `members`
-      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      limits: { ...pipelineBudgetDefaults, maxRuns: 3 },
       fns: {
         groups: () => [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
         members: () => ({ ids: ['x'] }),
@@ -2340,7 +2369,7 @@ describe('a call for every item', () => {
     const echo = vi.fn(() => null);
     await using server = serve({
       ...defaults,
-      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      limits: { ...pipelineBudgetDefaults, maxRuns: 3 },
       fns: { list: () => [1, 2, 3, 4], echo },
     });
     const list = sent('list', undefined);
@@ -2361,7 +2390,7 @@ describe('a call for every item', () => {
     expect(res.of(each)).toEqual({
       error: {
         code: 'BAD_REQUEST',
-        message: 'A list has 4 items, more than `maxRuns` (3) allows',
+        message: 'A list has 4 items, more than `maxBatchSize` (3) allows',
       },
       pipeline: 'not-run',
     });
@@ -2379,7 +2408,7 @@ describe('a call for every item', () => {
       ...defaults,
       stream: true,
       // The list, the call that isn't there, and the two runs below
-      limits: { ...pipelineLimitDefaults, maxRuns: 3 },
+      limits: { ...pipelineBudgetDefaults, maxRuns: 3 },
       fns: {
         list: async () => {
           // Ready after the client has the failure of the call below
@@ -2426,6 +2455,7 @@ describe('a call for every item', () => {
     const path = Array.from({ length: 200_000 }, () => null);
     const pipeline = pipelineCalls({
       calls: [0, 1, 2].map(() => ({
+        path: 'echo',
         getRawInput: async () => ({}),
         result: () => undefined,
       })),
@@ -2438,8 +2468,8 @@ describe('a call for every item', () => {
       }),
       transformer: transformers.none,
       inputOf: emptyInput,
-      maxRuns: null,
-      limits: pipelineLimitDefaults,
+      maxRuns: pipelineMaxBatchSizeDefault,
+      allow: allowOf({}),
     });
     const ran = vi.fn();
     const [list, ...each] = pipeline.run<Outcome>({
@@ -2476,55 +2506,73 @@ describe('a call for every item', () => {
 });
 
 describe('the limits of a server', () => {
-  test('`true` is the defaults, and an object sets the ones it has', () => {
-    expect(pipelineLimitsOf(true)).toEqual({
-      maxValueLength: 1024,
-      maxReadsPerCall: 16,
-      maxFillSize: 100_000,
-      maxDepth: 3,
-      allowWholeValues: false,
-      maxRuns: 100,
+  test('`true` is the default policy, a policy is itself, and `false` accepts none', () => {
+    const policy = experimental_pipelineBudget({ maxDepth: 5 });
+    expect(pipelinePolicyOf(policy)).toBe(policy);
+    expect(pipelinePolicyOf(false)).toBeNull();
+    expect(pipelinePolicyOf(undefined)).toBeNull();
+
+    const allow = pipelinePolicyOf(true)?.({ info: testInfo, ctx: undefined });
+    assert(allow);
+    expect(allow({ kind: 'call', path: 'a', depth: 3, reads: 16 })).toBe(true);
+    expect(allow({ kind: 'call', path: 'a', depth: 4, reads: 1 })).toEqual({
+      reason: 'maxDepth',
+      message:
+        'This call is 4 calls deep in a chain, more than `maxDepth` (3) allows',
     });
-    expect(pipelineLimitsOf({ maxDepth: 5, allowWholeValues: true })).toEqual({
-      ...pipelineLimitDefaults,
-      maxDepth: 5,
-      allowWholeValues: true,
+    expect(allow({ kind: 'call', path: 'a', depth: 1, reads: 17 })).toEqual({
+      reason: 'maxReadsPerCall',
+      message:
+        'This call reads 17 values, more than `maxReadsPerCall` (16) allows',
     });
-    expect(
-      pipelineLimitsOf({
-        maxValueLength: 1,
-        maxReadsPerCall: 2,
-        maxFillSize: 3,
-        maxDepth: 4,
-        allowWholeValues: true,
-        maxRuns: 5,
-      }),
-    ).toEqual({
-      maxValueLength: 1,
-      maxReadsPerCall: 2,
-      maxFillSize: 3,
-      maxDepth: 4,
-      allowWholeValues: true,
-      maxRuns: 5,
+    expect(allow({ kind: 'list', length: 1000 })).toBe(true);
+    expect(allow({ kind: 'value', whole: true, length: 2 })).toMatchObject({
+      reason: 'allowWholeValues',
     });
-    expect(pipelineLimitsOf({})).toEqual(pipelineLimitDefaults);
-    expect(pipelineLimitsOf(false)).toBeNull();
-    expect(pipelineLimitsOf(undefined)).toBeNull();
+    expect(allow({ kind: 'value', whole: false, length: 1025 })).toMatchObject({
+      reason: 'maxValueLength',
+    });
   });
 
-  test('`true` gives each handler limits of its own, which changing changes no other', () => {
-    const changed = pipelineLimitsOf(true);
-    expect(changed).not.toBe(pipelineLimitDefaults);
-    assert(changed);
-    changed.maxRuns = 1;
+  test('the default policy counts what a batch fills in, and each batch has its own count', () => {
+    const policy = experimental_pipelineBudget({ maxFillSize: 10 });
+    const first = policy({ info: testInfo, ctx: undefined });
+    const run = (filled: number) => ({
+      kind: 'run' as const,
+      path: 'a',
+      filled,
+    });
+    expect(first(run(6))).toBe(true);
+    // A refused run counts for nothing
+    expect(first(run(5))).toMatchObject({ reason: 'maxFillSize' });
+    expect(first(run(4))).toBe(true);
+    expect(first(run(1))).toMatchObject({ reason: 'maxFillSize' });
 
-    expect(pipelineLimitsOf(true)?.maxRuns).toBe(100);
-    expect(pipelineLimitDefaults.maxRuns).toBe(100);
+    const second = policy({ info: testInfo, ctx: undefined });
+    expect(second(run(10))).toBe(true);
+  });
+
+  test('a value refused for being an object or an array is not measured', () => {
+    const allow = experimental_pipelineBudget()({
+      info: testInfo,
+      ctx: undefined,
+    });
+    const measured = vi.fn(() => 2);
+    expect(
+      allow({
+        kind: 'value',
+        whole: true,
+        get length() {
+          return measured();
+        },
+      }),
+    ).toMatchObject({ reason: 'allowWholeValues' });
+    expect(measured).not.toHaveBeenCalled();
   });
 
   /** Sends a batch to a server with `limits`, and what ran */
   async function sendWith(opts: {
-    limits: PipelineLimits;
+    limits: TestLimits;
     fns: Record<string, Fn>;
     sent: Sent[];
     calls: Call[];
@@ -2584,9 +2632,9 @@ describe('the limits of a server', () => {
     const fns = { post: () => ({ id: 'ada' }), over: () => 1, within: () => 2 };
 
     test.each([
-      { limits: pipelineLimitDefaults, max: 16 },
-      { limits: { ...pipelineLimitDefaults, maxReadsPerCall: 20 }, max: 20 },
-      { limits: { ...pipelineLimitDefaults, maxReadsPerCall: 1 }, max: 1 },
+      { limits: pipelineBudgetDefaults, max: 16 },
+      { limits: { ...pipelineBudgetDefaults, maxReadsPerCall: 20 }, max: 20 },
+      { limits: { ...pipelineBudgetDefaults, maxReadsPerCall: 1 }, max: 1 },
     ])(
       'a call that reads more than $max values is refused, and the rest of the batch runs',
       async ({ limits, max }) => {
@@ -2614,6 +2662,7 @@ describe('the limits of a server', () => {
       const read = { to: ['id'], from: 0, path: ['id'] };
       const pipeline = pipelineCalls({
         calls: [0, 1].map(() => ({
+          path: 'echo',
           getRawInput: async () => ({}),
           result: () => undefined,
         })),
@@ -2622,8 +2671,8 @@ describe('the limits of a server', () => {
         }),
         transformer: transformers.none,
         inputOf: emptyInput,
-        maxRuns: null,
-        limits: pipelineLimitDefaults,
+        maxRuns: pipelineMaxBatchSizeDefault,
+        allow: allowOf({}),
       });
       const [first, second] = pipeline.run<Outcome>({
         call: async (_call, run) => {
@@ -2665,7 +2714,7 @@ describe('the limits of a server', () => {
       );
 
       const { res, ran } = await sendWith({
-        limits: { ...pipelineLimitDefaults, maxReadsPerCall: 1 },
+        limits: { ...pipelineBudgetDefaults, maxReadsPerCall: 1 },
         fns: { list: () => ({ id: 'x', items: [1, 2] }), each: () => 1 },
         sent: [list],
         calls: [each],
@@ -2729,7 +2778,7 @@ describe('the limits of a server', () => {
 
     test('a call more than 3 calls deep is refused, and the rest of the batch runs', async () => {
       const { res, ran } = await sendWith({
-        limits: pipelineLimitDefaults,
+        limits: pipelineBudgetDefaults,
         fns,
         sent: [post],
         calls: [author, team, teamPosts, first, both],
@@ -2744,7 +2793,7 @@ describe('the limits of a server', () => {
 
     test('raised, a longer chain runs, and lowered, a shorter one is refused', async () => {
       const raised = await sendWith({
-        limits: { ...pipelineLimitDefaults, maxDepth: 5 },
+        limits: { ...pipelineBudgetDefaults, maxDepth: 5 },
         fns,
         sent: [post],
         calls: [author, team, teamPosts, first],
@@ -2752,7 +2801,7 @@ describe('the limits of a server', () => {
       expect(raised.res.of(first)).toEqual({ data: 'first' });
 
       const lowered = await sendWith({
-        limits: { ...pipelineLimitDefaults, maxDepth: 2 },
+        limits: { ...pipelineBudgetDefaults, maxDepth: 2 },
         fns,
         sent: [post],
         calls: [author, team, both],
@@ -2777,7 +2826,7 @@ describe('the limits of a server', () => {
       );
 
       const { res, ran } = await sendWith({
-        limits: { ...pipelineLimitDefaults, maxDepth: 2 },
+        limits: { ...pipelineBudgetDefaults, maxDepth: 2 },
         fns: { post: fns.post, list: () => ({ items: [1] }), each: () => 1 },
         sent: [post],
         calls: [list, each],
@@ -2807,7 +2856,7 @@ describe('the limits of a server', () => {
       );
 
       const { res, ran } = await sendWith({
-        limits: pipelineLimitDefaults,
+        limits: pipelineBudgetDefaults,
         fns: {
           none: () => ({ id: 'a' }),
           second: () => ({ id: 'b' }),
@@ -2824,7 +2873,7 @@ describe('the limits of a server', () => {
     });
   });
 
-  describe('`maxRuns`', () => {
+  describe('`maxBatchSize`', () => {
     const list = sent('list', undefined);
     const ofList = call(
       'echo',
@@ -2837,10 +2886,10 @@ describe('the limits of a server', () => {
     });
 
     test.each([
-      { limits: pipelineLimitDefaults, max: 100 },
-      { limits: { ...pipelineLimitDefaults, maxRuns: 10 }, max: 10 },
+      { limits: pipelineBudgetDefaults, max: 100 },
+      { limits: { ...pipelineBudgetDefaults, maxRuns: 10 }, max: 10 },
     ])(
-      'a call for every item that would make the batch run more than $max times is refused, without `maxBatchSize`',
+      'a call for every item that would make the batch run more than $max times is refused',
       async ({ limits, max }) => {
         // `list` is a run, and one more item would be one too many
         const within = await sendWith({
@@ -2859,7 +2908,7 @@ describe('the limits of a server', () => {
         });
         expect(over.res.of(ofList)).toEqual(
           refused(
-            `This call would make the batch run ${max + 1} times, more than \`maxRuns\` (${max}) allows`,
+            `This call would make the batch run ${max + 1} times, more than \`maxBatchSize\` (${max}) allows`,
           ),
         );
         expect(over.ran).toEqual(['list']);
@@ -2883,7 +2932,7 @@ describe('the limits of a server', () => {
         ...defaults,
         stream: true,
         // The two lists, and the two runs for the items of `short`
-        limits: { ...pipelineLimitDefaults, maxRuns: 4 },
+        limits: { ...pipelineBudgetDefaults, maxRuns: 4 },
         fns: {
           list: () => [1, 2, 3],
           // Ready after the client has the refusal of the call for the items
@@ -2925,9 +2974,12 @@ describe('the limits of a server', () => {
     const ofLength = (length: number) => 'x'.repeat(length - 2);
 
     test.each([
-      { limits: pipelineLimitDefaults, max: 1024 },
-      { limits: { ...pipelineLimitDefaults, maxValueLength: 2000 }, max: 2000 },
-      { limits: { ...pipelineLimitDefaults, maxValueLength: 10 }, max: 10 },
+      { limits: pipelineBudgetDefaults, max: 1024 },
+      {
+        limits: { ...pipelineBudgetDefaults, maxValueLength: 2000 },
+        max: 2000,
+      },
+      { limits: { ...pipelineBudgetDefaults, maxValueLength: 10 }, max: 10 },
     ])(
       'a call that reads a value longer than $max characters of JSON is refused, and the rest of the batch runs',
       async ({ limits, max }) => {
@@ -2964,7 +3016,7 @@ describe('the limits of a server', () => {
       );
 
       const { res, ran } = await sendWith({
-        limits: { ...pipelineLimitDefaults, maxValueLength: 10 },
+        limits: { ...pipelineBudgetDefaults, maxValueLength: 10 },
         fns: {
           list: () => ({ items: [{ v: 'short' }, { v: ofLength(11) }] }),
           each: () => 1,
@@ -3022,7 +3074,7 @@ describe('the limits of a server', () => {
       ].map(reader);
 
       const { res, ran } = await sendWith({
-        limits: pipelineLimitDefaults,
+        limits: pipelineBudgetDefaults,
         fns,
         sent: [post],
         calls,
@@ -3053,7 +3105,7 @@ describe('the limits of a server', () => {
       const tags = reader('tags');
 
       const { res } = await sendWith({
-        limits: { ...pipelineLimitDefaults, allowWholeValues: true },
+        limits: { ...pipelineBudgetDefaults, allowWholeValues: true },
         fns,
         sent: [post],
         calls: [author, tags],
@@ -3077,7 +3129,7 @@ describe('the limits of a server', () => {
       );
 
       const { res } = await sendWith({
-        limits: pipelineLimitDefaults,
+        limits: pipelineBudgetDefaults,
         fns: {
           list: () => ({ items: [{ id: 'a' }] }),
           items: () => 1,
@@ -3103,7 +3155,7 @@ describe('the limits of a server', () => {
      * How a call that reads the ids of `count` items goes, and how many of
      * the ids are read to make the list of them
      */
-    async function readIds(limits: PipelineLimits) {
+    async function readIds(limits: TestLimits) {
       let read = 0;
       const transformer: CombinedDataTransformer = {
         input: transformers.none.input,
@@ -3123,6 +3175,7 @@ describe('the limits of a server', () => {
       };
       const pipeline = pipelineCalls({
         calls: [0, 1].map(() => ({
+          path: 'echo',
           getRawInput: async () => ({}),
           result: () => undefined,
         })),
@@ -3131,8 +3184,8 @@ describe('the limits of a server', () => {
         }),
         transformer,
         inputOf: emptyInput,
-        maxRuns: null,
-        limits,
+        maxRuns: pipelineMaxBatchSizeDefault,
+        allow: allowOf(limits),
       });
       const [, reader] = pipeline.run<Outcome>({
         call: async (_call, run) => {
@@ -3155,21 +3208,21 @@ describe('the limits of a server', () => {
       return { outcome: await reader, read };
     }
 
-    test('is refused before any of it is made, if `allowWholeValues` is false', async () => {
-      expect(await readIds(pipelineLimitDefaults)).toEqual({
+    test('is refused if `allowWholeValues` is false, each item read once', async () => {
+      expect(await readIds(pipelineBudgetDefaults)).toEqual({
         outcome: refused(
           'A value this call reads is an object or an array, and `allowWholeValues` is false',
         ),
-        read: 0,
+        read: count,
       });
     });
 
-    test('is refused before any of it is made, if it is longer than `maxValueLength` at least', async () => {
+    test('is refused if it is longer than `maxValueLength`, each item read once', async () => {
       expect(await readIds({ ...wholeValues, maxValueLength: count })).toEqual({
         outcome: refused(
           `A value this call reads is longer than \`maxValueLength\` (${count} characters of JSON) allows`,
         ),
-        read: 0,
+        read: count,
       });
     });
 
@@ -3190,8 +3243,8 @@ describe('`maxFillSize`: what a request fills in', () => {
   // A value is copied into every input it goes in. Without a limit, a small
   // request could make the server copy a large result many times over
   const maxFillSize = 1000;
-  const limits: PipelineLimits = {
-    ...pipelineLimitDefaults,
+  const limits: TestLimits = {
+    ...pipelineBudgetDefaults,
     maxFillSize,
     maxValueLength: maxFillSize,
   };
@@ -3440,7 +3493,7 @@ describe('`maxFillSize`: what a request fills in', () => {
       const echo = vi.fn(() => null);
       await using server = serve({
         ...defaults,
-        limits: { ...pipelineLimitDefaults, maxFillSize: max },
+        limits: { ...pipelineBudgetDefaults, maxFillSize: max },
         fns: { list: () => ['x'], echo },
       });
       const list = sent('list', undefined);
@@ -3493,7 +3546,7 @@ describe('`maxFillSize`: what a request fills in', () => {
       ...defaults,
       transformer: padded,
       // Each value is as long as the transformer writes it too, pad and all
-      limits: { ...pipelineLimitDefaults, maxValueLength: 50_000 },
+      limits: { ...pipelineBudgetDefaults, maxValueLength: 50_000 },
       fns: { list: () => [1, 2, 3], echo },
     });
     const list = sent('list', undefined);
@@ -3521,7 +3574,7 @@ describe('`maxFillSize`: what a request fills in', () => {
         2: {
           error: {
             code: 'BAD_REQUEST',
-            message: `What this call fills in goes over \`maxFillSize\` (${pipelineLimitDefaults.maxFillSize} characters of JSON for the batch)`,
+            message: `What this call fills in goes over \`maxFillSize\` (${pipelineBudgetDefaults.maxFillSize} characters of JSON for the batch)`,
           },
         },
       },
@@ -4298,7 +4351,6 @@ describe('what a client puts in a request', () => {
       readPipelinePath(
         { items: [{}, {}, { tags: [{ id: 'a' }] }] },
         bindPipelinePath(['items', null, 'tags', null, 'id'], 2),
-        null,
       ),
     ).toEqual(['a']);
   });
@@ -4913,7 +4965,7 @@ describe('a value a call reads that is in itself', () => {
     await using server = serve({
       ...defaults,
       transformer: inItself,
-      limits: { ...pipelineLimitDefaults, allowWholeValues: true },
+      limits: { ...pipelineBudgetDefaults, allowWholeValues: true },
       fns: { post: () => ({ v: { id: 'ada' } }), echo },
     });
     const post = sent('post', undefined);

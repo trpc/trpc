@@ -76,6 +76,12 @@ export {
    */
   lazy as experimental_lazy,
   callProcedure as callTRPCProcedure,
+  experimental_pipelineBudget,
+  experimental_TRPCPipelineRefusal,
+  type experimental_PipelineBudgetOptions,
+  type experimental_PipelineEvent,
+  type experimental_PipelinePolicy,
+  type experimental_PipelineVerdict,
 
   /**
    * @internal

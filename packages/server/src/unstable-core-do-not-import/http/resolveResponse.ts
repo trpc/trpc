@@ -27,9 +27,12 @@ import {
 import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import { urlPathToProcedurePath } from './pathSeparator';
-import { pipelineCalls, pipelineLimitsOf } from './pipeline/server';
+import { pipelineCalls, pipelinePolicyOf } from './pipeline/server';
 import type { PipelineCallRun, PipelineRuns } from './pipeline/server';
-import { pipelineErrorEnvelope } from './pipeline/wire';
+import {
+  pipelineErrorEnvelope,
+  pipelineMaxBatchSizeDefault,
+} from './pipeline/wire';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
@@ -570,7 +573,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           headers: opts.req.headers,
           url,
           maxBatchSize: opts.maxBatchSize,
-          pipelineLimits: pipelineLimitsOf(opts.experimental_allowPipelining),
+          pipelinePolicy: pipelinePolicyOf(opts.experimental_allowPipelining),
         }),
       ];
     } catch (cause) {
@@ -663,10 +666,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             pipe: await pipelined.getPipe(),
             transformer: config.transformer,
             inputOf: pipelined.getInput,
-            limits: pipelined.limits,
+            // Once for the batch, with its context
+            allow: pipelined.policy({
+              info,
+              ctx: ctxManager.valueOrUndefined(),
+            }),
             // Every run of a procedure counts towards `maxBatchSize`
-            maxRuns:
-              typeof opts.maxBatchSize === 'number' ? opts.maxBatchSize : null,
+            maxRuns: opts.maxBatchSize ?? pipelineMaxBatchSizeDefault,
           });
         })
       : null;

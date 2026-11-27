@@ -23,6 +23,7 @@ export * from './unstable-core-do-not-import/http/abortError';
 export * from './unstable-core-do-not-import/http/parseConnectionParams';
 export * from './unstable-core-do-not-import/http/pathSeparator';
 export * from './unstable-core-do-not-import/http/pipeline/client';
+export * from './unstable-core-do-not-import/http/pipeline/policy';
 export * from './unstable-core-do-not-import/http/pipeline/server';
 export * from './unstable-core-do-not-import/http/pipeline/wire';
 export * from './unstable-core-do-not-import/http/resolveResponse';
