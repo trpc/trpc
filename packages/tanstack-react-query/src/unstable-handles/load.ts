@@ -60,11 +60,27 @@ export function startEntry(opts: {
    */
   kind: TRPCEntryKind;
   options: EntryQueryOptions;
+  /**
+   * Whether a query that failed, and isn't fetching, keeps its error rather
+   * than fetching again. Rendering that starts a load does: a page whose
+   * Suspense boundary is above it renders again from nothing once the query
+   * fails, and would start it again, forever
+   */
+  keepFailed: boolean;
 }) {
   const { queryClient, options } = opts;
   // A `skipToken` input: its query is disabled, and nothing starts
   if (options.queryFn === skipToken) {
     return Promise.resolve(undefined);
+  }
+  const failed = opts.keepFailed
+    ? queryClient.getQueryState(options.queryKey)
+    : undefined;
+  if (failed?.status === 'error' && failed.fetchStatus === 'idle') {
+    // A prefetch absorbs its error, as `prefetchQuery` does
+    return opts.kind === 'prefetch'
+      ? Promise.resolve(undefined)
+      : Promise.reject(failed.error);
   }
   // The options proxy built them for the query's type, as the `QueryClient`
   // methods for that type take them
@@ -698,6 +714,7 @@ export function beginEntries(opts: {
         // A prefetch resolves to nothing, also when the cache had fresh data
         kind: isRead && state.kind === 'prefetch' ? 'fetch' : state.kind,
         options,
+        keepFailed: opts.now !== null,
       });
       return started ? started(promise) : promise;
     };
@@ -996,6 +1013,7 @@ export function beginEntries(opts: {
                   type: state.type,
                   kind: state.kind,
                   options,
+                  keepFailed: opts.now !== null,
                 });
               }).then((outcome) =>
                 outcome.ok

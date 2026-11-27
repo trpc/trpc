@@ -795,10 +795,9 @@ export function PostPage(props: { slug: string }) {
 ```
 
 - **It returns the handles at once**, and waits for no data. The component that reads a handle waits, in its Suspense boundary.
-- **It starts the entries once while the component is on the page.** Rendering again starts nothing.
-- **It starts them again when they change**, such as for another slug, and when the component comes back to the page. As in a loader, a prefetch entry whose data is fresh asks for nothing.
-- **A component that a Suspense boundary above it hasn't shown yet** keeps its load until 30 seconds after its queries settle.
-- **Build the entries from values that stay the same between renders**: props, the URL. An input that is new on every render, such as `new Date()`, starts the queries on every render.
+- **Once the component is on the page, rendering again starts nothing.**
+- **It starts them again as a loader that runs again does**: when they change, such as for another slug, when the component comes back to the page, and when it renders again before it got on the page, such as after a Suspense boundary above it waited. Each entry starts by its kind: a query that is loading or has fresh data asks for nothing. A query that failed isn't started again: resetting its error boundary retries it.
+- **Build the entries from the URL**, as a loader would: a search param read with your router's hook, or an id that a server component or the route passes as a prop. An input that is new on every render, such as `new Date()`, starts the queries on every render.
 - **Entries are compared by value, as query keys are**: the procedure, the input, and the options that say how a query starts, such as `staleTime`. Which function an option holds isn't compared. A function in `trpc.context` is, as a link may route by it: define it outside the component. The order of an object's keys isn't compared, so don't route by it.
 - **It is for a page without a loader.** Entries that a loader has already started get no second request, so the queries that depend on them have no request to go in.
 - **With a link that [pipelines](/docs/client/vanilla/nested-queries#turn-on), it is one request**, as from a loader.

@@ -527,7 +527,6 @@ export function describeEntries(opts: {
       dataOfRef: () => blankInput,
       pipeline: null,
     });
-    const firstCursor: unknown = options.initialPageParam;
     return {
       kind: leaf.state.kind,
       type: leaf.state.type,
@@ -539,8 +538,7 @@ export function describeEntries(opts: {
       // Not all of the options: `meta` can hold what has no JSON, or what is
       // new on every render
       options: startOptions.map((name) => describeOption(options[name])),
-      // A cursor can be a bigint, or have one in it, which has no JSON
-      firstCursor: describeValue(firstCursor, [], ids),
+      // Not the first cursor: TanStack Query keys a query without it
       reads: leaf.state.refs.map((ref) => [ref.to, describeRef(ref)]),
       // Where its requests go, and so whether they can go in another's
       context: describeContext(leaf.state.context, ids),
@@ -555,12 +553,15 @@ export function describeEntries(opts: {
     };
   };
   // In the shape of the entries, which is the shape of their handles: a group
-  // is a list, also an empty one, and an entry is not
+  // is a list, also an empty one, and an entry is not. By name: the order of
+  // the entries doesn't make another load
   const describeTree = (nodes: EntryTree): unknown[] =>
-    nodes.map(([name, node]) => [
-      name,
-      Array.isArray(node) ? describeTree(node) : describeLeaf(node),
-    ]);
+    [...nodes]
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([name, node]) => [
+        name,
+        Array.isArray(node) ? describeTree(node) : describeLeaf(node),
+      ]);
   return {
     key: hashKey(describeTree(tree)),
     /** The number of each symbol it has, which a load of it keeps */

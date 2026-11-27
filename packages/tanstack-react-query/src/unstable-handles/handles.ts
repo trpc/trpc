@@ -7,8 +7,7 @@ import type {
 import type { ResolverDef } from '../internals/types';
 import { queryClientOf, readProxy, readRoot } from './entry';
 import { TRPCEntryError } from './entryError';
-import { isServerEnvironment } from './handle';
-import { beginEntries, handlesOfLoads, settledOf, startEntries } from './load';
+import { beginEntries, handlesOfLoads, startEntries } from './load';
 import { attemptNow } from './outcome';
 import { describeEntries } from './plan';
 import { toTanStackEntries } from './shared';
@@ -72,65 +71,19 @@ export type {
   experimental_inferHandles,
 } from './types';
 
-/** A load that `useLoadHandles()` started, by what its entries are */
+/** What `useLoadHandles()` keeps for a component */
 interface UsedLoad {
+  /** What its entries are */
+  key: string;
+  /** Another `QueryClient`'s cache has none of its queries */
+  queryClient: QueryClient;
   handles: Record<string, unknown>;
-  /** The components that have it and are on the page */
-  mounts: number;
-  /** The number of each symbol its description has */
+  /**
+   * The number of each symbol its description has, which describes the
+   * entries the same on the next render
+   */
   symbols: ReadonlyMap<symbol, number>;
 }
-
-/** The loads of a `QueryClient` that components have, by their description */
-interface UsedLoads {
-  byKey: Map<string, UsedLoad>;
-  /**
-   * The number of each symbol their descriptions have, which describes it the
-   * same while one of them is kept. No other symbol is held
-   */
-  symbolIds: Map<symbol, number>;
-}
-
-const usedLoads = new WeakMap<QueryClient, UsedLoads>();
-
-function usedLoadsOf(queryClient: QueryClient) {
-  const loads = usedLoads.get(queryClient) ?? {
-    byKey: new Map<string, UsedLoad>(),
-    symbolIds: new Map<symbol, number>(),
-  };
-  usedLoads.set(queryClient, loads);
-  return loads;
-}
-
-function keepLoad(loads: UsedLoads, key: string, load: UsedLoad) {
-  loads.byKey.set(key, load);
-  for (const [symbol, id] of load.symbols) {
-    // Not over a number a newer load has for it, which its key has
-    if (!loads.symbolIds.has(symbol)) {
-      loads.symbolIds.set(symbol, id);
-    }
-  }
-}
-
-/** Lets go of a load, and of every symbol no load that is left has */
-function dropLoad(loads: UsedLoads, key: string) {
-  loads.byKey.delete(key);
-  const kept = new Set(
-    [...loads.byKey.values()].flatMap((load) => [...load.symbols.keys()]),
-  );
-  for (const symbol of loads.symbolIds.keys()) {
-    if (!kept.has(symbol)) {
-      loads.symbolIds.delete(symbol);
-    }
-  }
-}
-
-/**
- * How long the handles of a load stay for a component that rendered and
- * isn't on the page: one that waits, in a Suspense boundary above it, for the
- * queries it started. It then renders again, and must not start them again.
- */
-const USED_LOAD_KEPT_MS = 30_000;
 
 /**
  * Whether `error` is a failed entry from `loadHandles()`. Pass a procedure to
@@ -287,6 +240,10 @@ export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
+ * A component that renders again before it is on the page, such as after a
+ * Suspense boundary above it waited, starts them again, as a loader that runs
+ * again does: a query that is loading or has fresh data asks for nothing, and
+ * one that failed keeps its error, which resetting its error boundary retries.
  * Entries are compared by value, as query keys are: the procedure, the input,
  * and the options that say how a query starts, such as `staleTime`. Build them
  * from values that stay the same from render to render, such as props.
@@ -319,20 +276,31 @@ export function useLoadHandles<TEntries extends TRPCLoadEntries>(
   const root = readRoot(trpc, 'useLoadHandles');
   const queryClient = queryClientOf(root);
   const entries = toTanStackEntries(given);
-  const loads = usedLoadsOf(queryClient);
+  // Kept while the component is on the page, also through a render React
+  // throws away, as when a reader suspends to a boundary above the page. A
+  // component that renders again before it is on the page has none, and
+  // starts the entries again, as a loader that runs again does, each by its
+  // kind
+  const loadRef = React.useRef<UsedLoad>(null);
   const { key, symbols } = describeEntries({
     queryClient,
     entries,
-    symbolIds: loads.symbolIds,
+    symbolIds: loadRef.current?.symbols ?? new Map(),
   });
-  let used = loads.byKey.get(key);
-  if (!used) {
+  if (
+    loadRef.current?.key !== key ||
+    // Another `QueryClient`'s cache has none of the queries
+    loadRef.current.queryClient !== queryClient
+  ) {
     const started = beginEntries({
       queryClient,
       entries,
       now: 'useLoadHandles',
     });
-    const load: UsedLoad = {
+    loadRef.current = {
+      key,
+      queryClient,
+      symbols,
       handles: handlesOfLoads({
         tree: started.tree,
         handleOfLeaf: new Map(
@@ -342,44 +310,7 @@ export function useLoadHandles<TEntries extends TRPCLoadEntries>(
           ]),
         ),
       }),
-      mounts: 0,
-      symbols,
     };
-    used = load;
-    keepLoad(loads, key, load);
-    Promise.all(started.allLoads.map(settledOf))
-      // A component that never got on the page keeps nothing. One that is on
-      // the page lets go of it as it leaves, and no timer holds it, or its
-      // symbols, after that. A server renders the component but runs no
-      // effect, so nothing is ever on the page there: the request's
-      // `QueryClient` goes with the request, and a timer would only hold it
-      // longer
-      .finally(() => {
-        if (!isServerEnvironment() && load.mounts === 0) {
-          setTimeout(() => {
-            if (load.mounts === 0 && loads.byKey.get(key) === load) {
-              dropLoad(loads, key);
-            }
-          }, USED_LOAD_KEPT_MS);
-        }
-      })
-      .catch(() => {
-        // Surfaces where the handle is read
-      });
   }
-  const load = used;
-  React.useEffect(() => {
-    const kept = usedLoadsOf(queryClient);
-    load.mounts++;
-    // Back, if a development-mode remount took it away
-    keepLoad(kept, key, load);
-    return () => {
-      load.mounts--;
-      if (load.mounts === 0 && kept.byKey.get(key) === load) {
-        // The component left the page: its next visit loads again
-        dropLoad(kept, key);
-      }
-    };
-  }, [load, queryClient, key]);
-  return load.handles as any;
+  return loadRef.current.handles as any;
 }

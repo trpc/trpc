@@ -308,10 +308,9 @@ describe('chained entries in a server component', () => {
 });
 
 describe('useLoadHandles while server rendering', () => {
-  test("a client component's entries start on the server, which keeps nothing for later", async () => {
+  test("a client component's entries start on the server", async () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    const timers = vi.spyOn(globalThis, 'setTimeout');
     function Page() {
       const trpc = trpcContext.useTRPC();
       const handles = useLoadHandles(trpc, {
@@ -323,10 +322,5 @@ describe('useLoadHandles while server rendering', () => {
     expect(html).toContain('Posts on 2026-01-01');
     expect(resource.calls).toHaveBeenCalledTimes(1);
     expect(trpcWarnings(warn)).toEqual([]);
-    // A request's `QueryClient` goes with the request: no timer waits to clean up
-    await new Promise((resolve) => setImmediate(resolve));
-    expect(timers.mock.calls.filter(([, delay]) => delay === 30_000)).toEqual(
-      [],
-    );
   });
 });
