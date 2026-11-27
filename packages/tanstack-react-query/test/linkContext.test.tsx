@@ -80,8 +80,10 @@ test('`trpc.context` is typed from the client’s links and reaches them', async
   expect(calls.mutation).toHaveBeenCalledTimes(1);
 
   void (() => {
-    // @ts-expect-error -- no link reads `nope`
-    trpc.flakyQuery.queryOptions(undefined, { trpc: { context: { nope: 1 } } });
+    trpc.flakyQuery.queryOptions(undefined, {
+      // @ts-expect-error -- `retry` only takes `false`
+      trpc: { context: { retry: 1 } },
+    });
     // @ts-expect-error -- `retry` only takes `false`
     trpc.flakyMutation.mutationOptions({ trpc: { context: { retry: true } } });
   });
@@ -144,8 +146,8 @@ test('createTRPCContext takes the client’s type', async () => {
     );
     void (() => {
       trpc.flakyQuery.queryOptions(undefined, {
-        // @ts-expect-error -- no link reads `nope`
-        trpc: { context: { nope: 1 } },
+        // @ts-expect-error -- `retry` only takes `false`
+        trpc: { context: { retry: 1 } },
       });
     });
     return <div>{query.status}</div>;
