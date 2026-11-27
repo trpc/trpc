@@ -1154,6 +1154,8 @@ describe('runtime', () => {
     const [handles] = await loadHandles(serverTrpc, {
       post: prefetchEntry(serverTrpc.post.byId, { id: '1' }),
     });
+    // A handle with a prefixed key is a handle too
+    expectTypeOf(handles.post).toExtend<AnyTRPCHandle>();
     const handle = overTheWire(handles.post);
     await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
     hydrate(resource.queryClient, overTheWire(dehydrate(serverQueryClient)));

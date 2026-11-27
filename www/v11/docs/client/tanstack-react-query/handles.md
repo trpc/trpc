@@ -524,7 +524,7 @@ Build the entries from what a loader would have had: the URL.
 
 - **Read search params with your router's hook**, such as `useSearchParams()` in Next.js, not from component state. A filter in the URL survives a reload, the back button and a shared link. One in state is lost with each of them, and changing it starts the load again all the same.
 - **An id can come as a prop**, when a server component or the route passes the page its params. They come from the URL too.
-- **`useSearchParams()` needs a `<Suspense>` above it on a statically rendered route**, or the build fails. `app/posts/[id]` renders dynamically, so it needs none here.
+- **`useSearchParams()` needs a `<Suspense>` above it on a prerendered route**, or the build fails. `app/posts/[id]` renders dynamically while it has no `generateStaticParams()`. With one, wrap `<PostPage>` in a `<Suspense>` in the page.
 
 ```tsx twoslash title='app/posts/[id]/post-page.tsx'
 // @include: handles-router
@@ -554,19 +554,23 @@ import { useTRPC } from '~/trpc/client';
 // `/posts/1?comments=50`. The page, a server component, passes `id` from its params
 export function PostPage(props: { id: string }) {
   const trpc = useTRPC();
-  const limit = Number(useSearchParams().get('comments') ?? 20);
+  const searchParams = useSearchParams();
   const handles = useLoadHandles(trpc, {
     post: prefetchEntry(trpc.post.byId, { id: props.id }),
     comments: prefetchInfiniteEntry(trpc.post.comments, {
       postId: props.id,
-      limit,
+      limit: Number(searchParams.get('comments') ?? 20),
     }),
   });
   return (
-    <Suspense fallback={<p>Loading…</p>}>
-      <Post post={handles.post} />
-      <Comments comments={handles.comments} />
-    </Suspense>
+    <>
+      <Suspense fallback={<p>Loading post…</p>}>
+        <Post post={handles.post} />
+      </Suspense>
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
+      </Suspense>
+    </>
   );
 }
 ```

@@ -41,7 +41,8 @@ export function nextAppDirCaller<TContext, TMeta>(
        * `input` is the value the procedure received, so `FormData` is
        * already normalized to an object when `normalizeFormData` is on.
        * If that conversion fails, the procedure doesn't run and `input` is
-       * the original `FormData`.
+       * the original `FormData`. If `createContext` throws, the procedure
+       * doesn't run either and `ctx` and `input` are `undefined`.
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
     } & CreateContextCallback<TContext, () => MaybePromise<TContext>>
@@ -59,16 +60,7 @@ export function nextAppDirCaller<TContext, TMeta>(
   return async (opts) => {
     const path =
       config.pathExtractor?.({ meta: opts._def.meta as TMeta }) ?? '';
-    const ctx: TContext = await createContext().catch((cause) => {
-      const error = new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create context',
-        cause,
-      });
-
-      throw error;
-    });
-
+    let ctx: TContext | undefined;
     const handleError = (input: unknown) => (cause: unknown) => {
       const error = getTRPCErrorFromUnknown(cause);
 
@@ -84,6 +76,19 @@ export function nextAppDirCaller<TContext, TMeta>(
 
       throw error;
     };
+
+    try {
+      ctx = await createContext();
+    } catch (cause) {
+      return handleError(undefined)(
+        new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create context',
+          cause,
+        }),
+      );
+    }
+
     switch (opts._def.type) {
       case 'mutation': {
         /**
