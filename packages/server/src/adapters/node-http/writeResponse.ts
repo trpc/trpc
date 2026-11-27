@@ -80,7 +80,9 @@ export async function writeResponse(opts: {
   }
   const cookies = response.headers.getSetCookie();
   if (cookies.length > 0) {
-    rawResponse.setHeader('set-cookie', cookies);
+    // keep the cookies a middleware or procedure already set on `res`
+    const existing = rawResponse.getHeader('set-cookie') ?? [];
+    rawResponse.setHeader('set-cookie', [existing, cookies].flat().map(String));
   }
   try {
     if (response.body) {
