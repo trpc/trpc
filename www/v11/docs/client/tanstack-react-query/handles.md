@@ -509,7 +509,7 @@ export function PostPage(props: { id: string }) {
 - Every query starts when the page renders. Without it, a component that renders only once its parent has data starts its own query late.
 - It returns handles, not data, and waits for nothing. The components that read the handles wait in their Suspense boundaries.
 - Once the page is on the screen, rendering again starts nothing. It starts the entries again when they change, such as with another id, when the page comes back after it left, and when it renders again before it got on the screen, such as after a Suspense boundary above it waited. As with a loader that runs again, a query that is loading or has fresh data asks for nothing. Entries are compared by procedure, input and the options that say how the query starts, such as `staleTime`.
-- The entry's kind still says how the query starts: an ensure entry uses cached data, a fetch entry fetches unless the data is fresh. Nothing waits for them, so when a request fails, the reading component's error boundary gets the error. Rendering doesn't start a failed query again: resetting the boundary retries it.
+- The entry's kind still says how the query starts: an ensure entry uses cached data, a fetch entry fetches unless the data is fresh. Nothing waits for them, so when a request fails, the reading component's error boundary gets the error. Rendering doesn't start a failed query again. To retry, reset the boundary with TanStack Query's [`QueryErrorResetBoundary`](https://tanstack.com/query/latest/docs/framework/react/reference/QueryErrorResetBoundary): a plain error boundary's reset throws the cached error again.
 
 #### Inputs from the URL {#without-a-loader-url}
 
@@ -517,6 +517,7 @@ Build the entries from what a loader would have had: the URL.
 
 - **Read search params with your router's hook**, such as `useSearchParams()` in Next.js, not from component state. A filter in the URL survives a reload, the back button and a shared link. One in state is lost with each of them, and changing it starts the load again all the same.
 - **An id can come as a prop**, when a server component or the route passes the page its params. They come from the URL too.
+- **`useSearchParams()` needs a `<Suspense>` above it on a statically rendered route**, or the build fails. `app/posts/[id]` renders dynamically, so it needs none here.
 
 ```tsx twoslash title='app/posts/[id]/post-page.tsx'
 // @include: handles-router
@@ -537,6 +538,7 @@ import {
   useLoadHandles,
 } from '@trpc/tanstack-react-query/unstable-handles';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { Comments } from '~/components/comments';
 import { Post } from '~/components/post';
 import { useTRPC } from '~/trpc/client';
@@ -554,10 +556,10 @@ export function PostPage(props: { id: string }) {
     }),
   });
   return (
-    <>
+    <Suspense fallback={<p>Loading…</p>}>
       <Post post={handles.post} />
       <Comments comments={handles.comments} />
-    </>
+    </Suspense>
   );
 }
 ```

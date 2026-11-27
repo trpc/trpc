@@ -186,8 +186,9 @@ function describeOption(value: unknown) {
  *
  * Nothing waits for a fetch or ensure entry, so their errors surface where the
  * handle is read, as a prefetch entry's do. Rendering doesn't start a query
- * that failed again: resetting the reader's error boundary retries it. The entry's kind still says how
- * its query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
+ * that failed again: resetting the reader's error boundary with
+ * `QueryErrorResetBoundary` retries it. The entry's kind still says how its
+ * query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
  * unless the data is fresh.
  *
  * It starts the entries again when they change, such as with another id, and
@@ -253,9 +254,9 @@ export function useLoadHandles<
     Promise.all(
       states
         // Rendering doesn't start a query that failed again: its reader
-        // throws, and its error boundary retries it. A page whose Suspense
-        // boundary is above it renders again from nothing once the query
-        // fails, and would start it again, forever
+        // throws, and resetting its `QueryErrorResetBoundary` retries it. A
+        // page whose Suspense boundary is above it renders again from nothing
+        // once the query fails, and would start it again, forever
         .filter(([, state]) => {
           const query = queryClient.getQueryState(state.options.queryKey);
           return !(query?.status === 'error' && query.fetchStatus === 'idle');
