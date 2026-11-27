@@ -6,6 +6,7 @@ import type {
 } from '@tanstack/react-query';
 import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
 import { isTRPCClientError } from '@trpc/client';
+import * as React from 'react';
 import type {
   DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
@@ -405,14 +406,12 @@ function settleLoad(promise: Promise<unknown>) {
   );
 }
 
-async function startEntries(opts: {
-  queryClient: QueryClient;
-  entries: Record<string, unknown>;
-  /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
-  settle: boolean;
-}) {
-  const { queryClient, entries } = opts;
-  const states = Object.entries(entries).flatMap(([key, entry]) => {
+/** The entries to start, by their keys, without the `skipToken` ones */
+function readEntries(
+  queryClient: QueryClient,
+  entries: Record<string, unknown>,
+) {
+  return Object.entries(entries).flatMap(([key, entry]) => {
     if (entry === skipToken) {
       return [];
     }
@@ -424,6 +423,16 @@ async function startEntries(opts: {
     }
     return [[key, state] as const];
   });
+}
+
+async function startEntries(opts: {
+  queryClient: QueryClient;
+  entries: Record<string, unknown>;
+  /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
+  settle: boolean;
+}) {
+  const { queryClient } = opts;
+  const states = readEntries(queryClient, opts.entries);
   const loads = states.map(([key, state]) => ({
     key,
     state,
@@ -669,7 +678,8 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  *
  * Takes the root of an options proxy, from `createTRPCOptionsProxy` or `useTRPC()`.
  * Call it in a route loader, a server component or an event handler, not during
- * render: every render would start the entries again.
+ * render: every render would start the entries again. On a page without a
+ * loader, call `useLoadHandles()` in its component.
  * @example
  * ```ts
  * const [handles, data] = await loadHandles(trpc, {
@@ -729,6 +739,225 @@ export function loadHandlesSettled<
     entries,
     settle: true,
   }) as Promise<any>;
+}
+
+/** A load that `useLoadHandles()` started */
+interface UsedLoad {
+  handles: Record<string, unknown>;
+  /** The components that have it and are on the page */
+  mounts: number;
+}
+
+/** The loads of a `QueryClient` that components have, by what their entries are */
+const usedLoads = new WeakMap<QueryClient, Map<string, UsedLoad>>();
+
+function usedLoadsOf(queryClient: QueryClient) {
+  const loads = usedLoads.get(queryClient) ?? new Map<string, UsedLoad>();
+  usedLoads.set(queryClient, loads);
+  return loads;
+}
+
+/**
+ * How long the handles of a load stay for a component that rendered and
+ * isn't on the page: one that waits, in a Suspense boundary above it, for the
+ * queries it started. It then renders again, and must not start them again.
+ */
+const USED_LOAD_KEPT_MS = 30_000;
+
+/** The options of an entry that say how its query starts */
+const startOptions = [
+  'staleTime',
+  'retry',
+  'retryDelay',
+  'gcTime',
+  'pages',
+  // Whether there is one: without it, an infinite query loads no page after
+  // its first, and a load with `pages` fails
+  'getNextPageParam',
+] as const;
+
+/**
+ * A start option as a string. `undefined` and `Infinity` have no JSON, and
+ * would read the same as `null`. Which function an option is isn't compared:
+ * an inline one is new on every render.
+ */
+function describeOption(value: unknown) {
+  return typeof value === 'function'
+    ? 'function'
+    : `${typeof value}:${String(value)}`;
+}
+
+/**
+ * A first cursor as a value with JSON that no other cursor has. It isn't in
+ * the query key, which the cache hashes, and JSON reads `undefined` as `null`,
+ * `-0` as `0`, and has no bigint: a transformer can tell them apart. Each value
+ * is tagged with its type, so that no value reads like another's tag.
+ */
+function describeCursor(value: unknown, within: readonly object[]): unknown {
+  switch (typeof value) {
+    case 'undefined':
+      return ['undefined'];
+    case 'bigint':
+      return ['bigint', String(value)];
+    case 'number':
+      // `NaN` and `Infinity` have no JSON either
+      return ['number', Object.is(value, -0) ? '-0' : String(value)];
+    case 'string':
+    case 'boolean':
+      return ['value', value];
+    case 'function':
+    case 'symbol':
+      return [typeof value];
+    case 'object':
+      break;
+  }
+  if (value === null) {
+    return ['value', null];
+  }
+  // A cursor that has itself in it ends where it goes back
+  const back = within.indexOf(value);
+  if (back !== -1) {
+    return ['circular', back];
+  }
+  const inside = [...within, value];
+  if (value instanceof Date) {
+    return ['date', String(value.getTime())];
+  }
+  if (Array.isArray(value)) {
+    return [
+      'array',
+      Array.from({ length: value.length }, (_, index) =>
+        index in value ? describeCursor(value[index], inside) : ['hole'],
+      ),
+    ];
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype === Object.prototype || prototype === null) {
+    // Sorted, as the cache hashes a query key's objects
+    return [
+      'object',
+      Object.keys(value)
+        .sort()
+        .map((key) => [
+          key,
+          describeCursor((value as Record<string, unknown>)[key], inside),
+        ]),
+    ];
+  }
+  try {
+    return ['instance', hashKey([value])];
+  } catch {
+    return ['instance', describeOption(value)];
+  }
+}
+
+/**
+ * `loadHandles()` for a component on a page without a loader: an alternative
+ * to a route loader, `getServerSideProps` or a server component. Call it at
+ * the top of the page's component. It starts every entry, once, and returns
+ * the handles at once, without waiting for any data. The components that get
+ * them read the data, and wait for it in their Suspense boundary.
+ *
+ * Nothing waits for a fetch or ensure entry, so their errors surface where the
+ * handle is read, as a prefetch entry's do. The entry's kind still says how
+ * its query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
+ * unless the data is fresh.
+ *
+ * It starts the entries again when they change, such as with another id, and
+ * when the component comes back to the page. Rendering again starts nothing.
+ * Entries are compared by value, as query keys are: the procedure, the input,
+ * and the options that say how a query starts, such as `staleTime`. Build them
+ * from values that stay the same from render to render, such as props.
+ *
+ * Unstable: it may change in a minor release.
+ * @example
+ * ```tsx
+ * function PostPage(props: { id: string }) {
+ *   const trpc = useTRPC();
+ *   const handles = useLoadHandles(trpc, {
+ *     post: prefetchEntry(trpc.post.byId, { id: props.id }),
+ *     comments: prefetchInfiniteEntry(trpc.post.comments, { postId: props.id }),
+ *   });
+ *   return (
+ *     <Suspense fallback={<p>Loading…</p>}>
+ *       <Post post={handles.post} />
+ *       <Comments comments={handles.comments} />
+ *     </Suspense>
+ *   );
+ * }
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#without-a-loader
+ */
+export function useLoadHandles<
+  TFeatureFlags extends FeatureFlags,
+  TEntries extends TRPCLoadEntries,
+>(
+  trpc: DecorateRouterKeyable<TFeatureFlags>,
+  entries: TEntries,
+): TRPCLoadedHandles<TEntries>[0] {
+  const queryClient = queryClientOf(readRoot(trpc, 'useLoadHandles'));
+  const states = readEntries(queryClient, entries);
+  const key = hashKey(
+    states.map(([name, state]) => [
+      name,
+      state.kind,
+      state.type,
+      // As the cache hashes it, with the `queryKeyHashFn` it is set up
+      // with: the keys it tells apart are other queries
+      queryClient.defaultQueryOptions(state.options).queryHash,
+      // Not all of the options: `meta` can hold what has no JSON, or what is
+      // new on every render
+      startOptions.map((option) => describeOption(state.options[option])),
+      describeCursor(state.options.initialPageParam, []),
+    ]),
+  );
+  const loads = usedLoadsOf(queryClient);
+  let used = loads.get(key);
+  if (!used) {
+    const load: UsedLoad = {
+      handles: Object.fromEntries(
+        states.map(([name, state]) => [
+          name,
+          toHandle(state.options, state.type),
+        ]),
+      ),
+      mounts: 0,
+    };
+    used = load;
+    loads.set(key, load);
+    const settled = states.map(([, state]) =>
+      startEntry(queryClient, state).catch(() => {
+        // Surfaces where the handle is read
+      }),
+    );
+    // A component that never got on the page keeps nothing. One that is on
+    // the page lets go of it as it leaves, and no timer holds it after that.
+    // On a server, the request's `QueryClient` goes with the request
+    void Promise.all(settled).then(() => {
+      if (!isServerEnvironment() && load.mounts === 0) {
+        setTimeout(() => {
+          if (load.mounts === 0 && loads.get(key) === load) {
+            loads.delete(key);
+          }
+        }, USED_LOAD_KEPT_MS);
+      }
+    });
+  }
+  const load = used;
+  React.useEffect(() => {
+    const kept = usedLoadsOf(queryClient);
+    load.mounts++;
+    // Back, if a development-mode remount took it away
+    kept.set(key, load);
+    return () => {
+      load.mounts--;
+      if (load.mounts === 0 && kept.get(key) === load) {
+        // The component left the page: its next visit loads again
+        kept.delete(key);
+      }
+    };
+  }, [load, queryClient, key]);
+  return load.handles as any;
 }
 
 /**
