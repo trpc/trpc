@@ -761,6 +761,7 @@ function usedLoadsOf(queryClient: QueryClient) {
  * How long the handles of a load stay for a component that rendered and
  * isn't on the page: one that waits, in a Suspense boundary above it, for the
  * queries it started. It then renders again, and must not start them again.
+ * Counted from when every query has data, or one failed.
  */
 const USED_LOAD_KEPT_MS = 30_000;
 
@@ -871,23 +872,24 @@ export function useLoadHandles<
     };
     used = load;
     loads.set(key, load);
-    const settled = states.map(([, state]) =>
-      startEntry(queryClient, state).catch(() => {
+    Promise.all(states.map(([, state]) => startEntry(queryClient, state)))
+      // A component that never got on the page keeps nothing. One that is on
+      // the page lets go of it as it leaves, and no timer holds it after
+      // that. A server renders the component but runs no effect, so nothing
+      // is ever on the page there: the request's `QueryClient` goes with the
+      // request, and a timer would only hold it longer
+      .finally(() => {
+        if (!isServerEnvironment() && load.mounts === 0) {
+          setTimeout(() => {
+            if (load.mounts === 0 && loads.get(key) === load) {
+              loads.delete(key);
+            }
+          }, USED_LOAD_KEPT_MS);
+        }
+      })
+      .catch(() => {
         // Surfaces where the handle is read
-      }),
-    );
-    // A component that never got on the page keeps nothing. One that is on
-    // the page lets go of it as it leaves, and no timer holds it after that.
-    // On a server, the request's `QueryClient` goes with the request
-    void Promise.all(settled).then(() => {
-      if (!isServerEnvironment() && load.mounts === 0) {
-        setTimeout(() => {
-          if (load.mounts === 0 && loads.get(key) === load) {
-            loads.delete(key);
-          }
-        }, USED_LOAD_KEPT_MS);
-      }
-    });
+      });
   }
   const load = used;
   React.useEffect(() => {
