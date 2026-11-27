@@ -18,6 +18,10 @@ export function isPlainObject(o: unknown): o is Record<string, unknown> {
   ctor = o.constructor;
   if (ctor === undefined) return true;
 
+  // An own `constructor: null` key is not a plain object. Return before
+  // `ctor.prototype` throws on it.
+  if (ctor === null) return false;
+
   // If has modified prototype
   prot = ctor.prototype;
   if (isObject(prot) === false) return false;

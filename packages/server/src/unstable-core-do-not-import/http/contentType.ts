@@ -1,7 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
-import { emptyObject, isObject } from '../utils';
+import { emptyObject, isObject, isPlainObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import {
   pipelineDecodedInput,
@@ -237,7 +237,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
                 const lastEventId = getLastEventId(opts);
 
                 if (lastEventId) {
-                  if (isObject(input)) {
+                  if (isPlainObject(input)) {
                     input = {
                       ...input,
                       lastEventId: lastEventId,

@@ -2513,8 +2513,8 @@ export type RecursiveTypesCategoryResponse = RecursiveTypesCategoryResponses[key
 export type SimpleCasesNullishData = {
   body?: never;
   path?: never;
-  query: {
-    input: {
+  query?: {
+    input?: {
       name?: string | null;
     } | null;
   };
@@ -2550,8 +2550,8 @@ export type SimpleCasesNullishResponse = SimpleCasesNullishResponses[keyof Simpl
 export type SimpleCasesOptionalData = {
   body?: never;
   path?: never;
-  query: {
-    input: {
+  query?: {
+    input?: {
       name?: string;
     };
   };

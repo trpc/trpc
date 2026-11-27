@@ -3,7 +3,12 @@ import {
   getTRPCErrorShape,
   isTrackedEnvelope,
 } from '@trpc/server';
-import { behaviorSubject, observable } from '@trpc/server/observable';
+import {
+  behaviorSubject,
+  isObservable,
+  observable,
+  observableToAsyncIterable,
+} from '@trpc/server/observable';
 import { TRPC_ERROR_CODES_BY_KEY, type TRPCResult } from '@trpc/server/rpc';
 import {
   callProcedure,
@@ -239,9 +244,12 @@ export function localLink<TRouter extends AnyRouter>(
               // observer to still be open by the time it runs
               await run(async () => {
                 while (true) {
-                  const result = await runProcedure(
+                  const procedureResult = await runProcedure(
                     inputWithTrackedEventId(op.input, lastEventId),
                   );
+                  const result = isObservable(procedureResult)
+                    ? observableToAsyncIterable(procedureResult, signal)
+                    : procedureResult;
                   if (!isAsyncIterable(result)) {
                     throw new Error('Expected an async iterable');
                   }

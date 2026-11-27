@@ -1,4 +1,4 @@
-import { isObject } from '@trpc/server/unstable-core-do-not-import';
+import { isPlainObject } from '@trpc/server/unstable-core-do-not-import';
 
 export function inputWithTrackedEventId(
   input: unknown,
@@ -7,8 +7,9 @@ export function inputWithTrackedEventId(
   if (!lastEventId) {
     return input;
   }
-  // the server's `isObject` excludes arrays, so spreading one here would corrupt it
-  if (input != null && !isObject(input)) {
+  // Spreading an array, a `Date` or a class instance would corrupt it, so only
+  // a plain object can carry the id.
+  if (input != null && !isPlainObject(input)) {
     return input;
   }
   return {

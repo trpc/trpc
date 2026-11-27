@@ -48,6 +48,8 @@ interface ProcedureInfo {
   path: string;
   type: 'query' | 'mutation' | 'subscription';
   inputSchema: SchemaObject | null;
+  /** `undefined` is a valid input, so a call may leave the input out. */
+  inputOptional: boolean;
   outputSchema: SchemaObject | null;
   errorSchema: SchemaObject | null;
   description?: string;
@@ -173,6 +175,15 @@ function isUnserialisableType(type: Type): boolean {
 
 function isOptionalSymbol(sym: TsSymbol): boolean {
   return (sym.flags & SymbolFlags.Optional) !== 0;
+}
+
+/**
+ * Whether `type` is or includes `undefined` or `void`. JSON drops a property
+ * set to `undefined`, so such a property may be missing from the payload.
+ */
+function includesUndefined(type: Type): boolean {
+  const members = type.isUnionType() ? type.getTypes() : [type];
+  return members.some((m) => hasFlag(m, TypeFlags.Undefined | TypeFlags.Void));
 }
 
 // ---------------------------------------------------------------------------
@@ -904,7 +915,11 @@ function convertPlainObject(
     }
 
     properties[prop.name] = propSchema;
-    if (!isOptionalSymbol(prop) && !hasFunctionMember(propType)) {
+    if (
+      !isOptionalSymbol(prop) &&
+      !includesUndefined(propType) &&
+      !hasFunctionMember(propType)
+    ) {
       required.push(prop.name);
     }
   }
@@ -1059,6 +1074,26 @@ function isVoidLikeInput(inputType: Type | null): boolean {
       .getTypes()
       .every((t) => hasFlag(t, TypeFlags.Void | TypeFlags.Undefined));
   return isUnionOfVoids;
+}
+
+/**
+ * Whether `undefined` is among the values an input type accepts.
+ *
+ * `any` and `unknown` accept `undefined` too, but without an `Undefined` flag
+ * or union member of their own, so they are checked explicitly.
+ */
+function acceptsUndefined(inputType: Type | null): boolean {
+  if (!inputType) {
+    return false;
+  }
+  return (
+    hasFlag(inputType, TypeFlags.Undefined) ||
+    isUnknownLikeType(inputType) ||
+    (inputType.isUnionType() &&
+      inputType
+        .getTypes()
+        .some((member) => hasFlag(member, TypeFlags.Undefined)))
+  );
 }
 
 interface ProcedureDef {
@@ -1290,6 +1325,7 @@ function extractProcedure(def: ProcedureDef, ctx: WalkCtx): void {
     path: def.path,
     type: def.typeName as 'query' | 'mutation' | 'subscription',
     inputSchema,
+    inputOptional: acceptsUndefined(resolvedInputType),
     outputSchema,
     errorSchema: extractProcedureErrorSchema($typesType, ctx),
     description: def.description,
@@ -1696,12 +1732,15 @@ function buildProcedureOperation(
     return operation;
   }
 
+  // tRPC clients send no `?input=` and no body when the input is `undefined`
+  const inputRequired = !proc.inputOptional;
+
   if (method === 'get') {
     operation.parameters = [
       {
         name: 'input',
         in: 'query',
-        required: true,
+        required: inputRequired,
         // FIXME: OAS 3.1.1 says a parameter MUST use either schema+style OR content, not both.
         // style should be removed here, but hey-api requires it to generate a correct query serializer.
         style: 'deepObject',
@@ -1710,7 +1749,7 @@ function buildProcedureOperation(
     ];
   } else {
     operation.requestBody = {
-      required: true,
+      required: inputRequired,
       content: { 'application/json': { schema: proc.inputSchema } },
     };
   }
