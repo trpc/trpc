@@ -219,14 +219,17 @@ describe('useLoadHandles', () => {
   test('a query that failed is not started again by a page whose Suspense boundary is above it', async () => {
     await using resource = ctx();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    function PostPage(props: { kind: typeof prefetchEntry }) {
+    function PostPage(props: { kind: 'prefetch' | 'fetch' | 'ensure' }) {
       const trpc = resource.useTRPC();
+      const input = { slug: 'missing' };
+      const opts = { retry: false };
       const handles = useLoadHandles(trpc, {
-        post: props.kind(
-          trpc.post.bySlug,
-          { slug: 'missing' },
-          { retry: false },
-        ),
+        post:
+          props.kind === 'prefetch'
+            ? prefetchEntry(trpc.post.bySlug, input, opts)
+            : props.kind === 'fetch'
+              ? fetchEntry(trpc.post.bySlug, input, opts)
+              : ensureEntry(trpc.post.bySlug, input, opts),
       });
       // No Suspense boundary of its own: the page renders again from nothing
       const post = useSuspenseQuery(
@@ -234,7 +237,7 @@ describe('useLoadHandles', () => {
       );
       return <p>{post.data.title}</p>;
     }
-    for (const kind of [prefetchEntry, fetchEntry, ensureEntry]) {
+    for (const kind of ['prefetch', 'fetch', 'ensure'] as const) {
       resource.queryClient.clear();
       resource.calls.mockClear();
       const utils = resource.renderApp(
@@ -467,7 +470,7 @@ describe('useLoadHandles', () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    function Page(props: { staleTime: number | undefined }) {
+    function Page(props: { staleTime: number | undefined }): React.ReactNode {
       useLoadHandles(trpc, {
         post: prefetchEntry(
           trpc.post.bySlug,
