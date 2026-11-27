@@ -10,11 +10,15 @@ import {
   httpBatchStreamLink,
   retryLink,
 } from '@trpc/client';
-import type { PipelineSource } from '@trpc/client/unstable-internals';
+import type {
+  OperationReads,
+  PipelineSource,
+} from '@trpc/client/unstable-internals';
 import {
   createOperationPipeline,
   pipeCall,
   pipelineContext,
+  readsContext,
 } from '@trpc/client/unstable-internals';
 import type {
   AnyRouter,
@@ -1576,7 +1580,14 @@ describe('httpBatchStreamLink, when an operation fails', () => {
       reads: whole({ to: ['id'], from: post, path: ['authorId'] }),
     });
     assert(author);
+    const postSettled = vi.fn();
+    postResult.then(postSettled, postSettled);
 
+    // Before the held line: a client that waited for it would fail here, in
+    // time for the disposer to let it through
+    await vi.waitFor(() => expect(postSettled).toHaveBeenCalled(), {
+      timeout: 1000,
+    });
     await expect(postResult).rejects.toMatchObject({
       data: { code: 'NOT_FOUND' },
     });
@@ -4312,4 +4323,85 @@ test('an `onError` that throws for a run of a response that does not stream leav
   expect(json[1].items[1]).toMatchObject({
     error: { data: { code: 'NOT_FOUND' } },
   });
+});
+
+test('an attempt let go of while it waits for the data its input read writes nothing to its operation', async () => {
+  const { appRouter } = createRouter('none');
+  /** The operation of the query that reads, as the batch link gets it */
+  let reader: Operation | null = null;
+  let letGo: (() => void) | null = null;
+  // Holds the subscription of the query that reads, to let it go
+  const holdLink: TRPCLink<AnyRouter> = () => (linkOpts) => {
+    if (linkOpts.op.path !== 'author') {
+      return linkOpts.next(linkOpts.op);
+    }
+    reader = linkOpts.op;
+    return observable((observer) => {
+      const sub = linkOpts.next(linkOpts.op).subscribe(observer);
+      letGo = () => sub.unsubscribe();
+      return () => sub.unsubscribe();
+    });
+  };
+  await using ctx = testServerAndClientResource(appRouter, {
+    server: { experimental_allowPipelining: true },
+    client: (clientOpts) => ({
+      links: [
+        holdLink,
+        httpBatchLink({
+          url: clientOpts.httpUrl,
+          experimental_pipelining: experimental_pipelining(),
+        }),
+      ],
+    }),
+  });
+  const untyped = getUntypedClient(ctx.client);
+  const post = createOperationPipeline();
+  const own = createOperationPipeline();
+  /** The data its input reads, which the client doesn't have yet */
+  const read = createDeferred<unknown>();
+  const reads: OperationReads = {
+    reads: {
+      each: null,
+      reads: [{ kind: 'whole', to: ['id'], from: post, path: ['authorId'] }],
+    },
+    perItem: false,
+    resolve: () => read.promise,
+    known: () => null,
+  };
+  const letGoWhileItWaits = vi.fn();
+  own.onOpen.add(() => {
+    const call = own.attached;
+    if (!call || letGoWhileItWaits.mock.calls.length > 0) {
+      return;
+    }
+    void call.settled.then(async () => {
+      // After the link has started to wait for the data its input read
+      await Promise.resolve();
+      letGo?.();
+      read.resolve({ id: 'u1' });
+      letGoWhileItWaits();
+    });
+  });
+
+  const postResult = untyped.query(
+    'post',
+    { slug: 'hello' },
+    { context: pipelineContext(post) },
+  );
+  void untyped
+    .query(
+      'author',
+      { id: undefined },
+      { context: { ...pipelineContext(own), ...readsContext(reads) } },
+    )
+    .catch(() => undefined);
+  await postResult;
+  await vi.waitFor(() => expect(letGoWhileItWaits).toHaveBeenCalledOnce());
+  // A turn of the event loop, for what waited on the data to go on
+  await new Promise<void>((resolve) => setImmediate(resolve));
+
+  assert(reader);
+  const op: Operation = reader;
+  expect(op.input).toEqual({ id: undefined });
+  expect(op.context).toHaveProperty('~reads');
 });
