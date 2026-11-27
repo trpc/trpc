@@ -1,6 +1,7 @@
 import type {
   HTTPBatchLinkOptions,
   HTTPLinkOptions,
+  OperationContext,
   TRPCLink,
 } from '@trpc/client';
 import { httpBatchLink, httpLink } from '@trpc/client';
@@ -61,7 +62,8 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
     | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<
   TRouter,
-  { context: NextLinkContext; unsupported: 'subscription' }
+  // its `headers` callback is given the operation, so may read any field
+  { context: OperationContext & NextLinkContext; unsupported: 'subscription' }
 > {
   return (runtime) => {
     return (ctx) => {

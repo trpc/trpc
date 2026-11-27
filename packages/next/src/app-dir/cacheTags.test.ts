@@ -285,8 +285,8 @@ describe('app-dir links type `context.revalidate`', () => {
     void (() => {
       // @ts-expect-error -- `revalidate` is a number or `false`
       void client.post.query(undefined, { context: { revalidate: '5' } });
-      // @ts-expect-error -- no link reads `nope`
-      void client.post.query(undefined, { context: { nope: 1 } });
+      // `headers` may read any field, so others are taken too
+      void client.post.query(undefined, { context: { token: 't' } });
     });
   });
 
