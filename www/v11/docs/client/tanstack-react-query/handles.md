@@ -556,10 +556,14 @@ export function PostPage(props: { id: string }) {
     }),
   });
   return (
-    <Suspense fallback={<p>Loading…</p>}>
-      <Post post={handles.post} />
-      <Comments comments={handles.comments} />
-    </Suspense>
+    <>
+      <Suspense fallback={<p>Loading post…</p>}>
+        <Post post={handles.post} />
+      </Suspense>
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={handles.comments} />
+      </Suspense>
+    </>
   );
 }
 ```
