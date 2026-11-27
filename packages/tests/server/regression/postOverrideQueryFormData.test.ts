@@ -41,7 +41,7 @@ test('a POST-overridden query with FormData input skips the transformer', async 
             Object.prototype.toString.call(input) === '[object FormData]',
         ),
       )
-      .query((opts) => `hello ${opts.input.get('name')}`),
+      .query((opts) => opts.input.get('name')),
   });
   await using ctx = testServerAndClientResource(router, {
     server: { allowMethodOverride: true },
@@ -58,5 +58,5 @@ test('a POST-overridden query with FormData input skips the transformer', async 
 
   const formData = new FormData();
   formData.set('name', 'world');
-  expect(await ctx.client.upload.query(formData)).toBe('hello world');
+  expect(await ctx.client.upload.query(formData)).toBe('world');
 });
