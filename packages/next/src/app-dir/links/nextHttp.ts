@@ -10,6 +10,18 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTags } from '../shared';
 
+/**
+ * The `context` fields the Next.js links read from each call.
+ * @public
+ */
+export interface NextLinkContext {
+  /**
+   * How many seconds Next.js caches this call's response, overriding the
+   * link's `revalidate`. `false` caches it until it's revalidated.
+   */
+  revalidate?: number | false;
+}
+
 export interface NextLinkBaseOptions {
   /**
    * How many seconds Next.js caches a response. `false` caches it until it is
@@ -47,7 +59,10 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   opts:
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
     | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
+): TRPCLink<
+  TRouter,
+  { context: NextLinkContext; unsupported: 'subscription' }
+> {
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;

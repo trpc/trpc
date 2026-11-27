@@ -15,6 +15,9 @@ import type {
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag, generateCacheTags } from '../shared';
+import type { NextLinkContext } from './nextHttp';
+
+export type { NextLinkContext } from './nextHttp';
 
 export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   /**
@@ -47,7 +50,7 @@ export type NextCacheLinkOptions<TRouter extends AnyRouter> = {
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: NextLinkContext }> {
   const transformer = getTransformer(opts.transformer);
   return () =>
     ({ op }) =>
