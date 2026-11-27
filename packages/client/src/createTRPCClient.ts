@@ -140,16 +140,20 @@ export type Resolver<
 export type SubscriptionResolver<
   TDef extends TRPCResolverDef,
   TContext extends object = Record<string, unknown>,
+  // A parameter rather than written out below: TypeScript before 6 can't
+  // tell that the conditional `TRPCCallOptions` satisfies `TOpts`'s
+  // constraint as its default.
+  TCallOptions extends object = TRPCCallOptions<TContext>,
 > = {
   (
     input: TDef['input'],
     opts: TRPCSubscriptionCallbacks<TDef['output'], TRPCClientError<TDef>> &
-      TRPCCallOptions<TContext>,
+      TCallOptions,
   ): Unsubscribable;
   <
-    TOpts extends TRPCCallOptions<TContext> &
+    TOpts extends TCallOptions &
       Partial<TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>> =
-      TRPCCallOptions<TContext>,
+      TCallOptions,
   >(
     input: TDef['input'],
     opts?: TRPCSubscriptionWithoutCallbacks<TOpts>,
