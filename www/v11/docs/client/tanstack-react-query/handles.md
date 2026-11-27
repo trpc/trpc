@@ -547,12 +547,12 @@ import { useTRPC } from '~/trpc/client';
 // `/posts/1?comments=50`. The page, a server component, passes `id` from its params
 export function PostPage(props: { id: string }) {
   const trpc = useTRPC();
-  const limit = Number(useSearchParams().get('comments') ?? 20);
+  const searchParams = useSearchParams();
   const handles = useLoadHandles(trpc, {
     post: prefetchEntry(trpc.post.byId, { id: props.id }),
     comments: prefetchInfiniteEntry(trpc.post.comments, {
       postId: props.id,
-      limit,
+      limit: Number(searchParams.get('comments') ?? 20),
     }),
   });
   return (
