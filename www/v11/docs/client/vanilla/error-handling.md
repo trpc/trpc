@@ -64,10 +64,11 @@ A failed procedure call rejects with a [`TRPCClientError`](/docs/client/vanilla/
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, routerType } from "@trpc/client";
 import type { AppRouter } from "./server";
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",
@@ -104,10 +105,11 @@ See [Inferring Types](/docs/client/vanilla/infer-types#infer-trpcclienterror-typ
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, routerType } from "@trpc/client";
 import type { AppRouter } from "./server";
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",

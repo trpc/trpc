@@ -24,14 +24,15 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const wsClient = createWSClient({
   url: 'ws://localhost:3000',
 });
 
-const trpcClient = createTRPCClient<AppRouter>({
+const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [wsLink<AppRouter>({ client: wsClient })],
 });
 ```

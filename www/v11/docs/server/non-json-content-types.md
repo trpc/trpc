@@ -68,10 +68,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-createTRPCClient<AppRouter>({
+createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpLink({
       url: 'http://localhost:2022',
@@ -97,12 +98,14 @@ import {
   httpLink,
   isNonJsonSerializable,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const url = 'http://localhost:2022';
 
-createTRPCClient<AppRouter>({
+createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => isNonJsonSerializable(op.input),
@@ -136,13 +139,15 @@ import {
   httpLink,
   isNonJsonSerializable,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import superjson from 'superjson';
 import type { AppRouter } from './server';
 
 const url = 'http://localhost:2022';
 
-createTRPCClient<AppRouter>({
+createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => isNonJsonSerializable(op.input),
@@ -216,9 +221,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpLink({ url: 'http://localhost:2022' })],
 });
 // ---cut---
@@ -275,9 +281,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpLink({ url: 'http://localhost:2022' })],
 });
 // ---cut---

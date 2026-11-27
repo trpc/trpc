@@ -1,7 +1,8 @@
 import type { AppRouter } from '@monotest/api';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: '/api/trpc',

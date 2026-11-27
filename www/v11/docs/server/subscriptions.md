@@ -182,10 +182,12 @@ import {
   httpBatchLink,
   httpSubscriptionLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
@@ -232,9 +234,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import { createTRPCClient, httpSubscriptionLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpSubscriptionLink({ url: 'http://localhost:3000' })],
 });
 // ---cut---

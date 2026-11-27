@@ -8,6 +8,7 @@ import {
   httpBatchLink,
   loggerLink,
   wsLink,
+  routerType,
 } from '@trpc/client';
 import type { inferRouterOutputs } from '@trpc/server';
 import {
@@ -78,7 +79,8 @@ export function TRPCReactProvider(
 ) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       /**
        * @see https://trpc.io/docs/v11/client/links
        */

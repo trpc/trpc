@@ -24,11 +24,12 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, localLink } from '@trpc/client';
+import { createTRPCClient, localLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 import { appRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     localLink({
       router: appRouter,

@@ -142,10 +142,11 @@ It's also useful to infer the error type for your `AppRouter`
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, routerType } from "@trpc/client";
 import type { AppRouter } from "./server";
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: "http://localhost:3000/api/trpc",

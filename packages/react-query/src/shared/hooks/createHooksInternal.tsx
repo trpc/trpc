@@ -12,7 +12,10 @@ import {
   hashKey,
   skipToken,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type {
+  CreateTRPCClientOptions,
+  TRPCClientErrorLike,
+} from '@trpc/client';
 import {
   createTRPCClient,
   getUntypedClient,
@@ -97,7 +100,8 @@ export function createRootHooks<
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
 
-  const createClient = createTRPCClient<TRouter>;
+  const createClient = (opts: CreateTRPCClientOptions<TRouter>) =>
+    createTRPCClient<TRouter>(opts);
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, queryClient, ssrContext } = props;

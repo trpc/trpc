@@ -24,10 +24,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -53,9 +54,9 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+const trpc = createTRPCClient({ router: routerType<AppRouter>(), links: [httpBatchLink({ url: 'http://localhost:3000' })] });
 // ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
@@ -136,10 +137,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -198,10 +200,11 @@ export default createNextApiHandler({
 Use the `maxItems` option on your batch link to ensure the client doesn't exceed the server's limit. This splits large batches into multiple HTTP requests automatically
 
 ```ts title="client/index.ts"
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -265,10 +268,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpLink({
       url: 'http://localhost:3000',

@@ -149,7 +149,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
 // create persistent WebSocket connection
@@ -158,7 +158,8 @@ const wsClient = createWSClient({
 });
 
 // configure TRPCClient to use WebSockets transport
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     wsLink({
       client: wsClient,
@@ -200,7 +201,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 import superjson from 'superjson';
 
@@ -213,7 +214,8 @@ const wsClient = createWSClient({
     };
   },
 });
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [wsLink({ client: wsClient, transformer: superjson })],
 });
 ```

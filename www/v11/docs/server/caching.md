@@ -204,10 +204,12 @@ import {
   httpBatchLink,
   httpLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './routers/_app';
 
-const trpcClient = createTRPCClient<AppRouter>({
+const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'query' && op.path.startsWith('public.'),

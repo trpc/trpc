@@ -244,7 +244,7 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 // ---cut---
 import type { DehydratedState } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppProps } from 'next/app';
 import { useState } from 'react';
 import type { AppRouter } from '../server/routers/_app';
@@ -257,7 +257,8 @@ export default function App({
 }: AppProps<{ trpcState?: DehydratedState }>) {
   const [queryClient] = useState(makeQueryClient);
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpBatchLink({
           // transformer: superjson, <-- if you use a data transformer

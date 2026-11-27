@@ -73,7 +73,7 @@ export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: example.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server/router';
 import { makeQueryClient } from './utils/query-client';
@@ -81,7 +81,8 @@ import { makeQueryClient } from './utils/query-client';
 export async function getStaticProps() {
   const queryClient = makeQueryClient();
   const trpc = createTRPCOptionsProxy({
-    client: createTRPCClient<AppRouter>({
+    client: createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpBatchLink({
           url: 'http://localhost:3000/api/trpc',

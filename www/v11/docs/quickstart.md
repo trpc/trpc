@@ -425,13 +425,14 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @include: appRouter
 // @filename: client/index.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server/appRouter';
 //     👆 **type-only** imports are stripped at build time
 
-// Pass AppRouter as a type parameter. 👇 This lets `trpc` know
+// Pass AppRouter's type as `router`. 👇 This lets `trpc` know
 // what procedures are available on the server and their input/output types.
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -453,10 +454,11 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @filename: server/appRouter.ts
 // @include: appRouter
 // @filename: client/index.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server/appRouter';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -482,10 +484,11 @@ You can also use your autocomplete to explore the API on your client
 // @filename: server/appRouter.ts
 // @include: appRouter
 // @filename: client/index.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server/appRouter';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',

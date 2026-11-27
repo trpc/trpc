@@ -48,10 +48,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, loggerLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     loggerLink(),
     httpBatchLink({
@@ -151,10 +152,12 @@ import {
   httpSubscriptionLink,
   loggerLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     loggerLink(),
     splitLink({
@@ -215,7 +218,7 @@ await client.greeting.query(undefined, { context: { traceId: 123 } });
 - Declared fields are type-checked, and always optional.
 - A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any `context`. Declare `{ context: {} }` for a link that reads none. When every link reads none, passing a field is an error.
 - Links that hand the operation to your code, such as the HTTP links' `headers` or `retryLink`'s `retry`, declare only the fields added to `OperationContext`.
-- With `createTRPCClient<AppRouter>()`, calls take any `context`, as before.
+- With the deprecated `createTRPCClient<AppRouter>()` form, calls take any `context`, as before.
 
 To pass a field that such a callback reads, add it to `OperationContext`:
 

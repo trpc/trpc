@@ -28,10 +28,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink, retryLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, retryLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     retryLink({
       retry(opts) {

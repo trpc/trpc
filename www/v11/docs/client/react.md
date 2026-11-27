@@ -37,10 +37,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],
 });
 ```
@@ -60,9 +61,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server';
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],
 });
 

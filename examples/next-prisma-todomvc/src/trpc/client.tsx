@@ -3,7 +3,12 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  loggerLink,
+  routerType,
+} from '@trpc/client';
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
@@ -36,7 +41,8 @@ function getQueryClient() {
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       /**
        * @see https://trpc.io/docs/v11/client/links
        */
