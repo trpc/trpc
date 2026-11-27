@@ -204,3 +204,10 @@ test('the type argument form keeps taking any context', () => {
     client.onEvent.subscribe(undefined, {});
   });
 });
+
+test('a context no link reads still fits where any context is taken', () => {
+  // procedures and handles typed by each are compared both ways, e.g. a
+  // server-side proxy (`Record<string, unknown>`) against a client's
+  expectTypeOf<NoLinkReadsContext>().toExtend<Record<string, unknown>>();
+  expectTypeOf<Record<string, unknown>>().toExtend<NoLinkReadsContext>();
+});

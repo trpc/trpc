@@ -181,9 +181,12 @@ declare const noLinkReadsContext: unique symbol;
  * an error.
  * @public
  */
-export interface NoLinkReadsContext {
+// A type literal, not an interface: like `Record<string, unknown>`, it
+// then fits where any context is taken, so procedures and handles from
+// clients typed both ways stay compatible.
+export type NoLinkReadsContext = {
   readonly [noLinkReadsContext]?: never;
-}
+};
 
 /**
  * The `context` calls can pass: the fields every link in `TLinks` reads,
