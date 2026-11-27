@@ -1,629 +1,48 @@
+import type { QueryClient } from '@tanstack/react-query';
+import { hashKey } from '@tanstack/react-query';
+import * as React from 'react';
 import type {
-  FetchQueryOptions,
-  GetNextPageParamFunction,
-  QueryClient,
-  QueryFunction,
-} from '@tanstack/react-query';
-import { hashKey, isCancelledError, skipToken } from '@tanstack/react-query';
-import { isTRPCClientError } from '@trpc/client';
-import type {
-  DecorateInfiniteQueryProcedure,
   DecorateQueryProcedure,
   DecorateRouterKeyable,
 } from '../internals/createOptionsProxy';
+import type { FeatureFlags, ResolverDef } from '../internals/types';
+import { queryClientOf, readProxy, readRoot } from './entry';
+import { TRPCEntryError } from './entryError';
+import { toHandle } from './handle';
+import { readEntries, startEntries, startEntry } from './load';
 import type {
-  UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
-  UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
-} from '../internals/infiniteQueryOptions';
-import type {
-  UnusedSkipTokenTRPCQueryOptionsIn,
-  UnusedSkipTokenTRPCQueryOptionsOut,
-} from '../internals/queryOptions';
-import type {
-  ExtractCursorType,
-  FeatureFlags,
-  ResolverDef,
-  TRPCInfiniteData,
-  TRPCQueryBaseOptions,
-  TRPCQueryKey,
-} from '../internals/types';
-import { readQueryKey } from '../internals/utils';
-import type { ErrorOf } from './entryError';
-import { entryCause, TRPCEntryError } from './entryError';
+  TRPCInfiniteEntryOptions,
+  TRPCLoadEntries,
+  TRPCLoadedHandles,
+  TRPCSettledHandles,
+} from './types';
 
-declare const handleDef: unique symbol;
-declare const entryDef: unique symbol;
-
-type InfiniteHandleInput<TInput> = TInput extends object
-  ? Omit<TInput, 'cursor' | 'direction'>
-  : TInput;
-
-/**
- * A plain tuple typed with the procedure's input. TanStack Router's serializability check
- * rejects `unknown` inputs and `DataTag`-ged keys, so handles in `beforeLoad` need this shape.
- */
-type HandleQueryKey<
-  TDef extends ResolverDef,
-  TInput,
-  TType extends 'query' | 'infinite',
-> = TDef['featureFlags']['keyPrefix'] extends true
-  ? [prefix: string[], path: string[], opts?: { input?: TInput; type?: TType }]
-  : [path: string[], opts?: { input?: TInput; type?: TType }];
-
-/**
- * A serializable reference to a query, from `loadHandles()`.
- * Pass it to a component and read it with `fromHandle(trpc, handle)`.
- */
-export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
-  /**
-   * Type-only: never present at runtime. Required, so only
-   * `loadHandles` creates handles.
-   */
-  readonly [handleDef]: TDef & { kind: 'query' };
-  readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
-  /** The query's input. The key is absent when the input is `undefined`. */
-  readonly input: TDef['input'];
-}
-
-/**
- * A serializable reference to an infinite query, from `loadHandles()`.
- * Read it with `fromHandle(trpc, handle, { getNextPageParam })`.
- */
-export interface TRPCInfiniteQueryHandle<
-  TDef extends ResolverDef = ResolverDef,
-> {
-  /**
-   * Type-only: never present at runtime. Required, so only
-   * `loadHandles` creates handles.
-   */
-  readonly [handleDef]: TDef & { kind: 'infinite' };
-  readonly queryKey: HandleQueryKey<
-    TDef,
-    InfiniteHandleInput<TDef['input']>,
-    'infinite'
-  >;
-  /** The query's input, without `cursor` and `direction` */
-  readonly input: InfiniteHandleInput<TDef['input']>;
-  readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
-}
-
-/** Any query or infinite query handle. */
-export type AnyTRPCHandle = TRPCQueryHandle<any> | TRPCInfiniteQueryHandle<any>;
-
-/**
- * How `loadHandles` starts an entry's query, named after the
- * `QueryClient` method it calls: `prefetchQuery`, `fetchQuery` or `ensureQueryData`.
- */
-export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
-
-/**
- * A query for `loadHandles()` to start, from `prefetchEntry`, `fetchEntry` or
- * `ensureEntry`.
- * Creating it starts nothing.
- */
-export interface TRPCQueryEntry<
-  TDef extends ResolverDef = ResolverDef,
-  TKind extends TRPCEntryKind = TRPCEntryKind,
-> {
-  /** Type-only: never present at runtime. */
-  readonly [entryDef]: { def: TDef; kind: TKind; type: 'query' };
-}
-
-/**
- * An infinite query for `loadHandles()` to start, from `prefetchInfiniteEntry`,
- * `fetchInfiniteEntry` or `ensureInfiniteEntry`. Creating it starts nothing.
- */
-export interface TRPCInfiniteQueryEntry<
-  TDef extends ResolverDef = ResolverDef,
-  TKind extends TRPCEntryKind = TRPCEntryKind,
-> {
-  /** Type-only: never present at runtime. */
-  readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
-}
-
-/** Any query or infinite query entry. */
-export type AnyTRPCEntry =
-  | TRPCQueryEntry<any, any>
-  | TRPCInfiniteQueryEntry<any, any>;
-
-/**
- * What `loadHandles()` takes per key: an entry, or TanStack Query's
- * `skipToken` to start nothing for that key.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#conditional-queries
- */
-export type TRPCLoadEntries = Record<string, AnyTRPCEntry | typeof skipToken>;
-
-type HandleOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any>
-    ? TRPCQueryHandle<TDef>
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
-      ? TRPCInfiniteQueryHandle<TDef>
-      : TEntry extends typeof skipToken
-        ? undefined
-        : never;
-
-type DataOfEntry<TEntry> =
-  TEntry extends TRPCQueryEntry<infer TDef, any>
-    ? TDef['output']
-    : TEntry extends TRPCInfiniteQueryEntry<infer TDef, any>
-      ? TRPCInfiniteData<TDef['input'], TDef['output']>
-      : never;
-
-type HandlesOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries]: HandleOfEntry<TEntries[TKey]>;
-};
-
-type DefOfEntry<TEntry> = TEntry extends {
-  readonly [entryDef]: { def: infer TDef extends ResolverDef };
-}
-  ? TDef
-  : never;
-
-/** Only fetch and ensure entries are waited for, so only they have data */
-type WaitedKey<TEntries, TKey extends keyof TEntries> = TEntries[TKey] extends {
-  readonly [entryDef]: { kind: 'fetch' | 'ensure' };
-}
-  ? TKey
-  : never;
-
-type DataOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: DataOfEntry<
-    TEntries[TKey]
-  >;
-};
-
-type ResultsOf<TEntries extends TRPCLoadEntries> = {
-  [TKey in keyof TEntries as WaitedKey<TEntries, TKey>]: TRPCEntryResult<
-    DefOfEntry<TEntries[TKey]>,
-    DataOfEntry<TEntries[TKey]>
-  >;
-};
-
-/**
- * What `loadHandlesSettled()` has for a fetch or ensure entry: its data, or
- * the error it failed with.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
- */
-export type TRPCEntryResult<TDef extends ResolverDef, TData> =
-  | { readonly status: 'success'; readonly data: TData }
-  | { readonly status: 'error'; readonly error: TRPCEntryError<TDef> };
-
-/**
- * What `loadHandles()` resolves to: `[handles, data]`. `handles` has a handle
- * for every entry, by the entry's key, and `undefined` for a `skipToken`; return them
- * from the loader. `data` has the data of every fetch and ensure entry, by the entry's key.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#loader-data
- */
-export type TRPCLoadedHandles<TEntries extends TRPCLoadEntries> = readonly [
-  handles: HandlesOf<TEntries>,
-  data: DataOf<TEntries>,
-];
-
-/**
- * What `loadHandlesSettled()` resolves to: `[handles, results]`. `results`
- * has a `TRPCEntryResult` for every fetch and ensure entry, by the entry's key.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
- */
-export type TRPCSettledHandles<TEntries extends TRPCLoadEntries> = readonly [
-  handles: HandlesOf<TEntries>,
-  results: ResultsOf<TEntries>,
-];
-
-/** Options for an entry */
-export interface TRPCEntryOptions
-  extends
-    Pick<
-      FetchQueryOptions,
-      'staleTime' | 'retry' | 'retryDelay' | 'gcTime' | 'meta'
-    >,
-    TRPCQueryBaseOptions {}
-
-type HandleGetNextPageParam<TDef extends ResolverDef> =
-  GetNextPageParamFunction<
-    NonNullable<ExtractCursorType<TDef['input']>> | null,
-    TDef['output']
-  >;
-
-/**
- * Options for an infinite query entry. Pass `pages` and `getNextPageParam`
- * to load several pages up front.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
- */
-export type TRPCInfiniteEntryOptions<TDef extends ResolverDef> =
-  TRPCEntryOptions & {
-    initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
-  } & (
-      | {
-          pages?: never;
-          /**
-           * Without it, refetching a cached query with more than one page
-           * fails on the second page.
-           */
-          getNextPageParam?: HandleGetNextPageParam<TDef>;
-        }
-      | {
-          /** Number of pages to load up front */
-          pages: number;
-          getNextPageParam: HandleGetNextPageParam<TDef>;
-        }
-    );
-
-type EntryArgs<TDef extends ResolverDef> = undefined extends TDef['input']
-  ? [input?: TDef['input'], opts?: TRPCEntryOptions]
-  : [input: TDef['input'], opts?: TRPCEntryOptions];
-
-/**
- * The handle type of a query procedure, for typing props.
- * @example
- * ```ts
- * type PostHandle = inferQueryHandle<TRPC['post']['byId']>;
- * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
- */
-export type inferQueryHandle<TProcedure extends DecorateQueryProcedure<any>> =
-  TProcedure extends DecorateQueryProcedure<infer TDef>
-    ? TRPCQueryHandle<TDef>
-    : never;
-
-/**
- * The handle type of an infinite query procedure, for typing props.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#typing-props
- */
-export type inferInfiniteQueryHandle<
-  TProcedure extends DecorateInfiniteQueryProcedure<any>,
-> =
-  TProcedure extends DecorateInfiniteQueryProcedure<infer TDef>
-    ? TRPCInfiniteQueryHandle<TDef>
-    : never;
-
-const notAHandle = 'Expected a tRPC handle from `loadHandles()`';
-
-function readHandle(handle: AnyTRPCHandle, prefix: string | undefined) {
-  const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
-  if (!Array.isArray(queryKey)) {
-    throw new Error(`${notAHandle}, got ${JSON.stringify(handle)}`);
-  }
-  const data = readQueryKey(queryKey);
-  const type = data.args?.type;
-  if (type !== 'query' && type !== 'infinite') {
-    throw new Error(
-      `${notAHandle}, got a key of type ${String(type)} for "${data.path.join('.')}"`,
-    );
-  }
-  if ((data.prefix?.[0] ?? undefined) !== prefix) {
-    throw new Error(
-      `The handle for "${data.path.join('.')}" was created with keyPrefix ${JSON.stringify(data.prefix?.[0])}, but this proxy uses ${JSON.stringify(prefix)}`,
-    );
-  }
-  return {
-    type,
-    path: data.path,
-    input: data.args?.input,
-    queryKey,
-  };
-}
-
-type HandleType = 'query' | 'infinite';
-
-function toHandle(options: any, type: HandleType) {
-  const input = readQueryKey(options.queryKey).args?.input;
-  // Next.js rejects `undefined` in `getServerSideProps` / `getStaticProps` props
-  const handle: Record<string, unknown> = {
-    queryKey: options.queryKey,
-    ...(input !== undefined && { input }),
-  };
-  if (type === 'infinite' && options.initialPageParam != null) {
-    handle['initialCursor'] = options.initialPageParam;
-  }
-  return handle;
-}
-
-const entryState = Symbol('trpc.handleEntry');
-
-interface EntryState {
-  kind: TRPCEntryKind;
-  type: HandleType;
-  options: any;
-  /** The `QueryClient` of the proxy that built the entry */
-  queryClient: QueryClient;
-}
-
-function createEntry(state: EntryState) {
-  return { [entryState]: state };
-}
-
-function readEntry(key: string, entry: unknown): EntryState {
-  const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
-  if (!state) {
-    throw new Error(
-      `Expected an entry from \`prefetchEntry()\`, \`fetchEntry()\` or \`ensureEntry()\`, or \`skipToken\`, for "${key}", got ${JSON.stringify(entry)}`,
-    );
-  }
-  return state;
-}
-
-function startEntry(queryClient: QueryClient, state: EntryState) {
-  const { options } = state;
-  if (state.type === 'infinite') {
-    switch (state.kind) {
-      case 'prefetch':
-        return queryClient.prefetchInfiniteQuery(options);
-      case 'ensure':
-        return queryClient.ensureInfiniteQueryData({
-          ...options,
-          revalidateIfStale: true,
-        });
-      case 'fetch':
-        return queryClient.fetchInfiniteQuery(options);
-    }
-  }
-  switch (state.kind) {
-    case 'prefetch':
-      return queryClient.prefetchQuery(options);
-    case 'ensure':
-      return queryClient.ensureQueryData({
-        ...options,
-        revalidateIfStale: true,
-      });
-    case 'fetch':
-      return queryClient.fetchQuery(options);
-  }
-}
-
-/**
- * Next.js signals control flow, such as `headers()` in a static render, by
- * throwing an error with a `digest`, and reads it off the error the page throws.
- */
-function hasDigest(error: unknown): error is Error & { digest: string } {
-  return (
-    error instanceof Error &&
-    typeof (error as { digest?: unknown }).digest === 'string'
-  );
-}
-
-function toEntryError(key: string, state: EntryState, error: unknown) {
-  // Not failures of the entry: pass them on as they are
-  if (isCancelledError(error) || hasDigest(error)) {
-    return error;
-  }
-  return new TRPCEntryError({
-    key,
-    path: readQueryKey(state.options.queryKey).path.join('.'),
-    ...entryCause(error),
-  });
-}
-
-function settleLoad(promise: Promise<unknown>) {
-  return promise.then(
-    (data) => ({ status: 'success', data }),
-    (error: unknown) => {
-      if (error instanceof TRPCEntryError) {
-        return { status: 'error', error };
-      }
-      throw error;
-    },
-  );
-}
-
-async function startEntries(opts: {
-  queryClient: QueryClient;
-  entries: Record<string, unknown>;
-  /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
-  settle: boolean;
-}) {
-  const { queryClient, entries } = opts;
-  const states = Object.entries(entries).flatMap(([key, entry]) => {
-    if (entry === skipToken) {
-      return [];
-    }
-    const state = readEntry(key, entry);
-    if (state.queryClient !== queryClient) {
-      throw new Error(
-        `The entry for "${key}" was built with a proxy for another QueryClient than the root proxy that loads it`,
-      );
-    }
-    return [[key, state] as const];
-  });
-  const loads = states.map(([key, state]) => ({
-    key,
-    state,
-    promise: startEntry(queryClient, state).catch((error: unknown) => {
-      throw toEntryError(key, state, error);
-    }),
-  }));
-  const waited = loads.filter((load) => load.state.kind !== 'prefetch');
-  const results = await Promise.all(
-    waited.map((load) =>
-      opts.settle ? settleLoad(load.promise) : load.promise,
-    ),
-  );
-
-  // A skipped key is absent rather than `undefined`: Next.js rejects `undefined` in props
-  const handles = Object.fromEntries(
-    loads.map((load) => [
-      load.key,
-      toHandle(load.state.options, load.state.type),
-    ]),
-  );
-  const data = Object.fromEntries(
-    waited.map((load, index) => [load.key, results[index]]),
-  );
-  return [handles, data] as const;
-}
-
-function isServerEnvironment() {
-  return typeof window === 'undefined' || 'Deno' in globalThis;
-}
-
-const warnedNotHydrated = new Set<string>();
-
-function warnIfNotHydrated(
-  path: readonly string[],
-  queryFn: QueryFunction<any, any, any>,
-): QueryFunction<any, any, any> {
-  return (context) => {
-    if (isServerEnvironment()) {
-      const queryHash = hashKey(context.queryKey);
-      if (!warnedNotHydrated.has(queryHash)) {
-        warnedNotHydrated.add(queryHash);
-        // oxlint-disable-next-line no-console
-        console.warn(
-          `[@trpc/tanstack-react-query] The handle for "${path.join('.')}" is being fetched again during server rendering. ` +
-            `Unless its data is stale, the query it refers to isn't in this QueryClient. ` +
-            `Render the reading component inside <HydrateClient> or <HydrationBoundary>, and don't return handles from server functions or server actions. ` +
-            `See https://trpc.io/docs/client/tanstack-react-query/handles#where-handles-dont-work`,
-        );
-      }
-    }
-    return queryFn(context);
-  };
-}
-
-const watchedHydrations = new WeakSet<Promise<unknown>>();
-
-/**
- * A query dehydrated as pending that later rejects reaches the browser as a
- * redacted error, before any `retry` from `fromHandle()` applies. Refetch such
- * a query once so error boundaries see a `TRPCClientError` from this client.
- */
-function refetchRejectedHydration(
-  queryClient: QueryClient,
-  type: HandleType,
-  options: any,
-) {
-  const enabled =
-    typeof options.enabled === 'function'
-      ? options.enabled
-      : () => options.enabled;
-  if (isServerEnvironment()) {
-    return;
-  }
-  const query = queryClient
-    .getQueryCache()
-    .find({ queryKey: options.queryKey, exact: true });
-  const promise = query?.promise;
-  if (
-    !query ||
-    !promise ||
-    query.state.data !== undefined ||
-    query.state.fetchStatus === 'idle' ||
-    enabled(query) === false ||
-    watchedHydrations.has(promise)
-  ) {
-    return;
-  }
-  watchedHydrations.add(promise);
-  promise.catch((error: unknown) => {
-    if (
-      isTRPCClientError(error) ||
-      isCancelledError(error) ||
-      query.state.fetchStatus !== 'idle' ||
-      enabled(query) === false
-    ) {
-      return;
-    }
-    const defaulted = queryClient.defaultQueryOptions(options);
-    // Older query-core versions take the infinite behavior from the fetch's
-    // options, so `query.fetch` would store a bare page there.
-    // `fetchInfiniteQuery` skips retries unless asked, unlike a query's fetch
-    // in the browser, which retries 3 times by default.
-    const refetch =
-      type === 'infinite'
-        ? queryClient.fetchInfiniteQuery({
-            ...options,
-            retry: defaulted.retry ?? 3,
-          })
-        : query.fetch(defaulted);
-    refetch.catch(() => {
-      // surfaces through the query's state
-    });
-  });
-}
-
-function prepareHandleRead<TOptions extends { queryFn?: unknown }>(opts: {
-  queryClient: QueryClient;
-  handle: ReturnType<typeof readHandle>;
-  options: TOptions;
-}): TOptions {
-  const { options } = opts;
-  if (
-    globalThis.process?.env?.['NODE_ENV'] !== 'production' &&
-    typeof options.queryFn === 'function'
-  ) {
-    options.queryFn = warnIfNotHydrated(
-      opts.handle.path,
-      options.queryFn as QueryFunction<any, any, any>,
-    );
-  }
-  refetchRejectedHydration(opts.queryClient, opts.handle.type, options);
-  return options;
-}
-
-interface ProxyContext {
-  proxy: any;
-  path: string[];
-  prefix: string | undefined;
-}
-
-function readProxy(proxy: unknown, fn: string): ProxyContext {
-  const queryKey = (proxy as { queryKey?: unknown } | null)?.queryKey;
-  if (Array.isArray(queryKey)) {
-    throw new Error(
-      `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got a handle for \`${readQueryKey(queryKey as TRPCQueryKey<any>).path.join('.')}\``,
-    );
-  }
-  if (typeof queryKey !== 'function') {
-    throw new Error(
-      `\`${fn}()\` expects a tRPC options proxy or one of its procedures, got ${String(proxy)}`,
-    );
-  }
-  const key = readQueryKey(queryKey());
-  return {
-    proxy,
-    path: key.path,
-    prefix: key.prefix?.[0],
-  };
-}
-
-function queryClientOf(ctx: ProxyContext): QueryClient {
-  return ctx.proxy['~queryClient']();
-}
-
-function optionsOf(
-  procedure: any,
-  type: HandleType,
-): (input: unknown, opts: unknown) => any {
-  return type === 'infinite'
-    ? procedure.infiniteQueryOptions
-    : procedure.queryOptions;
-}
-
-function readRoot(trpc: unknown, fn: string) {
-  const ctx = readProxy(trpc, fn);
-  if (ctx.path.length > 0) {
-    throw new Error(
-      `\`${fn}()\` takes the root proxy, \`trpc\`, got \`trpc.${ctx.path.join('.')}\``,
-    );
-  }
-  return ctx;
-}
-
-function entry(opts: {
-  fn: string;
-  type: HandleType;
-  kind: TRPCEntryKind;
-  procedure: unknown;
-  input: unknown;
-  opts: unknown;
-}) {
-  const ctx = readProxy(opts.procedure, opts.fn);
-  return createEntry({
-    type: opts.type,
-    kind: opts.kind,
-    options: optionsOf(ctx.proxy, opts.type)(opts.input, opts.opts),
-    queryClient: queryClientOf(ctx),
-  });
-}
+export {
+  prefetchEntry,
+  fetchEntry,
+  ensureEntry,
+  prefetchInfiniteEntry,
+  fetchInfiniteEntry,
+  ensureInfiniteEntry,
+} from './entry';
+export { fromHandle } from './handle';
+export type {
+  TRPCQueryHandle,
+  TRPCInfiniteQueryHandle,
+  AnyTRPCHandle,
+  TRPCQueryEntry,
+  TRPCInfiniteQueryEntry,
+  AnyTRPCEntry,
+  TRPCEntryKind,
+  TRPCLoadEntries,
+  TRPCLoadedHandles,
+  TRPCSettledHandles,
+  TRPCEntryResult,
+  TRPCEntryOptions,
+  TRPCInfiniteEntryOptions,
+  inferQueryHandle,
+  inferInfiniteQueryHandle,
+} from './types';
 
 /**
  * Whether `error` is a failed entry from `loadHandles()`. Pass a procedure to
@@ -669,7 +88,8 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  *
  * Takes the root of an options proxy, from `createTRPCOptionsProxy` or `useTRPC()`.
  * Call it in a route loader, a server component or an event handler, not during
- * render: every render would start the entries again.
+ * render: every render would start the entries again. On a page without a
+ * loader, call `useLoadHandles()` in its component.
  * @example
  * ```ts
  * const [handles, data] = await loadHandles(trpc, {
@@ -693,7 +113,7 @@ export function loadHandles<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
     entries,
     settle: false,
-  }) as Promise<any>;
+  }) as Promise<TRPCLoadedHandles<TEntries>>;
 }
 
 /**
@@ -728,208 +148,148 @@ export function loadHandlesSettled<
     queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
     entries,
     settle: true,
-  }) as Promise<any>;
+  }) as Promise<TRPCSettledHandles<TEntries>>;
+}
+
+/** What `QueryClient.defaultQueryOptions()` takes: the options proxy built them */
+type QueryOptionsToDefault = Parameters<QueryClient['defaultQueryOptions']>[0];
+
+/** The options of an entry that say how its query starts */
+const startOptions = [
+  'staleTime',
+  'retry',
+  'retryDelay',
+  'gcTime',
+  'pages',
+  // Whether there is one: without it, an infinite query loads no page after
+  // its first, and a load with `pages` fails
+  'getNextPageParam',
+] as const satisfies readonly (keyof TRPCInfiniteEntryOptions<ResolverDef>)[];
+
+/**
+ * A start option as a string. `undefined` and `Infinity` have no JSON, and
+ * would read the same as `null`. Which function an option is isn't compared:
+ * an inline one is new on every render.
+ */
+function describeOption(value: unknown) {
+  return typeof value === 'function'
+    ? 'function'
+    : `${typeof value}:${String(value)}`;
 }
 
 /**
- * An entry for `loadHandles()` that starts the query without waiting, like
- * `queryClient.prefetchQuery`. It never makes the load reject: errors surface where
- * the handle is read. Creating the entry starts nothing.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#prefetch
+ * `loadHandles()` for a component on a page without a loader: an alternative
+ * to a route loader, `getServerSideProps` or a server component. Call it at
+ * the top of the page's component. It starts every entry, once, and returns
+ * the handles at once, without waiting for any data. The components that get
+ * them read the data, and wait for it in their Suspense boundary.
+ *
+ * Nothing waits for a fetch or ensure entry, so their errors surface where the
+ * handle is read, as a prefetch entry's do. Rendering doesn't start a query
+ * that failed again: resetting the reader's error boundary with
+ * `QueryErrorResetBoundary` retries it. The entry's kind still says how its
+ * query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
+ * unless the data is fresh.
+ *
+ * It starts the entries again when they change, such as with another id, and
+ * when the component comes back to the page. Rendering again starts nothing.
+ * A component that renders again before it is on the page, such as after a
+ * Suspense boundary above it waited, starts them again, as a loader that runs
+ * again does: a query that is loading or has fresh data asks for nothing.
+ * Entries are compared by value, as query keys are: the procedure, the input,
+ * and the options that say how a query starts, such as `staleTime`. Build them
+ * from values that stay the same from render to render, such as props.
+ *
+ * Unstable: it may change in a minor release.
+ * @example
+ * ```tsx
+ * function PostPage(props: { id: string }) {
+ *   const trpc = useTRPC();
+ *   const handles = useLoadHandles(trpc, {
+ *     post: prefetchEntry(trpc.post.byId, { id: props.id }),
+ *     comments: prefetchInfiniteEntry(trpc.post.comments, { postId: props.id }),
+ *   });
+ *   return (
+ *     <Suspense fallback={<p>Loading…</p>}>
+ *       <Post post={handles.post} />
+ *       <Comments comments={handles.comments} />
+ *     </Suspense>
+ *   );
+ * }
+ * ```
+ * @see https://trpc.io/docs/client/tanstack-react-query/handles#without-a-loader
  */
-export function prefetchEntry<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'prefetch'>;
-export function prefetchEntry(
-  procedure: unknown,
-  input?: unknown,
-  opts?: unknown,
-): unknown {
-  return entry({
-    fn: 'prefetchEntry',
-    type: 'query',
-    kind: 'prefetch',
-    procedure,
-    input,
-    opts,
-  });
-}
-
-/**
- * An entry for `loadHandles()` that waits for fresh data, like `queryClient.fetchQuery`:
- * cached data is used only if it isn't stale. The load rejects if the request fails.
- * Creating the entry starts nothing.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
- */
-export function fetchEntry<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'fetch'>;
-export function fetchEntry(
-  procedure: unknown,
-  input?: unknown,
-  opts?: unknown,
-): unknown {
-  return entry({
-    fn: 'fetchEntry',
-    type: 'query',
-    kind: 'fetch',
-    procedure,
-    input,
-    opts,
-  });
-}
-
-/**
- * An entry for `loadHandles()` that uses any cached data, even stale, like
- * `queryClient.ensureQueryData({ revalidateIfStale: true })`. It fetches and waits only
- * when the cache has no data, and the load rejects if that request fails. Stale data is
- * refetched in the background. Creating the entry starts nothing.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#ensure
- */
-export function ensureEntry<TDef extends ResolverDef>(
-  procedure: DecorateQueryProcedure<TDef>,
-  ...args: EntryArgs<TDef>
-): TRPCQueryEntry<TDef, 'ensure'>;
-export function ensureEntry(
-  procedure: unknown,
-  input?: unknown,
-  opts?: unknown,
-): unknown {
-  return entry({
-    fn: 'ensureEntry',
-    type: 'query',
-    kind: 'ensure',
-    procedure,
-    input,
-    opts,
-  });
-}
-
-/**
- * Like `prefetchEntry`, for an infinite query. Loads the first page unless `pages` is set.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
- */
-export function prefetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'prefetch'> {
-  return entry({
-    fn: 'prefetchInfiniteEntry',
-    type: 'infinite',
-    kind: 'prefetch',
-    procedure,
-    input,
-    opts,
-  }) as any;
-}
-
-/**
- * Like `fetchEntry`, for an infinite query.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
- */
-export function fetchInfiniteEntry<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'fetch'> {
-  return entry({
-    fn: 'fetchInfiniteEntry',
-    type: 'infinite',
-    kind: 'fetch',
-    procedure,
-    input,
-    opts,
-  }) as any;
-}
-
-/**
- * Like `ensureEntry`, for an infinite query.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
- */
-export function ensureInfiniteEntry<TDef extends ResolverDef>(
-  procedure: DecorateInfiniteQueryProcedure<TDef>,
-  input: TDef['input'],
-  opts?: TRPCInfiniteEntryOptions<TDef>,
-): TRPCInfiniteQueryEntry<TDef, 'ensure'> {
-  return entry({
-    fn: 'ensureInfiniteEntry',
-    type: 'infinite',
-    kind: 'ensure',
-    procedure,
-    input,
-    opts,
-  }) as any;
-}
-
-/**
- * Options for a handle: the same options `trpc.<path>.queryOptions(input)` or
- * `trpc.<path>.infiniteQueryOptions(input, opts)` return for the handle's procedure and
- * input. Pass them to `useQuery`, `useSuspenseQuery`, `useSuspenseInfiniteQuery`, etc.
- * `trpc` is the proxy or a router on the handle's path, usually `useTRPC()`.
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#reading-a-handle
- */
-export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
-  trpc: DecorateRouterKeyable<NoInfer<TDef['featureFlags']>>,
-  handle: TRPCQueryHandle<TDef>,
-  opts?: UnusedSkipTokenTRPCQueryOptionsIn<
-    NoInfer<TDef['output']>,
-    TData,
-    ErrorOf<TDef>,
-    TDef['featureFlags']
-  >,
-): UnusedSkipTokenTRPCQueryOptionsOut<
-  TDef['output'],
-  TData,
-  ErrorOf<TDef>,
-  TDef['featureFlags']
->;
-export function fromHandle<TDef extends ResolverDef, TData = TDef['output']>(
-  trpc: DecorateRouterKeyable<NoInfer<TDef['featureFlags']>>,
-  handle: TRPCInfiniteQueryHandle<TDef>,
-  opts: UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
-    TDef['input'],
-    NoInfer<TDef['output']>,
-    TData,
-    ErrorOf<TDef>,
-    TDef['featureFlags']
-  >,
-): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
-  TDef['input'],
-  TDef['output'],
-  TData,
-  ErrorOf<TDef>,
-  TDef['featureFlags']
->;
-export function fromHandle(
-  trpc: unknown,
-  rawHandle: AnyTRPCHandle,
-  opts?: object,
-): unknown {
-  const ctx = readProxy(trpc, 'fromHandle');
-  const handle = readHandle(rawHandle, ctx.prefix);
-  if (!ctx.path.every((segment, index) => handle.path[index] === segment)) {
-    throw new Error(
-      `\`fromHandle(trpc.${ctx.path.join('.')}, handle)\` got a handle for \`${handle.path.join('.')}\`, which isn't in \`${ctx.path.join('.')}\`. Pass the root proxy, \`trpc\``,
+export function useLoadHandles<
+  TFeatureFlags extends FeatureFlags,
+  TEntries extends TRPCLoadEntries,
+>(
+  trpc: DecorateRouterKeyable<TFeatureFlags>,
+  entries: TEntries,
+): TRPCLoadedHandles<TEntries>[0] {
+  const queryClient = queryClientOf(readRoot(trpc, 'useLoadHandles'));
+  const states = readEntries(queryClient, entries);
+  // By name, as an object: `hashKey` sorts its keys, so the order of the
+  // entries doesn't make another load
+  const key = hashKey([
+    Object.fromEntries(
+      states.map(([name, state]) => [
+        name,
+        [
+          state.kind,
+          state.type,
+          // As the cache hashes it, with the `queryKeyHashFn` it is set up
+          // with: the keys it tells apart are other queries
+          queryClient.defaultQueryOptions(
+            state.options as unknown as QueryOptionsToDefault,
+          ).queryHash,
+          // Not all of the options: `meta` can hold what has no JSON, or what
+          // is new on every render
+          startOptions.map((option) => describeOption(state.options[option])),
+          // Not the first cursor: TanStack Query keys a query without it
+        ],
+      ]),
+    ),
+  ]);
+  // Kept while the component is on the page, also through a render React
+  // throws away, as when a reader suspends to a boundary above the page. A
+  // component that renders again before it is on the page has none, and
+  // starts the entries again, as a loader that runs again does: a query that
+  // is loading or has fresh data asks for nothing
+  const loadRef = React.useRef<{
+    key: string;
+    queryClient: QueryClient;
+    handles: TRPCLoadedHandles<TEntries>[0];
+  }>(null);
+  if (
+    loadRef.current?.key !== key ||
+    // Another `QueryClient`'s cache has none of the queries
+    loadRef.current.queryClient !== queryClient
+  ) {
+    Promise.all(
+      states
+        // Rendering doesn't start a query that failed again: its reader
+        // throws, and resetting its `QueryErrorResetBoundary` retries it. A
+        // page whose Suspense boundary is above it renders again from nothing
+        // once the query fails, and would start it again, forever
+        .filter(([, state]) => {
+          const query = queryClient.getQueryState(state.options.queryKey);
+          return !(query?.status === 'error' && query.fetchStatus === 'idle');
+        })
+        .map(([, state]) => startEntry(queryClient, state)),
+    ).catch(() => {
+      // Surfaces where the handle is read
+    });
+    const handles: Record<string, unknown> = Object.fromEntries(
+      states.map(([name, state]) => [
+        name,
+        toHandle(state.options, state.type),
+      ]),
     );
+    loadRef.current = {
+      key,
+      queryClient,
+      handles: handles as TRPCLoadedHandles<TEntries>[0],
+    };
   }
-  const procedure = handle.path
-    .slice(ctx.path.length)
-    .reduce((level, segment) => level[segment], ctx.proxy);
-  const options = optionsOf(procedure, handle.type)(
-    handle.input,
-    handle.type === 'infinite'
-      ? {
-          initialCursor: (rawHandle as TRPCInfiniteQueryHandle).initialCursor,
-          ...opts,
-        }
-      : opts,
-  );
-  return prepareHandleRead({
-    queryClient: queryClientOf(ctx),
-    handle,
-    options,
-  });
+  return loadRef.current.handles;
 }

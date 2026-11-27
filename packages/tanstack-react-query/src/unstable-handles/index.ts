@@ -9,6 +9,7 @@ export {
   ensureInfiniteEntry,
   fromHandle,
   isTRPCEntryError,
+  useLoadHandles,
 } from './handles';
 export { TRPCEntryError } from './entryError';
 export type {
