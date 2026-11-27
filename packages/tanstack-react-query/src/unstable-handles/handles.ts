@@ -72,7 +72,7 @@ export type {
   experimental_inferHandles,
 } from './types';
 
-/** A load that `experimental_useHandles()` started, by what its entries are */
+/** A load that `useLoadHandles()` started, by what its entries are */
 interface UsedLoad {
   handles: Record<string, unknown>;
   /** The components that have it and are on the page */
@@ -186,7 +186,8 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  *
  * Takes the root of an options proxy, from `createTRPCOptionsProxy` or `useTRPC()`.
  * Call it in a route loader, a server component or an event handler, not during
- * render: every render would start the entries again.
+ * render: every render would start the entries again. On a page without a
+ * loader, call `useLoadHandles()` in its component.
  * @example
  * ```ts
  * const [handles, data] = await loadHandles(trpc, {
@@ -272,10 +273,11 @@ export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
 }
 
 /**
- * `loadHandles()` for a client component that has no loader. Call it at the
- * top of the page's component: it starts every entry, once, and returns the
- * handles at once. The components that get them read the data, and wait for
- * it in their Suspense boundary.
+ * `loadHandles()` for a component on a page without a loader: an alternative
+ * to a route loader, `getServerSideProps` or a server component. Call it at
+ * the top of the page's component. It starts every entry, once, and returns
+ * the handles at once, without waiting for any data. The components that get
+ * them read the data, and wait for it in their Suspense boundary.
  *
  * It waits for nothing, so no handle can have another entry's data in its
  * input. Build an entry that needs data with
@@ -289,13 +291,13 @@ export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
  * and the options that say how a query starts, such as `staleTime`. Build them
  * from values that stay the same from render to render, such as props.
  *
- * Experimental: it may change in a minor release.
+ * Unstable: it may change in a minor release.
  * @example
  * ```tsx
  * function PostPage(props: { id: string }) {
  *   const trpc = useTRPC();
  *   const post = prefetchEntry(trpc.post.byId, { id: props.id });
- *   const handles = experimental_useHandles(trpc, {
+ *   const handles = useLoadHandles(trpc, {
  *     post,
  *     author: experimental_dataOf(post, (it) =>
  *       prefetchEntry(trpc.author.byId, { id: it.authorId }),
@@ -310,13 +312,11 @@ export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#without-a-loader
  */
-export const experimental_useHandles = useHandles;
-
-function useHandles<TEntries extends TRPCLoadEntries>(
+export function useLoadHandles<TEntries extends TRPCLoadEntries>(
   trpc: DecorateRouterKeyable<any>,
   given: TEntries & TanStackEntriesOnly<TEntries>,
 ): TRPCLoadedHandles<LoadedEntries<TEntries>>[0] {
-  const root = readRoot(trpc, 'experimental_useHandles');
+  const root = readRoot(trpc, 'useLoadHandles');
   const queryClient = queryClientOf(root);
   const entries = toTanStackEntries(given);
   const loads = usedLoadsOf(queryClient);
@@ -330,7 +330,7 @@ function useHandles<TEntries extends TRPCLoadEntries>(
     const started = beginEntries({
       queryClient,
       entries,
-      now: 'experimental_useHandles',
+      now: 'useLoadHandles',
     });
     const load: UsedLoad = {
       handles: handlesOfLoads({

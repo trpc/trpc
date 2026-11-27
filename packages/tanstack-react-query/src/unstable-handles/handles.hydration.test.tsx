@@ -20,7 +20,7 @@ import { z } from 'zod';
 import {
   experimental_dataOf,
   experimental_handleOfItem,
-  experimental_useHandles,
+  useLoadHandles,
   loadHandles,
   prefetchEntry,
   ensureEntry,
@@ -307,14 +307,14 @@ describe('chained entries in a server component', () => {
   });
 });
 
-describe('experimental_useHandles while server rendering', () => {
+describe('useLoadHandles while server rendering', () => {
   test("a client component's entries start on the server, which keeps nothing for later", async () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const timers = vi.spyOn(globalThis, 'setTimeout');
     function Page() {
       const trpc = trpcContext.useTRPC();
-      const handles = experimental_useHandles(trpc, {
+      const handles = useLoadHandles(trpc, {
         post: prefetchEntry(trpc.post.byDay, { day: new Date('2026-01-01') }),
       });
       return <Post post={handles.post} />;

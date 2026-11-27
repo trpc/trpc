@@ -17,7 +17,7 @@ import {
   experimental_dataOf,
   experimental_handleOfItem,
   experimental_perItem,
-  experimental_useHandles,
+  useLoadHandles,
   fromHandle,
   loadHandles,
   prefetchEntry,
@@ -443,11 +443,11 @@ describe("a bare query of the client, which says nothing of how it starts, isn't
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
-  test('`experimental_useHandles()` throws for it', async () => {
+  test('`useLoadHandles()` throws for it', async () => {
     await using resource = setup();
     const trpc = resource.optionsProxyServer;
     expect(() =>
-      experimental_useHandles(trpc, {
+      useLoadHandles(trpc, {
         // @ts-expect-error -- a TanStack Query entry says how it starts
         post: experimental_query(trpc.post.bySlug, { slug: 'a' }),
       }),

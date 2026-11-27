@@ -43,7 +43,7 @@ import {
   fetchInfiniteEntry,
   fromHandle,
   experimental_handleOfItem,
-  experimental_useHandles,
+  useLoadHandles,
   isTRPCEntryError,
   loadHandles,
   loadHandlesSettled,
@@ -5777,7 +5777,7 @@ test("a `splitLink` that picks a backend by a value of the input sends the blank
 describe.each([
   { name: 'httpBatchLink', link: httpBatchLink },
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
-])('experimental_useHandles with $name', (scenario) => {
+])('useLoadHandles with $name', (scenario) => {
   /** A page without a loader: its component says what it loads */
   const postPage = (resource: ReturnType<typeof pipeliningCtx>) => {
     function pageEntries(trpc: TRPC, slug: string) {
@@ -5805,10 +5805,7 @@ describe.each([
     const renders = vi.fn();
     function Page(props: { slug: string }) {
       const trpc = resource.useTRPC();
-      const handles = experimental_useHandles(
-        trpc,
-        pageEntries(trpc, props.slug),
-      );
+      const handles = useLoadHandles(trpc, pageEntries(trpc, props.slug));
       renders(handles);
       return <Post handles={handles} />;
     }
@@ -5928,7 +5925,7 @@ describe.each([
     const skipped = vi.fn();
     function Groups(props: { skip: boolean }) {
       const trpc = resource.useTRPC();
-      const handles = experimental_useHandles(trpc, {
+      const handles = useLoadHandles(trpc, {
         groups: props.skip
           ? prefetchEntry(trpc.group.list, skipToken)
           : prefetchEntry(trpc.group.list),
@@ -5994,7 +5991,7 @@ describe.each([
     }
     function List() {
       const trpc = resource.useTRPC();
-      const handles = experimental_useHandles(trpc, listEntries(trpc, false));
+      const handles = useLoadHandles(trpc, listEntries(trpc, false));
       expect(handles.draft).toBeUndefined();
       const posts = useSuspenseInfiniteQuery(
         fromHandle(trpc, handles.posts, {
@@ -6059,7 +6056,7 @@ describe.each([
         { slug: 'missing' },
         { retry: false },
       );
-      const handles = experimental_useHandles(trpc, {
+      const handles = useLoadHandles(trpc, {
         post,
         fresh: fetchEntry(trpc.team.byId, { id: 'team1' }),
         author: experimental_dataOf(post, (it) =>
@@ -6392,18 +6389,27 @@ describe('a transformer that keeps what JSON drops', () => {
   });
 });
 
-describe('experimental_useHandles', () => {
+describe('useLoadHandles', () => {
   test('throws for a handle that needs data, before anything starts', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const errors = vi.fn();
-    function Page(props: { entries: () => TRPCLoadEntries }) {
-      try {
-        experimental_useHandles(trpc, props.entries());
-      } catch (error) {
-        errors((error as Error).message);
-      }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    function Load(props: { entries: () => TRPCLoadEntries }) {
+      useLoadHandles(trpc, props.entries());
       return null;
+    }
+    class Page extends React.Component<{ entries: () => TRPCLoadEntries }> {
+      override state = { failed: false };
+      static getDerivedStateFromError() {
+        return { failed: true };
+      }
+      override componentDidCatch(error: Error) {
+        errors(error.message);
+      }
+      override render() {
+        return this.state.failed ? null : <Load entries={this.props.entries} />;
+      }
     }
 
     const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
@@ -6456,10 +6462,10 @@ describe('experimental_useHandles', () => {
     expect(errors.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
-          "The handle of the entry for "author" has another entry's data in its input, and \`experimental_useHandles()\` doesn't wait for data. Build the entry from that data, with \`experimental_dataOf(entry, (data) => entry)\`, or wait in a loader with \`loadHandles()\`",
+          "The handle of the entry for "author" has another entry's data in its input, and \`useLoadHandles()\` doesn't wait for data. Build the entry from that data, with \`experimental_dataOf(entry, (data) => entry)\`, or wait in a loader with \`loadHandles()\`",
         ],
         Array [
-          "The handle of the entry for "authors" has another entry's data in its input, and \`experimental_useHandles()\` doesn't wait for data. Make the entry of its list a prefetch entry, and read nothing else of the list in its input, or wait in a loader with \`loadHandles()\`",
+          "The handle of the entry for "authors" has another entry's data in its input, and \`useLoadHandles()\` doesn't wait for data. Make the entry of its list a prefetch entry, and read nothing else of the list in its input, or wait in a loader with \`loadHandles()\`",
         ],
         Array [
           "The entry for "author" reads the data of an entry with \`experimental_dataOf()\` that isn't in this load. Add that entry to the load",
@@ -6473,9 +6479,9 @@ describe('experimental_useHandles', () => {
     expect(resource.queryClient.getQueryCache().getAll()).toEqual([]);
     expect(resource.calls).not.toHaveBeenCalled();
     expect(() =>
-      experimental_useHandles(trpc.post as any, {}),
+      useLoadHandles(trpc.post as any, {}),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: \`experimental_useHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
+      `[Error: \`useLoadHandles()\` takes the root proxy, \`trpc\`, got \`trpc.post\`]`,
     );
   });
 
@@ -6485,7 +6491,7 @@ describe('experimental_useHandles', () => {
     const seen: unknown[] = [];
     function Card() {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
         }),
       );
@@ -6521,7 +6527,7 @@ describe('experimental_useHandles', () => {
       const nested = prefetchEntry(trpc.post.bySlug, { slug: 'a' });
       const dotted = prefetchEntry(trpc.post.bySlug, { slug: 'b' });
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           card: { list: nested },
           'card.list': dotted,
           authors: experimental_perItem(
@@ -6556,7 +6562,7 @@ describe('experimental_useHandles', () => {
       // The same entry for every item: only how many items there are differs
       const author = () => prefetchEntry(trpc.author.byId, { id: 'u1' });
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           groups,
           authors: props.flat
             ? experimental_perItem(
@@ -6600,7 +6606,7 @@ describe('experimental_useHandles', () => {
     function Card(props: { items: TRPCOptionsProxy<AppRouter> }) {
       const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post,
           tags: experimental_perItem(experimental_dataOf(post).tags, (tag) =>
             prefetchEntry(props.items.tag.byIds, { ids: [tag.id] }),
@@ -6634,7 +6640,7 @@ describe('experimental_useHandles', () => {
       context: Record<PropertyKey, unknown> | undefined;
     }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -6669,7 +6675,7 @@ describe('experimental_useHandles', () => {
     function Card(props: { literal: boolean }) {
       const post = prefetchEntry(trpc.post.bySlug, { slug: 'hello' });
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post,
           author: experimental_dataOf(post, (it) =>
             prefetchEntry(trpc.author.byId, {
@@ -6706,7 +6712,7 @@ describe('experimental_useHandles', () => {
       meta: Record<string, unknown> | undefined;
     }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -6746,7 +6752,7 @@ describe('experimental_useHandles', () => {
     const seen: unknown[] = [];
     function Card(props: { slug: string }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(trpc.post.bySlug, { slug: props.slug }),
         }),
       );
@@ -6774,7 +6780,7 @@ describe('experimental_useHandles', () => {
         | undefined;
     }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           posts: prefetchInfiniteEntry(
             trpc.post.paged,
             {},
@@ -6810,7 +6816,7 @@ describe('experimental_useHandles', () => {
       retry: ((count: number) => boolean) | undefined;
     }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -6844,7 +6850,7 @@ describe('experimental_useHandles', () => {
     const seen: Record<string, any>[] = [];
     function List() {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           posts: prefetchInfiniteEntry(
             trpc.post.paged,
             {},
@@ -6870,7 +6876,7 @@ describe('experimental_useHandles', () => {
     const seen: Record<string, any>[] = [];
     function List(props: { cursor: unknown }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           posts: prefetchInfiniteEntry(
             trpc.post.paged,
             {},
@@ -6902,7 +6908,7 @@ describe('experimental_useHandles', () => {
     const seen: Record<string, any>[] = [];
     function List(props: { cursor: number }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           posts: prefetchInfiniteEntry(
             trpc.post.paged,
             {},
@@ -6935,7 +6941,7 @@ describe('experimental_useHandles', () => {
     const seen: Record<string, any>[] = [];
     function List(props: { cursor: unknown }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           posts: prefetchInfiniteEntry(
             trpc.post.paged,
             {},
@@ -6967,7 +6973,7 @@ describe('experimental_useHandles', () => {
     const seen: unknown[] = [];
     function Card(props: { context: Record<string, unknown> }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7004,7 +7010,7 @@ describe('experimental_useHandles', () => {
     const seen: unknown[] = [];
     function Card(props: { context: Record<string, unknown> }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7048,7 +7054,7 @@ describe('experimental_useHandles', () => {
     const region = Symbol('region');
     function Card(props: { context: Record<string, unknown> }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7081,7 +7087,7 @@ describe('experimental_useHandles', () => {
     const seen: unknown[] = [];
     function Card(props: { context: Record<string, unknown> }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7115,7 +7121,7 @@ describe('experimental_useHandles', () => {
     const west = () => 'west';
     function Card(props: { route: () => string }) {
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7150,7 +7156,7 @@ describe('experimental_useHandles', () => {
     const author = () => prefetchEntry(trpc.author.byId, { id: 'u1' });
     const seen: Record<string, unknown>[] = [];
     function Card(props: { entries: TRPCLoadEntries }) {
-      seen.push(experimental_useHandles(trpc, props.entries));
+      seen.push(useLoadHandles(trpc, props.entries));
       return null;
     }
     resource.renderApp(
@@ -7187,7 +7193,7 @@ describe('experimental_useHandles', () => {
     function Card() {
       const context = { session: current.session };
       seen.push(
-        experimental_useHandles(trpc, {
+        useLoadHandles(trpc, {
           post: prefetchEntry(
             trpc.post.bySlug,
             { slug: 'hello' },
@@ -7234,7 +7240,7 @@ describe('experimental_useHandles', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const seen: unknown[] = [];
     function Page(props: { fail: boolean }) {
-      const handles = experimental_useHandles(trpc, {
+      const handles = useLoadHandles(trpc, {
         post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
       });
       seen.push(handles);

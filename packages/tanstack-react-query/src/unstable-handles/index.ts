@@ -11,7 +11,7 @@ export {
   experimental_dataOf,
   experimental_perItem,
   experimental_handleOfItem,
-  experimental_useHandles,
+  useLoadHandles,
   isTRPCEntryError,
 } from './handles';
 export { TRPCEntryError } from './entryError';

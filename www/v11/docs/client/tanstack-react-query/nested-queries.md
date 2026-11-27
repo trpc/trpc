@@ -760,7 +760,7 @@ Some pages have no loader. The same entries load from a component.
 
 ### In a client component {#use-handles}
 
-`experimental_useHandles(trpc, entries)` is `loadHandles()` for a client component. Call it at the top of the page's component:
+[`useLoadHandles(trpc, entries)`](/docs/client/tanstack-react-query/handles#without-a-loader) is `loadHandles()` for a client component. Call it at the top of the page's component:
 
 ```tsx twoslash title='post-page.tsx'
 // @include: dq-router
@@ -773,7 +773,7 @@ declare function Post(props: {
 // ---cut---
 'use client';
 
-import { experimental_useHandles } from '@trpc/tanstack-react-query/unstable-handles';
+import { useLoadHandles } from '@trpc/tanstack-react-query/unstable-handles';
 import { Suspense } from 'react';
 import { useTRPC } from '~/trpc/client';
 
@@ -782,7 +782,7 @@ import { useTRPC } from '~/trpc/client';
 export function PostPage(props: { slug: string }) {
   const trpc = useTRPC();
   // Starts every query, once, and waits for none
-  const handles = experimental_useHandles(
+  const handles = useLoadHandles(
     trpc,
     postPageEntries(trpc, { slug: props.slug }),
   );
