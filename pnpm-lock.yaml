@@ -11744,9 +11744,6 @@ packages:
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-
   lodash@4.18.1:
     resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
 
@@ -24508,8 +24505,6 @@ snapshots:
   lodash.debounce@4.0.8:
     optional: true
 
-  lodash@4.17.21: {}
-
   lodash@4.18.1: {}
 
   log-symbols@6.0.0:
@@ -24958,7 +24953,7 @@ snapshots:
 
   minim@0.23.8:
     dependencies:
-      lodash: 4.17.21
+      lodash: 4.18.1
 
   minimatch@11.0.5:
     dependencies:
@@ -27589,7 +27584,7 @@ snapshots:
       commander: 6.2.1
       cosmiconfig: 7.1.0
       json5: 2.2.3
-      lodash: 4.17.21
+      lodash: 4.18.1
       true-myth: 4.1.1
       ts-morph: 13.0.3
 
