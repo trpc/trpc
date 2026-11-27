@@ -298,12 +298,8 @@ export function TRPCReactProvider(
   const [trpcClient] = useState(() =>
     createTRPCClient({
       router: routerType<AppRouter>(),
-      links: [
-        httpBatchLink({
-          // transformer: superjson, <-- if you use a data transformer
-          url: getUrl(),
-        }),
-      ],
+      // with a data transformer, add `transformer: superjson` to httpBatchLink
+      links: [httpBatchLink({ url: getUrl() })],
     }),
   );
 
