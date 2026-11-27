@@ -268,7 +268,8 @@ export const makeTRPCClient = () =>
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<typeof makeTRPCClient>();
 
-function Component() {
+// `context` is typed from the links: `retryLink` reads `retry`
+function useUserOptions() {
   const trpc = useTRPC();
   return trpc.getUser.queryOptions(
     { id: '1' },
