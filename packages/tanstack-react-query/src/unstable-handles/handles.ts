@@ -243,7 +243,8 @@ export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
  * A component that renders again before it is on the page, such as after a
  * Suspense boundary above it waited, starts them again, as a loader that runs
  * again does: a query that is loading or has fresh data asks for nothing, and
- * one that failed keeps its error, which resetting its error boundary retries.
+ * one that failed keeps its error, which resetting the reader's
+ * `QueryErrorResetBoundary` retries.
  * Entries are compared by value, as query keys are: the procedure, the input,
  * and the options that say how a query starts, such as `staleTime`. Build them
  * from values that stay the same from render to render, such as props.
