@@ -13,6 +13,7 @@ import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import'
 import type {
   ExtractCursorType,
   FeatureFlags,
+  inferResolverDefContext,
   ResolverDef,
   TRPCInfiniteData,
   TRPCQueryBaseOptions,
@@ -34,6 +35,7 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object,
 >
   extends
     DistributiveOmit<
@@ -46,7 +48,7 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {
+    TRPCQueryBaseOptions<TLinkContext> {
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -83,6 +85,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object,
 >
   extends
     DistributiveOmit<
@@ -95,7 +98,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {
+    TRPCQueryBaseOptions<TLinkContext> {
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -132,6 +135,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 >
   extends
     DistributiveOmit<
@@ -144,7 +148,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {
+    TRPCQueryBaseOptions<TLinkContext> {
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -190,7 +194,8 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      TDef['featureFlags'],
+      inferResolverDefContext<TDef>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -212,7 +217,8 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      TDef['featureFlags'],
+      inferResolverDefContext<TDef>
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -234,7 +240,8 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TDef['featureFlags']
+      TDef['featureFlags'],
+      inferResolverDefContext<TDef>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
@@ -249,9 +256,16 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
 }
 
 type AnyTRPCInfiniteQueryOptionsIn<TFeatureFlags extends FeatureFlags> =
-  | DefinedTRPCInfiniteQueryOptionsIn<any, any, any, any, TFeatureFlags>
-  | UnusedSkipTokenTRPCInfiniteQueryOptionsIn<any, any, any, any, TFeatureFlags>
-  | UndefinedTRPCInfiniteQueryOptionsIn<any, any, any, any, TFeatureFlags>;
+  | DefinedTRPCInfiniteQueryOptionsIn<any, any, any, any, TFeatureFlags, any>
+  | UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+      any,
+      any,
+      any,
+      any,
+      TFeatureFlags,
+      any
+    >
+  | UndefinedTRPCInfiniteQueryOptionsIn<any, any, any, any, TFeatureFlags, any>;
 
 type AnyTRPCInfiniteQueryOptionsOut<TFeatureFlags extends FeatureFlags> =
   | DefinedTRPCInfiniteQueryOptionsOut<any, any, any, any, TFeatureFlags>

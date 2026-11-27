@@ -12,6 +12,7 @@ import type {
   DefaultFeatureFlags,
   FeatureFlags,
   KeyPrefixOptions,
+  inferResolverDefContext,
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
@@ -32,11 +33,12 @@ type TRPCMutationOptionsIn<
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object,
 > = DistributiveOmit<
   UseMutationOptions<TOutput, TError, TInput, TContext>,
   ReservedOptions
 > &
-  TRPCQueryBaseOptions &
+  TRPCQueryBaseOptions<TLinkContext> &
   KeyPrefixOptions<TFeatureFlags>;
 
 interface TRPCMutationOptionsOut<
@@ -66,7 +68,8 @@ export interface TRPCMutationOptions<
       TRPCClientErrorLike<TDef>,
       TDef['output'],
       TContext,
-      TFeatureFlags
+      TFeatureFlags,
+      inferResolverDefContext<TDef>
     >,
   ): TRPCMutationOptionsOut<
     TDef['input'],
@@ -95,7 +98,7 @@ export interface MutationOptionsOverride {
 }
 
 type AnyTRPCMutationOptionsIn<TFeatureFlags extends FeatureFlags> =
-  TRPCMutationOptionsIn<unknown, unknown, unknown, unknown, TFeatureFlags>;
+  TRPCMutationOptionsIn<unknown, unknown, unknown, unknown, TFeatureFlags, any>;
 
 type AnyTRPCMutationOptionsOut<TFeatureFlags extends FeatureFlags> =
   TRPCMutationOptionsOut<unknown, unknown, unknown, unknown, TFeatureFlags>;

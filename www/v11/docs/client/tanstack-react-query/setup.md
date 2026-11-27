@@ -50,10 +50,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server/router';
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],
 });
 ```
@@ -70,9 +71,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../server/router';
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'YOUR_API_URL' })],
 });
 
@@ -180,7 +182,7 @@ If you already use React Query in your application, you **should** re-use the `Q
 // @filename: components/App.tsx
 // ---cut---
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { useState } from 'react';
 import type { AppRouter } from '../server/router';
 import { TRPCProvider } from '../utils/trpc';
@@ -216,7 +218,8 @@ function getQueryClient() {
 export function App() {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpBatchLink({
           url: 'http://localhost:2022',
@@ -235,6 +238,45 @@ export function App() {
 }
 ```
 
+#### Typing `trpc.context` from your links
+
+Pass the client's type, or the type of the function that creates it, instead of `AppRouter`. The `trpc.context` option is then typed from what the client's links read, as in [Typing call options](../links.md#typing-call-options).
+
+```tsx twoslash title='utils/trpc.ts'
+// @include: router
+
+// @filename: utils/trpc.ts
+// ---cut---
+import {
+  createTRPCClient,
+  httpBatchLink,
+  retryLink,
+  routerType,
+} from '@trpc/client';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+
+export const makeTRPCClient = () =>
+  createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      retryLink({ retry: (opts) => opts.attempts <= 3 }),
+      httpBatchLink({ url: 'http://localhost:2022' }),
+    ],
+  });
+
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<typeof makeTRPCClient>();
+
+function Component() {
+  const trpc = useTRPC();
+  return trpc.getUser.queryOptions(
+    { id: '1' },
+    { trpc: { context: { retry: false } } },
+  );
+}
+```
+
 ### 3b. Set up with Query/Mutation Key Prefixing enabled
 
 If you want to prefix all queries and mutations with a specific key, see [Query Key Prefixing](./usage.md#keyPrefix) for setup and usage examples.
@@ -249,17 +291,19 @@ When building an SPA using only client-side rendering with something like Vite, 
 // @filename: utils/trpc.ts
 // ---cut---
 import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 
 export const queryClient = new QueryClient();
 
-const trpcClient = createTRPCClient<AppRouter>({
+const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'http://localhost:2022' })],
 });
 
-export const trpc = createTRPCOptionsProxy<AppRouter>({
+// the router's type, and the `context` its links read, come from the client
+export const trpc = createTRPCOptionsProxy({
   client: trpcClient,
   queryClient,
 });
@@ -270,14 +314,15 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
 
 // @filename: utils/trpc.ts
 import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 export const queryClient = new QueryClient();
-const trpcClient = createTRPCClient<AppRouter>({
+const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'http://localhost:2022' })],
 });
-export const trpc = createTRPCOptionsProxy<AppRouter>({
+export const trpc = createTRPCOptionsProxy({
   client: trpcClient,
   queryClient,
 });
