@@ -178,7 +178,7 @@ const queryOptions = trpc.path.to.query.queryOptions(
 }
 ```
 
-When `useTRPC` comes from `createTRPCContext<typeof makeTRPCClient>()`, `context` is typed from what the client's links read. See [Typing `trpc.context` from your links](./setup.md#typing-trpccontext-from-your-links).
+When `useTRPC` comes from `createTRPCContext({ client: makeTRPCClient })`, `context` is typed from what the client's links read. See [Typing `trpc.context` from your links](./setup.md#typing-trpccontext-from-your-links).
 
 If you want to disable a query in a type safe way, you can use `skipToken`:
 

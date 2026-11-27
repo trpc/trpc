@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { TRPCClient } from '@trpc/client';
+import type { RouterType, TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
@@ -21,9 +21,8 @@ type TRPCProviderType<TFeatureFlags extends FeatureFlags, TClient> = React.FC<
 type AnyTRPCClient = TRPCClient<any, any>;
 
 /**
- * What {@link createTRPCContext} takes: a router's type, a client's type
- * (`typeof trpcClient`), or the type of a function that creates the client
- * (`typeof makeClient`).
+ * What {@link createTRPCContext} types its hooks from: a router, a client,
+ * or a function that creates the client.
  * @internal
  */
 export type TRPCContextSource =
@@ -87,6 +86,81 @@ export interface CreateTRPCContextResult<
 }
 
 /**
+ * The options of `createTRPCContext`: the router's type as
+ * `router: routerType<AppRouter>()`, or the client (or the function that
+ * creates it) as `client`, so `trpc.context` is typed from its links.
+ * Only their types are used.
+ * @public
+ */
+export type CreateTRPCContextOptions<
+  TSource extends TRPCContextSource,
+  TKeyPrefix extends boolean,
+> = (
+  | {
+      /**
+       * The router's type, from `routerType<AppRouter>()`. It's a type
+       * only: nothing about the router is sent or bundled.
+       */
+      router: RouterType<TSource & AnyTRPCRouter>;
+      client?: never;
+    }
+  | {
+      /**
+       * The client, or the function that creates it, such as
+       * `makeTRPCClient`. Only its type is used: it isn't called, and
+       * `TRPCProvider` still takes the client.
+       */
+      client: TSource;
+      router?: never;
+    }
+) & {
+  /**
+   * `true` prefixes query and mutation keys; `TRPCProvider` then takes the
+   * prefix as `keyPrefix`.
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#keyPrefix
+   */
+  keyPrefix?: TKeyPrefix;
+};
+
+/**
+ * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks.
+ * Pass the router's type with `routerType`, or the client (or the function
+ * that creates it) to type `trpc.context` from its links.
+ *
+ * @example
+ * ```ts
+ * export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext({
+ *   router: routerType<AppRouter>(),
+ * });
+ * // or, with `trpc.context` typed from the links
+ * const makeTRPCClient = () =>
+ *   createTRPCClient({ router: routerType<AppRouter>(), links });
+ * export const { TRPCProvider, useTRPC } = createTRPCContext({
+ *   client: makeTRPCClient,
+ * });
+ * ```
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
+ */
+// One signature whose type parameter a router also satisfies, so
+// `typeof createTRPCContext<AppRouter>` still instantiates.
+// `FeatureFlags` is allowed too, so `typeof createTRPCContext<AppRouter,
+// { keyPrefix: true }>` also still instantiates.
+export function createTRPCContext<
+  TSource extends TRPCContextSource,
+  const TKeyPrefix extends boolean | FeatureFlags = false,
+>(
+  opts: CreateTRPCContextOptions<
+    TSource,
+    TKeyPrefix extends FeatureFlags ? TKeyPrefix['keyPrefix'] : TKeyPrefix
+  >,
+): CreateTRPCContextResult<
+  inferSourceRouter<TSource>,
+  TKeyPrefix extends FeatureFlags ? TKeyPrefix : { keyPrefix: TKeyPrefix },
+  inferSourceLinkContext<TSource>,
+  inferSourceClient<TSource>
+>;
+/**
  * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks for
  * your router.
  *
@@ -98,41 +172,20 @@ export interface CreateTRPCContextResult<
  *
  * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
  */
+// Kept last: `ReturnType<typeof createTRPCContext>` reads the last overload.
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
 >(): CreateTRPCContextResult<TRouter, TFeatureFlags>;
-/**
- * Creates a `TRPCProvider` and the `useTRPC` and `useTRPCClient` hooks for
- * a client. Pass the client's type, or the type of the function that
- * creates it, and the `trpc.context` option is typed from what its links
- * read.
- *
- * @example
- * ```ts
- * const makeClient = () =>
- *   createTRPCClient({ router: routerType<AppRouter>(), links });
- * export const { TRPCProvider, useTRPC, useTRPCClient } =
- *   createTRPCContext<typeof makeClient>();
- * ```
- *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
- */
-export function createTRPCContext<
-  TClientSource extends AnyTRPCClient | ((...args: any[]) => AnyTRPCClient),
-  TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
->(): CreateTRPCContextResult<
-  inferSourceRouter<TClientSource>,
-  TFeatureFlags,
-  inferSourceLinkContext<TClientSource>,
-  inferSourceClient<TClientSource>
->;
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags,
   TLinkContext extends object,
   TClient,
->(): CreateTRPCContextResult<TRouter, TFeatureFlags, TLinkContext, TClient> {
+>(
+  // only types: `router`, `client` and `keyPrefix` change nothing at runtime
+  _opts?: CreateTRPCContextOptions<TRouter, TFeatureFlags['keyPrefix']>,
+): CreateTRPCContextResult<TRouter, TFeatureFlags, TLinkContext, TClient> {
   const TRPCClientContext = React.createContext<TClient | null>(null);
   const TRPCContext = React.createContext<TRPCOptionsProxy<
     TRouter,

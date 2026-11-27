@@ -32,6 +32,9 @@ function factory() {
       calls.query();
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
     }),
+    byId: t.procedure
+      .input((value) => value as { id: string })
+      .query((opts) => opts.input),
     flakyMutation: t.procedure.mutation(() => {
       calls.mutation();
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
@@ -126,15 +129,16 @@ test('other clients keep taking any context', () => {
   }
 });
 
-test('createTRPCContext takes the client’s type', async () => {
+test('createTRPCContext takes the client to type `trpc.context`', async () => {
   const { appRouter, calls } = factory();
   await using ctx = testServerAndClientResource(appRouter);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   const trpcClient = makeClient(ctx.httpUrl);
-  const { TRPCProvider, useTRPC, useTRPCClient } =
-    createTRPCContext<typeof makeClient>();
+  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext({
+    client: makeClient,
+  });
 
   function MyComponent() {
     const trpc = useTRPC();
@@ -163,8 +167,8 @@ test('createTRPCContext takes the client’s type', async () => {
   await vi.waitFor(() => expect(utils.container).toHaveTextContent('error'));
   expect(calls.query).toHaveBeenCalledTimes(1);
 
-  // `typeof client` works as well as the factory's type
-  const byClient = createTRPCContext<typeof trpcClient>();
+  // the client works as well as the function that creates it
+  const byClient = createTRPCContext({ client: trpcClient });
   expectTypeOf(byClient.useTRPCClient).returns.toEqualTypeOf<
     typeof trpcClient
   >();
@@ -175,4 +179,53 @@ test('createTRPCContext takes the client’s type', async () => {
       .useTRPC()
       .flakyQuery.queryOptions(undefined, { trpc: { context: { any: 1 } } });
   });
+});
+
+test('createTRPCContext takes the router type as `router`', async () => {
+  const { appRouter, calls } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const { TRPCProvider, useTRPC } = createTRPCContext({
+    router: routerType<AppRouter>(),
+  });
+  expectTypeOf(useTRPC).toEqualTypeOf<
+    ReturnType<typeof createTRPCContext<AppRouter>>['useTRPC']
+  >();
+
+  function MyComponent() {
+    const query = useQuery(useTRPC().byId.queryOptions({ id: '1' }));
+    return <div>{query.data?.id ?? query.status}</div>;
+  }
+  const trpcClient = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [httpBatchLink({ url: ctx.httpUrl })],
+  });
+  const utils = render(
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <MyComponent />
+      </TRPCProvider>
+    </QueryClientProvider>,
+  );
+  await vi.waitFor(() => expect(utils.container).toHaveTextContent('1'));
+  expect(calls.query).toHaveBeenCalledTimes(0);
+
+  // `keyPrefix: true` makes the provider take the prefix
+  const prefixed = createTRPCContext({
+    router: routerType<AppRouter>(),
+    keyPrefix: true,
+  });
+  expectTypeOf(prefixed.useTRPC).toEqualTypeOf<
+    ReturnType<
+      typeof createTRPCContext<AppRouter, { keyPrefix: true }>
+    >['useTRPC']
+  >();
+  void (() => (
+    // @ts-expect-error -- `keyPrefix` is required with `keyPrefix: true`
+    <prefixed.TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+      {null}
+    </prefixed.TRPCProvider>
+  ));
 });

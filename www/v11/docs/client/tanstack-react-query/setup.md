@@ -240,7 +240,7 @@ export function App() {
 
 #### Typing `trpc.context` from your links
 
-Pass the client's type, or the type of the function that creates it, instead of `AppRouter`. The `trpc.context` option is then typed from what the client's links read, as in [Typing call options](../links.md#typing-call-options).
+Pass the function that creates the client as `client`, instead of `router`. Only its type is used. The `trpc.context` option is then typed from what the client's links read, as in [Typing call options](../links.md#typing-call-options).
 
 ```tsx twoslash title='utils/trpc.ts'
 // @include: router
@@ -265,8 +265,9 @@ export const makeTRPCClient = () =>
     ],
   });
 
-export const { TRPCProvider, useTRPC, useTRPCClient } =
-  createTRPCContext<typeof makeTRPCClient>();
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext({
+  client: makeTRPCClient,
+});
 
 // `context` is typed from the links: `retryLink` reads `retry`
 function useUserOptions() {
