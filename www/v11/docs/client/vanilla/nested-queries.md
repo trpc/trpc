@@ -140,7 +140,7 @@ function postQueries(
 
 - **`experimental_query(procedure, input)` builds an entry.** It is a plain value and starts nothing.
 - **`experimental_dataOf(post)` stands for the post's data.** It has the data's type but holds no data. It records the part you read, such as `.authorId`, and the load fills it in.
-- **Pass it on as it is**, as an input or anywhere inside one. Don't compute with it or branch on it.
+- **Pass it on as it is**, as an input or anywhere inside one. Don't compute with it or branch on it: see [What a stand-in can't do](#pitfalls).
 - **`trpc` is a client**, typed as `experimental_QueryProcedures<AppRouter>`.
 - **Queries only.** A mutation is a type error. You can't read data that is a promise or a stream.
 
@@ -328,6 +328,77 @@ const data = await res.posts;
 - **`pages` holds the first page.** `pageParams` holds its cursor: `initialCursor`, else the input's `cursor`, else `undefined`.
 - **`initialCursor` replaces the input's `cursor`.**
 - **`getNextPageParam` is for TanStack Query**, which fetches the next pages. `experimental_load()` doesn't.
+
+## What a stand-in can't do {#pitfalls}
+
+`experimental_dataOf()` gives you a stand-in, not the data. Your code runs once, when you build the entries, before the data exists. The server fills in what you read later. So you can read a part of a stand-in and pass it on, but you can't look at it.
+
+| Code | What happens |
+| --- | --- |
+| `{ id: post.authorId }` | ✅ The load fills in the author's id |
+| `posts.items.map((post) => post.id)` | ✅ The load fills in every item's id |
+| `` `user-${post.authorId}` ``, `post.views + 1`, `post.views > 0` | Throws: a stand-in has no value to compute with |
+| `.filter()`, `.find()`, `.sort()`, `[...post.tags]` | Throws: only `.map()` and `.flatMap()` work |
+| `post.published ? a : b` | ❌ Always `a`, with no error: a stand-in is always truthy |
+| `post.kind === 'video'`, `!post.authorId` | ❌ Always `false`, with no error |
+| `post.authorId ?? 'anon'` | ❌ Never `'anon'`, with no error |
+| `{ ...post }`, `Object.keys(post)`, `Array.isArray(post.tags)` | ❌ `{}`, `[]` or `false`, with no error |
+
+The ❌ rows fail without an error, so look out for them. The rest of this section shows what to do instead.
+
+#### Choose a query on the server {#pitfalls-branch}
+
+You can't choose a query by the data. This always loads the stats, also for a draft:
+
+```ts
+// ❌ `post.published` is a stand-in, so it is always truthy
+experimental_dataOf(post, (post) =>
+  post.published
+    ? experimental_query(trpc.post.stats, { slug: post.slug })
+    : experimental_query(trpc.post.draftNotes, { slug: post.slug }),
+);
+```
+
+Make the choice in a procedure instead:
+
+```ts
+// ✅ The procedure looks at the post and returns the stats or the notes
+experimental_query(trpc.post.extras, {
+  slug: experimental_dataOf(post).slug,
+});
+```
+
+#### Items of different kinds {#pitfalls-mixed}
+
+A `.map()` or `experimental_perItem()` callback runs once, on one stand-in for every item. A branch in it picks the same side for all of them:
+
+```ts
+// ❌ Reads every item's `imageId`, also a video's, which has none
+experimental_dataOf(feed).items.map((item) =>
+  item.kind === 'video' ? item.videoId : item.imageId,
+);
+```
+
+The video's query then gets `undefined` and fails its input validation. Give every item the field you read, such as `mediaId`, in the procedure that returns the items.
+
+#### Skip a query by the data {#pitfalls-skip}
+
+`null` [skips an entry](#per-item), but only by what you know when you build the entries, such as `isAdmin`. An `experimental_dataOf()` callback can't return `null`: it throws. And a branch on a stand-in always picks the query.
+
+Let the procedure take a `null` input and return `null` for it:
+
+```ts
+// ✅ `author.byIdOrNull` returns `null` for a post without an author
+experimental_query(trpc.author.byIdOrNull, {
+  id: experimental_dataOf(post).authorId,
+});
+```
+
+This also covers a value that is `null` in the data. Without it, the query gets `null` and fails its input validation.
+
+#### Code in a callback runs once {#pitfalls-once}
+
+A callback runs once, when you build the entries: not once per item, and not when the data arrives. So `count++`, `Date.now()` or `console.log()` in it runs once, with no data.
 
 ## One request {#one-request}
 
