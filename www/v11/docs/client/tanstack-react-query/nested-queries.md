@@ -284,7 +284,7 @@ export function postPageEntries(trpc: TRPC, opts: { slug: string }) {
 ```
 
 - **`it` is typed as the post**, so TypeScript checks `it.authorId`. It holds no data: it records which field you read.
-- **The callback runs once**, before any request. Pass `it.authorId` on as it is. Don't compute with it or branch on it.
+- **The callback runs once**, before any request. Pass `it.authorId` on as it is. Don't compute with it or branch on it: see [What a stand-in can't do](/docs/client/vanilla/nested-queries#pitfalls).
 - **Give an infinite entry its `getNextPageParam`.** Without it, a refetch of a cached query with two pages fails on the second page.
 
 #### 2. Load it {#gist-load}
@@ -520,7 +520,7 @@ const tags = prefetchEntry(trpc.tag.byIds, {
 prefetchEntry(trpc.author.byId, { id: experimental_dataOf(post).tags });
 ```
 
-- **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`.
+- **Pass it on as it is.** Use it as an input, or anywhere inside one. Don't compute with it or branch on it: `` `${experimental_dataOf(post).slug}-draft` `` throws, and `experimental_dataOf(post).authorId ? a : b` is always `a`. [What a stand-in can't do](/docs/client/vanilla/nested-queries#pitfalls) lists the cases, and what to do instead, such as choosing or skipping a query in a procedure.
 - **`.map()` is the one array method that works in an input.** `.flatMap()` works only for [a query for every item](#entry-per-item). The callback runs once, on a stand-in for every item, and must return the item or a part of it.
 - **A list from `.map()` is a whole value.** With [one request](#one-request), the server takes it only with [`allowWholeValues`](/docs/client/vanilla/nested-queries#limit-whole-values). Without that, the query loads in a request of its own once the data is there.
 - **Put every entry it reads in the same load.** The order of the entries doesn't matter.
