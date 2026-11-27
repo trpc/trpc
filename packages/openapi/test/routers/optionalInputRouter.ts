@@ -20,6 +20,10 @@ export const OptionalInputRouter = t.router({
     .input(z.object({ name: z.string() }).nullable())
     .mutation(({ input }) => input?.name ?? 'anonymous'),
 
+  voidUnion: t.procedure
+    .input(z.string().or(z.void()))
+    .mutation(({ input }) => input ?? 'anonymous'),
+
   any: t.procedure.input(z.any()).mutation(({ input }) => String(input)),
 
   unknown: t.procedure
