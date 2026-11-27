@@ -123,6 +123,8 @@ export interface HTTPLinkOptions {
 }
 ```
 
+Passing `prepareInput` inline to `httpBatchLink` or `httpBatchStreamLink` is a TypeScript error; only [`httpLink`](./httpLink.md#preparing-the-input) supports it. Passing it through a variable or spread bypasses that check, but the batch links ignore it. To send `FormData` returned from `prepareInput` for a query, set `methodOverride: 'POST'` on `httpLink` and `allowMethodOverride: true` on the server.
+
 ## Setting a maximum URL length
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.

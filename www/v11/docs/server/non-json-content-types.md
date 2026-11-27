@@ -231,6 +231,59 @@ const result = await client.hello.mutate(form);
 
 For a more advanced code sample you can see our [example project here](https://github.com/juliusmarminge/trpc-interop/blob/66aa760141030ffc421cae1a3bda9b5f1ab340b6/src/server.ts#L28-L43)
 
+#### Preparing FormData from an object
+
+When the client already has the payload as an object — for example a `File` next to other form fields — you don't have to build the `FormData` at the call site. [`httpLink`'s `prepareInput`](/docs/client/links/httpLink#preparing-the-input) runs before the request is sent, so it can turn the object into `FormData`:
+
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const uploadInput = z.union([
+  z.instanceof(FormData),
+  z.object({ file: z.instanceof(File) }),
+]);
+
+export const appRouter = t.router({
+  upload: t.procedure
+    .input(uploadInput)
+    .mutation(({ input }) => ({ receivedFormData: input instanceof FormData })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:2022',
+      prepareInput({ value, path }) {
+        if (path !== 'upload') {
+          return value;
+        }
+        if (value instanceof FormData) {
+          return value;
+        }
+        const { file } = value as { file: File };
+        const form = new FormData();
+        form.set('file', file);
+        return form;
+      },
+    }),
+  ],
+});
+// ---cut---
+const file = new File(['hello world'], 'hello.txt', { type: 'text/plain' });
+
+await client.upload.mutate({ file });
+```
+
 #### `File` and other Binary Type Inputs
 
 tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.

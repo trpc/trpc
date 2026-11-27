@@ -2,6 +2,7 @@ import { observable } from '@trpc/server/observable';
 import type {
   AnyClientTypes,
   AnyRouter,
+  ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { raceAbortSignalsWithCleanup } from '../internals/signals';
@@ -39,6 +40,16 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
     headers?:
       | HTTPHeaders
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+    /**
+     * Called with the input of every call before it is serialized or has its
+     * content type detected. Return the value to send instead.
+     */
+    prepareInput?: (opts: {
+      value: unknown;
+      type: ProcedureType;
+      path: string;
+      methodOverride?: 'POST';
+    }) => unknown;
   };
 
 const universalRequester: Requester = (opts) => {
@@ -107,7 +118,14 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
             ...resolvedOpts,
             type,
             path,
-            input,
+            input: opts.prepareInput
+              ? opts.prepareInput({
+                  value: input,
+                  type,
+                  path,
+                  methodOverride: resolvedOpts.methodOverride,
+                })
+              : input,
             signal,
             headers() {
               if (!opts.headers) {
