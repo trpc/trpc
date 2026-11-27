@@ -1,5 +1,4 @@
 import { testReactResource } from '../../test/__helpers';
-import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   skipToken,
   useSuspenseInfiniteQuery,
@@ -21,6 +20,7 @@ import {
 import type {
   inferInfiniteQueryHandle,
   inferQueryHandle,
+  TRPCEntryOptions,
   TRPCLoadEntries,
 } from '.';
 import type { TRPCOptionsProxy } from '..';
@@ -70,6 +70,32 @@ class Boundary extends React.Component<
       this.props.children
     );
   }
+}
+
+/**
+ * Renders one component with each of `entries` in turn. Says, for each one
+ * after the first, whether the component started its entries again
+ */
+function restartsAcross(
+  resource: ReturnType<typeof ctx>,
+  entries: (() => TRPCLoadEntries)[],
+) {
+  const trpc = resource.optionsProxyServer;
+  const seen: unknown[] = [];
+  function Card(props: { entries: () => TRPCLoadEntries }) {
+    seen.push(useLoadHandles(trpc, props.entries()));
+    return null;
+  }
+  // What the component has once each render is done: a render can run twice
+  const utils = resource.renderApp(<Card entries={entries[0]!} />);
+  const committed = [seen.at(-1)];
+  for (const next of entries.slice(1)) {
+    resource.rerenderApp(utils, <Card entries={next} />);
+    committed.push(seen.at(-1));
+  }
+  return committed
+    .slice(1)
+    .map((handles, index) => handles !== committed[index]);
 }
 
 describe('useLoadHandles', () => {
@@ -253,16 +279,13 @@ describe('useLoadHandles', () => {
     expect(resource.calls).toHaveBeenCalledTimes(1);
   });
 
-  test('two components with the same entries share one load, until the last of them leaves', async () => {
+  test('two components with the same entries each start them, in one request, and a component that comes back starts them again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const seen: unknown[] = [];
     function Card() {
-      seen.push(
-        useLoadHandles(trpc, {
-          post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
-        }),
-      );
+      useLoadHandles(trpc, {
+        post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
+      });
       return null;
     }
     const page = (cards: number) =>
@@ -271,112 +294,71 @@ describe('useLoadHandles', () => {
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
+    // The second joined the first's request
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
-    // One leaves. The other keeps the load
+    // One leaves: nothing starts
     resource.rerenderApp(utils, page(1));
-    expect(new Set(seen).size).toBe(1);
     expect(resource.calls).toHaveBeenCalledTimes(1);
 
-    // Both gone, and one comes back: it loads again
-    resource.rerenderApp(utils, page(0));
-    resource.rerenderApp(utils, page(1));
-    expect(new Set(seen).size).toBe(2);
+    // It comes back: it starts them again, as a loader that runs again does
+    resource.rerenderApp(utils, page(2));
     await vi.waitFor(() => {
       expect(resource.calls).toHaveBeenCalledTimes(2);
     });
   });
 
-  test('the same entries under other keys, or of another kind, are another load. Their order is not compared', async () => {
+  test('the same entries under other keys, or of another kind, start again. Their order is not compared', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const seen: Record<string, unknown>[] = [];
-    function Card(props: { entries: () => TRPCLoadEntries }) {
-      seen.push(useLoadHandles(trpc, props.entries()));
-      return null;
-    }
     const input = { slug: 'hello' };
-    resource.renderApp(
-      <>
-        <Card entries={() => ({ a: prefetchEntry(trpc.post.bySlug, input) })} />
-        <Card entries={() => ({ b: prefetchEntry(trpc.post.bySlug, input) })} />
-        <Card entries={() => ({ a: ensureEntry(trpc.post.bySlug, input) })} />
-        <Card entries={() => ({ a: prefetchEntry(trpc.post.bySlug, input) })} />
-        <Card
-          entries={() => ({
-            a: prefetchEntry(trpc.post.bySlug, input),
-            b: ensureEntry(trpc.post.bySlug, input),
-          })}
-        />
-        <Card
-          entries={() => ({
-            b: ensureEntry(trpc.post.bySlug, input),
-            a: prefetchEntry(trpc.post.bySlug, input),
-          })}
-        />
-      </>,
-    );
-    expect(seen[1]).not.toBe(seen[0]);
-    expect(seen[2]).not.toBe(seen[0]);
-    expect(seen[3]).toBe(seen[0]);
-    // The order of the entries isn't compared
-    expect(seen[5]).toBe(seen[4]);
+    expect(
+      restartsAcross(resource, [
+        () => ({ a: prefetchEntry(trpc.post.bySlug, input) }),
+        () => ({ b: prefetchEntry(trpc.post.bySlug, input) }),
+        () => ({ b: ensureEntry(trpc.post.bySlug, input) }),
+        () => ({
+          a: prefetchEntry(trpc.post.bySlug, input),
+          b: ensureEntry(trpc.post.bySlug, input),
+        }),
+        () => ({
+          b: ensureEntry(trpc.post.bySlug, input),
+          a: prefetchEntry(trpc.post.bySlug, input),
+        }),
+      ]),
+    ).toEqual([true, true, true, false]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
-  test('the same query with another option for how it starts is another load. Its `meta` is not compared', async () => {
+  test('another option for how the query starts starts it again. Its `meta` is not compared', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const seen: unknown[] = [];
     // Anything can be in `meta`: what has no JSON, or is new on every render
     const circular: Record<string, unknown> = { big: 1n, at: Date.now() };
     circular['self'] = circular;
-    function Card(props: {
-      staleTime: number | undefined;
-      meta: Record<string, unknown> | undefined;
-      retry: ((count: number) => boolean) | undefined;
-    }) {
-      seen.push(
-        useLoadHandles(trpc, {
-          post: prefetchEntry(
-            trpc.post.bySlug,
-            { slug: 'hello' },
-            {
-              staleTime: props.staleTime,
-              meta: props.meta,
-              retry: props.retry,
-            },
-          ),
-        }),
-      );
-      return null;
-    }
-    resource.renderApp(
-      <>
-        <Card staleTime={undefined} meta={undefined} retry={undefined} />
-        <Card staleTime={undefined} meta={circular} retry={undefined} />
-        <Card staleTime={60_000} meta={undefined} retry={undefined} />
-        {/* `Infinity` has no JSON: it doesn't read as no option */}
-        <Card staleTime={Infinity} meta={undefined} retry={undefined} />
-        <Card staleTime={undefined} meta={undefined} retry={() => false} />
-        {/* Which function it is isn't compared: an inline one is new on every render */}
-        <Card staleTime={undefined} meta={undefined} retry={() => false} />
-      </>,
-    );
-    expect(seen[1]).toBe(seen[0]);
-    expect(seen[2]).not.toBe(seen[0]);
-    expect(seen[2]).toEqual(seen[0]);
-    expect(seen[3]).not.toBe(seen[0]);
-    expect(seen[4]).not.toBe(seen[0]);
-    expect(seen[5]).toBe(seen[4]);
+    const post = (opts: TRPCEntryOptions) => () => ({
+      post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }, opts),
+    });
+    expect(
+      restartsAcross(resource, [
+        post({}),
+        post({ meta: circular }),
+        post({ staleTime: 60_000 }),
+        // `Infinity` has no JSON: it doesn't read as no option
+        post({ staleTime: Infinity }),
+        post({ retry: () => false }),
+        // Which function it is isn't compared: an inline one is new on every render
+        post({ retry: () => false }),
+      ]),
+    ).toEqual([false, true, true, true, false]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
-  test("keys that the client's `queryKeyHashFn` tells apart are another load", async () => {
+  test("keys that the client's `queryKeyHashFn` tells apart start again", async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     // Tells a date from its ISO string, as the cache then does
@@ -387,151 +369,97 @@ describe('useLoadHandles', () => {
       },
     });
     const date = new Date(0);
-    const seen: unknown[] = [];
-    function Card(props: { slug: string }) {
-      seen.push(
-        useLoadHandles(trpc, {
-          post: prefetchEntry(trpc.post.bySlug, { slug: props.slug }),
-        }),
-      );
-      return null;
-    }
-    resource.renderApp(
-      <>
-        <Card slug={date as unknown as string} />
-        <Card slug={date.toISOString()} />
-      </>,
-    );
-    expect(seen[1]).not.toBe(seen[0]);
+    const post = (slug: unknown) => () => ({
+      post: prefetchEntry(trpc.post.bySlug, { slug: slug as string }),
+    });
+    expect(
+      restartsAcross(resource, [post(date), post(date.toISOString())]),
+    ).toEqual([true]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
-  test('the same infinite entry with and without `getNextPageParam` is another load', async () => {
+  test('an infinite entry with and without `getNextPageParam` starts again', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const seen: unknown[] = [];
-    function Card(props: { withNext: boolean }) {
-      seen.push(
-        useLoadHandles(trpc, {
-          posts: prefetchInfiniteEntry(
-            trpc.post.paged,
-            {},
-            props.withNext
-              ? { getNextPageParam: (last) => last.nextCursor }
-              : {},
-          ),
-        }),
-      );
-      return null;
-    }
-    resource.renderApp(
-      <>
-        <Card withNext={false} />
-        <Card withNext />
-        {/* Which function it is isn't compared: an inline one is new on every render */}
-        <Card withNext />
-      </>,
-    );
-    expect(seen[1]).not.toBe(seen[0]);
-    expect(seen[2]).toBe(seen[1]);
+    const posts = (withNext: boolean) => () => ({
+      posts: prefetchInfiniteEntry(
+        trpc.post.paged,
+        {},
+        withNext ? { getNextPageParam: (last) => last.nextCursor } : {},
+      ),
+    });
+    expect(
+      // Which function it is isn't compared: an inline one is new on every render
+      restartsAcross(resource, [posts(false), posts(true), posts(true)]),
+    ).toEqual([true, false]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
-  test('another first cursor is another load, also one with a bigint in it', async () => {
+  test('another first cursor starts it again, also one with a bigint in it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    const seen: Record<string, any>[] = [];
-    function List(props: { cursor: unknown }) {
-      seen.push(
-        useLoadHandles(trpc, {
-          posts: prefetchInfiniteEntry(
-            trpc.post.paged,
-            {},
-            // Against its type, as an app with a transformer for it can have
-            { initialCursor: props.cursor as number },
-          ),
-        }),
-      );
-      return null;
-    }
-    const cursors = [5n, 6n, '5', 0, { offset: 5n }, { offset: '5' }];
-    resource.renderApp(
-      <>
-        {[...cursors, ...cursors].map((cursor, index) => (
-          <List key={index} cursor={cursor} />
-        ))}
-      </>,
-    );
-    expect(seen[0]!['posts'].initialCursor).toBe(5n);
-    expect(new Set(seen.slice(0, cursors.length)).size).toBe(cursors.length);
-    // The same cursor again is the same load
-    seen.slice(cursors.length).forEach((handles, index) => {
-      expect(handles).toBe(seen[index]);
+    const posts = (cursor: unknown) => () => ({
+      posts: prefetchInfiniteEntry(
+        trpc.post.paged,
+        {},
+        // Against its type, as an app with a transformer for it can have
+        { initialCursor: cursor as number },
+      ),
     });
+    expect(
+      restartsAcross(resource, [
+        posts(5n),
+        posts(5n),
+        posts(6n),
+        posts('5'),
+        posts(0),
+        posts({ offset: 5n }),
+        posts({ offset: 5n }),
+        posts({ offset: '5' }),
+      ]),
+    ).toEqual([false, true, true, true, true, false, true]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });
   });
 
-  test('a component that never got on the page keeps its handles for 30 seconds, then loads again', async () => {
+  test('a component that renders again before it is on the page starts its entries again, as a loader that runs again does', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
-    using timers = fakeTimersResource();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const seen: unknown[] = [];
-    function Page(props: { fail: boolean }) {
-      const handles = useLoadHandles(trpc, {
-        post: prefetchEntry(trpc.post.bySlug, { slug: 'hello' }),
+    function Page(props: { staleTime: number | undefined }) {
+      useLoadHandles(trpc, {
+        post: prefetchEntry(
+          trpc.post.bySlug,
+          { slug: 'hello' },
+          { staleTime: props.staleTime },
+        ),
       });
-      seen.push(handles);
-      if (props.fail) {
-        throw new Error('It never mounts');
-      }
-      return null;
+      throw new Error('It never gets on the page');
     }
     /** Renders the page, which throws before it gets on the page */
-    const renderOffPage = () => {
-      seen.length = 0;
+    const renderOffPage = async (staleTime: number | undefined) => {
       resource.renderApp(
         <Boundary>
-          <Page fail />
+          <Page staleTime={staleTime} />
         </Boundary>,
       );
-      return seen[0];
+      await vi.waitFor(() => {
+        expect(resource.queryClient.isFetching()).toBe(0);
+      });
     };
 
-    const first = renderOffPage();
-    await vi.waitFor(() => {
-      expect(resource.queryClient.isFetching()).toBe(0);
-    });
+    await renderOffPage(undefined);
     expect(resource.calls).toHaveBeenCalledTimes(1);
-
-    // Until 30 seconds after its queries settled, it has the same load, as
-    // when a Suspense boundary above it shows it again. `vi.waitFor()` moved
-    // the clock by one of its 50 ms steps at most
-    await timers.advanceTimersByTimeAsync(29_900);
-    expect(renderOffPage()).toBe(first);
-    expect(resource.calls).toHaveBeenCalledTimes(1);
-
-    // Then nothing is kept: it loads again
-    await timers.advanceTimersByTimeAsync(200);
-    const second = renderOffPage();
-    expect(second).not.toBe(first);
-    await vi.waitFor(() => {
-      expect(resource.calls).toHaveBeenCalledTimes(2);
-    });
-
-    // On the page, it keeps its load however long it is there
-    seen.length = 0;
-    const onPage = resource.renderApp(<Page fail={false} />);
-    expect(seen[0]).toBe(second);
-    await timers.advanceTimersByTimeAsync(120_000);
-    resource.rerenderApp(onPage, <Page fail={false} />);
-    expect(seen.at(-1)).toBe(second);
+    // Its data is stale: it is fetched again
+    await renderOffPage(undefined);
+    expect(resource.calls).toHaveBeenCalledTimes(2);
+    // Its data is fresh: nothing is asked for
+    await renderOffPage(60_000);
     expect(resource.calls).toHaveBeenCalledTimes(2);
   });
 });

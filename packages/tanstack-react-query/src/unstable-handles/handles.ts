@@ -741,30 +741,6 @@ export function loadHandlesSettled<
   }) as Promise<any>;
 }
 
-/** A load that `useLoadHandles()` started */
-interface UsedLoad {
-  handles: Record<string, unknown>;
-  /** The components that have it and are on the page */
-  mounts: number;
-}
-
-/** The loads of a `QueryClient` that components have, by what their entries are */
-const usedLoads = new WeakMap<QueryClient, Map<string, UsedLoad>>();
-
-function usedLoadsOf(queryClient: QueryClient) {
-  const loads = usedLoads.get(queryClient) ?? new Map<string, UsedLoad>();
-  usedLoads.set(queryClient, loads);
-  return loads;
-}
-
-/**
- * How long the handles of a load stay for a component that rendered and
- * isn't on the page: one that waits, in a Suspense boundary above it, for the
- * queries it started. It then renders again, and must not start them again.
- * Counted from when every query has data, or one failed.
- */
-const USED_LOAD_KEPT_MS = 30_000;
-
 /** The options of an entry that say how its query starts */
 const startOptions = [
   'staleTime',
@@ -812,6 +788,9 @@ function describeCursor(cursor: unknown) {
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
+ * A component that renders again before it is on the page, such as after a
+ * Suspense boundary above it waited, starts them again, as a loader that runs
+ * again does: a query that is loading or has fresh data asks for nothing.
  * Entries are compared by value, as query keys are: the procedure, the input,
  * and the options that say how a query starts, such as `staleTime`. Build them
  * from values that stay the same from render to render, such as props.
@@ -864,54 +843,33 @@ export function useLoadHandles<
       ]),
     ),
   ]);
-  const loads = usedLoadsOf(queryClient);
-  let used = loads.get(key);
-  if (!used) {
-    const load: UsedLoad = {
+  const start = () => {
+    Promise.all(
+      states.map(([, state]) => startEntry(queryClient, state)),
+    ).catch(() => {
+      // Surfaces where the handle is read
+    });
+    return {
+      key,
       handles: Object.fromEntries(
         states.map(([name, state]) => [
           name,
           toHandle(state.options, state.type),
         ]),
-      ),
-      mounts: 0,
+      ) as TRPCLoadedHandles<TEntries>[0],
     };
-    used = load;
-    loads.set(key, load);
-    Promise.all(states.map(([, state]) => startEntry(queryClient, state)))
-      // A component that never got on the page keeps nothing. One that is on
-      // the page lets go of it as it leaves, and no timer holds it after
-      // that. A server renders the component but runs no effect, so nothing
-      // is ever on the page there: the request's `QueryClient` goes with the
-      // request, and a timer would only hold it longer
-      .finally(() => {
-        if (!isServerEnvironment() && load.mounts === 0) {
-          setTimeout(() => {
-            if (load.mounts === 0 && loads.get(key) === load) {
-              loads.delete(key);
-            }
-          }, USED_LOAD_KEPT_MS);
-        }
-      })
-      .catch(() => {
-        // Surfaces where the handle is read
-      });
+  };
+  // Kept while the component is on the page. A component that renders again
+  // before it is on the page has none, and starts the entries again, as a
+  // loader that runs again does: a query that is loading or has fresh data
+  // asks for nothing
+  const [load, setLoad] = React.useState(start);
+  if (load.key === key) {
+    return load.handles;
   }
-  const load = used;
-  React.useEffect(() => {
-    const kept = usedLoadsOf(queryClient);
-    load.mounts++;
-    // Back, if a development-mode remount took it away
-    kept.set(key, load);
-    return () => {
-      load.mounts--;
-      if (load.mounts === 0 && kept.get(key) === load) {
-        // The component left the page: its next visit loads again
-        kept.delete(key);
-      }
-    };
-  }, [load, queryClient, key]);
-  return load.handles as TRPCLoadedHandles<TEntries>[0];
+  const next = start();
+  setLoad(next);
+  return next.handles;
 }
 
 /**
