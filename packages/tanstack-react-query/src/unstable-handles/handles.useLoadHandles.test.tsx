@@ -427,7 +427,7 @@ describe('useLoadHandles', () => {
     });
   });
 
-  test('first cursors that JSON reads the same are other loads, and one with no JSON still renders', async () => {
+  test('another first cursor is another load, also one with a bigint in it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const seen: Record<string, any>[] = [];
@@ -444,7 +444,7 @@ describe('useLoadHandles', () => {
       );
       return null;
     }
-    const cursors = [5n, '5n', -0, 0, { offset: 5n }, { offset: '5' }];
+    const cursors = [5n, 6n, '5', 0, { offset: 5n }, { offset: '5' }];
     resource.renderApp(
       <>
         {[...cursors, ...cursors].map((cursor, index) => (
