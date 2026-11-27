@@ -287,7 +287,7 @@ describe('useLoadHandles', () => {
     });
   });
 
-  test('the same entries under other keys, or of another kind, are another load', async () => {
+  test('the same entries under other keys, or of another kind, are another load. Their order is not compared', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const seen: Record<string, unknown>[] = [];
@@ -302,11 +302,25 @@ describe('useLoadHandles', () => {
         <Card entries={() => ({ b: prefetchEntry(trpc.post.bySlug, input) })} />
         <Card entries={() => ({ a: ensureEntry(trpc.post.bySlug, input) })} />
         <Card entries={() => ({ a: prefetchEntry(trpc.post.bySlug, input) })} />
+        <Card
+          entries={() => ({
+            a: prefetchEntry(trpc.post.bySlug, input),
+            b: ensureEntry(trpc.post.bySlug, input),
+          })}
+        />
+        <Card
+          entries={() => ({
+            b: ensureEntry(trpc.post.bySlug, input),
+            a: prefetchEntry(trpc.post.bySlug, input),
+          })}
+        />
       </>,
     );
     expect(seen[1]).not.toBe(seen[0]);
     expect(seen[2]).not.toBe(seen[0]);
     expect(seen[3]).toBe(seen[0]);
+    // The order of the entries isn't compared
+    expect(seen[5]).toBe(seen[4]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

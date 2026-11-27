@@ -844,20 +844,26 @@ export function useLoadHandles<
 ): TRPCLoadedHandles<TEntries>[0] {
   const queryClient = queryClientOf(readRoot(trpc, 'useLoadHandles'));
   const states = readEntries(queryClient, entries);
-  const key = hashKey(
-    states.map(([name, state]) => [
-      name,
-      state.kind,
-      state.type,
-      // As the cache hashes it, with the `queryKeyHashFn` it is set up
-      // with: the keys it tells apart are other queries
-      queryClient.defaultQueryOptions(state.options).queryHash,
-      // Not all of the options: `meta` can hold what has no JSON, or what is
-      // new on every render
-      startOptions.map((option) => describeOption(state.options[option])),
-      describeCursor(state.options.initialPageParam),
-    ]),
-  );
+  // By name, as an object: `hashKey` sorts its keys, so the order of the
+  // entries doesn't make another load
+  const key = hashKey([
+    Object.fromEntries(
+      states.map(([name, state]) => [
+        name,
+        [
+          state.kind,
+          state.type,
+          // As the cache hashes it, with the `queryKeyHashFn` it is set up
+          // with: the keys it tells apart are other queries
+          queryClient.defaultQueryOptions(state.options).queryHash,
+          // Not all of the options: `meta` can hold what has no JSON, or what
+          // is new on every render
+          startOptions.map((option) => describeOption(state.options[option])),
+          describeCursor(state.options.initialPageParam),
+        ],
+      ]),
+    ),
+  ]);
   const loads = usedLoadsOf(queryClient);
   let used = loads.get(key);
   if (!used) {
