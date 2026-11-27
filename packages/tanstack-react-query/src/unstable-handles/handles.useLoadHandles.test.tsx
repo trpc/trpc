@@ -438,7 +438,7 @@ describe('useLoadHandles', () => {
     });
   });
 
-  test('another first cursor starts it again, also one with a bigint in it', async () => {
+  test('another first cursor alone starts nothing again, as TanStack Query keys a query without it', async () => {
     await using resource = ctx();
     const trpc = resource.optionsProxyServer;
     const posts = (cursor: unknown) => () => ({
@@ -450,17 +450,8 @@ describe('useLoadHandles', () => {
       ),
     });
     expect(
-      restartsAcross(resource, [
-        posts(5n),
-        posts(5n),
-        posts(6n),
-        posts('5'),
-        posts(0),
-        posts({ offset: 5n }),
-        posts({ offset: 5n }),
-        posts({ offset: '5' }),
-      ]),
-    ).toEqual([false, true, true, true, true, false, true]);
+      restartsAcross(resource, [posts(5n), posts(6n), posts({ offset: 5n })]),
+    ).toEqual([false, false]);
     await vi.waitFor(() => {
       expect(resource.queryClient.isFetching()).toBe(0);
     });

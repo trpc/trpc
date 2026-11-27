@@ -174,16 +174,6 @@ function describeOption(value: unknown) {
 }
 
 /**
- * A first cursor as a string. It isn't in the query key, but it is in the
- * handle. An app with a transformer can have a bigint in it, which has no JSON.
- */
-function describeCursor(cursor: unknown) {
-  return JSON.stringify(cursor, (_, value: unknown) =>
-    typeof value === 'bigint' ? { bigint: String(value) } : value,
-  );
-}
-
-/**
  * `loadHandles()` for a component on a page without a loader: an alternative
  * to a route loader, `getServerSideProps` or a server component. Call it at
  * the top of the page's component. It starts every entry, once, and returns
@@ -248,7 +238,7 @@ export function useLoadHandles<
           // Not all of the options: `meta` can hold what has no JSON, or what
           // is new on every render
           startOptions.map((option) => describeOption(state.options[option])),
-          describeCursor(state.options.initialPageParam),
+          // Not the first cursor: TanStack Query keys a query without it
         ],
       ]),
     ),
