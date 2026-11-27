@@ -56,6 +56,12 @@ describe('generateOpenAPIDocument optional procedure input', () => {
     expect(getRequestBody(doc, 'required')?.required).toBe(true);
   });
 
+  it('does not require the body of a mutation whose input is a union with void', async () => {
+    const doc = await getDoc();
+    // `void` is `undefined` as far as the wire is concerned.
+    expect(getRequestBody(doc, 'voidUnion')?.required).toBe(false);
+  });
+
   it('still requires the body of a mutation whose input only accepts null', async () => {
     const doc = await getDoc();
     // `null` is sent as a body, so only `undefined` can make the input optional.

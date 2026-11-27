@@ -1086,14 +1086,8 @@ function acceptsUndefined(inputType: Type | null): boolean {
   if (!inputType) {
     return false;
   }
-  return (
-    hasFlag(inputType, TypeFlags.Undefined) ||
-    isUnknownLikeType(inputType) ||
-    (inputType.isUnionType() &&
-      inputType
-        .getTypes()
-        .some((member) => hasFlag(member, TypeFlags.Undefined)))
-  );
+  // `void` is `undefined` as far as the wire is concerned.
+  return includesUndefined(inputType) || isUnknownLikeType(inputType);
 }
 
 interface ProcedureDef {
