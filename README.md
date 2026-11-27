@@ -49,7 +49,7 @@ tRPC lets you build and consume fully typesafe APIs without schemas or code gene
 - 🐻&nbsp; Easy to add to an existing project.
 - 🔋&nbsp; Adapters for Next.js, Express, Fastify, AWS Lambda, Fetch and more, plus TanStack Query integration. Not tied to React; see the [community add-ons](https://trpc.io/docs/community/awesome-trpc).
 - 🥃&nbsp; Subscriptions over SSE and WebSockets.
-- ⚡️&nbsp; Request batching: queries made at the same time are combined into one request, and so are mutations.
+- ⚡️&nbsp; Request batching: queries made at the same time can be combined into one request, and so can mutations.
 - ✅&nbsp; Well-tested and production ready.
 
 ## Quickstart
