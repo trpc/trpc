@@ -6,6 +6,7 @@ import type {
 import type { ResolverDef, TRPCQueryKey } from '../internals/types';
 import { readQueryKey } from '../internals/utils';
 import type {
+  AnyTRPCEntry,
   EntryArgs,
   HandleType,
   TRPCEntryKind,
@@ -28,7 +29,7 @@ function createEntry(state: EntryState) {
   return { [entryState]: state };
 }
 
-export function readEntry(key: string, entry: unknown): EntryState {
+export function readEntry(key: string, entry: AnyTRPCEntry): EntryState {
   const state = (entry as { [entryState]?: EntryState } | null)?.[entryState];
   if (!state) {
     throw new Error(

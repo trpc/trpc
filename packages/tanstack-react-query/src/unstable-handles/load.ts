@@ -5,6 +5,7 @@ import type { EntryState } from './entry';
 import { readEntry } from './entry';
 import { TRPCEntryError, entryCause } from './entryError';
 import { toHandle } from './handle';
+import type { TRPCLoadEntries } from './types';
 
 export function startEntry(queryClient: QueryClient, state: EntryState) {
   const { options } = state;
@@ -72,7 +73,7 @@ function settleLoad(promise: Promise<unknown>) {
 /** The entries to start, by their keys, without the `skipToken` ones */
 export function readEntries(
   queryClient: QueryClient,
-  entries: Record<string, unknown>,
+  entries: TRPCLoadEntries,
 ) {
   return Object.entries(entries).flatMap(([key, entry]) => {
     if (entry === skipToken) {
@@ -90,7 +91,7 @@ export function readEntries(
 
 export async function startEntries(opts: {
   queryClient: QueryClient;
-  entries: Record<string, unknown>;
+  entries: TRPCLoadEntries;
   /** Resolve each waited entry to a `TRPCEntryResult` instead of rejecting */
   settle: boolean;
 }) {
