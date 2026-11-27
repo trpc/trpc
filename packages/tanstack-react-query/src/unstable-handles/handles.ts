@@ -782,7 +782,8 @@ function describeCursor(cursor: unknown) {
  * them read the data, and wait for it in their Suspense boundary.
  *
  * Nothing waits for a fetch or ensure entry, so their errors surface where the
- * handle is read, as a prefetch entry's do. The entry's kind still says how
+ * handle is read, as a prefetch entry's do. Rendering doesn't start a query
+ * that failed again: resetting the reader's error boundary retries it. The entry's kind still says how
  * its query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
  * unless the data is fresh.
  *
@@ -845,7 +846,16 @@ export function useLoadHandles<
   ]);
   const start = () => {
     Promise.all(
-      states.map(([, state]) => startEntry(queryClient, state)),
+      states
+        // Rendering doesn't start a query that failed again: its reader
+        // throws, and its error boundary retries it. A page whose Suspense
+        // boundary is above it renders again from nothing once the query
+        // fails, and would start it again, forever
+        .filter(([, state]) => {
+          const query = queryClient.getQueryState(state.options.queryKey);
+          return !(query?.status === 'error' && query.fetchStatus === 'idle');
+        })
+        .map(([, state]) => startEntry(queryClient, state)),
     ).catch(() => {
       // Surfaces where the handle is read
     });

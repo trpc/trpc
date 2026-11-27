@@ -509,7 +509,7 @@ export function PostPage(props: { id: string }) {
 - Every query starts when the page renders. Without it, a component that renders only once its parent has data starts its own query late.
 - It returns handles, not data, and waits for nothing. The components that read the handles wait in their Suspense boundaries.
 - Rendering again starts nothing. It starts the entries again when they change, such as with another id, and when the page comes back after it left, as a loader that runs again does: a query that is loading or has fresh data asks for nothing. Entries are compared by procedure, input and the options that say how the query starts, such as `staleTime`.
-- The entry's kind still says how the query starts: an ensure entry uses cached data, a fetch entry fetches unless the data is fresh. Nothing waits for them, so when a request fails, the reading component's error boundary gets the error.
+- The entry's kind still says how the query starts: an ensure entry uses cached data, a fetch entry fetches unless the data is fresh. Nothing waits for them, so when a request fails, the reading component's error boundary gets the error. Rendering doesn't start a failed query again: resetting the boundary retries it.
 
 How it compares with a loader:
 

@@ -216,6 +216,42 @@ describe('useLoadHandles', () => {
     ).toHaveLength(1);
   });
 
+  test('a query that failed is not started again by a page whose Suspense boundary is above it', async () => {
+    await using resource = ctx();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    function PostPage(props: { kind: typeof prefetchEntry }) {
+      const trpc = resource.useTRPC();
+      const handles = useLoadHandles(trpc, {
+        post: props.kind(
+          trpc.post.bySlug,
+          { slug: 'missing' },
+          { retry: false },
+        ),
+      });
+      // No Suspense boundary of its own: the page renders again from nothing
+      const post = useSuspenseQuery(
+        fromHandle(trpc, handles.post, { retry: false }),
+      );
+      return <p>{post.data.title}</p>;
+    }
+    for (const kind of [prefetchEntry, fetchEntry, ensureEntry]) {
+      resource.queryClient.clear();
+      resource.calls.mockClear();
+      const utils = resource.renderApp(
+        <Boundary>
+          <React.Suspense fallback={<p>loading</p>}>
+            <PostPage kind={kind} />
+          </React.Suspense>
+        </Boundary>,
+      );
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent('failed:NOT_FOUND');
+      });
+      expect(resource.calls).toHaveBeenCalledTimes(1);
+      utils.unmount();
+    }
+  });
+
   test('throws for what is not an entry, and for a proxy that is not the root, before anything starts', async () => {
     await using resource = ctx();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
