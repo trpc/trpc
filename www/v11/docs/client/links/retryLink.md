@@ -65,16 +65,16 @@ In the example above, we add the `retryLink` before the `httpBatchLink`. The `re
 - Retry the request if the error is a `TRPCClientError` with a status code of 500 or if we couldn't get a valid tRPC error.
 - Retry the request up to 3 times.
 
-## Skipping retries for one call
+## Changing retries for one call
 
-Pass `context: { retry: false }` to skip retrying a call, whatever `retry` returns. With `router: routerType<AppRouter>()`, the field is typed.
+Pass a `retry` function in a call's `context` to use it instead of the link's `retry` for that call. With `router: routerType<AppRouter>()`, it's typed like the link's.
 
 ```ts twoslash
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 export const appRouter = t.router({
-  createPost: t.procedure.mutation(() => 'ok'),
+  createPayment: t.procedure.mutation(() => 'ok'),
 });
 export type AppRouter = typeof appRouter;
 
@@ -91,12 +91,16 @@ import type { AppRouter } from './server';
 const client = createTRPCClient({
   router: routerType<AppRouter>(),
   links: [
+    // retry queries and mutations
     retryLink({ retry: (opts) => opts.attempts <= 3 }),
     httpBatchLink({ url: 'http://localhost:3000' }),
   ],
 });
 
-await client.createPost.mutate(undefined, { context: { retry: false } });
+// never send a payment twice
+await client.createPayment.mutate(undefined, {
+  context: { retry: () => false },
+});
 ```
 
 ## Options

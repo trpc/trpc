@@ -11,19 +11,23 @@ import type { Operation, OperationContext, TRPCLink } from './types';
  * The `context` fields `retryLink` reads from each call.
  * @public
  */
-export interface RetryLinkContext {
+export interface RetryLinkContext<TInferrable extends InferrableClientTypes> {
   /**
-   * `false` skips retrying this call, whatever `retry` returns.
-   * @example client.post.create.mutate(input, { context: { retry: false } })
+   * Decides whether to retry this call, in place of the link's `retry`.
+   * @example client.post.upsert.mutate(input, { context: { retry: (opts) => opts.attempts <= 3 } })
    */
-  retry?: false;
+  retry?: RetryFn<TInferrable>;
 }
+
+type RetryFn<TInferrable extends InferrableClientTypes> = (
+  opts: RetryFnOptions<TInferrable>,
+) => boolean;
 
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
-   * The retry function
+   * The retry function. A call's `context.retry` replaces it for that call.
    */
-  retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+  retry: RetryFn<TInferrable>;
   /**
    * The delay between retries in ms (defaults to 0)
    */
@@ -47,7 +51,7 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 
 /**
  * Retries failed operations. Subscriptions resume from the last tracked event
- * id. A call can opt out with `context: { retry: false }`.
+ * id. A call can pass its own `retry` in `context`.
  *
  * @see https://trpc.io/docs/client/links/retryLink
  */
@@ -56,7 +60,7 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 ): TRPCLink<
   TInferrable,
   // `retry` is given the operation, so may read any field
-  { context: OperationContext & RetryLinkContext }
+  { context: OperationContext & RetryLinkContext<TInferrable> }
 > {
   // initialized config
   return () => {
@@ -95,13 +99,17 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 
           const subscription = callOpts.next(op).subscribe({
             error(error) {
-              const shouldRetry =
-                op.context['retry'] !== false &&
-                opts.retry({
-                  op,
-                  attempts,
-                  error,
-                });
+              const callRetry = op.context['retry'];
+              // a `retry` that isn't a function is a flag for the link's own `retry`
+              const retry =
+                typeof callRetry === 'function'
+                  ? (callRetry as RetryFn<TInferrable>)
+                  : opts.retry;
+              const shouldRetry = retry({
+                op,
+                attempts,
+                error,
+              });
               if (disposed) {
                 return;
               }

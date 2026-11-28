@@ -45,13 +45,52 @@ function factory() {
 }
 type AppRouter = ReturnType<typeof factory>['appRouter'];
 
-test('`context: { retry: false }` skips retryLink for that call', async () => {
+test('`context.retry` replaces the link’s `retry` for that call', async () => {
   const { appRouter, flakyCalls } = factory();
   await using ctx = testServerAndClientResource(appRouter);
   const client = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
-      retryLink({ retry: (opts) => opts.attempts < 3 }),
+      // only retry queries
+      retryLink({ retry: (opts) => opts.op.type === 'query' }),
+      httpBatchLink({ url: ctx.httpUrl }),
+    ],
+  });
+
+  await expect(client.flaky.mutate('a')).rejects.toMatchObject({
+    data: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+  expect(flakyCalls).toHaveBeenCalledTimes(1);
+
+  flakyCalls.mockClear();
+  const retry = vi.fn((opts: { attempts: number }) => opts.attempts < 3);
+  expect(await client.flaky.mutate('b', { context: { retry } })).toBe('b');
+  expect(flakyCalls).toHaveBeenCalledTimes(2);
+  expect(retry).toHaveBeenCalledTimes(1);
+
+  void (() => {
+    void client.flaky.mutate('c', {
+      context: {
+        retry: (opts) => {
+          expectTypeOf(opts.attempts).toEqualTypeOf<number>();
+          return false;
+        },
+      },
+    });
+  });
+});
+
+test('a `context.retry` that isn’t a function is left to the link’s `retry`', async () => {
+  // e.g. a flag the link's own `retry` reads, as apps did before
+  // `context.retry` took a function
+  const { appRouter, flakyCalls } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      retryLink({
+        retry: (opts) =>
+          opts.op.context['retry'] !== false && opts.attempts < 3,
+      }),
       httpBatchLink({ url: ctx.httpUrl }),
     ],
   });
@@ -60,9 +99,6 @@ test('`context: { retry: false }` skips retryLink for that call', async () => {
     client.flaky.mutate('a', { context: { retry: false } }),
   ).rejects.toMatchObject({ data: { code: 'INTERNAL_SERVER_ERROR' } });
   expect(flakyCalls).toHaveBeenCalledTimes(1);
-
-  expect(await client.flaky.mutate('b')).toBe('b');
-  expect(flakyCalls).toHaveBeenCalledTimes(2);
 });
 
 test('calls take the context their links declare', () => {
@@ -133,7 +169,7 @@ test('links that give the operation to a callback may read any context', () => {
   });
   void (() => {
     void client.flaky.mutate('a', {
-      context: { token: 't', skipLog: true, retry: false },
+      context: { token: 't', skipLog: true, retry: () => false },
     });
     // @ts-expect-error -- declared fields stay typed
     void client.flaky.mutate('a', { context: { retry: true } });
@@ -151,7 +187,9 @@ test('a link that declares nothing may read any context', () => {
     ],
   });
   void (() => {
-    void client.flaky.mutate('a', { context: { anything: 1, retry: false } });
+    void client.flaky.mutate('a', {
+      context: { anything: 1, retry: () => false },
+    });
     // @ts-expect-error -- declared fields stay typed
     void client.flaky.mutate('a', { context: { retry: 1 } });
   });
@@ -212,9 +250,9 @@ test('methods the links can’t carry can’t be called', () => {
   void (() => {
     // the condition may read anything; the branches' fields stay typed
     void split.flaky.mutate('a', {
-      context: { skipBatch: true, retry: false },
+      context: { skipBatch: true, retry: () => false },
     });
-    // @ts-expect-error -- `retry` only takes `false`
+    // @ts-expect-error -- `retry` takes a function
     void split.flaky.mutate('a', { context: { retry: 1 } });
   });
 

@@ -266,11 +266,11 @@ export type CreateTRPCClientWithRouterOptions<
  * ```ts
  * const client = createTRPCClient({
  *   router: routerType<AppRouter>(),
- *   links: [retryLink({ retry: () => true }), httpBatchLink({ url })],
+ *   links: [retryLink({ retry: () => false }), httpBatchLink({ url })],
  * });
  * const post = await client.post.byId.query(
  *   { id: '1' },
- *   { context: { retry: false } },
+ *   { context: { retry: (opts) => opts.attempts <= 3 } },
  * );
  * ```
  * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client

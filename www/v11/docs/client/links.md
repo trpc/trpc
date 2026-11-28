@@ -178,7 +178,7 @@ For an example use case, see [Disable batching for certain requests](/docs/clien
 
 ### Typing call options
 
-Create the client with `router: routerType<AppRouter>()` and the `context` each call takes is typed from the links. A link declares what it reads with the second type argument of `TRPCLink`. Built-in links declare theirs: [`retryLink`](./links/retryLink.md#skipping-retries-for-one-call) reads `retry`.
+Create the client with `router: routerType<AppRouter>()` and the `context` each call takes is typed from the links. A link declares what it reads with the second type argument of `TRPCLink`. Built-in links declare theirs: [`retryLink`](./links/retryLink.md#changing-retries-for-one-call) reads `retry`.
 
 ```ts twoslash
 // @filename: server.ts
