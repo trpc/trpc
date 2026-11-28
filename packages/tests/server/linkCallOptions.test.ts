@@ -30,7 +30,7 @@ function factory() {
   const flakyCalls = vi.fn();
   const t = initTRPC.create();
   const appRouter = t.router({
-    flaky: t.procedure.input(z.string()).mutation((opts) => {
+    flaky: t.procedure.input(z.string()).query((opts) => {
       flakyCalls();
       if (flakyCalls.mock.calls.length === 1) {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
@@ -51,25 +51,25 @@ test('`context.retry` replaces the link’s `retry` for that call', async () => 
   const client = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
-      // only retry queries
-      retryLink({ retry: (opts) => opts.op.type === 'query' }),
+      // never retry
+      retryLink({ retry: () => false }),
       httpBatchLink({ url: ctx.httpUrl }),
     ],
   });
 
-  await expect(client.flaky.mutate('a')).rejects.toMatchObject({
+  await expect(client.flaky.query('a')).rejects.toMatchObject({
     data: { code: 'INTERNAL_SERVER_ERROR' },
   });
   expect(flakyCalls).toHaveBeenCalledTimes(1);
 
   flakyCalls.mockClear();
   const retry = vi.fn((opts: { attempts: number }) => opts.attempts < 3);
-  expect(await client.flaky.mutate('b', { context: { retry } })).toBe('b');
+  expect(await client.flaky.query('b', { context: { retry } })).toBe('b');
   expect(flakyCalls).toHaveBeenCalledTimes(2);
   expect(retry).toHaveBeenCalledTimes(1);
 
   void (() => {
-    void client.flaky.mutate('c', {
+    void client.flaky.query('c', {
       context: {
         retry: (opts) => {
           expectTypeOf(opts.attempts).toEqualTypeOf<number>();
@@ -96,7 +96,7 @@ test('a `context.retry` that isn’t a function is left to the link’s `retry`'
   });
 
   await expect(
-    client.flaky.mutate('a', { context: { retry: false } }),
+    client.flaky.query('a', { context: { retry: false } }),
   ).rejects.toMatchObject({ data: { code: 'INTERNAL_SERVER_ERROR' } });
   expect(flakyCalls).toHaveBeenCalledTimes(1);
 });
@@ -118,18 +118,18 @@ test('calls take the context their links declare', () => {
     ],
   });
 
-  expectTypeOf<ContextOf<typeof client.flaky.mutate>>().toEqualTypeOf<{
+  expectTypeOf<ContextOf<typeof client.flaky.query>>().toEqualTypeOf<{
     traceId?: string;
   }>();
   expectTypeOf(client).toExtend<TRPCClient<AppRouter>>();
 
   void (() => {
-    void client.flaky.mutate('a');
-    void client.flaky.mutate('a', { context: { traceId: '1' } });
+    void client.flaky.query('a');
+    void client.flaky.query('a', { context: { traceId: '1' } });
     // @ts-expect-error -- no link reads `nope`
-    void client.flaky.mutate('a', { context: { nope: 1 } });
+    void client.flaky.query('a', { context: { nope: 1 } });
     // @ts-expect-error -- `traceId` is a string
-    void client.flaky.mutate('a', { context: { traceId: 1 } });
+    void client.flaky.query('a', { context: { traceId: 1 } });
   });
 });
 
@@ -140,13 +140,13 @@ test('no context when no link reads one', () => {
     links: [localLink({ router: appRouter, createContext: async () => ({}) })],
   });
   expectTypeOf<
-    ContextOf<typeof client.flaky.mutate>
+    ContextOf<typeof client.flaky.query>
   >().toEqualTypeOf<NoLinkReadsContext>();
 
   void (() => {
-    void client.flaky.mutate('a', { context: {} });
+    void client.flaky.query('a', { context: {} });
     // @ts-expect-error -- no link reads `foo`
-    void client.flaky.mutate('a', { context: { foo: 1 } });
+    void client.flaky.query('a', { context: { foo: 1 } });
   });
 });
 
@@ -168,11 +168,11 @@ test('links that give the operation to a callback may read any context', () => {
     ],
   });
   void (() => {
-    void client.flaky.mutate('a', {
+    void client.flaky.query('a', {
       context: { token: 't', skipLog: true, retry: () => false },
     });
     // @ts-expect-error -- declared fields stay typed
-    void client.flaky.mutate('a', { context: { retry: true } });
+    void client.flaky.query('a', { context: { retry: true } });
   });
 });
 
@@ -187,11 +187,11 @@ test('a link that declares nothing may read any context', () => {
     ],
   });
   void (() => {
-    void client.flaky.mutate('a', {
+    void client.flaky.query('a', {
       context: { anything: 1, retry: () => false },
     });
     // @ts-expect-error -- declared fields stay typed
-    void client.flaky.mutate('a', { context: { retry: 1 } });
+    void client.flaky.query('a', { context: { retry: 1 } });
   });
 
   // so does an inline link with no type at all
@@ -208,7 +208,7 @@ test('a link that declares nothing may read any context', () => {
     ],
   });
   void (() => {
-    void inline.flaky.mutate('a', { context: { traceId: '1' } });
+    void inline.flaky.query('a', { context: { traceId: '1' } });
   });
 
   // and a `links` array typed as `TRPCLink<AppRouter>[]`
@@ -220,7 +220,7 @@ test('a link that declares nothing may read any context', () => {
     links,
   });
   void (() => {
-    void fromArray.flaky.mutate('a', { context: { anything: 1 } });
+    void fromArray.flaky.query('a', { context: { anything: 1 } });
     fromArray.onEvent.subscribe(undefined, {});
   });
 });
@@ -246,21 +246,21 @@ test('methods the links can’t carry can’t be called', () => {
     ],
   });
   expectTypeOf(split.onEvent.subscribe).not.toBeNever();
-  expectTypeOf(split.flaky.mutate).not.toBeNever();
+  expectTypeOf(split.flaky.query).not.toBeNever();
   void (() => {
     // the condition may read anything; the branches' fields stay typed
-    void split.flaky.mutate('a', {
+    void split.flaky.query('a', {
       context: { skipBatch: true, retry: () => false },
     });
     // @ts-expect-error -- `retry` takes a function
-    void split.flaky.mutate('a', { context: { retry: 1 } });
+    void split.flaky.query('a', { context: { retry: 1 } });
   });
 
   const onlySubscriptions = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [httpSubscriptionLink({ url: 'http://localhost' })],
   });
-  expectTypeOf(onlySubscriptions.flaky.mutate).toBeNever();
+  expectTypeOf(onlySubscriptions.flaky.query).toBeNever();
 });
 
 test('the client still fits where integrations take TRPCClient<AppRouter>', () => {
@@ -291,7 +291,7 @@ test('the type argument form keeps taking any context', () => {
   });
   expectTypeOf(client).toEqualTypeOf<TRPCClient<AppRouter>>();
   void (() => {
-    void client.flaky.mutate('a', { context: { anything: 1 } });
+    void client.flaky.query('a', { context: { anything: 1 } });
     client.onEvent.subscribe(undefined, {});
   });
 });
