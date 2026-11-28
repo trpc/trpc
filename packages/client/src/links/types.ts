@@ -193,7 +193,17 @@ export type NoLinkReadsContext = {
  * @public
  */
 export type inferLinksDeclaredContext<TLinks extends readonly unknown[]> =
-  UnionToIntersection<inferDeclContext<inferLinkDecl<TLinks[number]>>>;
+  // boxed per link, so a link that declares a union of contexts keeps it
+  // instead of having its alternatives intersected
+  UnionToIntersection<
+    TLinks[number] extends infer $Link
+      ? $Link extends unknown
+        ? { context: inferDeclContext<inferLinkDecl<$Link>> }
+        : never
+      : never
+  > extends { context: infer $Context }
+    ? $Context
+    : {};
 
 /**
  * The `context` calls can pass: the fields every link in `TLinks` reads,

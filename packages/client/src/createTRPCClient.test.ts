@@ -69,6 +69,27 @@ test('calls take the context their links declare', () => {
   });
 });
 
+test('a link can declare a union of contexts', () => {
+  const { appRouter } = factory();
+  const modeLink: TRPCLink<
+    AppRouter,
+    { context: { mode: 'fast' } | { mode: 'slow'; budgetMs: number } }
+  > = () => (opts) => opts.next(opts.op);
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      modeLink,
+      localLink({ router: appRouter, createContext: async () => ({}) }),
+    ],
+  });
+  void (() => {
+    void client.flaky.query('a', { context: { mode: 'fast' } });
+    void client.flaky.query('a', { context: { mode: 'slow', budgetMs: 5 } });
+    // @ts-expect-error -- `mode` is `'fast'` or `'slow'`
+    void client.flaky.query('a', { context: { mode: 'other' } });
+  });
+});
+
 test('no context when no link reads one', () => {
   const { appRouter } = factory();
   const client = createTRPCClient({

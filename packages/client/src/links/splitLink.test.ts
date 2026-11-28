@@ -180,3 +180,33 @@ test('splitLink’s `context` defaults declare what `condition` reads', async ()
     .catch(() => null);
   expect(seen).toEqual([false, false, true]);
 });
+
+test('a symbol-keyed `context` field takes its default only when left out', async () => {
+  const { appRouter } = factory();
+  const useCache = Symbol('useCache');
+  const seen: unknown[] = [];
+  const local = localLink({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      splitLink({
+        context: { [useCache]: false },
+        condition: (op) => {
+          seen.push(op.context[useCache]);
+          return op.context[useCache];
+        },
+        true: local,
+        false: local,
+      }),
+    ],
+  });
+
+  await client.flaky.query('a').catch(() => null);
+  await client.flaky
+    .query('b', { context: { [useCache]: true } })
+    .catch(() => null);
+  expect(seen).toEqual([false, true]);
+});

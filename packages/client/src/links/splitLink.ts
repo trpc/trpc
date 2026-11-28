@@ -14,15 +14,15 @@ function asArray<TType>(value: TType | readonly TType[]): readonly TType[] {
 
 // a field the call leaves out, or sets to `undefined`, takes its default
 function withDefaults(
-  defaults: object,
+  defaults: Record<PropertyKey, unknown>,
   context: OperationContext,
 ): OperationContext {
-  return {
-    ...defaults,
-    ...Object.fromEntries(
-      Object.entries(context).filter(([, value]) => value !== undefined),
-    ),
-  };
+  // spreading copies symbol keys too
+  const merged: Record<PropertyKey, unknown> = { ...defaults, ...context };
+  for (const key of Reflect.ownKeys(defaults)) {
+    if (merged[key] === undefined) merged[key] = defaults[key];
+  }
+  return merged;
 }
 
 /**
@@ -116,7 +116,7 @@ export function splitLink(
     SplitLinkBranch<AnyRouter>,
     SplitLinkBranch<AnyRouter>,
     any
-  > & { context?: object },
+  > & { context?: Record<PropertyKey, unknown> },
 ): TRPCLink<AnyRouter> {
   return (runtime) => {
     const yes = asArray(opts.true).map((link) => link(runtime));
