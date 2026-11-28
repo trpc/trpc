@@ -9,6 +9,28 @@ function encodeCodec<TSchema extends z.ZodType>(schema: TSchema) {
   };
 }
 
+type CallableWithTypedParamAndAssert = ((data: string) => { data?: number }) & {
+  assert(value: unknown): asserts value is number;
+};
+
+const assertCalls: unknown[] = [];
+const fnCalls: unknown[] = [];
+
+const callableAssertParser: CallableWithTypedParamAndAssert = Object.assign(
+  (data: string): { data?: number } => {
+    fnCalls.push(data);
+    return { data: 1 };
+  },
+  {
+    assert(value: unknown): asserts value is number {
+      assertCalls.push(value);
+      if (typeof value !== 'number') {
+        throw new Error('Expected number');
+      }
+    },
+  },
+);
+
 test('output binds procedure return type to custom parser input type', async () => {
   const stringToBigInt = z.codec(z.string(), z.bigint(), {
     decode: (raw) => BigInt(raw),
@@ -67,12 +89,22 @@ test('output binds procedure return type to custom parser input type', async () 
         throw new Error('Output is not a string');
       })
       .query(() => 'ok'),
+    callableAssertInput: t.procedure
+      .input(callableAssertParser)
+      .query((opts) => {
+        expectTypeOf(opts.input).toEqualTypeOf<number | { data?: number }>();
+        return 'ok' as const;
+      }),
   });
 
   type CallableWithAssert = ((data: unknown) => { data?: number }) & {
     assert(value: unknown): asserts value is number;
   };
   expectTypeOf<inferParser<CallableWithAssert>>().toEqualTypeOf<{
+    in: number | { data?: number };
+    out: number | { data?: number };
+  }>();
+  expectTypeOf<inferParser<CallableWithTypedParamAndAssert>>().toEqualTypeOf<{
     in: number | { data?: number };
     out: number | { data?: number };
   }>();
@@ -111,4 +143,13 @@ test('output binds procedure return type to custom parser input type', async () 
   const inferredResult = await ctx.client.unannotatedInferredReturn.query();
   expectTypeOf(inferredResult).toEqualTypeOf<string>();
   expect(inferredResult).toEqual('ok');
+
+  const callableAssertResult = await ctx.client.callableAssertInput.query(123);
+  expectTypeOf(callableAssertResult).toEqualTypeOf<'ok'>();
+  expect(callableAssertResult).toEqual('ok');
+  expect(assertCalls).toEqual([123]);
+  expect(fnCalls).toEqual([]);
+  await expect(
+    ctx.client.callableAssertInput.query('not-a-number' as never),
+  ).rejects.toThrow('Expected number');
 });

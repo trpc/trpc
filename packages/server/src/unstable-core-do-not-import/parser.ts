@@ -75,11 +75,13 @@ export type inferParser<TParser extends Parser> =
         }
       : TParser extends ParserWithoutInput<infer $InOut>
         ? {
-            in: TParser extends (input: infer $TIn) => unknown
-              ? unknown extends $TIn
-                ? $InOut
-                : $TIn
-              : $InOut;
+            in: TParser extends ParserScaleEsque<any>
+              ? $InOut
+              : TParser extends (input: infer $TIn) => unknown
+                ? unknown extends $TIn
+                  ? $InOut
+                  : $TIn
+                : $InOut;
             out: $InOut;
           }
         : never;
