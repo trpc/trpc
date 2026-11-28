@@ -2,11 +2,11 @@
 id: httpSubscriptionLink
 title: HTTP Subscription Link
 description: A terminating link for subscriptions over Server-sent Events
-sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
 section: "Client Usage"
 parent: "client/links"
 order: 34
+sidebar_label: '`httpSubscriptionLink`'
 ---
 
 `httpSubscriptionLink` is a [**terminating link**](../links.md#the-terminating-link) that uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.

@@ -2,11 +2,11 @@
 id: httpBatchLink
 title: HTTP Batch Link
 description: A terminating link that batches concurrent tRPC calls into a single HTTP request
-sidebar_label: HTTP Batch Link
 slug: /client/links/httpBatchLink
 section: "Client Usage"
 parent: "client/links"
 order: 32
+sidebar_label: '`httpBatchLink`'
 ---
 
 `httpBatchLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request. A batch can include calls to different procedures (queries and mutations are batched separately).

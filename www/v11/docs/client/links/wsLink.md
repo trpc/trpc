@@ -2,11 +2,11 @@
 id: wsLink
 title: WebSocket Link
 description: A terminating link that sends tRPC operations over a WebSocket
-sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 section: "Client Usage"
 parent: "client/links"
-order: 36
+order: 35
+sidebar_label: '`wsLink`'
 ---
 
 `wsLink` is a [**terminating link**](../links.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md).

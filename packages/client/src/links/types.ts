@@ -118,7 +118,7 @@ export type OperationResultObserver<
 /**
  * Handles one operation: pass it on with `next(op)`, or send it and
  * return the results.
- * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @see https://trpc.io/docs/client/custom-links
  * @internal
  */
 export type OperationLink<
@@ -135,7 +135,7 @@ export type OperationLink<
 /**
  * What a link declares about itself, for clients created with
  * `createTRPCClient({ router: routerType<AppRouter>(), links })`.
- * @see https://trpc.io/docs/client/links#typing-call-options
+ * @see https://trpc.io/docs/client/custom-links#typing-call-options
  * @public
  */
 export interface LinkDecl {
@@ -152,7 +152,7 @@ export interface LinkDecl {
  *
  * `TDecl` says what it reads from `op.context`. A link that doesn't
  * declare it may read any context.
- * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @see https://trpc.io/docs/client/custom-links
  * @public
  */
 export type TRPCLink<

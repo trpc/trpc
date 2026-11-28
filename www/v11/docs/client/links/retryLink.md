@@ -2,11 +2,11 @@
 id: retryLink
 title: Retry Link
 description: A link that retries failed operations
-sidebar_label: Retry Link
 slug: /client/links/retryLink
 section: "Client Usage"
 parent: "client/links"
-order: 39
+order: 37
+sidebar_label: '`retryLink`'
 ---
 
 `retryLink` is a link that allows you to retry failed operations in your tRPC client. It provides a customizable way to handle transient errors, such as network failures or server errors, by automatically retrying the failed requests based on specified conditions.

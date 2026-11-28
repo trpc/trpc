@@ -32,7 +32,7 @@ export function isObservable(x: unknown): x is Observable<unknown, unknown> {
  *   return () => clearInterval(timer);
  * });
  * ```
- * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @see https://trpc.io/docs/client/custom-links
  * @public
  */
 export function observable<TValue, TError = unknown>(
