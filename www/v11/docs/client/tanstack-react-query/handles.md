@@ -79,10 +79,11 @@ export function makeQueryClient() {
 }
 
 // @filename: trpc/client.tsx
+import { routerType } from '@trpc/client';
 import { createTRPCContext, type TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '~/server/router';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 // @filename: trpc/server.tsx

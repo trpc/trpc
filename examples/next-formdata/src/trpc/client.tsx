@@ -9,6 +9,7 @@ import {
   isNonJsonSerializable,
   loggerLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
@@ -16,7 +17,9 @@ import { useState } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 import { makeQueryClient } from './query-client';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 let browserQueryClient: QueryClient | undefined;
 function getQueryClient() {
@@ -33,7 +36,8 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const [trpcClient] = useState(() => {
     // The client only calls the API from the browser
     const url = '/api/trpc';
-    return createTRPCClient<AppRouter>({
+    return createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         loggerLink({
           enabled: (op) =>

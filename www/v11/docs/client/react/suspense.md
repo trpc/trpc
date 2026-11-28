@@ -176,12 +176,12 @@ The performance of suspense queries can be improved by prefetching the query dat
 // @filename: loader.ts
 // ---cut---
 import { createTRPCQueryUtils } from '@trpc/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { QueryClient } from '@tanstack/react-query';
 import type { AppRouter } from './server';
 
 const queryClient = new QueryClient();
-const trpcClient = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+const trpcClient = createTRPCClient({ router: routerType<AppRouter>(), links: [httpBatchLink({ url: 'http://localhost:3000' })] });
 const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // tanstack router/ react router loader

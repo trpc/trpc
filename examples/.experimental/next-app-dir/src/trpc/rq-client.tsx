@@ -7,13 +7,16 @@ import {
   createTRPCClient,
   httpBatchStreamLink,
   loggerLink,
+  routerType,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 import { createQueryClient, getUrl, transformer } from './shared';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -30,7 +33,8 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
 
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         loggerLink({
           enabled: (op) =>

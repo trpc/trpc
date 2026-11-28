@@ -10,7 +10,11 @@ import type {
   UseSuspenseInfiniteQueryResult,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
+import type {
+  CreateTRPCClientOptions,
+  TRPCClient,
+  TRPCClientErrorLike,
+} from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -462,7 +466,9 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * Same as `createTRPCClient`, typed for this router.
    */
-  createClient: typeof createTRPCClient<TRouter>;
+  // Its own signature, so it doesn't share the deprecation of
+  // `createTRPCClient<AppRouter>()`: this is the way to create one here.
+  createClient: (opts: CreateTRPCClientOptions<TRouter>) => TRPCClient<TRouter>;
   /**
    * @see https://trpc.io/docs/client/react/useQueries
    */

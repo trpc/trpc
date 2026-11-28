@@ -66,11 +66,12 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 import superjson from 'superjson';
 
-export const client = createTRPCClient<AppRouter>({
+export const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpLink({
       url: 'http://localhost:3000',
@@ -97,11 +98,13 @@ import {
   httpBatchLink,
   httpSubscriptionLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 import superjson from 'superjson';
 
-export const client = createTRPCClient<AppRouter>({
+export const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
@@ -132,10 +135,11 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 import superjson from 'superjson';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'http://localhost:3000', transformer: superjson })],
 });
 // ---cut---
@@ -220,11 +224,12 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server/routers/_app';
 import { transformer } from './utils/trpc';
 
-export const client = createTRPCClient<AppRouter>({
+export const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpLink({
       url: 'http://localhost:3000',

@@ -2,10 +2,12 @@ import {
   createTRPCClient,
   httpBatchStreamLink,
   loggerLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     loggerLink({
       enabled: (opts) => opts.direction === 'down',

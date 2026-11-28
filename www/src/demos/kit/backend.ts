@@ -1,4 +1,9 @@
-import { createTRPCClient, localLink, type TRPCLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  localLink,
+  type TRPCLink,
+  routerType,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 
@@ -289,7 +294,8 @@ function networkLink(
  */
 export function createDemoClient(network: Network, origin?: string) {
   const router = createAppRouter(network);
-  return createTRPCClient<AppRouter>({
+  return createTRPCClient({
+    router: routerType<AppRouter>(),
     links: [
       networkLink(network, origin),
       localLink({ createContext: async () => ({}), router }),

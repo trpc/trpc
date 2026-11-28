@@ -64,9 +64,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.tsx
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+export const { useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: components/MyComponent.tsx
 // ---cut---

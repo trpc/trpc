@@ -36,10 +36,12 @@ import {
   httpSubscriptionLink,
   loggerLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpcClient = createTRPCClient<AppRouter>({
+const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   /**
    * @see https://trpc.io/docs/v11/client/links
    */
@@ -121,12 +123,14 @@ import {
   httpBatchLink,
   httpSubscriptionLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from './server';
 
 // Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
@@ -183,6 +187,7 @@ import {
   httpSubscriptionLink,
   retryLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import {
   EventSourcePolyfill,
@@ -191,7 +196,8 @@ import {
 import type { AppRouter } from './server';
 
 // Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
@@ -273,11 +279,13 @@ import {
   httpBatchLink,
   httpSubscriptionLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
 // Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',

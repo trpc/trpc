@@ -9,7 +9,7 @@ import { routeTree } from './routeTree.gen';
 export function getRouter() {
   const queryClient = createQueryClient();
   const trpcClient = makeTRPCClient();
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy({
     client: trpcClient,
     queryClient,
   });

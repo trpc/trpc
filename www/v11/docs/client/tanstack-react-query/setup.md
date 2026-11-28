@@ -125,10 +125,11 @@ export type AppRouter = typeof appRouter;
 ```twoslash include utils-a
 // @filename: utils/trpc.ts
 // ---cut---
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 
-export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext({ router: routerType<AppRouter>() });
 ```
 
 Import your `AppRouter` type into the client application. This type holds the shape of your entire API.
@@ -403,9 +404,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: components/create-user.tsx
 // ---cut---

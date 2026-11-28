@@ -26,10 +26,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpLink({
       url: 'http://localhost:3000',

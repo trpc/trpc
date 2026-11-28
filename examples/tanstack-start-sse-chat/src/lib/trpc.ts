@@ -8,6 +8,7 @@ import {
   loggerLink,
   splitLink,
   type TRPCLink,
+  routerType,
 } from '@trpc/client';
 import {
   createTRPCContext,
@@ -18,7 +19,9 @@ import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
@@ -63,4 +66,4 @@ const getLinks = createIsomorphicFn()
   });
 
 export const makeTRPCClient = () =>
-  createTRPCClient<AppRouter>({ links: getLinks() });
+  createTRPCClient({ router: routerType<AppRouter>(), links: getLinks() });

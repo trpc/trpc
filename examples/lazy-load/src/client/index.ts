@@ -1,14 +1,15 @@
 /**
  * This is the client-side code that uses the inferred types from the server
  */
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
 import type { AppRouter } from '../server/routers/_app.js';
 
 // Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',

@@ -262,6 +262,9 @@ export function createTRPCClient<
  * const post = await client.post.byId.query({ id: '1' });
  * ```
  * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
+ * @deprecated Pass the router's type as `router: routerType<AppRouter>()`
+ * instead of a type argument, so the links can type each call's `context`.
+ * The type argument form is removed in v12.
  */
 // Kept last: `ReturnType<typeof createTRPCClient>` reads the last overload.
 export function createTRPCClient<TRouter extends AnyRouter>(

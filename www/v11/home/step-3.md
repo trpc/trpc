@@ -19,11 +19,12 @@ const appRouter = t.router({
 
 export type AppRouter = typeof appRouter;
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
 // ---cut---
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',

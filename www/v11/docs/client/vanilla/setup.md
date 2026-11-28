@@ -12,9 +12,10 @@ skill:
   type: core
   requires:
     - server-setup
-  description: Create a vanilla tRPC client with createTRPCClient<AppRouter>()
-    and a terminating link such as httpBatchLink, import AppRouter with `import
-    type`, set dynamic auth headers, and put the transformer on links (not the
+  description: Create a vanilla tRPC client with createTRPCClient, passing
+    the router type as router routerType<AppRouter>() and a terminating link
+    such as httpBatchLink, import AppRouter with `import type`, set dynamic
+    auth headers, and put the transformer on links (not the
     client constructor). Infer types with inferRouterInputs and
     inferRouterOutputs, handle TRPCClientError with try/catch or safe(), and
     abort calls with an AbortSignal.
@@ -65,7 +66,9 @@ By using `import type` you ensure that the reference will be stripped at compile
 
 ### 3. Initialize the tRPC client
 
-Create a tRPC client with the `createTRPCClient` method, and add a `links` array with a [terminating link](../links.md#the-terminating-link) pointing at your API. To learn more about tRPC links, [click here](../links.md).
+Create a tRPC client with the `createTRPCClient` method. Pass your router's type as `router: routerType<AppRouter>()`, and add a `links` array with a [terminating link](../links.md#the-terminating-link) pointing at your API. `routerType` does nothing at runtime, so no server code reaches the client. To learn more about tRPC links, [click here](../links.md).
+
+With `router:`, the client also types each call's `context` from what its links read. See [Typing call options](../links.md#typing-call-options).
 
 ```ts twoslash title='client.ts'
 // @filename: server.ts
@@ -77,10 +80,11 @@ export type AppRouter = typeof appRouter;
 // @filename: client.ts
 declare function getAuthCookie(): string;
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000/trpc',
@@ -113,9 +117,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut---
@@ -143,9 +148,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import { createTRPCClient, httpSubscriptionLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut---
@@ -183,7 +189,7 @@ You're all set!
 
 ## Common mistakes
 
-- **Leaving out the `AppRouter` type parameter.** `createTRPCClient({ links })` without `<AppRouter>` compiles, but none of your procedures are typed. If the `AppRouter` import doesn't resolve (often a monorepo path or `tsconfig` issue), fix the import rather than reaching for `createTRPCClient<any>`.
+- **Leaving out `router`.** `createTRPCClient({ links })` without `router: routerType<AppRouter>()` compiles, but none of your procedures are typed. If the `AppRouter` import doesn't resolve (often a monorepo path or `tsconfig` issue), fix the import rather than reaching for `routerType<any>()`.
 - **Importing the router value instead of its type.** `import { appRouter } from '../server/router'` pulls your server code into the client bundle. Export `type AppRouter = typeof appRouter` from the server and import it with `import type`.
 - **Passing `transformer` to `createTRPCClient`.** The transformer belongs on each terminating link (`httpBatchLink`, `httpLink`, `wsLink`, ...), and TypeScript rejects it on the client itself. See [Data Transformers](../../server/data-transformers.md).
 - **Using `createTRPCProxyClient`.** It's the v10 name, kept as a deprecated alias of `createTRPCClient`.

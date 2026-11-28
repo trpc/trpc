@@ -2,7 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import {
   createTRPCContext,
   type TRPCOptionsProxy,
@@ -11,7 +11,9 @@ import { useState } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
 import { makeQueryClient } from './query-client';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 let browserQueryClient: QueryClient | undefined;
@@ -43,7 +45,8 @@ function getBaseUrl() {
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
+    createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpBatchLink({
           url: getBaseUrl() + '/api/trpc',

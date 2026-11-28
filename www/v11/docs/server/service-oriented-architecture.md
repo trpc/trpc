@@ -177,7 +177,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client/client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink, type TRPCLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, type TRPCLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../faux-gateway';
 
 const serviceLink: TRPCLink<AppRouter> = (runtime) => {
@@ -197,7 +197,8 @@ const serviceLink: TRPCLink<AppRouter> = (runtime) => {
   };
 };
 
-export const client = createTRPCClient<AppRouter>({
+export const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [serviceLink],
 });
 ```
@@ -233,9 +234,10 @@ const appRouter = router({ serverA: serverARouter, serverB: serverBRouter });
 export type AppRouter = typeof appRouter;
 
 // @filename: client/client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from '../faux-gateway';
-export const client = createTRPCClient<AppRouter>({
+export const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [httpBatchLink({ url: 'http://localhost:2021' })],
 });
 

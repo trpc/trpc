@@ -5,7 +5,7 @@
  */
 import { isServer, QueryClient } from '@tanstack/react-query';
 import { createIsomorphicFn } from '@tanstack/react-start';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import {
   createTRPCContext,
   createTRPCOptionsProxy,
@@ -17,7 +17,9 @@ import { appRouter, type AppRouter } from './-server/router.ts';
 
 export const endpoint = '/kitchen-sink/handles/api';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 const makeQueryClient = () =>
@@ -49,7 +51,8 @@ export function getQueryClient() {
 let sent = 0;
 const listeners = new Set<() => void>();
 
-export const trpcClient = createTRPCClient<AppRouter>({
+export const trpcClient = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       fetch: (url, init) => {

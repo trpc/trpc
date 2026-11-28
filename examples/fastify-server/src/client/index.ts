@@ -4,6 +4,7 @@ import {
   httpBatchLink,
   splitLink,
   wsLink,
+  routerType,
 } from '@trpc/client';
 import superjson from 'superjson';
 import { serverConfig } from '../config';
@@ -14,7 +15,8 @@ async function start() {
   const { port, prefix } = serverConfig;
   const urlEnd = `localhost:${port}${prefix}`;
   const wsClient = createWSClient({ url: `ws://${urlEnd}` });
-  const trpc = createTRPCClient<AppRouter>({
+  const trpc = createTRPCClient({
+    router: routerType<AppRouter>(),
     links: [
       splitLink({
         condition(op) {

@@ -38,10 +38,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
@@ -66,9 +67,9 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchStreamLink({ url: 'http://localhost:3000' })] });
+const trpc = createTRPCClient({ router: routerType<AppRouter>(), links: [httpBatchStreamLink({ url: 'http://localhost:3000' })] });
 // ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
@@ -92,10 +93,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
@@ -144,10 +146,11 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',

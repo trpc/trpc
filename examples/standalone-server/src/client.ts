@@ -4,6 +4,7 @@ import {
   httpLink,
   splitLink,
   wsLink,
+  routerType,
 } from '@trpc/client';
 import { WebSocket } from 'ws';
 import type { AppRouter } from './server';
@@ -13,7 +14,8 @@ globalThis.WebSocket = WebSocket as any;
 const wsClient = createWSClient({
   url: `ws://localhost:2022`,
 });
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     // call subscriptions through websockets and the rest over http
     splitLink({

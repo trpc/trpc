@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, routerType } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import React from 'react';
 import superjson from 'superjson';
@@ -11,8 +11,9 @@ import type { AppRouter } from '~/server/routers/_app';
 export const runtime = 'edge';
 
 export default function Page() {
-  const trpc = createTRPCOptionsProxy<AppRouter>({
+  const trpc = createTRPCOptionsProxy({
     client: createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpLink({
           url: 'http://localhost:3000/api/trpc',

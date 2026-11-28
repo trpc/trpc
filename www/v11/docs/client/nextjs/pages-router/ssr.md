@@ -52,9 +52,10 @@ import { QueryClient } from '@tanstack/react-query';
 export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: utils/trpc.ts
+import { routerType } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/routers/_app';
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({ router: routerType<AppRouter>() });
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
@@ -188,7 +189,7 @@ export function makeQueryClient() { return new QueryClient(); }
 
 // @filename: pages/posts/[id].tsx
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import type { GetServerSidePropsContext } from 'next';
 import type { AppRouter } from '../../server/routers/_app';
@@ -197,7 +198,8 @@ import { makeQueryClient } from '../../utils/query-client';
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const queryClient = makeQueryClient();
   const trpc = createTRPCOptionsProxy({
-    client: createTRPCClient<AppRouter>({
+    client: createTRPCClient({
+      router: routerType<AppRouter>(),
       links: [
         httpBatchLink({
           url: 'https://api.example.com/trpc',

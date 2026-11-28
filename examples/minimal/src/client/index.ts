@@ -6,6 +6,7 @@ import {
   httpBatchStreamLink,
   httpSubscriptionLink,
   splitLink,
+  routerType,
 } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
@@ -14,7 +15,8 @@ import type { AppRouter } from '../server/index.js';
 import { transformer } from '../shared/transformer.js';
 
 // Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',

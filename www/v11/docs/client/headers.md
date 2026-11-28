@@ -21,7 +21,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
 
 let token: string;
@@ -34,7 +34,8 @@ export function setToken(newToken: string) {
   token = newToken;
 }
 
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -72,9 +73,9 @@ export type AppRouter = typeof appRouter;
 export function setToken(token: string) {}
 
 // @filename: auth.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const trpc = createTRPCClient<AppRouter>({ links: [httpBatchLink({ url: 'http://localhost:3000' })] });
+const trpc = createTRPCClient({ router: routerType<AppRouter>(), links: [httpBatchLink({ url: 'http://localhost:3000' })] });
 import { setToken } from './utils';
 // ---cut---
 const result = await trpc.auth.login.mutate({ username: 'user', password: 'pass' });

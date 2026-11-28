@@ -1,3 +1,4 @@
+import { routerType } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createTRPCContext,
@@ -9,7 +10,9 @@ import type { ReactNode } from 'react';
 import { type AppRouter, createDemoClient } from './backend.ts';
 import { createNetwork, type Network } from './network.ts';
 
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC } = createTRPCContext({
+  router: routerType<AppRouter>(),
+});
 
 export type TRPC = TRPCOptionsProxy<AppRouter>;
 
@@ -38,7 +41,7 @@ export function createSession(latency: number, origin?: string) {
     client,
     network,
     queryClient,
-    trpc: createTRPCOptionsProxy<AppRouter>({ client, queryClient }),
+    trpc: createTRPCOptionsProxy({ client, queryClient }),
   };
 }
 
