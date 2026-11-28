@@ -1,5 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
+import type { inferParser } from '@trpc/server/unstable-core-do-not-import';
 import * as z from 'zod';
 
 function encodeCodec<TSchema extends z.ZodType>(schema: TSchema) {
@@ -32,6 +33,18 @@ test('output binds procedure return type to custom parser input type', async () 
       .query(() => ({
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
       })),
+    typedInputTransform: t.procedure
+      .input((v: { id: string }) => ({ id: Number(v.id) }))
+      .query((opts) => {
+        expectTypeOf(opts.input).toEqualTypeOf<{ id: number }>();
+        return opts.input;
+      }),
+    unannotatedInputValidator: t.procedure
+      .input((v) => {
+        expectTypeOf(v).toEqualTypeOf<unknown>();
+        return v as { id: string };
+      })
+      .query((opts) => opts.input),
     legacyUnknown: t.procedure
       .input((value: unknown) => value as { ok: boolean })
       .output((value: unknown) => value as { ok: boolean })
@@ -56,6 +69,14 @@ test('output binds procedure return type to custom parser input type', async () 
       .query(() => 'ok'),
   });
 
+  type CallableWithAssert = ((data: unknown) => { data?: number }) & {
+    assert(value: unknown): asserts value is number;
+  };
+  expectTypeOf<inferParser<CallableWithAssert>>().toEqualTypeOf<{
+    in: number | { data?: number };
+    out: number | { data?: number };
+  }>();
+
   await using ctx = testServerAndClientResource(appRouter);
 
   const codecResult = await ctx.client.byCodec.query();
@@ -65,6 +86,19 @@ test('output binds procedure return type to custom parser input type', async () 
   const asyncResult = await ctx.client.asyncTransform.query();
   expectTypeOf(asyncResult).toEqualTypeOf<{ createdAt: string }>();
   expect(asyncResult).toEqual({ createdAt: '2026-01-01T00:00:00.000Z' });
+
+  const typedInputResult = await ctx.client.typedInputTransform.query({
+    id: '42',
+  });
+  expectTypeOf(typedInputResult).toEqualTypeOf<{ id: number }>();
+  expect(typedInputResult).toEqual({ id: 42 });
+
+  const unannotatedInputResult =
+    await ctx.client.unannotatedInputValidator.query({
+      id: 'ok',
+    });
+  expectTypeOf(unannotatedInputResult).toEqualTypeOf<{ id: string }>();
+  expect(unannotatedInputResult).toEqual({ id: 'ok' });
 
   const legacyResult = await ctx.client.legacyUnknown.query({ ok: true });
   expectTypeOf(legacyResult).toEqualTypeOf<{ ok: boolean }>();

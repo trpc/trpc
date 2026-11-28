@@ -34,13 +34,10 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput> = (
-  input: unknown,
-) => Promise<TInput> | TInput;
-
-export type ParserCustomTransformerEsque<TInput, TParsedInput> = (
-  input: TInput,
-) => Promise<TParsedInput> | TParsedInput;
+export type ParserCustomValidatorEsque<TInput> = {
+  // method syntax, so a function with a typed parameter is assignable
+  bivarianceHack(input: unknown): Promise<TInput> | TInput;
+}['bivarianceHack'];
 
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
@@ -65,9 +62,7 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-export type OutputParser = Parser | ParserCustomTransformerEsque<never, any>;
-
-export type inferParser<TParser extends OutputParser> =
+export type inferParser<TParser extends Parser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
@@ -78,23 +73,20 @@ export type inferParser<TParser extends OutputParser> =
           in: $TIn;
           out: $TOut;
         }
-      : TParser extends (input: infer $TIn) => infer $TReturn
+      : TParser extends ParserWithoutInput<infer $InOut>
         ? {
-            in: unknown extends $TIn ? Awaited<$TReturn> : $TIn;
-            out: Awaited<$TReturn>;
+            in: TParser extends (input: infer $TIn) => unknown
+              ? unknown extends $TIn
+                ? $InOut
+                : $TIn
+              : $InOut;
+            out: $InOut;
           }
-        : TParser extends ParserWithoutInput<infer $InOut>
-          ? {
-              in: $InOut;
-              out: $InOut;
-            }
-          : never;
+        : never;
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
-export function getParseFn<TType>(
-  procedureParser: OutputParser,
-): ParseFn<TType> {
+export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
   const isStandardSchema = '~standard' in parser;
 

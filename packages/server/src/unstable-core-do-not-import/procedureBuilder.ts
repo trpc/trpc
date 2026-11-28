@@ -13,7 +13,7 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import type { inferParser, OutputParser, Parser } from './parser';
+import type { inferParser, Parser } from './parser';
 import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
@@ -78,7 +78,7 @@ export type CallerOverride<TContext> = (opts: {
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
-  output?: OutputParser;
+  output?: Parser;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
@@ -258,19 +258,6 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/server/validators#output-validators
    */
   output<$Parser extends Parser>(
-    schema: $Parser,
-  ): ProcedureBuilder<
-    TContext,
-    TMeta,
-    TContextOverrides,
-    TInputIn,
-    TInputOut,
-    IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
-    TCaller,
-    TErrorShape
-  >;
-  output<$Parser extends OutputParser>(
     schema: $Parser,
   ): ProcedureBuilder<
     TContext,
@@ -601,7 +588,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(output: OutputParser) {
+    output(output: Parser) {
       const parser = getParseFn(output);
       return createNewBuilder(_def, {
         output,
