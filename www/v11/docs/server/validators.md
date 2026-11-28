@@ -183,6 +183,39 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+You can also annotate the parameter type on a custom validator or transformer function for `.input()` or `.output()`. When the parameter has a narrower type than `unknown`, TypeScript infers that parameter type as the caller input or resolver return type, and infers the return type as the procedure `opts.input` or client output type.
+
+:::caution
+A typed parameter on `.input((value: MyInput) => ...)` **does not validate `value` at runtime** — it tells TypeScript to trust that the caller sends `MyInput`. Unless you check the value inside the function, runtime requests receive whatever JSON payload was sent over the wire. Use an unannotated `(value) => ...` parser with runtime checks or a [validation library](#library-integrations) when validating untrusted input.
+:::
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  parseEvent: publicProcedure
+    .input((value: { id: string }) => {
+      // Static type only — validate `value` manually if needed at runtime
+      return { id: Number(value.id) };
+    })
+    .output((value: { createdAt: Date }) => ({
+      createdAt: value.createdAt.toISOString(),
+    }))
+    .query((opts) => {
+      const { input } = opts;
+      //      ^?
+      return { createdAt: new Date(input.id) };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Library integrations
 
 tRPC works out of the box with a number of popular validation and parsing libraries, including any library conforming to [Standard Schema](https://standardschema.dev). The below are some examples of usage with validators which we officially maintain support for.

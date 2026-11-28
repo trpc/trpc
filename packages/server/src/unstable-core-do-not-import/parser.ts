@@ -34,10 +34,16 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput> = {
-  // method syntax, so a function with a typed parameter is assignable
-  bivarianceHack(input: unknown): Promise<TInput> | TInput;
-}['bivarianceHack'];
+/**
+ * A function type that also accepts a narrower parameter,
+ * so `(input: Foo) => T` is assignable and `(input) => T` still gets `unknown`.
+ */
+type FnWithAnyParam<TInput, TOutput> = { fn(input: TInput): TOutput }['fn'];
+
+export type ParserCustomValidatorEsque<TInput> = FnWithAnyParam<
+  unknown,
+  Promise<TInput> | TInput
+>;
 
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
