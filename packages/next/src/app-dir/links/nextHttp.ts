@@ -1,6 +1,7 @@
 import type {
   HTTPBatchLinkOptions,
   HTTPLinkOptions,
+  OperationContext,
   TRPCLink,
 } from '@trpc/client';
 import { httpBatchLink, httpLink } from '@trpc/client';
@@ -9,6 +10,18 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTags } from '../shared';
+
+/**
+ * The `context` fields the Next.js links read from each call.
+ * @public
+ */
+export interface NextLinkContext {
+  /**
+   * How many seconds Next.js caches this call's response, overriding the
+   * link's `revalidate`. `false` caches it until it's revalidated.
+   */
+  revalidate?: number | false;
+}
 
 export interface NextLinkBaseOptions {
   /**
@@ -47,7 +60,11 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   opts:
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
     | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
+): TRPCLink<
+  TRouter,
+  // its `headers` callback is given the operation, so may read any field
+  { context: OperationContext & NextLinkContext }
+> {
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;

@@ -1,4 +1,8 @@
-import { createTRPCUntypedClient } from '@trpc/client';
+import {
+  createTRPCClient,
+  createTRPCUntypedClient,
+  routerType,
+} from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag, unstable_cache } from 'next/cache';
@@ -247,6 +251,56 @@ describe('app-dir links attach hierarchical tags', () => {
         'page.home.header',
         'page.home.header?input={"size":"medium"}',
       ],
+    });
+  });
+});
+
+describe('app-dir links type `context.revalidate`', () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    post: t.procedure.query(() => 'post'),
+  });
+
+  test('experimental_nextHttpLink reads a typed per-call revalidate', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ result: { data: 'post' } }), {
+        headers: { 'content-type': 'application/json' },
+        status: 200,
+      }),
+    );
+    globalThis.fetch = fetchMock;
+    const client = createTRPCClient({
+      router: routerType<typeof router>(),
+      links: [
+        experimental_nextHttpLink({
+          url: 'http://localhost:3000/api/trpc',
+          revalidate: 60,
+        }),
+      ],
+    });
+
+    await client.post.query(undefined, { context: { revalidate: 5 } });
+    expect(fetchMock.mock.calls[0]![1]?.next?.revalidate).toBe(5);
+
+    void (() => {
+      // @ts-expect-error -- `revalidate` is a number or `false`
+      void client.post.query(undefined, { context: { revalidate: '5' } });
+      // `headers` may read any field, so others are taken too
+      void client.post.query(undefined, { context: { token: 't' } });
+    });
+  });
+
+  test('experimental_nextCacheLink declares `revalidate` too', () => {
+    const client = createTRPCClient({
+      router: routerType<typeof router>(),
+      links: [
+        experimental_nextCacheLink({ router, createContext: async () => ({}) }),
+      ],
+    });
+    void (() => {
+      void client.post.query(undefined, { context: { revalidate: false } });
+      // @ts-expect-error -- `revalidate` is a number or `false`
+      void client.post.query(undefined, { context: { revalidate: true } });
     });
   });
 });
