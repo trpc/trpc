@@ -1,5 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
-import type { TRPCRequestOptions } from '@trpc/client';
+import type { OperationContext, TRPCRequestOptions } from '@trpc/client';
 
 /**
  * Turn a set of optional properties into required
@@ -8,6 +8,17 @@ import type { TRPCRequestOptions } from '@trpc/client';
 export type WithRequired<TObj, TKey extends keyof TObj> = TObj & {
   [P in TKey]-?: TObj[P];
 };
+
+/**
+ * The `context` a procedure's calls take: what the client's links read, or
+ * anything when they don't type it.
+ * @internal
+ */
+export type inferResolverDefContext<TDef> = TDef extends {
+  linkContext: infer $Context extends object;
+}
+  ? $Context
+  : Record<string, unknown>;
 
 /**
  * @internal
@@ -45,12 +56,29 @@ export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
 >;
 
 /**
+ * A `context` that takes any field also takes what `OperationContext` is
+ * augmented with, as `trpc.context` always did. A strict one stays as is.
+ * @internal
+ */
+export type withOperationContext<TContext extends object> =
+  string extends keyof TContext ? OperationContext & TContext : TContext;
+
+/**
  * tRPC options for a single query or mutation, passed as `trpc`.
+ * `TLinkContext` is the `context` the client's links read, when it was
+ * created with `router: routerType<AppRouter>()`.
  * @public
  */
-export interface TRPCReactRequestOptions
+export interface TRPCReactRequestOptions<
+  TLinkContext extends object = Record<string, unknown>,
+>
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
-  extends Omit<TRPCRequestOptions, 'signal'> {
+  extends Omit<TRPCRequestOptions, 'signal' | 'context'> {
+  /**
+   * Context for the links, such as a flag a `splitLink` reads.
+   * @see https://trpc.io/docs/client/links#managing-context
+   */
+  context?: withOperationContext<TLinkContext>;
   /**
    * Opt out of SSR for this query by passing `ssr: false`
    */
@@ -65,11 +93,13 @@ export interface TRPCReactRequestOptions
  * Adds the `trpc` option to TanStack Query options.
  * @public
  */
-export interface TRPCQueryBaseOptions {
+export interface TRPCQueryBaseOptions<
+  TLinkContext extends object = Record<string, unknown>,
+> {
   /**
    * tRPC-related options
    */
-  trpc?: TRPCReactRequestOptions;
+  trpc?: TRPCReactRequestOptions<TLinkContext>;
 }
 
 /**

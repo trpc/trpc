@@ -114,9 +114,24 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: trpc.ts
+import { createTRPCClient, httpBatchLink, httpLink, routerType, splitLink } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from './server';
-export const { useTRPC } = createTRPCContext<AppRouter>();
+const url = 'http://localhost:3000';
+const makeTRPCClient = () =>
+  createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      splitLink({
+        context: { skipBatch: false },
+        condition: (op) => op.context.skipBatch,
+        true: httpLink({ url }),
+        false: httpBatchLink({ url }),
+      }),
+    ],
+  });
+// the client types `trpc.context`
+export const { useTRPC } = createTRPCContext({ client: makeTRPCClient });
 
 // @filename: MyComponent.tsx
 // ---cut---

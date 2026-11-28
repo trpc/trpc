@@ -17,6 +17,7 @@ import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
+  inferResolverDefContext,
   ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
@@ -36,6 +37,7 @@ interface UndefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object,
 >
   extends
     DistributiveOmit<
@@ -47,7 +49,7 @@ interface UndefinedTRPCQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {}
+    TRPCQueryBaseOptions<TLinkContext> {}
 
 interface UndefinedTRPCQueryOptionsOut<
   TQueryFnData,
@@ -75,6 +77,7 @@ interface DefinedTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object,
 >
   extends
     DistributiveOmit<
@@ -86,7 +89,7 @@ interface DefinedTRPCQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {}
+    TRPCQueryBaseOptions<TLinkContext> {}
 
 export interface DefinedTRPCQueryOptionsOut<
   TQueryFnData,
@@ -114,6 +117,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 >
   extends
     DistributiveOmit<
@@ -125,7 +129,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsIn<
       >,
       ReservedOptions
     >,
-    TRPCQueryBaseOptions {}
+    TRPCQueryBaseOptions<TLinkContext> {}
 
 export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
@@ -165,7 +169,8 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TFeatureFlags,
+      inferResolverDefContext<TDef>
     >,
   ): DefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -185,7 +190,8 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TFeatureFlags,
+      inferResolverDefContext<TDef>
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
@@ -205,7 +211,8 @@ export interface TRPCQueryOptions<
         transformer: TDef['transformer'];
         errorShape: TDef['errorShape'];
       }>,
-      TFeatureFlags
+      TFeatureFlags,
+      inferResolverDefContext<TDef>
     >,
   ): UndefinedTRPCQueryOptionsOut<
     TQueryFnData,
@@ -219,9 +226,15 @@ export interface TRPCQueryOptions<
 }
 
 type AnyTRPCQueryOptionsIn<TFeatureFlags extends FeatureFlags> =
-  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>
-  | UnusedSkipTokenTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>
-  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags>;
+  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags, any>
+  | UnusedSkipTokenTRPCQueryOptionsIn<
+      unknown,
+      unknown,
+      unknown,
+      TFeatureFlags,
+      any
+    >
+  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown, TFeatureFlags, any>;
 
 type AnyTRPCQueryOptionsOut<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,

@@ -294,10 +294,11 @@ export type DecoratedRouterRecord<
   TRoot extends AnyTRPCRootTypes,
   TRecord extends TRPCRouterRecord,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
-      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags> &
+      ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags, TLinkContext> &
           DecorateRouterKeyable<TFeatureFlags>
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
@@ -308,6 +309,7 @@ export type DecoratedRouterRecord<
               transformer: TRoot['transformer'];
               errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
+              linkContext: TLinkContext;
             }
           >
         : never
@@ -316,15 +318,21 @@ export type DecoratedRouterRecord<
 
 /**
  * The object returned by `useTRPC()` and `createTRPCOptionsProxy`. It mirrors your router and has query, mutation and subscription option helpers on each procedure.
+ *
+ * `TLinkContext` is the `context` the `trpc` options take: what the
+ * client's links read, when it was created with
+ * `router: routerType<AppRouter>()`.
  * @see https://trpc.io/docs/client/tanstack-react-query/usage
  */
 export type TRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 > = DecoratedRouterRecord<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record'],
-  TFeatureFlags
+  TFeatureFlags,
+  TLinkContext
 > &
   DecorateRouterKeyable<TFeatureFlags>;
 
@@ -369,11 +377,14 @@ export interface TRPCOptionsProxyOptionsInternal<
  */
 export interface TRPCOptionsProxyOptionsExternal<
   TRouter extends AnyTRPCRouter,
+  TLinkContext extends object = Record<string, unknown>,
 > {
   /**
-   * The tRPC client to call procedures with.
+   * The tRPC client to call procedures with. A client created with
+   * `router: routerType<AppRouter>()` types the `trpc.context` option from
+   * its links.
    */
-  client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
+  client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter, TLinkContext>;
 }
 
 /**
@@ -382,10 +393,11 @@ export interface TRPCOptionsProxyOptionsExternal<
 export type TRPCOptionsProxyOptions<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 > = TRPCOptionsProxyOptionsBase<TFeatureFlags> &
   (
     | TRPCOptionsProxyOptionsInternal<TRouter>
-    | TRPCOptionsProxyOptionsExternal<TRouter>
+    | TRPCOptionsProxyOptionsExternal<TRouter, TLinkContext>
   );
 
 type UtilsMethods =
@@ -397,10 +409,12 @@ type UtilsMethods =
 
 /**
  * Creates the options proxy without React context. Works on the server too.
+ * The router's type, and the `context` the client's links read, come from
+ * `client`.
  *
  * @example
  * ```ts
- * export const trpc = createTRPCOptionsProxy<AppRouter>({
+ * export const trpc = createTRPCOptionsProxy({
  *   client: trpcClient,
  *   queryClient,
  * });
@@ -412,9 +426,10 @@ type UtilsMethods =
 export function createTRPCOptionsProxy<
   TRouter extends AnyTRPCRouter,
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
+  TLinkContext extends object = Record<string, unknown>,
 >(
-  opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags>,
-): TRPCOptionsProxy<TRouter, TFeatureFlags> {
+  opts: TRPCOptionsProxyOptions<TRouter, TFeatureFlags, TLinkContext>,
+): TRPCOptionsProxy<TRouter, TFeatureFlags, TLinkContext> {
   const prefix = opts.keyPrefix;
 
   const callIt = (type: TRPCProcedureType): any => {

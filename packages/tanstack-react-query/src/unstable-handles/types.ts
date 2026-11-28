@@ -45,7 +45,7 @@ export interface TRPCQueryHandle<TDef extends ResolverDef = ResolverDef> {
    * Type-only: never present at runtime. Required, so only
    * `loadHandles` creates handles.
    */
-  readonly [handleDef]: TDef & { kind: 'query' };
+  readonly [handleDef]: inferEntryDef<TDef> & { kind: 'query' };
   readonly queryKey: HandleQueryKey<TDef, TDef['input'], 'query'>;
   /** The query's input. The key is absent when the input is `undefined`. */
   readonly input: TDef['input'];
@@ -62,7 +62,7 @@ export interface TRPCInfiniteQueryHandle<
    * Type-only: never present at runtime. Required, so only
    * `loadHandles` creates handles.
    */
-  readonly [handleDef]: TDef & { kind: 'infinite' };
+  readonly [handleDef]: inferEntryDef<TDef> & { kind: 'infinite' };
   readonly queryKey: HandleQueryKey<
     TDef,
     InfiniteHandleInput<TDef['input']>,
@@ -85,6 +85,17 @@ export type AnyTRPCHandle =
 export type TRPCEntryKind = 'prefetch' | 'fetch' | 'ensure';
 
 /**
+ * A procedure's types as entries and handles keep them: without the links'
+ * `context`, which they don't use and which loaders that check their data
+ * is serializable, such as TanStack Start's, reject.
+ * @internal
+ */
+export type inferEntryDef<TDef extends ResolverDef> = Pick<
+  TDef,
+  keyof ResolverDef
+>;
+
+/**
  * A query for `loadHandles()` to start, from `prefetchEntry`, `fetchEntry` or
  * `ensureEntry`.
  * Creating it starts nothing.
@@ -94,7 +105,7 @@ export interface TRPCQueryEntry<
   TKind extends TRPCEntryKind = TRPCEntryKind,
 > {
   /** Type-only: never present at runtime. */
-  readonly [entryDef]: { def: TDef; kind: TKind; type: 'query' };
+  readonly [entryDef]: { def: inferEntryDef<TDef>; kind: TKind; type: 'query' };
 }
 
 /**
@@ -106,7 +117,11 @@ export interface TRPCInfiniteQueryEntry<
   TKind extends TRPCEntryKind = TRPCEntryKind,
 > {
   /** Type-only: never present at runtime. */
-  readonly [entryDef]: { def: TDef; kind: TKind; type: 'infinite' };
+  readonly [entryDef]: {
+    def: inferEntryDef<TDef>;
+    kind: TKind;
+    type: 'infinite';
+  };
 }
 
 /** Any query or infinite query entry. */

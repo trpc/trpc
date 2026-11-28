@@ -1,4 +1,5 @@
 export { createTRPCContext } from './internals/Context';
+export type { CreateTRPCContextOptions } from './internals/Context';
 export type {
   TRPCOptionsProxy,
   inferInput,
