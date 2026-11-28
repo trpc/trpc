@@ -25,7 +25,7 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 #### 1. Configure client / `utils/trpc.ts`
 
-Give `splitLink` defaults for the `context` fields `condition` reads. Their types type the calls' `skipBatch`, and a call that leaves it out gets the default:
+`context` gives the fields `condition` reads, with their defaults:
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
@@ -70,7 +70,6 @@ const client = createTRPCClient({
 #### 2. Perform request without batching
 
 ```ts twoslash title='client.ts'
-// @errors: 2322
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -100,11 +99,6 @@ const postResult = proxy.posts.query(undefined, {
   },
 });
 
-proxy.posts.query(undefined, {
-  context: {
-    skipBatch: 'yes',
-  },
-});
 ```
 
 or:
@@ -145,6 +139,10 @@ export function MyComponent() {
   )
 }
 ```
+
+### Typed `context`
+
+With `context: { skipBatch: false }` and `router: routerType<AppRouter>()`, calls take `skipBatch?: boolean`, so passing anything else is a type error. A call that leaves it out gets `false`. Without `context`, `condition` can read any field and calls can pass any `context`.
 
 ## `splitLink` Options
 
