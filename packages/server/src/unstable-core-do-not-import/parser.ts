@@ -38,6 +38,10 @@ export type ParserCustomValidatorEsque<TInput> = (
   input: unknown,
 ) => Promise<TInput> | TInput;
 
+export type ParserCustomTransformerEsque<TInput, TParsedInput> = (
+  input: TInput,
+) => Promise<TParsedInput> | TParsedInput;
+
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
@@ -61,7 +65,9 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-export type inferParser<TParser extends Parser> =
+export type OutputParser = Parser | ParserCustomTransformerEsque<any, any>;
+
+export type inferParser<TParser extends OutputParser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
@@ -72,16 +78,23 @@ export type inferParser<TParser extends Parser> =
           in: $TIn;
           out: $TOut;
         }
-      : TParser extends ParserWithoutInput<infer $InOut>
+      : TParser extends (input: infer $TIn) => infer $TReturn
         ? {
-            in: $InOut;
-            out: $InOut;
+            in: unknown extends $TIn ? Awaited<$TReturn> : $TIn;
+            out: Awaited<$TReturn>;
           }
-        : never;
+        : TParser extends ParserWithoutInput<infer $InOut>
+          ? {
+              in: $InOut;
+              out: $InOut;
+            }
+          : never;
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export function getParseFn<TType>(
+  procedureParser: OutputParser,
+): ParseFn<TType> {
   const parser = procedureParser as any;
   const isStandardSchema = '~standard' in parser;
 

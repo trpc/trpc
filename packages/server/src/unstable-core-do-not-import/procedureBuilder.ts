@@ -13,7 +13,7 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import type { inferParser, Parser } from './parser';
+import type { inferParser, OutputParser, Parser } from './parser';
 import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
@@ -257,7 +257,7 @@ export interface ProcedureBuilder<
    * returns.
    * @see https://trpc.io/docs/server/validators#output-validators
    */
-  output<$Parser extends Parser>(
+  output<$Parser extends OutputParser>(
     schema: $Parser,
   ): ProcedureBuilder<
     TContext,
@@ -588,7 +588,7 @@ export function createBuilder<TContext, TMeta, TErrorShape = unknown>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(output: Parser) {
+    output(output: OutputParser) {
       const parser = getParseFn(output);
       return createNewBuilder(_def, {
         output,
