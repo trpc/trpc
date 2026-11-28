@@ -22,6 +22,7 @@ import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import type { WebReadableStreamEsque } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
+import type { TransformerOptions } from '../unstable-internals';
 import {
   fetchHTTPResponse,
   getBody,
@@ -46,8 +47,17 @@ import type {
  * The options of `httpSSELink`.
  * @see https://trpc.io/docs/client/links/httpSSELink#options
  */
-export type HTTPSSELinkOptions<TRoot extends AnyClientTypes> =
-  HTTPLinkBaseOptions<TRoot> & {
+export type HTTPSSELinkOptions<TRoot extends AnyClientTypes> = Pick<
+  HTTPLinkBaseOptions<TRoot>,
+  'fetch' | 'methodOverride' | 'pathSeparator'
+> &
+  TransformerOptions<TRoot> & {
+    /**
+     * The URL of your tRPC endpoint, such as `http://localhost:3000/trpc`,
+     * or a function that returns it. A function runs again on every
+     * reconnect.
+     */
+    url: string | URL | (() => string | URL | Promise<string | URL>);
     /**
      * Headers for each connection: an object, or a function of the operation
      * that returns them. A function runs again on every reconnect, so it can
@@ -201,6 +211,23 @@ function decodeEvent(
   }
 }
 
+/** The tRPC error in an error response's body, if it has one */
+function errorResponseOf(
+  json: unknown,
+  transformer: ResolvedHTTPLinkOptions['transformer'],
+) {
+  if (!isObject(json) || !('error' in json)) {
+    return null;
+  }
+  try {
+    const transformed = transformResult(json as never, transformer.output);
+    return transformed.ok ? null : transformed.error;
+  } catch {
+    // not a tRPC error, such as a proxy's `{ "error": "Bad gateway" }`
+    return null;
+  }
+}
+
 /** A retryable error carries on with `retry`; any other ends with `fatal` */
 const endWith = (
   code: TRPC_ERROR_CODE_NUMBER,
@@ -236,10 +263,13 @@ async function* subscribe(opts: {
   ): Promise<{ type: 'open'; body: WebReadableStreamEsque } | ConnectionEnd> {
     let res: Awaited<ReturnType<typeof fetchHTTPResponse>>;
     try {
-      const params = await resultOf(opts.link.connectionParams);
+      const [url, params] = await Promise.all([
+        resultOf(opts.link.url),
+        resultOf(opts.link.connectionParams),
+      ]);
       res = await fetchHTTPResponse({
         ...opts.resolved,
-        url: withConnectionParams(opts.resolved.url, params ?? null),
+        url: withConnectionParams(url.toString(), params ?? null),
         type: op.type,
         path: op.path,
         input: inputWithTrackedEventId(op.input, lastEventId),
@@ -268,15 +298,14 @@ async function* subscribe(opts: {
 
     if (!res.ok) {
       // a tRPC error response, or something else, such as a proxy's page
-      const json = await res.json().catch(() => null);
-      const transformed =
-        isObject(json) && 'error' in json
-          ? transformResult(json as never, transformer.output)
-          : null;
-      if (transformed && !transformed.ok) {
+      const errorResponse = errorResponseOf(
+        await res.json().catch(() => null),
+        transformer,
+      );
+      if (errorResponse) {
         return endWith(
-          transformed.error.error.code,
-          TRPCClientError.from(transformed.error, { meta: { response: res } }),
+          errorResponse.error.code,
+          TRPCClientError.from(errorResponse, { meta: { response: res } }),
         );
       }
       return {
@@ -425,7 +454,8 @@ async function* subscribe(opts: {
 export function httpSSELink<TInferrable extends InferrableClientTypes>(
   opts: HTTPSSELinkOptions<inferClientTypes<TInferrable>>,
 ): TRPCLink<TInferrable> {
-  const resolved = resolveHTTPLinkOptions(opts);
+  // `url` may be a function, so each connection resolves it
+  const resolved = resolveHTTPLinkOptions({ ...opts, url: '' });
 
   return () => {
     return ({ op }) => {

@@ -70,3 +70,17 @@ test('ignores an id with a NUL character', async () => {
     { event: 'message', data: '1', id: undefined },
   ]);
 });
+
+test('a chunk of only the LF of a CRLF ends nothing else', async () => {
+  expect(await parse(['data: a\r', '\n', '\n'])).toEqual([
+    { event: 'message', data: 'a', id: undefined },
+  ]);
+});
+
+test('reads a line split across many chunks', async () => {
+  const value = 'x'.repeat(10_000);
+  const chunks = `data: ${value}\n\n`.match(/[\s\S]{1,7}/g) ?? [];
+  expect(await parse(chunks)).toEqual([
+    { event: 'message', data: value, id: undefined },
+  ]);
+});

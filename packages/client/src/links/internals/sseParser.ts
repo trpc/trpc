@@ -47,16 +47,33 @@ async function* textChunks(body: WebReadableStreamEsque, signal: AbortSignal) {
 }
 
 /**
- * Lines split on `\r\n`, `\r` or `\n`. A `\r` at the end of a chunk waits
- * for the next one, which may start with its `\n`.
+ * Lines split on `\r\n`, `\r` or `\n`. Each chunk is scanned once: the
+ * start of an unfinished line is kept in pieces until a later chunk ends
+ * it, and a `\n` that starts a chunk after a `\r` is the rest of a `\r\n`.
  */
-async function* lines(chunks: AsyncIterable<string>) {
-  let buffer = '';
+async function* lines(chunks: AsyncIterable<string>): AsyncGenerator<string> {
+  const pending: string[] = [];
+  let afterCR = false;
   for await (const chunk of chunks) {
-    buffer += chunk;
-    const parts = buffer.split(/\r\n|\r(?!$)|\n/);
-    buffer = parts.pop() ?? '';
-    yield* parts;
+    if (chunk === '') {
+      continue;
+    }
+    const text: string =
+      afterCR && chunk.startsWith('\n') ? chunk.slice(1) : chunk;
+    afterCR = text.endsWith('\r');
+    if (text === '') {
+      continue;
+    }
+    const [first = '', ...rest] = text.split(/\r\n|\r|\n/);
+    pending.push(first);
+    const last = rest.pop();
+    if (last === undefined) {
+      continue;
+    }
+    yield pending.join('');
+    pending.length = 0;
+    yield* rest;
+    pending.push(last);
   }
 }
 

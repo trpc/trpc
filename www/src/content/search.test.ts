@@ -141,6 +141,22 @@ describe('searchDocs', () => {
     );
   });
 
+  it('puts a deprecated page after a listed one with the same name', () => {
+    const page = (slug: string, stability?: 'deprecated'): DocMeta => ({
+      description: '',
+      headings: [],
+      label: 'Batch',
+      section: 'Client',
+      slug,
+      stability,
+      title: 'Batch',
+    });
+    const both = [page('client/old', 'deprecated'), page('client/new')];
+    expect(searchDocs(both, 'batching', 20).map((hit) => hit.entry.id)).toEqual(
+      ['client/new', 'client/old'],
+    );
+  });
+
   it('places a heading under its pages and its h2', () => {
     const [hit] = searchDocs(docs, 'maxitems', 20);
     expect(hit?.entry).toMatchObject({

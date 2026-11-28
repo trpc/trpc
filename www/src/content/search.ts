@@ -379,6 +379,8 @@ export function searchDocs(
       (a, b) =>
         tierOf(b.entry, b.level) - tierOf(a.entry, a.level) ||
         b.level - a.level ||
+        // a deprecated page after its replacement, found by name or not
+        Number(a.entry.deprecated) - Number(b.entry.deprecated) ||
         b.score - a.score,
     )
     .slice(0, limit)

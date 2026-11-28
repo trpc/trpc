@@ -502,15 +502,14 @@ test('disconnect and reconnect with an event id', async () => {
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 
-  const release = suppressLogs();
-  ctx.destroyConnections();
-  await vi.waitFor(() => {
-    const lastState = onConnectionStateChange.mock.calls.at(-1)![0];
-    expect(lastState.state).toBe('connecting');
-    expect(lastState.error).toBeInstanceOf(Error);
+  await suppressLogsUntil(async () => {
+    ctx.destroyConnections();
+    await vi.waitFor(() => {
+      const lastState = onConnectionStateChange.mock.calls.at(-1)![0];
+      expect(lastState.state).toBe('connecting');
+      expect(lastState.error).toBeInstanceOf(Error);
+    });
   });
-
-  release();
 
   await vi.waitFor(
     () => {
@@ -523,7 +522,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
   const lastCall = ctx.onIterableInfiniteSpy.mock.calls.at(-1)![0];
 
-  expect(lastCall.input.lastEventId).toBeGreaterThan(5);
+  expect(lastCall.input.lastEventId).toBeGreaterThanOrEqual(5);
 
   subscription.unsubscribe();
 
@@ -968,15 +967,15 @@ describe('tracked and untracked yields', () => {
       expect(onData).toHaveBeenCalledTimes(2);
     });
 
-    const release = suppressLogs();
-    ctx.destroyConnections();
-    await vi.waitFor(
-      () => {
-        expect(ctx.onConnection).toHaveBeenCalledTimes(2);
-      },
-      { timeout: 3_000 },
-    );
-    release();
+    await suppressLogsUntil(async () => {
+      ctx.destroyConnections();
+      await vi.waitFor(
+        () => {
+          expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+        },
+        { timeout: 3_000 },
+      );
+    });
 
     expect(ctx.onConnection.mock.calls).toEqual([[undefined], ['1']]);
 

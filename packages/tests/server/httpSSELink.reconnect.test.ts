@@ -5,6 +5,7 @@ import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClient, httpSSELink } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 type Context = { version: string | undefined };
@@ -71,6 +72,7 @@ test('runs `headers` again for each reconnect and resumes from the last event id
 
   const onData = vi.fn<(args: { id: string; data: number }) => void>();
   const sub = client.numbers.subscribe(undefined, { onData });
+  using _sub = makeResource({}, () => sub.unsubscribe());
 
   await vi.waitFor(() => {
     expect(ctx.listenerCount()).toBe(1);
@@ -103,8 +105,6 @@ test('runs `headers` again for each reconnect and resumes from the last event id
     { id: '1', data: 1 },
     { id: '2', data: 2 },
   ]);
-
-  sub.unsubscribe();
 });
 
 test('a non-retryable error ends the subscription without reconnecting', async () => {
@@ -206,6 +206,7 @@ test('`methodOverride: POST` sends the input in the body', async () => {
 
   const onData = vi.fn<(args: { id: string; data: number }) => void>();
   const sub = client.numbers.subscribe({ lastEventId: '5' }, { onData });
+  using _sub = makeResource({}, () => sub.unsubscribe());
 
   await vi.waitFor(() => {
     expect(ctx.listenerCount()).toBe(1);
@@ -217,8 +218,6 @@ test('`methodOverride: POST` sends the input in the body', async () => {
   await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(1);
   });
-
-  sub.unsubscribe();
 });
 
 test('a stream the server ends reconnects without counting as a failure', async () => {
@@ -235,12 +234,71 @@ test('a stream the server ends reconnects without counting as a failure', async 
 
   const onError = vi.fn();
   const sub = client.numbers.subscribe(undefined, { onError });
+  using _sub = makeResource({}, () => sub.unsubscribe());
 
   // each response ends at `maxDurationMs` without the `return` event
   await vi.waitFor(() => {
     expect(ctx.onConnection.mock.calls.length).toBeGreaterThanOrEqual(4);
   });
   expect(onError).not.toHaveBeenCalled();
+});
 
-  sub.unsubscribe();
+test('retries an error response that is not a tRPC error', async () => {
+  await using ctx = setup({
+    allowMethodOverride: false,
+    maxDurationMs: undefined,
+  });
+  // a proxy's error, shaped like a tRPC error response but without a code
+  const fetchSpy = vi.fn(
+    async () =>
+      new Response(JSON.stringify({ error: { message: 'Bad gateway' } }), {
+        status: 502,
+      }),
+  );
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [
+      httpSSELink({
+        url: ctx.httpUrl,
+        fetch: fetchSpy,
+        reconnect: { attempts: 2, delay: () => 0 },
+      }),
+    ],
+  });
+
+  const onError = vi.fn<(err: TRPCClientError<typeof ctx.router>) => void>();
+  client.numbers.subscribe(undefined, { onError });
+
+  await vi.waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+  expect(onError.mock.calls[0]![0].message).toBe(
+    'The subscription request failed with an unexpected response',
+  );
+  // the first request and 2 retries
+  expect(fetchSpy).toHaveBeenCalledTimes(3);
+});
+
+test('runs a `url` function again for each reconnect', async () => {
+  await using ctx = setup({
+    allowMethodOverride: false,
+    maxDurationMs: undefined,
+  });
+  const url = vi.fn(async () => ctx.httpUrl);
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [httpSSELink({ url, reconnect: { delay: () => 0 } })],
+  });
+
+  const sub = client.numbers.subscribe(undefined, { onData: vi.fn() });
+  using _sub = makeResource({}, () => sub.unsubscribe());
+
+  await vi.waitFor(() => {
+    expect(ctx.onConnection).toHaveBeenCalledTimes(1);
+  });
+  await suppressLogsUntil(async () => {
+    ctx.destroyConnections();
+    await vi.waitFor(() => {
+      expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+    });
+  });
+  expect(url).toHaveBeenCalledTimes(2);
 });

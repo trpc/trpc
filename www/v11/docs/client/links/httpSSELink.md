@@ -13,7 +13,7 @@ order: 34
 
 - sends `headers`, and runs a `headers` function again on every reconnect, so a refreshed token is picked up without a `retryLink`
 - can send its input in a `POST` body with `methodOverride`
-- reads an error response, such as a `405` or a `401` from a middleware, as a `TRPCClientError` with its code
+- reads a tRPC error response, such as a `405`, or a `401` from a tRPC middleware, as a `TRPCClientError` with its code. Any other error response, such as a proxy's HTML page, is [retried](#reconnect)
 - needs no polyfill where `fetch` can stream a response
 
 It replaces [`httpSubscriptionLink`](./httpSubscriptionLink.md), and reads the same server responses: the server doesn't change.
@@ -258,7 +258,7 @@ Rename the import. The server, the router and `useSubscription` don't change. Th
 | `EventSource: EventSourcePolyfill` | Drop it, and the polyfill. |
 | `eventSourceOptions: { headers }` | `headers` |
 | `eventSourceOptions: { withCredentials: true }` | `fetch` with `credentials: 'include'`, as in [Headers and authentication](#headers) |
-| `url: async () => url` | `url` is a string. Move what changed per connection, such as a token, to `headers` or `connectionParams`. |
+| `url: async () => url` | Unchanged: a `url` function runs again on every reconnect. A token in the URL is better sent in `headers`. |
 | `retryLink` to refresh headers on reconnect | Not needed: `headers` runs on every reconnect. |
 | `connectionParams`, `transformer` | Unchanged. |
 
@@ -303,8 +303,11 @@ type HTTPHeaders = any;
 type Operation = any;
 // ---cut---
 type HTTPSSELinkOptions<TRoot extends AnyClientTypes> = {
-  /** The URL of your tRPC endpoint, such as `http://localhost:3000/trpc`. */
-  url: string | URL;
+  /**
+   * The URL of your tRPC endpoint, such as `http://localhost:3000/trpc`, or
+   * a function that returns it. A function runs on every reconnect.
+   */
+  url: string | URL | (() => string | URL | Promise<string | URL>);
   /**
    * Headers for each connection: an object, or a function of the
    * operation that returns them. A function runs on every reconnect.
