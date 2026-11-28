@@ -63,7 +63,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 ): TRPCLink<
   TRouter,
   // its `headers` callback is given the operation, so may read any field
-  { context: OperationContext & NextLinkContext; unsupported: 'subscription' }
+  { context: OperationContext & NextLinkContext }
 > {
   return (runtime) => {
     return (ctx) => {
