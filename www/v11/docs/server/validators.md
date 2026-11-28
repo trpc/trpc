@@ -183,6 +183,24 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+You can also annotate the parameter type on `.input()` or `.output()` to infer caller input or resolver return types. Note that a typed `.input((value: MyInput) => ...)` function **checks nothing at runtime** — it trusts what the client sends, so validate untrusted input inside the function or use a [validation library](#library-integrations):
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+// ---cut---
+export const appRouter = t.router({
+  parseEvent: publicProcedure
+    .input((value: { id: string }) => ({ id: Number(value.id) }))
+    .output((value: { createdAt: Date }) => value.createdAt.toISOString())
+    .query(({ input }) => ({ createdAt: new Date(input.id) })),
+});
+```
+
 ## Library integrations
 
 tRPC works out of the box with a number of popular validation and parsing libraries, including any library conforming to [Standard Schema](https://standardschema.dev). The below are some examples of usage with validators which we officially maintain support for.

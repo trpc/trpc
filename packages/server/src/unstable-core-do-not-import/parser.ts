@@ -34,9 +34,16 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput> = (
-  input: unknown,
-) => Promise<TInput> | TInput;
+/**
+ * A function type that also accepts a narrower parameter,
+ * so `(input: Foo) => T` is assignable and `(input) => T` still gets `unknown`.
+ */
+type FnWithAnyParam<TInput, TOutput> = { fn(input: TInput): TOutput }['fn'];
+
+export type ParserCustomValidatorEsque<TInput> = FnWithAnyParam<
+  unknown,
+  Promise<TInput> | TInput
+>;
 
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
@@ -74,7 +81,13 @@ export type inferParser<TParser extends Parser> =
         }
       : TParser extends ParserWithoutInput<infer $InOut>
         ? {
-            in: $InOut;
+            in: TParser extends ParserScaleEsque<any>
+              ? $InOut
+              : TParser extends (input: infer $TIn) => unknown
+                ? unknown extends $TIn
+                  ? $InOut
+                  : $TIn
+                : $InOut;
             out: $InOut;
           }
         : never;
