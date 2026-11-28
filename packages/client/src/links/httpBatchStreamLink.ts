@@ -2,7 +2,10 @@ import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
-import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
+import {
+  jsonlStreamConsumer,
+  pipelineMaxBatchSizeDefault,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import {
@@ -20,7 +23,8 @@ import {
   getUrl,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import type { Operation, TRPCLink } from './types';
+import type { PipeliningLoader } from './internals/pipeline';
+import type { Operation, OperationLink, TRPCLink } from './types';
 
 /**
  * Options for {@link httpBatchStreamLink}. Takes the same options as
@@ -56,13 +60,19 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
-  const maxItems = opts.maxItems ?? Infinity;
+  // A server that pipelines takes at most this many calls, if it sets no
+  // `maxBatchSize`
+  const maxItems =
+    opts.maxItems ??
+    (opts.experimental_pipelining ? pipelineMaxBatchSizeDefault : Infinity);
 
   return () => {
+    // Queries that read others' data, in the requests of what they read
+    const pipelining = opts.experimental_pipelining?.(opts, true);
     const batchLoader = (
       type: ProcedureType,
     ): BatchLoader<BatchStreamOperation, HTTPResult> => {
-      return {
+      const loader: PipeliningLoader<BatchStreamOperation> = {
         validate(batchOps) {
           if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
@@ -84,7 +94,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        async fetch(batchOps) {
+        async fetch(batchOps, request) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
@@ -111,6 +121,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             trpcAcceptHeaderKey: opts.streamHeader ?? 'trpc-accept',
             getUrl,
             getBody,
+            ...request,
             inputs,
             path,
             headers() {
@@ -171,7 +182,13 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             async (key): Promise<HTTPResult> => {
               let json: TRPCResponse = await Promise.resolve(head[key]);
 
-              if ('result' in json) {
+              // A slot that is `null` or missing is no envelope: it goes on
+              // as it is, as `httpBatchLink` gives it
+              if (
+                typeof json === 'object' &&
+                json !== null &&
+                'result' in json
+              ) {
                 /**
                  * Not very pretty, but we need to unwrap nested data as promises
                  * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
@@ -195,13 +212,14 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           return promises;
         },
       };
+      return pipelining?.loader(loader) ?? loader;
     };
 
     const query = dataLoader(batchLoader('query'));
     const mutation = dataLoader(batchLoader('mutation'));
 
     const loaders = { query, mutation };
-    return ({ op }) => {
+    const handler: OperationLink<TRouter> = ({ op }) => {
       return observable((observer) => {
         /* istanbul ignore if -- @preserve */
         if (op.type === 'subscription') {
@@ -265,6 +283,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
         };
       });
     };
+    return pipelining?.link(handler) ?? handler;
   };
 }
 

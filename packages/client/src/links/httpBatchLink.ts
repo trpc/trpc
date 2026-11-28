@@ -1,6 +1,9 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { transformResult } from '@trpc/server/unstable-core-do-not-import';
+import {
+  pipelineMaxBatchSizeDefault,
+  transformResult,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import {
@@ -16,7 +19,8 @@ import {
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import type { Operation, TRPCLink } from './types';
+import type { PipeliningLoader } from './internals/pipeline';
+import type { Operation, OperationLink, TRPCLink } from './types';
 
 /**
  * A terminating link that batches calls made in the same tick into one HTTP
@@ -29,13 +33,19 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
-  const maxItems = opts.maxItems ?? Infinity;
+  // A server that pipelines takes at most this many calls, if it sets no
+  // `maxBatchSize`
+  const maxItems =
+    opts.maxItems ??
+    (opts.experimental_pipelining ? pipelineMaxBatchSizeDefault : Infinity);
 
   return () => {
+    // Queries that read others' data, in the requests of what they read
+    const pipelining = opts.experimental_pipelining?.(opts, false);
     const batchLoader = (
       type: ProcedureType,
     ): BatchLoader<Operation, HTTPResult> => {
-      return {
+      const loader: PipeliningLoader<Operation> = {
         validate(batchOps) {
           if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
@@ -57,13 +67,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        async fetch(batchOps) {
+        async fetch(batchOps, request) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
           const signal = allAbortSignals(...batchOps.map((op) => op.signal));
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,
+            ...request,
             path,
             inputs,
             type,
@@ -90,13 +101,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           return result;
         },
       };
+      return pipelining?.loader(loader) ?? loader;
     };
 
     const query = dataLoader(batchLoader('query'));
     const mutation = dataLoader(batchLoader('mutation'));
 
     const loaders = { query, mutation };
-    return ({ op }) => {
+    const handler: OperationLink<TRouter> = ({ op }) => {
       return observable((observer) => {
         /* istanbul ignore if -- @preserve */
         if (op.type === 'subscription') {
@@ -157,5 +169,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         };
       });
     };
+    return pipelining?.link(handler) ?? handler;
   };
 }

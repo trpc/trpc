@@ -163,17 +163,19 @@ export const getBody: GetBody = (opts) => {
 };
 
 export type Requester = (
-  opts: HTTPBaseRequestOptions & {
-    headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-  },
+  opts: HTTPBaseRequestOptions &
+    Partial<ContentOptions> & {
+      headers: () => HTTPHeaders | Promise<HTTPHeaders>;
+    },
 ) => Promise<HTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
-    ...opts,
     contentTypeHeader: 'application/json',
     getUrl,
     getBody,
+    // A pipelined batch has a URL and body of its own
+    ...opts,
   });
 };
 

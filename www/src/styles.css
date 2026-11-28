@@ -26,6 +26,20 @@ html {
   }
 }
 
+/* Data that just arrived in a kitchen-sink showcase
+   (`src/routes/kitchen-sink`): use it as `motion-safe:animate-arrive`, so
+   it doesn't move for a reader who asked for reduced motion. */
+@theme {
+  --animate-arrive: arrive 250ms ease-out;
+
+  @keyframes arrive {
+    from {
+      opacity: 0.4;
+      scale: 1.15;
+    }
+  }
+}
+
 /* The sponsor cloud's newest sponsors (`SponsorCloud`), who pop in once it
    comes into view: `pop` from hidden, or `boing` when they were already
    showing, and `shimmer` after; then the reader's (`you`). Each element sets its own `animation-delay`: a theme variable is

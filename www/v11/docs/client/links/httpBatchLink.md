@@ -75,6 +75,7 @@ type DataTransformerOptions = any;
 type HTTPHeaders = Record<string, string | string[]>;
 type Operation = { id: number; type: 'query' | 'mutation' | 'subscription'; path: string; input: unknown };
 type NonEmptyArray<T> = [T, ...T[]];
+import type { experimental_Pipelining } from '@trpc/client';
 // ---cut---
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
   /**
@@ -87,6 +88,13 @@ export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
    * @default Infinity
    */
   maxItems?: number;
+  /**
+   * Lets a query read parts of its input from the data of another query in
+   * the same batch. Pass `experimental_pipelining()` from `@trpc/client`.
+   * The server must set `experimental_allowPipelining: true`
+   * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
+   */
+  experimental_pipelining?: experimental_Pipelining;
 }
 
 export interface HTTPLinkOptions {
@@ -211,6 +219,46 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 ```
+
+## Pipelining (experimental) {#pipelining}
+
+Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. [`experimental_load()`](/docs/client/vanilla/nested-queries) uses it for the queries of a page.
+
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import {
+  createTRPCClient,
+  experimental_pipelining,
+  httpBatchLink,
+} from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      experimental_pipelining: experimental_pipelining(),
+    }),
+  ],
+});
+```
+
+- You pass it in, so the link's own module has none of its code. A bundler that tree-shakes leaves it out of an app that doesn't import it. The CommonJS build of `@trpc/client` loads it with the package.
+
+- The server must set `experimental_allowPipelining`. Without it, the server runs nothing of such a request.
+- The server [limits](/docs/client/vanilla/nested-queries#limits) what such a request can make it do: how deep a chain is, how many values a call reads, how long they are, and how many times it runs a procedure. The link plans with the default limits: a call that reads more than 16 values, or is more than 3 calls deep, waits for the data it reads and makes a request of its own. With `experimental_pipelining`, `maxItems` is 100 by default, as many calls as a server takes without `maxBatchSize`. That holds for every batch the link sends, ordinary ones too: requests keep their format, but a batch of more than 100 calls goes as two. Set `maxItems` to send more in one. The server checks the rest once the data has arrived. A call it refuses before any of its runs ran, such as for a list too long for `maxBatchSize`, falls back to a separate query. A list inside an item that goes over once other runs ran rejects its items' queries with the server's error instead, so a result can have some items with errors.
+- Other requests are sent as they are without the option.
+- A query that `experimental_load()` sends this way is still an operation of its own: the links before this one see it, with blanks in its input where the server fills in what it reads. See [What your links see](/docs/client/vanilla/nested-queries#links).
+- `httpBatchStreamLink` takes the same option, and sends each result back when it is ready.
+
+See [Nested queries in one request](/docs/client/vanilla/nested-queries#one-request).
 
 ## Disabling request batching
 

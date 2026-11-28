@@ -11,6 +11,8 @@ import type {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
+import type { experimental_PipelinePolicy } from './pipeline/policy';
+import type { PipelineCallInput } from './pipeline/server';
 
 /**
  * @deprecated Use `Headers` instead. This will be removed in v12.
@@ -113,6 +115,23 @@ export interface TRPCRequestInfo {
    */
   isBatchCall: boolean;
   /**
+   * Only on a pipelined batch: what the server lets it make it do.
+   * @internal
+   */
+  experimental_pipeline?: {
+    policy: experimental_PipelinePolicy;
+    /**
+     * Reads the batch's `pipe`, which says which parts of the calls' inputs
+     * to fill in from earlier calls' data. The `pipe` isn't validated.
+     */
+    getPipe: () => Promise<unknown>;
+    /**
+     * Reads a call's input by the call's index: as the client sent it, taken
+     * before the transformer reads any input, and as the transformer read it
+     */
+    getInput: (index: number) => Promise<PipelineCallInput>;
+  };
+  /**
    * The procedure calls in the request.
    */
   calls: TRPCRequestInfoProcedureCall[];
@@ -191,10 +210,32 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    */
   allowBatching?: boolean;
   /**
+   * Whether to accept pipelined batches: batches where a query reads parts of
+   * its input from the data of an earlier query. The server fills them in, so
+   * a query that depends on another costs no extra round trip. Every call
+   * still validates its input and runs its middleware, and every run counts
+   * towards `maxBatchSize`, which is 100 for a pipelined batch if it isn't
+   * set. Set `experimental_pipelining` on the client's batch link too.
+   *
+   * `true` accepts them with the limits of `experimental_pipelineBudget()`.
+   * A policy decides what to allow: a call or a run it refuses fails by
+   * itself with an `experimental_TRPCPipelineRefusal`, and the rest of the
+   * batch runs.
+   *
+   * Experimental: it may change in a minor release.
+   * @see https://trpc.io/docs/client/vanilla/nested-queries#one-request
+   * @see https://trpc.io/docs/client/vanilla/nested-queries#limits
+   * @default false
+   */
+  experimental_allowPipelining?:
+    | boolean
+    | experimental_PipelinePolicy<inferRouterContext<TRouter>>;
+  /**
    * The most calls a batch can have. Larger batches get a 400 error. Set
-   * the client's `maxItems` to the same or a lower number.
+   * the client's `maxItems` to the same or a lower number. In a pipelined
+   * batch, the most runs: a call for every item runs once for each item.
    * @see https://trpc.io/docs/client/links/httpBatchLink#limiting-batch-size
-   * @default unlimited
+   * @default unlimited, or 100 for a pipelined batch
    */
   maxBatchSize?: number;
 }

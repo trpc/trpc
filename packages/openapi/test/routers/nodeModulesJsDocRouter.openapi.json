@@ -167,6 +167,11 @@
             "type": "boolean",
             "description": "Whether the request is a batch."
           },
+          "experimental_pipeline": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Only on a pipelined batch: what the server lets it make it do."
+          },
           "calls": {
             "type": "array",
             "items": {

@@ -22,6 +22,12 @@ export type TrpcRequestInfo = {
    */
   isBatchCall: boolean;
   /**
+   * Only on a pipelined batch: what the server lets it make it do.
+   */
+  experimental_pipeline?: {
+    [key: string]: never;
+  };
+  /**
    * The procedure calls in the request.
    */
   calls: Array<TrpcRequestInfoProcedureCall>;

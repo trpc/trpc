@@ -163,6 +163,12 @@ for await (const value of iterable) {
 }
 ```
 
+## Pipelining (experimental) {#pipelining}
+
+With `experimental_pipelining: experimental_pipelining()`, a query that needs another query's data for its input goes in the same request, and the server fills in the input. Each result still comes back when it is ready. See [`httpBatchLink`'s option](/docs/client/links/httpBatchLink#pipelining) and [Nested queries in one request](/docs/client/vanilla/nested-queries#one-request).
+
+With a plain client, [`experimental_load()`](/docs/client/vanilla/nested-queries#without-tanstack-query) gives each query a promise of its own, also each item's query of [a query for every item](/docs/client/vanilla/nested-queries#per-item). With this link, each promise settles as soon as its result arrives. With `httpBatchLink`, the queries in a request settle together, with its whole response.
+
 ## Compatibility (client-side)
 
 ### Browsers
