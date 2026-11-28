@@ -212,8 +212,11 @@ export type inferLinksDeclaredContext<TLinks extends readonly unknown[]> =
  */
 export type inferLinksContext<TLinks extends readonly unknown[]> =
   inferLinksDeclaredContext<TLinks> extends infer $Context
-    ? keyof $Context extends never
-      ? NoLinkReadsContext
-      : // optional: a call can leave out its options altogether
-        Simplify<Partial<$Context>>
+    ? // per alternative, so a union with no common keys keeps them
+      $Context extends unknown
+      ? keyof $Context extends never
+        ? NoLinkReadsContext
+        : // optional: a call can leave out its options altogether
+          Simplify<Partial<$Context>>
+      : never
     : never;

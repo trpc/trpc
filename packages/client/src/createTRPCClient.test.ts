@@ -88,6 +88,25 @@ test('a link can declare a union of contexts', () => {
     // @ts-expect-error -- `mode` is `'fast'` or `'slow'`
     void client.flaky.query('a', { context: { mode: 'other' } });
   });
+
+  // alternatives with no keys in common keep each one's
+  const authLink: TRPCLink<
+    AppRouter,
+    { context: { token: string } | { apiKey: string } }
+  > = () => (opts) => opts.next(opts.op);
+  const auth = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      authLink,
+      localLink({ router: appRouter, createContext: async () => ({}) }),
+    ],
+  });
+  void (() => {
+    void auth.flaky.query('a', { context: { token: 't' } });
+    void auth.flaky.query('a', { context: { apiKey: 'k' } });
+    // @ts-expect-error -- no link reads `nope`
+    void auth.flaky.query('a', { context: { nope: 1 } });
+  });
 });
 
 test('no context when no link reads one', () => {
