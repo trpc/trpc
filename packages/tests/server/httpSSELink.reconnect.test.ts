@@ -384,26 +384,26 @@ test('empty reads do not keep the inactivity timeout from firing', async () => {
     allowMethodOverride: false,
     maxDurationMs: undefined,
   });
-  const fetchSpy = vi.fn(
-    async () =>
-      new Response(
-        new ReadableStream<Uint8Array>({
-          start(controller) {
-            controller.enqueue(
-              new TextEncoder().encode(
-                'event: connected\ndata: {"reconnectAfterInactivityMs":100}\n\n',
-              ),
-            );
-            const timer = setInterval(
-              () => controller.enqueue(new Uint8Array()),
-              20,
-            );
-            setTimeout(() => clearInterval(timer), 1_000);
-          },
-        }),
-        { headers: { 'content-type': 'text/event-stream' } },
-      ),
-  );
+  const fetchSpy = vi.fn(async () => {
+    let timer: ReturnType<typeof setInterval> | undefined = undefined;
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode(
+            'event: connected\ndata: {"reconnectAfterInactivityMs":100}\n\n',
+          ),
+        );
+        timer = setInterval(() => controller.enqueue(new Uint8Array()), 20);
+      },
+      // the link cancels the body when it reconnects or unsubscribes
+      cancel() {
+        clearInterval(timer);
+      },
+    });
+    return new Response(body, {
+      headers: { 'content-type': 'text/event-stream' },
+    });
+  });
   const client = createTRPCClient<typeof ctx.router>({
     links: [httpSSELink({ url: ctx.httpUrl, fetch: fetchSpy })],
   });
