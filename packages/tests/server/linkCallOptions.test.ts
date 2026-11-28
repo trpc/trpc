@@ -249,14 +249,18 @@ test('splitLink takes the context both branches read', () => {
   });
 });
 
-test('splitLink’s `condition` declares the context it reads', () => {
+test('splitLink’s `context` defaults declare what `condition` reads', async () => {
+  const { appRouter } = factory();
   const url = 'http://localhost';
   const client = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
       splitLink({
-        condition: ({ context }: { context: { skipBatch?: boolean } }) =>
-          context.skipBatch === true,
+        context: { skipBatch: false },
+        condition: (op) => {
+          expectTypeOf(op.context.skipBatch).toEqualTypeOf<boolean>();
+          return op.context.skipBatch;
+        },
         true: httpLink({ url }),
         false: httpBatchLink({ url }),
       }),
@@ -272,16 +276,20 @@ test('splitLink’s `condition` declares the context it reads', () => {
   });
 
   // only `condition` reads a context here
+  const seen: unknown[] = [];
   const local = localLink({
-    router: factory().appRouter,
+    router: appRouter,
     createContext: async () => ({}),
   });
   const strict = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
       splitLink({
-        condition: ({ context }: { context: { useCache?: boolean } }) =>
-          context.useCache === true,
+        context: { useCache: false },
+        condition: (op) => {
+          seen.push(op.context.useCache);
+          return op.context.useCache;
+        },
         true: local,
         false: local,
       }),
@@ -294,6 +302,16 @@ test('splitLink’s `condition` declares the context it reads', () => {
     // @ts-expect-error -- no link reads `nope`
     void strict.flaky.query('a', { context: { nope: 1 } });
   });
+
+  // a field the call leaves out takes its default
+  await strict.flaky.query('a').catch(() => null);
+  await strict.flaky
+    .query('b', { context: { useCache: undefined } })
+    .catch(() => null);
+  await strict.flaky
+    .query('c', { context: { useCache: true } })
+    .catch(() => null);
+  expect(seen).toEqual([false, false, true]);
 });
 
 test('the client still fits where integrations take TRPCClient<AppRouter>', () => {

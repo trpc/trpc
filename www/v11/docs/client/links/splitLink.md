@@ -25,7 +25,7 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 #### 1. Configure client / `utils/trpc.ts`
 
-Type the `context` that `condition` reads, and calls get a typed `skipBatch`:
+Give `splitLink` defaults for the `context` fields `condition` reads. Their types type the calls' `skipBatch`, and a call that leaves it out gets the default:
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
@@ -51,9 +51,9 @@ const client = createTRPCClient({
   router: routerType<AppRouter>(),
   links: [
     splitLink({
-      // the `context` this condition reads
-      condition: ({ context }: { context: { skipBatch?: boolean } }) =>
-        context.skipBatch === true,
+      // the `context` this condition reads, with its defaults
+      context: { skipBatch: false },
+      condition: (op) => op.context.skipBatch,
       // when condition is true, use normal request
       true: httpLink({
         url,
@@ -86,8 +86,8 @@ const proxy = createTRPCClient({
   router: routerType<AppRouter>(),
   links: [
     splitLink({
-      condition: ({ context }: { context: { skipBatch?: boolean } }) =>
-        context.skipBatch === true,
+      context: { skipBatch: false },
+      condition: (op) => op.context.skipBatch,
       true: httpLink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),
@@ -148,7 +148,7 @@ export function MyComponent() {
 
 ## `splitLink` Options
 
-The `splitLink` function takes an options object that has three fields: `condition`, `true`, and `false`.
+The `splitLink` function takes an options object with `condition`, `true` and `false`, and optionally `context`.
 
 ```ts twoslash
 type AnyRouter = any;
@@ -157,8 +157,13 @@ type TRPCLink<T> = any;
 // ---cut---
 declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   /**
-   * Picks the chain for an operation. Type its `context` to declare the
-   * fields it reads; untyped, it may read any field.
+   * Values for the `context` fields `condition` reads, used when a call
+   * leaves one out. Their types are the fields calls can pass. Without it,
+   * `condition` may read any field.
+   */
+  context?: Record<string, unknown>;
+  /**
+   * Picks the chain for an operation.
    */
   condition: (op: Operation) => boolean;
   /**
