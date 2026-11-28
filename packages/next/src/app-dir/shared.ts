@@ -109,10 +109,11 @@ export function generateCacheTag(procedurePath: string, input: any) {
 /**
  * @internal
  */
-export function generateCacheTags(
-  procedurePath: string,
-  input?: any,
-): string[] {
+export function generateCacheTags(opts: {
+  procedurePath: string;
+  input: any;
+}): string[] {
+  const { procedurePath } = opts;
   if (!procedurePath) {
     return [];
   }
@@ -121,8 +122,8 @@ export function generateCacheTags(
   for (let i = 1; i <= parts.length; i++) {
     tags.push(parts.slice(0, i).join('.'));
   }
-  if (input !== undefined) {
-    tags.push(`${procedurePath}?input=${JSON.stringify(input)}`);
+  if (opts.input !== undefined) {
+    tags.push(`${procedurePath}?input=${JSON.stringify(opts.input)}`);
   }
   return tags;
 }
