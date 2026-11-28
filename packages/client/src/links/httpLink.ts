@@ -22,7 +22,7 @@ import {
   isOctetType,
   type HTTPHeaders,
   type Operation,
-  type OperationContext,
+  type AugmentedOperationContext,
   type TRPCLink,
 } from './types';
 
@@ -85,8 +85,8 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<
   TRouter,
-  // its `headers` callback is given the operations, so may read any field
-  { context: OperationContext }
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext }
 > {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   return () => {

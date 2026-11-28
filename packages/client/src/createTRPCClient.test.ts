@@ -8,8 +8,19 @@ import { httpLink } from './links/httpLink';
 import { localLink } from './links/localLink';
 import { loggerLink } from './links/loggerLink';
 import { retryLink } from './links/retryLink';
-import type { NoLinkReadsContext, TRPCLink } from './links/types';
+import type {
+  NoLinkReadsContext,
+  OperationContext,
+  TRPCLink,
+} from './links/types';
 import { routerType } from './routerType';
+
+declare module './links/types' {
+  interface OperationContext {
+    token?: string;
+    skipLog?: boolean;
+  }
+}
 
 type ContextOf<TMethod> = TMethod extends (
   input: any,
@@ -43,7 +54,7 @@ test('calls take the context their links declare', () => {
   // call can leave out its options
   const traceLink: TRPCLink<AppRouter, { context: { traceId: string } }> =
     () => (opts) => {
-      expectTypeOf(opts.op.context).toEqualTypeOf<Record<string, unknown>>();
+      expectTypeOf(opts.op.context).toEqualTypeOf<OperationContext>();
       return opts.next(opts.op);
     };
   const client = createTRPCClient({
@@ -126,27 +137,31 @@ test('no context when no link reads one', () => {
   });
 });
 
-test('links that give the operation to a callback may read any context', () => {
+test('links that give the operation to a callback take the fields added to `OperationContext`', () => {
   // `headers({ op })`, `eventSourceOptions({ op })`, `enabled(op)` and
-  // `retry({ op })` are user code that can read any field
+  // `retry({ op })` read what the app added to `OperationContext`
   const client = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
       loggerLink({
-        enabled: (opts) =>
-          opts.direction === 'down' || opts.context['skipLog'] !== true,
+        enabled: (opts) => opts.direction === 'down' || !opts.context.skipLog,
       }),
       retryLink({ retry: () => true }),
       httpLink({
         url: 'http://localhost',
-        headers: ({ op }) => ({ authorization: String(op.context['token']) }),
+        headers: ({ op }) => ({ authorization: op.context.token ?? '' }),
       }),
     ],
   });
+  expectTypeOf<keyof ContextOf<typeof client.flaky.query>>().toEqualTypeOf<
+    'token' | 'skipLog' | 'retry'
+  >();
   void (() => {
     void client.flaky.query('a', {
       context: { token: 't', skipLog: true, retry: () => false },
     });
+    // @ts-expect-error -- nothing declares `nope`
+    void client.flaky.query('a', { context: { nope: 1 } });
     // @ts-expect-error -- declared fields stay typed
     void client.flaky.query('a', { context: { retry: true } });
   });

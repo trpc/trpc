@@ -24,6 +24,19 @@ export {
 export interface OperationContext extends Record<string, unknown> {}
 
 /**
+ * The fields added to `OperationContext` with module augmentation, without
+ * its `[key: string]: unknown`. Links that hand the operation to your code
+ * declare these, so calls take only fields something declared.
+ * @see https://trpc.io/docs/client/links#managing-context
+ * @public
+ */
+export type AugmentedOperationContext = {
+  [
+    TKey in keyof OperationContext as string extends TKey ? never : TKey
+  ]: OperationContext[TKey];
+};
+
+/**
  * A procedure call as it goes through the links.
  * @internal
  */

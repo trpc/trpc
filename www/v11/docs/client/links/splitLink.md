@@ -142,7 +142,7 @@ export function MyComponent() {
 
 ### Typed `context`
 
-With `context: { skipBatch: false }` and `router: routerType<AppRouter>()`, calls take `skipBatch?: boolean`, so passing anything else is a type error. A call that leaves it out gets `false`. Without `context`, `condition` can read any field and calls can pass any `context`.
+With `context: { skipBatch: false }` and `router: routerType<AppRouter>()`, calls take `skipBatch?: boolean`, so passing anything else is a type error. A call that leaves it out, or passes `undefined`, gets `false`. A field the call passes replaces its default whole: nested objects aren't merged. Without `context`, calls take only what the branches' links declare.
 
 ## `splitLink` Options
 
@@ -157,7 +157,7 @@ declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   /**
    * Values for the `context` fields `condition` reads, used when a call
    * leaves one out. Their types are the fields calls can pass. Without it,
-   * `condition` may read any field.
+   * calls take only what the branches' links declare.
    */
   context?: Record<string, unknown>;
   /**

@@ -2,6 +2,7 @@ import { observable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import type {
+  AugmentedOperationContext,
   inferLinksDeclaredContext,
   Operation,
   OperationContext,
@@ -75,8 +76,8 @@ type SplitLink<
  * Sends each operation down one of two link chains, based on `condition`.
  *
  * Calls take the `context` both chains read. Give `context` defaults to
- * declare the fields `condition` reads; without them, `condition` may read
- * any field.
+ * declare the fields `condition` reads; without them, `condition` reads
+ * the fields added to `OperationContext`.
  * @example
  * splitLink({
  *   context: { skipBatch: false },
@@ -95,7 +96,8 @@ export function splitLink<
   opts: SplitLinkOptions<TRouter, TTrue, TFalse, OperationContext> & {
     context?: never;
   },
-): SplitLink<TRouter, TTrue, TFalse, OperationContext>;
+  // `condition` may read the fields added to `OperationContext`
+): SplitLink<TRouter, TTrue, TFalse, AugmentedOperationContext>;
 export function splitLink<
   TRouter extends AnyRouter,
   const TTrue extends SplitLinkBranch<TRouter>,
@@ -105,7 +107,8 @@ export function splitLink<
   opts: SplitLinkOptions<TRouter, TTrue, TFalse, TContext> & {
     /**
      * Values for the `context` fields `condition` reads, used when a call
-     * leaves one out. Their types are the fields calls can pass.
+     * leaves one out. Their types are the fields calls can pass. A field a
+     * call passes replaces its default whole: nested objects aren't merged.
      */
     context: TContext;
   },

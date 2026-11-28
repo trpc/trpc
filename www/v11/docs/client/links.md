@@ -214,8 +214,45 @@ await client.greeting.query(undefined, { context: { traceId: 123 } });
 
 - Declared fields are type-checked, and always optional.
 - A link that declares nothing, such as `TRPCLink<AppRouter>`, may read any field, so calls can pass any `context`. Declare `{ context: {} }` for a link that reads none. When every link reads none, passing a field is an error.
-- Links that hand the operation to your code may read any field too: the HTTP links (`headers`, `eventSourceOptions`), `loggerLink` (`enabled`, `logger`), `retryLink` (`retry`) and `splitLink` (`condition`, unless you give `splitLink` [`context` defaults](./links/splitLink.md#typed-context)).
+- Links that hand the operation to your code, such as the HTTP links' `headers` or `retryLink`'s `retry`, declare only the fields added to `OperationContext`.
 - With `createTRPCClient<AppRouter>()`, calls take any `context`, as before.
+
+To pass a field that such a callback reads, add it to `OperationContext`:
+
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  greeting: t.procedure.query(() => 'hello'),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
+import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
+import type { AppRouter } from './server';
+
+declare module '@trpc/client' {
+  interface OperationContext {
+    token?: string;
+  }
+}
+
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      headers: ({ opList }) => ({
+        authorization: opList[0].context.token ?? '',
+      }),
+    }),
+  ],
+});
+
+await client.greeting.query(undefined, { context: { token: 'abc' } });
+```
 
 ## Common mistakes
 

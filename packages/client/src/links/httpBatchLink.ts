@@ -16,7 +16,7 @@ import {
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
-import type { Operation, OperationContext, TRPCLink } from './types';
+import type { AugmentedOperationContext, Operation, TRPCLink } from './types';
 
 /**
  * A terminating link that batches calls made in the same tick into one HTTP
@@ -28,8 +28,8 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<
   TRouter,
-  // its `headers` callback is given the operations, so may read any field
-  { context: OperationContext }
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext }
 > {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;

@@ -13,7 +13,7 @@ import type {
 import type { TRPCClientError } from '../TRPCClientError';
 import type {
   Operation,
-  OperationContext,
+  AugmentedOperationContext,
   OperationResultEnvelope,
   TRPCLink,
 } from './types';
@@ -236,8 +236,8 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
 ): TRPCLink<
   TRouter,
-  // `enabled` and `logger` are given the operation, so may read any field
-  { context: OperationContext }
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext }
 > {
   const { enabled = () => true } = opts;
 

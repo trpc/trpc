@@ -107,10 +107,9 @@ test('splitLink takes the context both branches read', () => {
     ],
   });
   void (() => {
-    // the condition may read anything; the branches' fields stay typed
-    void split.flaky.query('a', {
-      context: { skipBatch: true, retry: () => false },
-    });
+    void split.flaky.query('a', { context: { retry: () => false } });
+    // @ts-expect-error -- an untyped `condition` doesn't declare `skipBatch`
+    void split.flaky.query('a', { context: { skipBatch: true } });
     // @ts-expect-error -- `retry` takes a function
     void split.flaky.query('a', { context: { retry: 1 } });
   });
@@ -209,4 +208,30 @@ test('a symbol-keyed `context` field takes its default only when left out', asyn
     .query('b', { context: { [useCache]: true } })
     .catch(() => null);
   expect(seen).toEqual([false, true]);
+});
+
+test('a call passes a nested `context` field whole', () => {
+  const { appRouter } = factory();
+  const local = localLink({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      splitLink({
+        context: { cache: { ttl: 60, tags: ['posts'] } },
+        condition: (op) => op.context.cache.ttl > 0,
+        true: local,
+        false: local,
+      }),
+    ],
+  });
+  void (() => {
+    void client.flaky.query('a', {
+      context: { cache: { ttl: 5, tags: [] } },
+    });
+    // @ts-expect-error -- defaults aren't merged into it, so it needs `tags`
+    void client.flaky.query('a', { context: { cache: { ttl: 5 } } });
+  });
 });
