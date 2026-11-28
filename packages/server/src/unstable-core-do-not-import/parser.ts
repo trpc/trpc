@@ -65,7 +65,7 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
-export type OutputParser = Parser | ParserCustomTransformerEsque<any, any>;
+export type OutputParser = Parser | ParserCustomTransformerEsque<never, any>;
 
 export type inferParser<TParser extends OutputParser> =
   TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>

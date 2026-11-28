@@ -36,6 +36,24 @@ test('output binds procedure return type to custom parser input type', async () 
       .input((value: unknown) => value as { ok: boolean })
       .output((value: unknown) => value as { ok: boolean })
       .query((opts) => opts.input),
+    unannotatedValidator: t.procedure
+      .output((value): string => {
+        expectTypeOf(value).toEqualTypeOf<unknown>();
+        if (typeof value === 'string') {
+          return value;
+        }
+        throw new Error('Output is not a string');
+      })
+      .query(() => 'ok'),
+    unannotatedInferredReturn: t.procedure
+      .output((value) => {
+        expectTypeOf(value).toEqualTypeOf<unknown>();
+        if (typeof value === 'string') {
+          return value;
+        }
+        throw new Error('Output is not a string');
+      })
+      .query(() => 'ok'),
   });
 
   await using ctx = testServerAndClientResource(appRouter);
@@ -51,4 +69,12 @@ test('output binds procedure return type to custom parser input type', async () 
   const legacyResult = await ctx.client.legacyUnknown.query({ ok: true });
   expectTypeOf(legacyResult).toEqualTypeOf<{ ok: boolean }>();
   expect(legacyResult).toEqual({ ok: true });
+
+  const unannotatedResult = await ctx.client.unannotatedValidator.query();
+  expectTypeOf(unannotatedResult).toEqualTypeOf<string>();
+  expect(unannotatedResult).toEqual('ok');
+
+  const inferredResult = await ctx.client.unannotatedInferredReturn.query();
+  expectTypeOf(inferredResult).toEqualTypeOf<string>();
+  expect(inferredResult).toEqual('ok');
 });

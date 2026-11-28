@@ -78,7 +78,7 @@ export type CallerOverride<TContext> = (opts: {
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
-  output?: Parser;
+  output?: OutputParser;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
@@ -257,6 +257,19 @@ export interface ProcedureBuilder<
    * returns.
    * @see https://trpc.io/docs/server/validators#output-validators
    */
+  output<$Parser extends Parser>(
+    schema: $Parser,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
+    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TCaller,
+    TErrorShape
+  >;
   output<$Parser extends OutputParser>(
     schema: $Parser,
   ): ProcedureBuilder<
