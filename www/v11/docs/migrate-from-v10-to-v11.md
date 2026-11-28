@@ -249,9 +249,9 @@ We want your feedback on this feature, so please try it out and let us know what
 
 👉 [See more in the `httpBatchStreamLink` docs](./client/links/httpBatchStreamLink.md#generators)
 
-### `resolveHTTPRequest` has been replaced by `resolveRequest` that uses Fetch APIs (rarely breaking)
+### `resolveHTTPResponse` has been replaced by `resolveResponse` that uses Fetch APIs (rarely breaking)
 
-The function `resolveHTTPRequest` has been replaced by `resolveRequest` which uses the Fetch API - [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)/[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response).
+The function `resolveHTTPResponse` has been replaced by `resolveResponse` which uses the Fetch API - [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)/[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response).
 
 This is a breaking change for HTTP-adapters, but should not affect you as a user.
 
