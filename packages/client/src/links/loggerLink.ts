@@ -11,7 +11,12 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
-import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
+import type {
+  Operation,
+  AugmentedOperationContext,
+  OperationResultEnvelope,
+  TRPCLink,
+} from './types';
 
 type ConsoleEsque = {
   log: (...args: any[]) => void;
@@ -229,7 +234,11 @@ const defaultLogger =
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
-): TRPCLink<TRouter> {
+): TRPCLink<
+  TRouter,
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext }
+> {
   const { enabled = () => true } = opts;
 
   const colorMode =

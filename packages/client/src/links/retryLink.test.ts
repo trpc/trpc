@@ -1,9 +1,15 @@
 // @vitest-environment node
 import { EventEmitter } from 'node:events';
+import { testServerAndClientResource } from '../__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { z } from 'zod';
+import { createTRPCClient } from '../createTRPCClient';
 import { createTRPCUntypedClient } from '../createTRPCUntypedClient';
+import { routerType } from '../routerType';
 import { TRPCClientError } from '../TRPCClientError';
+import { httpBatchLink } from './httpBatchLink';
 import { retryLink } from './retryLink';
 
 describe.each([1, 3])('after %i retries', (failures) => {
@@ -212,3 +218,78 @@ test.each(['retry', 'retryDelayMs'] as const)(
     expect(cleanup).toHaveBeenCalledTimes(1);
   },
 );
+
+function factory() {
+  const flakyCalls = vi.fn();
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    flaky: t.procedure.input(z.string()).query((opts) => {
+      flakyCalls();
+      if (flakyCalls.mock.calls.length === 1) {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }
+      return opts.input;
+    }),
+    onEvent: t.procedure.subscription(async function* () {
+      yield 1;
+    }),
+  });
+  return { appRouter, flakyCalls };
+}
+type AppRouter = ReturnType<typeof factory>['appRouter'];
+
+test('`context.retry` replaces the link’s `retry` for that call', async () => {
+  const { appRouter, flakyCalls } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      // never retry
+      retryLink({ retry: () => false }),
+      httpBatchLink({ url: ctx.httpUrl }),
+    ],
+  });
+
+  await expect(client.flaky.query('a')).rejects.toMatchObject({
+    data: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+  expect(flakyCalls).toHaveBeenCalledTimes(1);
+
+  flakyCalls.mockClear();
+  const retry = vi.fn((opts: { attempts: number }) => opts.attempts < 3);
+  expect(await client.flaky.query('b', { context: { retry } })).toBe('b');
+  expect(flakyCalls).toHaveBeenCalledTimes(2);
+  expect(retry).toHaveBeenCalledTimes(1);
+
+  void (() => {
+    void client.flaky.query('c', {
+      context: {
+        retry: (opts) => {
+          expectTypeOf(opts.attempts).toEqualTypeOf<number>();
+          return false;
+        },
+      },
+    });
+  });
+});
+
+test('a `context.retry` that isn’t a function is left to the link’s `retry`', async () => {
+  // e.g. a flag the link's own `retry` reads, as apps did before
+  // `context.retry` took a function
+  const { appRouter, flakyCalls } = factory();
+  await using ctx = testServerAndClientResource(appRouter);
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      retryLink({
+        retry: (opts) =>
+          opts.op.context['retry'] !== false && opts.attempts < 3,
+      }),
+      httpBatchLink({ url: ctx.httpUrl }),
+    ],
+  });
+
+  await expect(
+    client.flaky.query('a', { context: { retry: false } }),
+  ).rejects.toMatchObject({ data: { code: 'INTERNAL_SERVER_ERROR' } });
+  expect(flakyCalls).toHaveBeenCalledTimes(1);
+});

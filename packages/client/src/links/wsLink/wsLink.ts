@@ -34,7 +34,7 @@ export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: {} }> {
   const { client } = opts;
   const transformer = getTransformer(opts.transformer);
   return () => {

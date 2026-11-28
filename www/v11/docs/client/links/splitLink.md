@@ -25,6 +25,8 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 #### 1. Configure client / `utils/trpc.ts`
 
+`context` gives the fields `condition` reads, with their defaults:
+
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -38,19 +40,20 @@ import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
+  routerType,
   splitLink,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const url = `http://localhost:3000`;
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
-      condition(op) {
-        // check for context property `skipBatch`
-        return Boolean(op.context.skipBatch);
-      },
+      // the `context` this condition reads, with its defaults
+      context: { skipBatch: false },
+      condition: (op) => op.context.skipBatch,
       // when condition is true, use normal request
       true: httpLink({
         url,
@@ -76,12 +79,14 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink, splitLink, httpLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, splitLink, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const proxy = createTRPCClient<AppRouter>({
+const proxy = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
-      condition(op) { return Boolean(op.context.skipBatch); },
+      context: { skipBatch: false },
+      condition: (op) => op.context.skipBatch,
       true: httpLink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),
@@ -93,6 +98,7 @@ const postResult = proxy.posts.query(undefined, {
     skipBatch: true,
   },
 });
+
 ```
 
 or:
@@ -134,9 +140,13 @@ export function MyComponent() {
 }
 ```
 
+### Typed `context`
+
+With `context: { skipBatch: false }` and `router: routerType<AppRouter>()`, calls take `skipBatch?: boolean`, so passing anything else is a type error. A call that leaves it out, or passes `undefined`, gets `false`. A field the call passes replaces its default whole: nested objects aren't merged. Without `context`, calls take only what the branches' links declare.
+
 ## `splitLink` Options
 
-The `splitLink` function takes an options object that has three fields: `condition`, `true`, and `false`.
+The `splitLink` function takes an options object with `condition`, `true` and `false`, and optionally `context`.
 
 ```ts twoslash
 type AnyRouter = any;
@@ -144,6 +154,15 @@ type Operation = any;
 type TRPCLink<T> = any;
 // ---cut---
 declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+  /**
+   * Values for the `context` fields `condition` reads, used when a call
+   * leaves one out. Their types are the fields calls can pass. Without it,
+   * calls take only what the branches' links declare.
+   */
+  context?: Record<string, unknown>;
+  /**
+   * Picks the chain for an operation.
+   */
   condition: (op: Operation) => boolean;
   /**
    * The link to execute next if the test function returns `true`.

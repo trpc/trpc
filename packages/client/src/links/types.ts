@@ -2,6 +2,7 @@ import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
   Maybe,
+  Simplify,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -23,16 +24,32 @@ export {
 export interface OperationContext extends Record<string, unknown> {}
 
 /**
+ * The fields added to `OperationContext` with module augmentation, without
+ * its `[key: string]: unknown`. Links that hand the operation to your code
+ * declare these, so calls take only fields something declared.
+ * @see https://trpc.io/docs/client/links#managing-context
+ * @public
+ */
+export type AugmentedOperationContext = {
+  [
+    TKey in keyof OperationContext as string extends TKey ? never : TKey
+  ]: OperationContext[TKey];
+};
+
+/**
  * A procedure call as it goes through the links.
  * @internal
  */
-export type Operation<TInput = unknown> = {
+export type Operation<
+  TInput = unknown,
+  TContext extends object = OperationContext,
+> = {
   /** A number unique to the call within its client. */
   id: number;
   type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
-  context: OperationContext;
+  context: TContext;
   signal: Maybe<AbortSignal>;
 };
 
@@ -116,11 +133,103 @@ export type OperationLink<
 }) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
+ * What a link declares about itself, for clients created with
+ * `createTRPCClient({ router: routerType<AppRouter>(), links })`.
+ * @see https://trpc.io/docs/client/links#typing-call-options
+ * @public
+ */
+export interface LinkDecl {
+  /**
+   * The fields the link reads from `op.context`. Calls can pass them, typed,
+   * as `.query(input, { context })`. `{}` declares that the link reads none.
+   */
+  context?: object;
+}
+
+/**
  * A link: a step every call goes through, such as logging or sending it
  * over HTTP. It's called once when the client is created.
+ *
+ * `TDecl` says what it reads from `op.context`. A link that doesn't
+ * declare it may read any context.
  * @see https://trpc.io/docs/client/links#creating-a-custom-link
  * @public
  */
-export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime,
-) => OperationLink<TInferrable>;
+export type TRPCLink<
+  TInferrable extends InferrableClientTypes,
+  TDecl extends LinkDecl = LinkDecl,
+> = ((opts: TRPCClientRuntime) => OperationLink<TInferrable>) & {
+  /** Type-only: what the link declares. Never set. */
+  readonly '~decl'?: TDecl;
+};
+
+type UnionToIntersection<TUnion> = (
+  TUnion extends any ? (arg: TUnion) => void : never
+) extends (arg: infer TIntersection) => void
+  ? TIntersection
+  : never;
+
+// A function with no `~decl`, such as an inline `() => ({ op, next }) =>
+// next(op)`, declares nothing either.
+type inferLinkDecl<TLink> = TLink extends unknown
+  ? '~decl' extends keyof TLink
+    ? NonNullable<TLink['~decl' & keyof TLink]>
+    : LinkDecl
+  : never;
+
+type inferDeclContext<TDecl> = TDecl extends unknown
+  ? // a link that declares nothing may read any context
+    LinkDecl extends TDecl
+    ? OperationContext
+    : TDecl extends { context: infer $Context }
+      ? $Context
+      : {}
+  : never;
+
+declare const noLinkReadsContext: unique symbol;
+
+/**
+ * The call options' `context` when no link reads one: passing any field is
+ * an error.
+ * @public
+ */
+// A type literal, not an interface: like `Record<string, unknown>`, it
+// then fits where any context is taken, so procedures and handles from
+// clients typed both ways stay compatible.
+export type NoLinkReadsContext = {
+  readonly [noLinkReadsContext]?: never;
+};
+
+/**
+ * The fields the links in `TLinks` declare they read, merged, for a link
+ * that wraps other links to declare.
+ * @public
+ */
+export type inferLinksDeclaredContext<TLinks extends readonly unknown[]> =
+  // boxed per link, so a link that declares a union of contexts keeps it
+  // instead of having its alternatives intersected
+  UnionToIntersection<
+    TLinks[number] extends infer $Link
+      ? $Link extends unknown
+        ? { context: inferDeclContext<inferLinkDecl<$Link>> }
+        : never
+      : never
+  > extends { context: infer $Context }
+    ? $Context
+    : {};
+
+/**
+ * The `context` calls can pass: the fields every link in `TLinks` reads,
+ * merged.
+ * @public
+ */
+export type inferLinksContext<TLinks extends readonly unknown[]> =
+  inferLinksDeclaredContext<TLinks> extends infer $Context
+    ? // per alternative, so a union with no common keys keeps them
+      $Context extends unknown
+      ? keyof $Context extends never
+        ? NoLinkReadsContext
+        : // optional: a call can leave out its options altogether
+          Simplify<Partial<$Context>>
+      : never
+    : never;

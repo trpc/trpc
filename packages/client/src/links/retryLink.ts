@@ -5,20 +5,40 @@ import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../TRPCClientError';
-import type { Operation, TRPCLink } from './types';
+import type { AugmentedOperationContext, Operation, TRPCLink } from './types';
+
+/**
+ * The `context` fields `retryLink` reads from each call.
+ * @public
+ */
+export interface RetryLinkContext<TInferrable extends InferrableClientTypes> {
+  /**
+   * Decides whether to retry this call, in place of the link's `retry`.
+   * @example client.post.upsert.mutate(input, { context: { retry: (opts) => opts.attempts <= 3 } })
+   */
+  retry?: RetryFn<TInferrable>;
+}
+
+type RetryFn<TInferrable extends InferrableClientTypes> = (
+  opts: RetryFnOptions<TInferrable>,
+) => boolean;
 
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
-   * The retry function
+   * The retry function. A call's `context.retry` replaces it for that call.
    */
-  retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+  retry: RetryFn<TInferrable>;
   /**
    * The delay between retries in ms (defaults to 0)
    */
   retryDelayMs?: (attempt: number) => number;
 }
 
-interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
+/**
+ * What a `retry` function is given.
+ * @public
+ */
+export interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The operation that failed
    */
@@ -35,13 +55,17 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 
 /**
  * Retries failed operations. Subscriptions resume from the last tracked event
- * id.
+ * id. A call can pass its own `retry` in `context`.
  *
  * @see https://trpc.io/docs/client/links/retryLink
  */
 export function retryLink<TInferrable extends InferrableClientTypes>(
   opts: RetryLinkOptions<TInferrable>,
-): TRPCLink<TInferrable> {
+): TRPCLink<
+  TInferrable,
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext & RetryLinkContext<TInferrable> }
+> {
   // initialized config
   return () => {
     // initialized in app
@@ -79,7 +103,13 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
 
           const subscription = callOpts.next(op).subscribe({
             error(error) {
-              const shouldRetry = opts.retry({
+              const callRetry = op.context['retry'];
+              // a `retry` that isn't a function is a flag for the link's own `retry`
+              const retry =
+                typeof callRetry === 'function'
+                  ? (callRetry as RetryFn<TInferrable>)
+                  : opts.retry;
+              const shouldRetry = retry({
                 op,
                 attempts,
                 error,

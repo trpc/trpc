@@ -86,7 +86,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
  */
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
-): TRPCLink<TRouter> {
+): TRPCLink<TRouter, { context: {} }> {
   const transformer = getTransformer(opts.transformer);
 
   const transformChunk = (chunk: unknown) => {

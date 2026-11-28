@@ -22,7 +22,7 @@ import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import type { Operation, TRPCLink } from './types';
+import type { AugmentedOperationContext, Operation, TRPCLink } from './types';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,
@@ -79,7 +79,11 @@ export function httpSubscriptionLink<
     inferClientTypes<TInferrable>,
     TEventSource
   >,
-): TRPCLink<TInferrable> {
+): TRPCLink<
+  TInferrable,
+  // its callbacks may read the fields added to `OperationContext`
+  { context: AugmentedOperationContext }
+> {
   const transformer = getTransformer(opts.transformer);
   const pathSeparator = resolvePathSeparator(opts.pathSeparator);
 
