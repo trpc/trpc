@@ -39,6 +39,8 @@ export const OptionalInputRouter = t.router({
   nullishOutput: t.procedure
     .output(z.string().nullish())
     .query(() => undefined),
+
+  nullableOutput: t.procedure.output(z.string().nullable()).query(() => 'name'),
 });
 
 export type OptionalInputRouter = typeof OptionalInputRouter;

@@ -1079,17 +1079,16 @@ function isVoidLikeInput(inputType: Type | null): boolean {
 }
 
 /**
- * Whether `undefined` is among the values an input type accepts.
+ * Whether `undefined` is among the values a type accepts.
  *
  * `any` and `unknown` accept `undefined` too, but without an `Undefined` flag
  * or union member of their own, so they are checked explicitly.
  */
-function acceptsUndefined(inputType: Type | null): boolean {
-  if (!inputType) {
+function acceptsUndefined(type: Type | null): boolean {
+  if (!type) {
     return false;
   }
-  // `void` is `undefined` as far as the wire is concerned.
-  return includesUndefined(inputType) || isUnknownLikeType(inputType);
+  return includesUndefined(type) || isUnknownLikeType(type);
 }
 
 interface ProcedureDef {
@@ -1684,17 +1683,15 @@ const DEFAULT_ERROR_SCHEMA: SchemaObject = {
  * returns `undefined`, so `data` is only required when its type rules
  * that out.
  */
-function wrapInSuccessEnvelope(
-  outputSchema: SchemaObject | null,
-  outputOptional: boolean,
-): SchemaObject {
+function wrapInSuccessEnvelope(proc: ProcedureInfo): SchemaObject {
+  const { outputSchema } = proc;
   const hasOutput = outputSchema !== null && isNonEmptySchema(outputSchema);
   const resultSchema: SchemaObject = {
     type: 'object',
     properties: {
       ...(hasOutput ? { data: outputSchema } : {}),
     },
-    ...(hasOutput && !outputOptional ? { required: ['data'] } : {}),
+    ...(hasOutput && !proc.outputOptional ? { required: ['data'] } : {}),
   };
   return {
     type: 'object',
@@ -1720,10 +1717,7 @@ function buildProcedureOperation(
         description: 'Successful response',
         content: {
           'application/json': {
-            schema: wrapInSuccessEnvelope(
-              proc.outputSchema,
-              proc.outputOptional,
-            ),
+            schema: wrapInSuccessEnvelope(proc),
           },
         },
       },

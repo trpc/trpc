@@ -100,4 +100,10 @@ describe('generateOpenAPIDocument optional procedure output', () => {
     const doc = await getDoc();
     expect(getResultObject(doc, 'requiredOutput').required).toEqual(['data']);
   });
+
+  it('still requires the data of a response whose output is nullable', async () => {
+    const doc = await getDoc();
+    // `null` is sent as a body, so only `undefined` can make the data optional.
+    expect(getResultObject(doc, 'nullableOutput').required).toEqual(['data']);
+  });
 });
