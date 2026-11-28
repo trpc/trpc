@@ -1,8 +1,10 @@
-import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
-import type { TRPCClient } from '@trpc/client';
-import { createTRPCClient, httpBatchLink, routerType } from '@trpc/client';
+import { testServerAndClientResource } from './__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
+import type { TRPCClient } from './createTRPCClient';
+import { createTRPCClient } from './createTRPCClient';
+import { httpBatchLink } from './links/httpBatchLink';
+import { routerType } from './routerType';
 
 const t = initTRPC.create();
 const appRouter = t.router({
