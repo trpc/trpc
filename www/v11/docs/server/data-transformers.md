@@ -14,7 +14,7 @@ skill:
     - client-setup
   description: "Configure SuperJSON transformer on both server initTRPC.create({
     transformer: superjson }) and every client terminating link (httpBatchLink,
-    httpLink, httpBatchStreamLink, wsLink, httpSubscriptionLink), including
+    httpLink, httpBatchStreamLink, wsLink, httpSSELink), including
     each splitLink branch, to support Date, Map, Set, BigInt over the wire.
     Transformer must match on both sides. In v11, transformer goes on
     individual links, not the client constructor. Also devalue, custom and
@@ -95,7 +95,7 @@ export type AppRouter = typeof appRouter;
 import {
   createTRPCClient,
   httpBatchLink,
-  httpSubscriptionLink,
+  httpSSELink,
   splitLink,
 } from '@trpc/client';
 import type { AppRouter } from './server';
@@ -105,7 +105,7 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({
+      true: httpSSELink({
         url: 'http://localhost:3000',
         transformer: superjson,
       }),

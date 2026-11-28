@@ -3,7 +3,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import {
   createTRPCClient,
   httpBatchStreamLink,
-  httpSubscriptionLink,
+  httpSSELink,
   localLink,
   loggerLink,
   splitLink,
@@ -44,7 +44,7 @@ const getLinks = createIsomorphicFn()
       loggerLink(),
       splitLink({
         condition: (op) => op.type === 'subscription',
-        true: httpSubscriptionLink({
+        true: httpSSELink({
           url,
           /**
            * @see https://trpc.io/docs/v11/data-transformers

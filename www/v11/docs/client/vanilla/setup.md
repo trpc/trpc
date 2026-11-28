@@ -128,7 +128,7 @@ const frodo = await client.createUser.mutate({ name: 'Frodo' });
 
 ### 5. Use subscriptions
 
-Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSubscriptionLink`](../links/httpSubscriptionLink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Either pass callbacks, or leave them out and iterate the result with `for await`:
+Given a [subscription procedure](../../server/subscriptions.md) and a link that supports subscriptions, such as [`httpSSELink`](../links/httpSSELink.md) or [`wsLink`](../links/wsLink.md), `.subscribe()` starts the subscription. Either pass callbacks, or leave them out and iterate the result with `for await`:
 
 ```ts twoslash title='client.ts'
 // @target: esnext
@@ -143,10 +143,10 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import { createTRPCClient, httpSSELink } from '@trpc/client';
 import type { AppRouter } from './server';
 const client = createTRPCClient<AppRouter>({
-  links: [httpSubscriptionLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpSSELink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut---
 // with callbacks

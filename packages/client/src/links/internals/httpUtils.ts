@@ -83,7 +83,7 @@ function arrayToDict(array: unknown[]) {
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
-  subscription: 'PATCH',
+  subscription: 'GET',
 } as const;
 
 export interface HTTPResult {

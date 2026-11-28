@@ -719,7 +719,7 @@ const mutationKey = trpc.path.to.mutation.mutationKey();
 
 TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions).
 Available for all subscription procedures. Provides a type-safe identity function for constructing options that can be passed to `useSubscription`.
-Note that you need to have either the [`httpSubscriptionLink`](/docs/client/links/httpSubscriptionLink) or [`wsLink`](/docs/client/links/wsLink) configured in your tRPC client to use subscriptions.
+Note that you need to have either the [`httpSSELink`](/docs/client/links/httpSSELink) or [`wsLink`](/docs/client/links/wsLink) configured in your tRPC client to use subscriptions.
 
 ```tsx twoslash
 // @jsx: react-jsx

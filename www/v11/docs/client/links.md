@@ -13,16 +13,17 @@ skill:
     - client-setup
   description: "Configure the tRPC client link chain: httpLink, httpBatchLink,
     httpBatchStreamLink, splitLink, loggerLink, wsLink, createWSClient,
-    httpSubscriptionLink, unstable_localLink, retryLink. Choose the right
+    httpSSELink, unstable_localLink, retryLink. Choose the right
     terminating link, route subscriptions or non-batched calls with splitLink,
     pass per-operation context, and write custom links. Link options: url,
     headers, transformer, maxURLLength, maxItems, methodOverride,
-    connectionParams, EventSource ponyfill."
+    connectionParams, reconnect. httpSubscriptionLink is deprecated in favour
+    of httpSSELink."
   references:
     - client/links/httpBatchLink
     - client/links/httpLink
     - client/links/httpBatchStreamLink
-    - client/links/httpSubscriptionLink
+    - client/links/httpSSELink
     - client/links/wsLink
     - client/links/localLink
     - client/links/splitLink
@@ -130,7 +131,7 @@ The `links` array that you add to the tRPC client config should have at least on
 | [`httpBatchLink`](./links/httpBatchLink.md) | Queries and mutations. Calls made together, for example in a `Promise.all`, are sent as one HTTP request. |
 | [`httpLink`](./links/httpLink.md) | One HTTP request per call, for example to [skip batching](./links/splitLink.md#disable-batching-for-certain-requests) or to send [`FormData` and binary inputs](../server/non-json-content-types.md). |
 | [`httpBatchStreamLink`](./links/httpBatchStreamLink.md) | Batching, but each response is streamed as soon as it's ready. Required for procedures that return async generators or promises nested in the output. |
-| [`httpSubscriptionLink`](./links/httpSubscriptionLink.md) | Subscriptions over Server-sent Events. |
+| [`httpSSELink`](./links/httpSSELink.md) | Subscriptions over Server-sent Events. |
 | [`wsLink`](./links/wsLink.md) | Any operation over a WebSocket. |
 | [`unstable_localLink`](./links/localLink.md) | Calling a router in the same process, without HTTP. |
 
@@ -148,7 +149,7 @@ export type AppRouter = typeof appRouter;
 import {
   createTRPCClient,
   httpBatchLink,
-  httpSubscriptionLink,
+  httpSSELink,
   loggerLink,
   splitLink,
 } from '@trpc/client';
@@ -159,7 +160,7 @@ export const trpc = createTRPCClient<AppRouter>({
     loggerLink(),
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({ url: 'http://localhost:3000' }),
+      true: httpSSELink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),
   ],
@@ -180,7 +181,7 @@ For an example use case, see [Disable batching for certain requests](/docs/clien
 
 - **No terminating link at the end of the chain.** Calls fail with `No more links to execute - did you forget to add an ending link?`. Links listed after the terminating link never run, so put `loggerLink`, `retryLink` and your own links before it.
 - **A `splitLink` branch without a terminating link.** Each branch is its own chain, so each one needs to end in a terminating link.
-- **Sending subscriptions through `httpLink`, `httpBatchLink` or `httpBatchStreamLink`.** They throw on subscriptions. Route them to `httpSubscriptionLink` or `wsLink` with a `splitLink`, as shown in [The terminating link](#the-terminating-link).
+- **Sending subscriptions through `httpLink`, `httpBatchLink` or `httpBatchStreamLink`.** They throw on subscriptions. Route them to `httpSSELink` or `wsLink` with a `splitLink`, as shown in [The terminating link](#the-terminating-link).
 - **Returning an async generator from a query through `httpLink` or `httpBatchLink`.** The server responds with `Cannot use stream-like response in non-streaming request - use httpBatchStreamLink`.
 - **Reading `op` in a batch link's `headers` callback.** `httpBatchLink` and `httpBatchStreamLink` call `headers({ opList })` once per batch, with all its operations. Only `httpLink` gets a single `{ op }`.
 - **Unbounded batches.** `maxURLLength` and `maxItems` default to `Infinity`. If long URLs hit limits in your server or CDN, set `maxURLLength`. If the server sets `maxBatchSize`, set `maxItems` to the same or a lower value, or larger batches are rejected with `400 Bad Request`. See [`httpBatchLink`](./links/httpBatchLink.md#setting-a-maximum-url-length).

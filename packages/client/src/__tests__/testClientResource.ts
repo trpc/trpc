@@ -3,7 +3,12 @@ import {
   trpcServerResource,
   type TRPCServerResourceOpts,
 } from '@trpc/server/__tests__/trpcServerResource';
-import { httpBatchLink, httpLink, httpSubscriptionLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  httpLink,
+  httpSSELink,
+  httpSubscriptionLink,
+} from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { tap } from '@trpc/server/observable';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
@@ -55,6 +60,7 @@ export interface TestServerAndClientResourceOpts<
     | 'httpBatchStreamLink'
     | 'httpLink'
     | 'httpSubscriptionLink'
+    | 'httpSSELink'
     | 'wsLink';
 }
 
@@ -100,6 +106,10 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
       url: serverResource.httpUrl,
       transformer,
     }),
+    httpSSELink: httpSSELink({
+      url: serverResource.httpUrl,
+      transformer,
+    }),
     wsLink: wsLink({
       client: wsClient,
       transformer,
@@ -140,7 +150,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
             true: links.wsLink,
             false: splitLink({
               condition: (op) => op.type === 'subscription',
-              true: links.httpSubscriptionLink,
+              true: links.httpSSELink,
 
               false: splitLink({
                 condition: (op) => op.context['batch'] === false,

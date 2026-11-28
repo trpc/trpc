@@ -54,4 +54,16 @@ describe('listedSections', () => {
       },
     ]);
   });
+
+  it('drops deprecated pages', () => {
+    const deprecated: DocMeta = {
+      ...doc('client/links/old', 'Client'),
+      stability: 'deprecated',
+    };
+    expect(
+      listedSections([
+        { docs: [doc('client/links', 'Client'), deprecated], title: 'Client' },
+      ]),
+    ).toEqual([{ docs: [doc('client/links', 'Client')], title: 'Client' }]);
+  });
 });

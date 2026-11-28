@@ -103,4 +103,6 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
 
 When using `retryLink` with subscriptions that use [`tracked()`](../../server/subscriptions.md#tracked), the link will automatically include the last known event ID when retrying. This ensures that when a subscription reconnects, it can resume from where it left off without missing any events.
 
-For example, if you're using Server-sent Events (SSE) with `httpSubscriptionLink`, the `retryLink` will automatically handle reconnecting with the last event ID when errors like `401 Unauthorized` occur.
+For example, with Server-sent Events (SSE) through [`httpSSELink`](./httpSSELink.md), `retryLink` can resubscribe from the last event ID after an error the link doesn't retry by itself, like `401 Unauthorized`.
+
+You don't need `retryLink` to refresh an auth token on reconnect: `httpSSELink` calls its [`headers`](../headers.md) function again every time it reconnects.

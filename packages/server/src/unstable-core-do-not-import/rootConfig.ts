@@ -102,7 +102,7 @@ export interface RootConfig<TTypes extends RootTypes> {
 
   /**
    * Options for subscriptions over server-sent events (SSE).
-   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#sse-options-on-the-server
+   * @see https://trpc.io/docs/client/links/httpSSELink#server-options
    */
   sse?: {
     /**

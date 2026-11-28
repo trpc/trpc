@@ -7,6 +7,8 @@ import type { DocMeta } from './types.ts';
 export interface SearchEntry {
   /** A page's description; empty for a heading. */
   readonly description: string;
+  /** About a deprecated API: found, but marked and ranked lower. */
+  readonly deprecated: boolean;
   /** In an experiment (`src/experiments.ts`): found, but marked. */
   readonly experimental: boolean;
   /** The heading's id, or `undefined` for the page itself. */
@@ -63,8 +65,10 @@ function entriesOf(docs: ReadonlyArray<DocMeta>): ReadonlyArray<SearchEntry> {
   return docs.flatMap((doc) => {
     const parents = parentsOf(doc);
     const experimental = doc.experiment !== undefined;
+    const deprecated = doc.stability === 'deprecated';
     const entries: Array<SearchEntry> = [
       {
+        deprecated,
         description: doc.description,
         experimental,
         hash: undefined,
@@ -81,6 +85,7 @@ function entriesOf(docs: ReadonlyArray<DocMeta>): ReadonlyArray<SearchEntry> {
         h2 = heading.text;
       }
       entries.push({
+        deprecated,
         description: '',
         experimental,
         hash: heading.id,
@@ -267,13 +272,14 @@ function indexOf(docs: ReadonlyArray<DocMeta>): Index {
     searchOptions: {
       boost: { description: 0.5, path: 0.5, section: 0.5, text: 3 },
       // Pages over their headings, guides over the API reference, listed
-      // pages over experiments'.
+      // pages over experiments' and deprecated ones.
       boostDocument: (id) => {
         const entry = byId.get(String(id));
         return (
           (entry?.hash === undefined ? 1.5 : 1) *
           (entry?.slug.startsWith(referencePrefix) ? 0.4 : 1) *
-          (entry?.experimental ? 0.8 : 1)
+          (entry?.experimental ? 0.8 : 1) *
+          (entry?.deprecated ? 0.6 : 1)
         );
       },
       combineWith: 'AND',
@@ -326,7 +332,7 @@ export function searchDocs(
   const index = indexOf(docs);
   if (query.trim() === '') {
     return index.pages
-      .filter((entry) => !entry.experimental)
+      .filter((entry) => !entry.experimental && !entry.deprecated)
       .slice(0, Math.min(8, limit))
       .map((entry) => ({ entry, match: noMatch }));
   }

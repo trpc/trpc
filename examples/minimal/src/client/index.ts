@@ -4,7 +4,7 @@
 import {
   createTRPCClient,
   httpBatchStreamLink,
-  httpSubscriptionLink,
+  httpSSELink,
   splitLink,
 } from '@trpc/client';
 /**
@@ -18,7 +18,7 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({
+      true: httpSSELink({
         url: 'http://localhost:3000',
         transformer,
       }),

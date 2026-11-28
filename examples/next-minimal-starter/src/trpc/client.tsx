@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import {
   createTRPCClient,
   httpBatchLink,
-  httpSubscriptionLink,
+  httpSSELink,
   splitLink,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
@@ -49,7 +49,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       links: [
         splitLink({
           condition: (op) => op.type === 'subscription',
-          true: httpSubscriptionLink({ url }),
+          true: httpSSELink({ url }),
           false: httpBatchLink({ url }),
         }),
       ],

@@ -14,7 +14,7 @@ skill:
     - links
   description: "Set up real-time event streams with async generator subscriptions
     using .subscription(async function*() { yield }). SSE via
-    httpSubscriptionLink is recommended over WebSocket. Use tracked(id, data)
+    httpSSELink is recommended over WebSocket. Use tracked(id, data)
     from @trpc/server for reconnection recovery with lastEventId. WebSocket via
     wsLink and createWSClient from @trpc/client, applyWSSHandler from
     @trpc/server/adapters/ws. Configure SSE ping with initTRPC.create({ sse: {
@@ -25,7 +25,7 @@ skill:
     with break or an AbortSignal."
   references:
     - server/websockets
-    - client/links/httpSubscriptionLink
+    - client/links/httpSSELink
     - client/links/wsLink
 ---
 
@@ -40,7 +40,7 @@ With tRPC's subscriptions, the client establishes and maintains a persistent con
 You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) to setup real-time subscriptions in tRPC.
 
 - For WebSockets, see [the WebSockets page](./websockets.md)
-- For SSE, see the [httpSubscriptionLink](../client/links/httpSubscriptionLink.md)
+- For SSE, see [`httpSSELink`](../client/links/httpSSELink.md)
 
 If you are unsure which one to use, we recommend using SSE for subscriptions as it's easier to setup and doesn't require setting up a WebSocket server.
 
@@ -89,7 +89,7 @@ If you `yield` an event using our `tracked()`-helper and include an `id`, the cl
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
-- For SSE, this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
+- For SSE, `httpSSELink` sends the last known ID when it reconnects, and it arrives as `lastEventId` in your `.input()`.
 - For WebSockets, our `wsLink` will automatically send the last known ID and update it as the browser receives data.
 
 :::tip
@@ -156,7 +156,7 @@ export const subRouter = router({
 
 ## Subscribing from the client
 
-Route subscriptions to [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md) (SSE) or [`wsLink`](../client/links/wsLink.md) with a [`splitLink`](../client/links/splitLink.md), then call `.subscribe()` with the input and your callbacks. Tracked events arrive in `onData` as `{ id, data }`.
+Route subscriptions to [`httpSSELink`](../client/links/httpSSELink.md) (SSE) or [`wsLink`](../client/links/wsLink.md) with a [`splitLink`](../client/links/splitLink.md), then call `.subscribe()` with the input and your callbacks. Tracked events arrive in `onData` as `{ id, data }`.
 
 ```ts twoslash title="client.ts"
 // @types: node
@@ -180,7 +180,7 @@ export type AppRouter = typeof appRouter;
 import {
   createTRPCClient,
   httpBatchLink,
-  httpSubscriptionLink,
+  httpSSELink,
   splitLink,
 } from '@trpc/client';
 import type { AppRouter } from './server';
@@ -189,7 +189,7 @@ const client = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: httpSubscriptionLink({ url: 'http://localhost:3000' }),
+      true: httpSSELink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),
   ],
@@ -232,10 +232,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpSubscriptionLink } from '@trpc/client';
+import { createTRPCClient, httpSSELink } from '@trpc/client';
 import type { AppRouter } from './server';
 const client = createTRPCClient<AppRouter>({
-  links: [httpSubscriptionLink({ url: 'http://localhost:3000' })],
+  links: [httpSSELink({ url: 'http://localhost:3000' })],
 });
 // ---cut---
 for await (const event of client.onPostAdd.subscribe({ lastEventId: null })) {
@@ -567,4 +567,4 @@ export const appRouter = router({
 - **Fetching missed events before listening for new ones.** Events emitted in between are lost. Start listening first, as in the [`tracked()` example](#tracked).
 - **Tracking an event with an empty id.** `tracked('', data)` throws, since an empty id means "no id" in SSE.
 - **Returning an `observable()`.** Observable subscriptions are deprecated and will be removed in v12. Use an async generator.
-- **Pinging less often than the client reconnects.** With SSE, keep `sse.ping.intervalMs` lower than `sse.client.reconnectAfterInactivityMs`, or the client reconnects between pings. tRPC throws when the ping interval is the longer one. See [Server Ping Configuration](../client/links/httpSubscriptionLink.md#server-ping).
+- **Pinging less often than the client reconnects.** With SSE, keep `sse.ping.intervalMs` lower than `sse.client.reconnectAfterInactivityMs`, or the client reconnects between pings. tRPC throws when the ping interval is the longer one. See [the server options](../client/links/httpSSELink.md#server-options).

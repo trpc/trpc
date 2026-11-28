@@ -117,7 +117,7 @@ export interface TRPCRequestInfo {
    */
   calls: TRPCRequestInfoProcedureCall[];
   /**
-   * The connection params the client sent with `httpSubscriptionLink` or
+   * The connection params the client sent with `httpSSELink` or
    * `createWSClient`.
    */
   connectionParams: Dict<string> | null;

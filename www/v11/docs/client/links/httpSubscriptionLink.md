@@ -1,13 +1,18 @@
 ---
 id: httpSubscriptionLink
-title: HTTP Subscription Link
+title: HTTP Subscription Link (deprecated)
 description: A terminating link for subscriptions over Server-sent Events
 sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
 section: "Client Usage"
 parent: "client/links"
 order: 34
+stability: deprecated
 ---
+
+:::caution Deprecated
+`httpSubscriptionLink` is deprecated: use [`httpSSELink`](./httpSSELink.md). It reads the same server responses with `fetch` instead of `EventSource`, so it sends headers without a polyfill, runs `headers` again on every reconnect, and reads error responses. See [Migrating from `httpSubscriptionLink`](./httpSSELink.md#migrating-from-httpsubscriptionlink).
+:::
 
 `httpSubscriptionLink` is a [**terminating link**](../links.md#the-terminating-link) that uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
 

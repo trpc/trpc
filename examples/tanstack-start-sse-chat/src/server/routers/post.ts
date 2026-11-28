@@ -83,7 +83,7 @@ export const postRouter = router({
     .input(
       z.object({
         // The id of the last post the client received.
-        // `httpSubscriptionLink` sets it when it reconnects.
+        // `httpSSELink` sets it when it reconnects.
         lastEventId: z.string().nullish(),
       }),
     )

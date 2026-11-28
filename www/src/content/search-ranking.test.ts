@@ -14,7 +14,8 @@ import type { DocMeta } from './types.ts';
 const contentDir = fileURLToPath(new URL('../../v11/docs', import.meta.url));
 
 // The API reference is generated before a build, so only the guides are
-// here, as the sidebar lists them with no experiment on.
+// here, as the sidebar lists them with no experiment on, and no deprecated
+// pages.
 const v11Guides = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -27,7 +28,9 @@ const v11Guides = Effect.gen(function* () {
   return yield* Effect.forEach(
     pages.filter(
       (page) =>
-        !page.slug.startsWith('typedoc/') && page.experiment === undefined,
+        !page.slug.startsWith('typedoc/') &&
+        page.experiment === undefined &&
+        page.stability !== 'deprecated',
     ),
     (page) =>
       fs.readFileString(path.join(contentDir, `${page.slug}.md`)).pipe(
@@ -66,7 +69,7 @@ const ranking = [
   ['server actions', 'client/nextjs/server-actions'],
   ['infinite query', 'client/react/useInfiniteQuery'],
   ['transformer', 'server/data-transformers'],
-  ['sse', 'client/links/httpSubscriptionLink#sse-options-on-the-server'],
+  ['sse', 'client/links/httpSSELink'],
   ['adapters', 'server/adapters'],
   ['cors', 'client/cors'],
 ] as const;

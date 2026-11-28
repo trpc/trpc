@@ -32,6 +32,16 @@ const docs: ReadonlyArray<DocMeta> = [
     title: 'HTTP Batch Link',
   },
   {
+    description: 'Subscriptions over EventSource.',
+    headings: [],
+    label: '`httpSubscriptionLink`',
+    parent: 'client/links',
+    section: 'Client',
+    slug: 'client/links/httpSubscriptionLink',
+    stability: 'deprecated',
+    title: 'HTTP Subscription Link',
+  },
+  {
     description: 'Query and mutation options for TanStack Query.',
     headings: [{ depth: 2, id: 'query-options', text: '`queryOptions()`' }],
     section: 'Integrations',
@@ -118,6 +128,17 @@ describe('searchDocs', () => {
       experimental: true,
       id: 'integrations/tanstack-query/tanstack-db',
     });
+  });
+
+  it('finds deprecated pages, marked, but leaves them out of the default list', () => {
+    const [hit] = searchDocs(docs, 'httpSubscriptionLink', 20);
+    expect(hit?.entry).toMatchObject({
+      deprecated: true,
+      id: 'client/links/httpSubscriptionLink',
+    });
+    expect(searchDocs(docs, '', 20).map((one) => one.entry.id)).not.toContain(
+      'client/links/httpSubscriptionLink',
+    );
   });
 
   it('places a heading under its pages and its h2', () => {

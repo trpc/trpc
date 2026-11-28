@@ -596,7 +596,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           );
         }
         case 'subscription': {
-          // httpSubscriptionLink
+          // httpSSELink (and the deprecated httpSubscriptionLink)
 
           const iterable: AsyncIterable<unknown> = run(() => {
             if (error) {

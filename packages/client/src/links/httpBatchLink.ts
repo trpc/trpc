@@ -101,7 +101,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         /* istanbul ignore if -- @preserve */
         if (op.type === 'subscription') {
           throw new Error(
-            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+            'Subscriptions are unsupported by `httpLink` - use `httpSSELink` or `wsLink`',
           );
         }
         const ac = new AbortController();
