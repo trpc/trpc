@@ -17,11 +17,19 @@ export interface SSEMessage {
   id: string | undefined;
 }
 
+interface ReadOptions {
+  /** Aborting it cancels the body, and the iteration throws */
+  signal: AbortSignal;
+  /** Called on every read that returns bytes */
+  onRead: () => void;
+}
+
 /**
  * The body's bytes as text. Ending the iteration, or aborting `signal`,
  * cancels the body; an aborted `signal` throws.
  */
-async function* textChunks(body: WebReadableStreamEsque, signal: AbortSignal) {
+async function* textChunks(body: WebReadableStreamEsque, opts: ReadOptions) {
+  const { signal } = opts;
   const reader = body.getReader();
   const cancel = () => {
     reader.cancel().catch(() => {
@@ -35,6 +43,8 @@ async function* textChunks(body: WebReadableStreamEsque, signal: AbortSignal) {
     cancel();
   });
 
+  // aborted before the listener was added: don't wait on a silent body
+  throwIfAborted(signal);
   const decoder = new TextDecoder();
   while (true) {
     const chunk = await reader.read();
@@ -42,6 +52,7 @@ async function* textChunks(body: WebReadableStreamEsque, signal: AbortSignal) {
     if (chunk.done) {
       return;
     }
+    opts.onRead();
     yield decoder.decode(chunk.value, { stream: true });
   }
 }
@@ -126,6 +137,6 @@ export async function* parseSSE(
 /**
  * The events of an SSE response body.
  */
-export function sseMessages(body: WebReadableStreamEsque, signal: AbortSignal) {
-  return parseSSE(textChunks(body, signal));
+export function sseMessages(body: WebReadableStreamEsque, opts: ReadOptions) {
+  return parseSSE(textChunks(body, opts));
 }

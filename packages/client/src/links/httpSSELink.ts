@@ -139,6 +139,10 @@ const connecting = (error: ClientError | null): Result => ({
 /** Resolves after `ms`, or as soon as `signal` aborts */
 function sleep(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
     const timer = setTimeout(done, ms);
     signal.addEventListener('abort', done, { once: true });
     function done() {
@@ -337,6 +341,10 @@ async function* subscribe(opts: {
     });
 
     const opened = await open(connection.signal);
+    if (signal.aborted) {
+      // whatever reading a failed response made of the abort
+      return { type: 'aborted' };
+    }
     if (opened.type !== 'open') {
       return opened;
     }
@@ -352,12 +360,18 @@ async function* subscribe(opts: {
     );
 
     try {
-      for await (const message of sseMessages(opened.body, connection.signal)) {
+      const messages = sseMessages(opened.body, {
+        signal: connection.signal,
+        // any byte, a partial event or a ping, shows the connection is alive
+        onRead: () => inactivity.reset(inactivityMs),
+      });
+      for await (const message of messages) {
         const event = decodeEvent(message, transformer);
         switch (event.type) {
           case 'connected':
             connected = true;
             inactivityMs = event.options.reconnectAfterInactivityMs;
+            inactivity.reset(inactivityMs);
             yield { type: 'started' };
             yield { type: 'state', state: 'pending', error: null };
             break;
@@ -387,7 +401,6 @@ async function* subscribe(opts: {
           case 'ignored':
             break;
         }
-        inactivity.reset(inactivityMs);
       }
     } catch (cause) {
       if (signal.aborted) {
@@ -478,6 +491,10 @@ export function httpSSELink<TInferrable extends InferrableClientTypes>(
             link: opts,
             resolved,
           })) {
+            // a parsed chunk can hold more events than the one that aborted
+            if (signal.aborted) {
+              return;
+            }
             observer.next({ result });
           }
           observer.complete();

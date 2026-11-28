@@ -302,3 +302,73 @@ test('runs a `url` function again for each reconnect', async () => {
   });
   expect(url).toHaveBeenCalledTimes(2);
 });
+
+/** A `fetch` that answers with an event stream `write` feeds */
+function fakeSSEFetch(
+  write: (send: (text: string) => void) => Promise<void> | void,
+) {
+  return vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const encoder = new TextEncoder();
+            await write((text) => controller.enqueue(encoder.encode(text)));
+          },
+        }),
+        { headers: { 'content-type': 'text/event-stream' } },
+      ),
+  );
+}
+
+test('bytes of an unfinished event keep the inactivity timeout from firing', async () => {
+  await using ctx = setup({
+    allowMethodOverride: false,
+    maxDurationMs: undefined,
+  });
+  const fetchSpy = fakeSSEFetch(async (send) => {
+    send('event: connected\ndata: {"reconnectAfterInactivityMs":100}\n\n');
+    // one event, in parts 60ms apart: 300ms in all, 60ms between bytes
+    for (const part of ['data: ', '1', '2', '3', '\n\n']) {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      send(part);
+    }
+    send('event: return\ndata: \n\n');
+  });
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [httpSSELink({ url: ctx.httpUrl, fetch: fetchSpy })],
+  });
+
+  const onData = vi.fn();
+  const onComplete = vi.fn();
+  client.numbers.subscribe(undefined, { onData, onComplete });
+
+  await vi.waitFor(() => {
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+  expect(onData.mock.calls).toEqual([[123]]);
+  expect(fetchSpy).toHaveBeenCalledTimes(1);
+});
+
+test('delivers nothing after the caller aborts, even from the same chunk', async () => {
+  await using ctx = setup({
+    allowMethodOverride: false,
+    maxDurationMs: undefined,
+  });
+  const fetchSpy = fakeSSEFetch((send) => {
+    send('event: connected\ndata: {}\n\ndata: 1\n\ndata: 2\n\ndata: 3\n\n');
+  });
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [httpSSELink({ url: ctx.httpUrl, fetch: fetchSpy })],
+  });
+
+  const ac = new AbortController();
+  const onData = vi.fn(() => ac.abort());
+  client.numbers.subscribe(undefined, { signal: ac.signal, onData });
+
+  await vi.waitFor(() => {
+    expect(onData).toHaveBeenCalled();
+  });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(onData).toHaveBeenCalledTimes(1);
+});

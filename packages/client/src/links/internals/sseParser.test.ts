@@ -84,3 +84,9 @@ test('reads a line split across many chunks', async () => {
     { event: 'message', data: value, id: undefined },
   ]);
 });
+
+test('a bare CR at the end of the stream ends the event', async () => {
+  expect(await parse(['data: 1\r\r'])).toEqual([
+    { event: 'message', data: '1', id: undefined },
+  ]);
+});
