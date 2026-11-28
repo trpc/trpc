@@ -183,11 +183,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-You can also annotate the parameter type on a custom validator or transformer function for `.input()` or `.output()`. When the parameter has a narrower type than `unknown`, TypeScript infers that parameter type as the caller input or resolver return type, and infers the return type as the procedure `opts.input` or client output type.
-
-:::caution
-A typed parameter on `.input((value: MyInput) => ...)` **does not validate `value` at runtime** — it tells TypeScript to trust that the caller sends `MyInput`. Unless you check the value inside the function, runtime requests receive whatever JSON payload was sent over the wire. Use an unannotated `(value) => ...` parser with runtime checks or a [validation library](#library-integrations) when validating untrusted input.
-:::
+You can also annotate the parameter type on `.input()` or `.output()` to infer caller input or resolver return types. Note that a typed `.input((value: MyInput) => ...)` function **checks nothing at runtime** — it trusts what the client sends, so validate untrusted input inside the function or use a [validation library](#library-integrations):
 
 ```ts twoslash
 // @target: esnext
@@ -196,24 +192,13 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 
 const publicProcedure = t.procedure;
-
+// ---cut---
 export const appRouter = t.router({
   parseEvent: publicProcedure
-    .input((value: { id: string }) => {
-      // Static type only — validate `value` manually if needed at runtime
-      return { id: Number(value.id) };
-    })
-    .output((value: { createdAt: Date }) => ({
-      createdAt: value.createdAt.toISOString(),
-    }))
-    .query((opts) => {
-      const { input } = opts;
-      //      ^?
-      return { createdAt: new Date(input.id) };
-    }),
+    .input((value: { id: string }) => ({ id: Number(value.id) }))
+    .output((value: { createdAt: Date }) => value.createdAt.toISOString())
+    .query(({ input }) => ({ createdAt: new Date(input.id) })),
 });
-
-export type AppRouter = typeof appRouter;
 ```
 
 ## Library integrations
