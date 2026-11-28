@@ -28,13 +28,16 @@ export interface OperationContext extends Record<string, unknown> {}
  * A procedure call as it goes through the links.
  * @internal
  */
-export type Operation<TInput = unknown> = {
+export type Operation<
+  TInput = unknown,
+  TContext extends object = OperationContext,
+> = {
   /** A number unique to the call within its client. */
   id: number;
   type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
-  context: OperationContext;
+  context: TContext;
   signal: Maybe<AbortSignal>;
 };
 
@@ -193,14 +196,20 @@ export type NoLinkReadsContext = {
 };
 
 /**
+ * The fields the links in `TLinks` declare they read, merged, for a link
+ * that wraps other links to declare.
+ * @public
+ */
+export type inferLinksDeclaredContext<TLinks extends readonly unknown[]> =
+  UnionToIntersection<inferDeclContext<inferLinkDecl<TLinks[number]>>>;
+
+/**
  * The `context` calls can pass: the fields every link in `TLinks` reads,
  * merged.
  * @public
  */
 export type inferLinksContext<TLinks extends readonly unknown[]> =
-  UnionToIntersection<
-    inferDeclContext<inferLinkDecl<TLinks[number]>>
-  > extends infer $Context
+  inferLinksDeclaredContext<TLinks> extends infer $Context
     ? keyof $Context extends never
       ? NoLinkReadsContext
       : // optional: a call can leave out its options altogether

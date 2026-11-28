@@ -263,6 +263,53 @@ test('methods the links can’t carry can’t be called', () => {
   expectTypeOf(onlySubscriptions.flaky.query).toBeNever();
 });
 
+test('splitLink’s `condition` declares the context it reads', () => {
+  const url = 'http://localhost';
+  const client = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      splitLink({
+        condition: ({ context }: { context: { skipBatch?: boolean } }) =>
+          context.skipBatch === true,
+        true: httpLink({ url }),
+        false: httpBatchLink({ url }),
+      }),
+    ],
+  });
+  expectTypeOf<
+    ContextOf<typeof client.flaky.query>['skipBatch']
+  >().toEqualTypeOf<boolean | undefined>();
+  void (() => {
+    void client.flaky.query('a', { context: { skipBatch: true } });
+    // @ts-expect-error -- `skipBatch` is a boolean
+    void client.flaky.query('a', { context: { skipBatch: 'yes' } });
+  });
+
+  // only `condition` reads a context here
+  const local = localLink({
+    router: factory().appRouter,
+    createContext: async () => ({}),
+  });
+  const strict = createTRPCClient({
+    router: routerType<AppRouter>(),
+    links: [
+      splitLink({
+        condition: ({ context }: { context: { useCache?: boolean } }) =>
+          context.useCache === true,
+        true: local,
+        false: local,
+      }),
+    ],
+  });
+  expectTypeOf<ContextOf<typeof strict.flaky.query>>().toEqualTypeOf<{
+    useCache?: boolean;
+  }>();
+  void (() => {
+    // @ts-expect-error -- no link reads `nope`
+    void strict.flaky.query('a', { context: { nope: 1 } });
+  });
+});
+
 test('the client still fits where integrations take TRPCClient<AppRouter>', () => {
   const client = createTRPCClient({
     router: routerType<AppRouter>(),

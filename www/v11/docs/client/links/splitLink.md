@@ -25,6 +25,8 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 #### 1. Configure client / `utils/trpc.ts`
 
+Type the `context` that `condition` reads, and calls get a typed `skipBatch`:
+
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -38,19 +40,20 @@ import {
   createTRPCClient,
   httpBatchLink,
   httpLink,
+  routerType,
   splitLink,
 } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const url = `http://localhost:3000`;
 
-const client = createTRPCClient<AppRouter>({
+const client = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
-      condition(op) {
-        // check for context property `skipBatch`
-        return Boolean(op.context.skipBatch);
-      },
+      // the `context` this condition reads
+      condition: ({ context }: { context: { skipBatch?: boolean } }) =>
+        context.skipBatch === true,
       // when condition is true, use normal request
       true: httpLink({
         url,
@@ -67,6 +70,7 @@ const client = createTRPCClient<AppRouter>({
 #### 2. Perform request without batching
 
 ```ts twoslash title='client.ts'
+// @errors: 2322
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -76,12 +80,14 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink, splitLink, httpLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, splitLink, httpLink, routerType } from '@trpc/client';
 import type { AppRouter } from './server';
-const proxy = createTRPCClient<AppRouter>({
+const proxy = createTRPCClient({
+  router: routerType<AppRouter>(),
   links: [
     splitLink({
-      condition(op) { return Boolean(op.context.skipBatch); },
+      condition: ({ context }: { context: { skipBatch?: boolean } }) =>
+        context.skipBatch === true,
       true: httpLink({ url: 'http://localhost:3000' }),
       false: httpBatchLink({ url: 'http://localhost:3000' }),
     }),
@@ -91,6 +97,12 @@ const proxy = createTRPCClient<AppRouter>({
 const postResult = proxy.posts.query(undefined, {
   context: {
     skipBatch: true,
+  },
+});
+
+proxy.posts.query(undefined, {
+  context: {
+    skipBatch: 'yes',
   },
 });
 ```
@@ -144,6 +156,10 @@ type Operation = any;
 type TRPCLink<T> = any;
 // ---cut---
 declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
+  /**
+   * Picks the chain for an operation. Type its `context` to declare the
+   * fields it reads; untyped, it may read any field.
+   */
   condition: (op: Operation) => boolean;
   /**
    * The link to execute next if the test function returns `true`.
