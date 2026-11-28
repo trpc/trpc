@@ -34,7 +34,11 @@ interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   retryDelayMs?: (attempt: number) => number;
 }
 
-interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
+/**
+ * What a `retry` function is given.
+ * @public
+ */
+export interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The operation that failed
    */
