@@ -3,7 +3,6 @@ import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import type {
   inferLinksDeclaredContext,
-  inferLinksUnsupported,
   Operation,
   OperationContext,
   TRPCLink,
@@ -12,10 +11,24 @@ import type {
 function asArray<TType>(value: TType | readonly TType[]): readonly TType[] {
   return Array.isArray(value) ? value : [value as TType];
 }
+
+/**
+ * A `splitLink` branch: one link or a chain of them.
+ * @internal
+ */
+type SplitLinkBranch<TRouter extends AnyRouter> =
+  | TRPCLink<TRouter, any>
+  | readonly TRPCLink<TRouter, any>[];
+
+// a tuple, so links whose declarations nest aren't merged into one
+type asLinks<TBranch> = TBranch extends readonly unknown[]
+  ? TBranch
+  : [TBranch];
+
 interface SplitLinkOptions<
   TRouter extends AnyRouter,
-  TTrue extends TRPCLink<TRouter, any>,
-  TFalse extends TRPCLink<TRouter, any>,
+  TTrue extends SplitLinkBranch<TRouter>,
+  TFalse extends SplitLinkBranch<TRouter>,
   TContext extends object,
 > {
   /**
@@ -26,24 +39,23 @@ interface SplitLinkOptions<
   /**
    * The link to execute next if the test function returns `true`.
    */
-  true: TTrue | readonly TTrue[];
+  true: TTrue;
   /**
    * The link to execute next if the test function returns `false`.
    */
-  false: TFalse | readonly TFalse[];
+  false: TFalse;
 }
 
 type SplitLink<
   TRouter extends AnyRouter,
-  TTrue extends TRPCLink<TRouter, any>,
-  TFalse extends TRPCLink<TRouter, any>,
+  TTrue extends SplitLinkBranch<TRouter>,
+  TFalse extends SplitLinkBranch<TRouter>,
   TContext extends object,
 > = TRPCLink<
   TRouter,
   {
-    context: TContext & inferLinksDeclaredContext<[TTrue, TFalse]>;
-    unsupported: inferLinksUnsupported<[TTrue]> &
-      inferLinksUnsupported<[TFalse]>;
+    context: TContext &
+      inferLinksDeclaredContext<[...asLinks<TTrue>, ...asLinks<TFalse>]>;
   }
 >;
 
@@ -52,8 +64,7 @@ type SplitLink<
  *
  * Calls take the `context` both chains read, plus what `condition` reads.
  * Type `condition`'s `context` to declare it; otherwise `condition` may
- * read any field. An operation type is unsupported only when neither chain
- * carries it.
+ * read any field.
  * @example
  * splitLink({
  *   condition: ({ context }: { context: { skipBatch?: boolean } }) =>
@@ -69,15 +80,15 @@ type SplitLink<
 // used instead.
 export function splitLink<
   TRouter extends AnyRouter = AnyRouter,
-  TTrue extends TRPCLink<TRouter, any> = TRPCLink<TRouter>,
-  TFalse extends TRPCLink<TRouter, any> = TRPCLink<TRouter>,
+  const TTrue extends SplitLinkBranch<TRouter> = TRPCLink<TRouter>,
+  const TFalse extends SplitLinkBranch<TRouter> = TRPCLink<TRouter>,
 >(
   opts: SplitLinkOptions<TRouter, TTrue, TFalse, OperationContext>,
 ): SplitLink<TRouter, TTrue, TFalse, OperationContext>;
 export function splitLink<
   TRouter extends AnyRouter,
-  TTrue extends TRPCLink<TRouter, any>,
-  TFalse extends TRPCLink<TRouter, any>,
+  const TTrue extends SplitLinkBranch<TRouter>,
+  const TFalse extends SplitLinkBranch<TRouter>,
   TContext extends object,
 >(
   opts: SplitLinkOptions<TRouter, TTrue, TFalse, TContext>,
@@ -85,8 +96,8 @@ export function splitLink<
 export function splitLink(
   opts: SplitLinkOptions<
     AnyRouter,
-    TRPCLink<AnyRouter>,
-    TRPCLink<AnyRouter>,
+    SplitLinkBranch<AnyRouter>,
+    SplitLinkBranch<AnyRouter>,
     any
   >,
 ): TRPCLink<AnyRouter> {

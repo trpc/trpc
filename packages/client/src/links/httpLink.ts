@@ -86,7 +86,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<
   TRouter,
   // its `headers` callback is given the operations, so may read any field
-  { context: OperationContext; unsupported: 'subscription' }
+  { context: OperationContext }
 > {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   return () => {

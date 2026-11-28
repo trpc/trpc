@@ -2,7 +2,6 @@ import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
   Maybe,
-  ProcedureType,
   Simplify,
   TRPCResultMessage,
   TRPCSuccessResponse,
@@ -132,19 +131,14 @@ export interface LinkDecl {
    * as `.query(input, { context })`. `{}` declares that the link reads none.
    */
   context?: object;
-  /**
-   * The operation types the link can't carry, such as `'subscription'` for
-   * `httpBatchLink`. Their client methods can't be called.
-   */
-  unsupported?: ProcedureType;
 }
 
 /**
  * A link: a step every call goes through, such as logging or sending it
  * over HTTP. It's called once when the client is created.
  *
- * `TDecl` says what it reads from `op.context` and what it can't carry. A
- * link that doesn't declare it may read any context.
+ * `TDecl` says what it reads from `op.context`. A link that doesn't
+ * declare it may read any context.
  * @see https://trpc.io/docs/client/links#creating-a-custom-link
  * @public
  */
@@ -161,8 +155,6 @@ type UnionToIntersection<TUnion> = (
 ) extends (arg: infer TIntersection) => void
   ? TIntersection
   : never;
-
-type IsAny<TType> = 0 extends 1 & TType ? true : false;
 
 // A function with no `~decl`, such as an inline `() => ({ op, next }) =>
 // next(op)`, declares nothing either.
@@ -215,18 +207,3 @@ export type inferLinksContext<TLinks extends readonly unknown[]> =
       : // optional: a call can leave out its options altogether
         Simplify<Partial<$Context>>
     : never;
-
-type inferDeclUnsupported<TDecl> =
-  IsAny<TDecl> extends true
-    ? never
-    : TDecl extends { unsupported: infer $Unsupported extends ProcedureType }
-      ? $Unsupported
-      : never;
-
-/**
- * The operation types a chain can't carry: those any link in `TLinks`
- * declares it can't.
- * @public
- */
-export type inferLinksUnsupported<TLinks extends readonly unknown[]> =
-  inferDeclUnsupported<inferLinkDecl<TLinks[number]>>;

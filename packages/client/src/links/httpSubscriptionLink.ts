@@ -82,7 +82,7 @@ export function httpSubscriptionLink<
 ): TRPCLink<
   TInferrable,
   // `eventSourceOptions` is given the operation, so may read any field
-  { context: OperationContext; unsupported: 'query' | 'mutation' }
+  { context: OperationContext }
 > {
   const transformer = getTransformer(opts.transformer);
   const pathSeparator = resolvePathSeparator(opts.pathSeparator);

@@ -24,11 +24,7 @@ import type {
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
-import type {
-  inferLinksContext,
-  inferLinksUnsupported,
-  TRPCLink,
-} from './links/types';
+import type { inferLinksContext, TRPCLink } from './links/types';
 import type { RouterType } from './routerType';
 import type { TRPCTaggedPromise } from './safe';
 import type { TRPCClientError } from './TRPCClientError';
@@ -53,23 +49,21 @@ const untypedClientSymbol = Symbol.for('trpc_untypedClient');
  * A typed client for a router, as `createTRPCClient` returns it. Each
  * procedure has `.query()`, `.mutate()` or `.subscribe()`.
  *
- * `TContext` is the `context` calls take, and `TUnsupported` the operation
- * types the links can't carry; `createTRPCClient({ router, links })` infers
- * both from the links.
+ * `TContext` is the `context` calls take; `createTRPCClient({ router,
+ * links })` infers it from the links.
  * @see https://trpc.io/docs/client/vanilla/infer-types
  * @public
  **/
 export type TRPCClient<
   TRouter extends AnyRouter,
   TContext extends object = Record<string, unknown>,
-  TUnsupported extends ProcedureType = never,
 > = DecoratedProcedureRecord<
   {
     transformer: TRouter['_def']['_config']['$types']['transformer'];
     errorShape: TRouter['_def']['_config']['$types']['errorShape'];
   },
   TRouter['_def']['record'],
-  { context: TContext; unsupported: TUnsupported }
+  TContext
 > & {
   [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
 };
@@ -128,40 +122,16 @@ export type SubscriptionResolver<
   ): AsyncIterableIterator<inferAsyncIterableYield<TDef['output']>>;
 };
 
-/**
- * What a client's links allow: the `context` calls take, and the operation
- * types they can't carry.
- * @internal
- */
-type ClientLinksDef = {
-  context: object;
-  unsupported: ProcedureType;
-};
-
-// A method the links can't carry is `never` rather than missing, so the
-// client stays assignable to `TRPCClient<TRouter>` for integrations.
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends TRPCResolverDef,
-  TLinks extends ClientLinksDef,
+  TContext extends object,
 > = TType extends 'query'
-  ? {
-      query: TType extends TLinks['unsupported']
-        ? never
-        : Resolver<TDef, TLinks['context']>;
-    }
+  ? { query: Resolver<TDef, TContext> }
   : TType extends 'mutation'
-    ? {
-        mutate: TType extends TLinks['unsupported']
-          ? never
-          : Resolver<TDef, TLinks['context']>;
-      }
+    ? { mutate: Resolver<TDef, TContext> }
     : TType extends 'subscription'
-      ? {
-          subscribe: TType extends TLinks['unsupported']
-            ? never
-            : SubscriptionResolver<TDef, TLinks['context']>;
-        }
+      ? { subscribe: SubscriptionResolver<TDef, TContext> }
       : never;
 
 /**
@@ -170,7 +140,7 @@ type DecorateProcedure<
 type DecoratedProcedureRecord<
   TRoot extends InferrableClientTypes,
   TRecord extends RouterRecord,
-  TLinks extends ClientLinksDef,
+  TContext extends object,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
@@ -185,10 +155,10 @@ type DecoratedProcedureRecord<
             errorShape: inferProcedureErrorShape<TRoot, $Value>;
             transformer: inferClientTypes<TRoot>['transformer'];
           },
-          TLinks
+          TContext
         >
       : $Value extends RouterRecord
-        ? DecoratedProcedureRecord<TRoot, $Value, TLinks>
+        ? DecoratedProcedureRecord<TRoot, $Value, TContext>
         : never
     : never;
 };
@@ -280,11 +250,7 @@ export function createTRPCClient<
   const TLinks extends readonly TRPCLink<TRouter, any>[],
 >(
   opts: CreateTRPCClientWithRouterOptions<TRouter, TLinks>,
-): TRPCClient<
-  TRouter,
-  inferLinksContext<TLinks>,
-  inferLinksUnsupported<TLinks>
->;
+): TRPCClient<TRouter, inferLinksContext<TLinks>>;
 /**
  * Creates a typed client for a router. Pass the router's type, and the
  * links that send its calls.

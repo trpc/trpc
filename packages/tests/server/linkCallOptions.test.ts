@@ -225,13 +225,7 @@ test('a link that declares nothing may read any context', () => {
   });
 });
 
-test('methods the links can’t carry can’t be called', () => {
-  const overHttp = createTRPCClient({
-    router: routerType<AppRouter>(),
-    links: [httpBatchLink({ url: 'http://localhost' })],
-  });
-  expectTypeOf(overHttp.onEvent.subscribe).toBeNever();
-
+test('splitLink takes the context both branches read', () => {
   const split = createTRPCClient({
     router: routerType<AppRouter>(),
     links: [
@@ -245,8 +239,6 @@ test('methods the links can’t carry can’t be called', () => {
       }),
     ],
   });
-  expectTypeOf(split.onEvent.subscribe).not.toBeNever();
-  expectTypeOf(split.flaky.query).not.toBeNever();
   void (() => {
     // the condition may read anything; the branches' fields stay typed
     void split.flaky.query('a', {
@@ -255,12 +247,6 @@ test('methods the links can’t carry can’t be called', () => {
     // @ts-expect-error -- `retry` takes a function
     void split.flaky.query('a', { context: { retry: 1 } });
   });
-
-  const onlySubscriptions = createTRPCClient({
-    router: routerType<AppRouter>(),
-    links: [httpSubscriptionLink({ url: 'http://localhost' })],
-  });
-  expectTypeOf(onlySubscriptions.flaky.query).toBeNever();
 });
 
 test('splitLink’s `condition` declares the context it reads', () => {

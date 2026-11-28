@@ -29,7 +29,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 ): TRPCLink<
   TRouter,
   // its `headers` callback is given the operations, so may read any field
-  { context: OperationContext; unsupported: 'subscription' }
+  { context: OperationContext }
 > {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
