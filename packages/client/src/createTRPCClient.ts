@@ -24,6 +24,7 @@ import type {
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
+import type { RouterType } from './routerType';
 import type { TRPCTaggedPromise } from './safe';
 import type { TRPCClientError } from './TRPCClientError';
 
@@ -194,6 +195,36 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 }
 
 /**
+ * The options of `createTRPCClient` with the router's type passed as
+ * `router: routerType<AppRouter>()`.
+ * @public
+ */
+export type CreateTRPCClientWithRouterOptions<TRouter extends AnyRouter> =
+  CreateTRPCClientOptions<TRouter> & {
+    /**
+     * The router's type, from `routerType<AppRouter>()`. It's a type only:
+     * nothing about the router is sent or bundled.
+     */
+    router: RouterType<TRouter>;
+  };
+
+/**
+ * Creates a typed client for a router. Pass the router's type with
+ * `routerType`, and the links that send its calls.
+ * @example
+ * ```ts
+ * const client = createTRPCClient({
+ *   router: routerType<AppRouter>(),
+ *   links: [httpBatchLink({ url: 'http://localhost:3000/trpc' })],
+ * });
+ * const post = await client.post.byId.query({ id: '1' });
+ * ```
+ * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
+ */
+export function createTRPCClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientWithRouterOptions<TRouter>,
+): TRPCClient<TRouter>;
+/**
  * Creates a typed client for a router. Pass the router's type, and the
  * links that send its calls.
  * @example
@@ -205,9 +236,14 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
  * ```
  * @see https://trpc.io/docs/client/vanilla/setup#3-initialize-the-trpc-client
  */
+// Kept last: `ReturnType<typeof createTRPCClient>` reads the last overload.
+export function createTRPCClient<TRouter extends AnyRouter>(
+  opts: CreateTRPCClientOptions<TRouter>,
+): TRPCClient<TRouter>;
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
 ): TRPCClient<TRouter> {
+  // `router` is a type only, so the untyped client ignores it
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
