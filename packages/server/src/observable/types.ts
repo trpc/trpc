@@ -12,7 +12,7 @@ interface Subscribable<TValue, TError> {
 /**
  * A stream of values, which starts when you subscribe to it. Links pass
  * results along as observables.
- * @see https://trpc.io/docs/client/links#creating-a-custom-link
+ * @see https://trpc.io/docs/client/custom-links
  */
 export interface Observable<TValue, TError> extends Subscribable<
   TValue,

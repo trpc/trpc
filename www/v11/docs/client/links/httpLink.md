@@ -2,11 +2,11 @@
 id: httpLink
 title: HTTP Link
 description: A terminating link that sends each tRPC call as its own HTTP request
-sidebar_label: HTTP Link
 slug: /client/links/httpLink
 section: "Client Usage"
 parent: "client/links"
 order: 31
+sidebar_label: '`httpLink`'
 ---
 
 `httpLink` is a [**terminating link**](../links.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.

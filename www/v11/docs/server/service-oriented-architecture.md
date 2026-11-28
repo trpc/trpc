@@ -146,7 +146,7 @@ export type AppRouter = typeof appRouter;
 
 ## 4. Route calls to the right service
 
-On the client, a [custom link](../client/links.md#creating-a-custom-link) reads the first segment of each procedure path, `serverA` in `serverA.greet`, and forwards the call to that service's link with the segment removed, since the service itself only knows `greet`.
+On the client, a [custom link](../client/custom-links.md) reads the first segment of each procedure path, `serverA` in `serverA.greet`, and forwards the call to that service's link with the segment removed, since the service itself only knows `greet`.
 
 ```ts twoslash title='client/client.ts'
 // @filename: server-lib/index.ts

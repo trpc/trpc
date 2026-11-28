@@ -2,11 +2,11 @@
 id: loggerLink
 title: Logger Link
 description: A link that logs tRPC operations and their results
-sidebar_label: Logger Link
 slug: /client/links/loggerLink
 section: "Client Usage"
 parent: "client/links"
 order: 38
+sidebar_label: '`loggerLink`'
 ---
 
 `loggerLink` is a link that lets you implement a logger for your tRPC client. It allows you to see more clearly what operations are queries, mutations, or subscriptions, their requests, and responses. The link, by default, prints a prettified log to the browser's console. However, you can customize the logging behavior and the way it prints to the console with your own implementations.

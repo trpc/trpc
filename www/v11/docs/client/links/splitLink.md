@@ -2,11 +2,11 @@
 id: splitLink
 title: Split Link
 description: A link that routes each operation down one of two link chains based on a condition
-sidebar_label: Split Link
 slug: /client/links/splitLink
 section: "Client Usage"
 parent: "client/links"
-order: 37
+order: 36
+sidebar_label: '`splitLink`'
 ---
 
 `splitLink` is a link that allows you to branch your link chain's execution depending on a given condition. Both the `true` and `false` branches are required. You can provide just one link, or multiple links per branch via an array.

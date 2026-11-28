@@ -2,11 +2,11 @@
 id: httpBatchStreamLink
 title: HTTP Batch Stream Link
 description: A terminating link that batches tRPC calls and streams each response as soon as it is ready
-sidebar_label: HTTP Batch Stream Link
 slug: /client/links/httpBatchStreamLink
 section: "Client Usage"
 parent: "client/links"
 order: 33
+sidebar_label: '`httpBatchStreamLink`'
 ---
 
 `httpBatchStreamLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request (equivalent to [`httpBatchLink`](./httpBatchLink.md)), but doesn't wait for all the responses of the batch to be ready and streams the responses as soon as any data is available.
