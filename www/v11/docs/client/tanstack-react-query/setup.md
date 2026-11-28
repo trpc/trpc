@@ -274,7 +274,7 @@ function useUserOptions() {
   const trpc = useTRPC();
   return trpc.getUser.queryOptions(
     { id: '1' },
-    { trpc: { context: { retry: false } } },
+    { trpc: { context: { retry: () => false } } },
   );
 }
 ```

@@ -68,14 +68,14 @@ test('`trpc.context` is typed from the client’s links and reaches them', async
   await expect(
     queryClient.fetchQuery(
       trpc.flakyQuery.queryOptions(undefined, {
-        trpc: { context: { retry: false } },
+        trpc: { context: { retry: () => false } },
       }),
     ),
   ).rejects.toMatchObject({ data: { code: 'INTERNAL_SERVER_ERROR' } });
   expect(calls.query).toHaveBeenCalledTimes(1);
 
   const mutationOptions = trpc.flakyMutation.mutationOptions({
-    trpc: { context: { retry: false } },
+    trpc: { context: { retry: () => false } },
   });
   await expect(
     mutationOptions.mutationFn?.(undefined, {} as any),
@@ -84,10 +84,10 @@ test('`trpc.context` is typed from the client’s links and reaches them', async
 
   void (() => {
     trpc.flakyQuery.queryOptions(undefined, {
-      // @ts-expect-error -- `retry` only takes `false`
+      // @ts-expect-error -- `retry` takes a function
       trpc: { context: { retry: 1 } },
     });
-    // @ts-expect-error -- `retry` only takes `false`
+    // @ts-expect-error -- `retry` takes a function
     trpc.flakyMutation.mutationOptions({ trpc: { context: { retry: true } } });
   });
 });
@@ -145,12 +145,12 @@ test('createTRPCContext takes the client to type `trpc.context`', async () => {
     expectTypeOf(useTRPCClient()).toEqualTypeOf<typeof trpcClient>();
     const query = useQuery(
       trpc.flakyQuery.queryOptions(undefined, {
-        trpc: { context: { retry: false } },
+        trpc: { context: { retry: () => false } },
       }),
     );
     void (() => {
       trpc.flakyQuery.queryOptions(undefined, {
-        // @ts-expect-error -- `retry` only takes `false`
+        // @ts-expect-error -- `retry` takes a function
         trpc: { context: { retry: 1 } },
       });
     });
