@@ -1,3 +1,7 @@
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { throwIfAborted } from '../../internals/signals';
+import type { WebReadableStreamEsque } from '../../internals/types';
+
 /**
  * One event of a `text/event-stream`.
  */
@@ -14,53 +18,83 @@ export interface SSEMessage {
 }
 
 /**
- * Parses a `text/event-stream` fed to it in decoded chunks, following the
- * WHATWG rules for lines, fields and dispatch.
+ * The body's bytes as text. Ending the iteration, or aborting `signal`,
+ * cancels the body; an aborted `signal` throws.
+ */
+async function* textChunks(body: WebReadableStreamEsque, signal: AbortSignal) {
+  const reader = body.getReader();
+  const cancel = () => {
+    reader.cancel().catch(() => {
+      // the stream is already errored or closed
+    });
+  };
+  // a `fetch` that ignores its signal still stops reading
+  signal.addEventListener('abort', cancel, { once: true });
+  using _reader = makeResource({}, () => {
+    signal.removeEventListener('abort', cancel);
+    cancel();
+  });
+
+  const decoder = new TextDecoder();
+  while (true) {
+    const chunk = await reader.read();
+    throwIfAborted(signal);
+    if (chunk.done) {
+      return;
+    }
+    yield decoder.decode(chunk.value, { stream: true });
+  }
+}
+
+/**
+ * Lines split on `\r\n`, `\r` or `\n`. A `\r` at the end of a chunk waits
+ * for the next one, which may start with its `\n`.
+ */
+async function* lines(chunks: AsyncIterable<string>) {
+  let buffer = '';
+  for await (const chunk of chunks) {
+    buffer += chunk;
+    const parts = buffer.split(/\r\n|\r(?!$)|\n/);
+    buffer = parts.pop() ?? '';
+    yield* parts;
+  }
+}
+
+/**
+ * The events of a `text/event-stream`, following the WHATWG rules for
+ * fields and dispatch. An event without a blank line after it, at the end
+ * of the stream, isn't dispatched.
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation
  */
-export function createSSEParser(onMessage: (message: SSEMessage) => void) {
-  let buffer = '';
-  // a `\r` at the end of a chunk may be the first half of `\r\n`
-  let skipLeadingLF = false;
+export async function* parseSSE(
+  chunks: AsyncIterable<string>,
+): AsyncGenerator<SSEMessage> {
   let event = '';
-  let data = '';
-  let hasData = false;
+  let data: string | null = null;
   let id: string | undefined = undefined;
 
-  const dispatch = () => {
-    const message: SSEMessage | null = hasData
-      ? { event: event || 'message', data, id }
-      : null;
-    event = '';
-    data = '';
-    hasData = false;
-    id = undefined;
-    if (message) {
-      onMessage(message);
-    }
-  };
-
-  const processLine = (line: string) => {
+  for await (const line of lines(chunks)) {
     if (line === '') {
-      dispatch();
-      return;
+      if (data !== null) {
+        yield { event: event || 'message', data, id };
+      }
+      event = '';
+      data = null;
+      id = undefined;
+      continue;
     }
     if (line.startsWith(':')) {
-      return;
+      continue;
     }
     const colon = line.indexOf(':');
     const field = colon === -1 ? line : line.slice(0, colon);
-    let value = colon === -1 ? '' : line.slice(colon + 1);
-    if (value.startsWith(' ')) {
-      value = value.slice(1);
-    }
+    const value = colon === -1 ? '' : line.slice(colon + 1).replace(/^ /, '');
     switch (field) {
       case 'event':
         event = value;
         break;
       case 'data':
-        data = hasData ? data + '\n' + value : value;
-        hasData = true;
+        data = data === null ? value : `${data}\n${value}`;
         break;
       case 'id':
         if (!value.includes('\0')) {
@@ -69,33 +103,12 @@ export function createSSEParser(onMessage: (message: SSEMessage) => void) {
         break;
       // `retry` and unknown fields are ignored
     }
-  };
+  }
+}
 
-  return {
-    push(chunk: string) {
-      buffer += chunk;
-      if (skipLeadingLF && buffer.startsWith('\n')) {
-        buffer = buffer.slice(1);
-      }
-      skipLeadingLF = false;
-
-      let start = 0;
-      for (let i = 0; i < buffer.length; i++) {
-        const char = buffer[i];
-        if (char !== '\n' && char !== '\r') {
-          continue;
-        }
-        processLine(buffer.slice(start, i));
-        if (char === '\r') {
-          if (i + 1 === buffer.length) {
-            skipLeadingLF = true;
-          } else if (buffer[i + 1] === '\n') {
-            i++;
-          }
-        }
-        start = i + 1;
-      }
-      buffer = buffer.slice(start);
-    },
-  };
+/**
+ * The events of an SSE response body.
+ */
+export function sseMessages(body: WebReadableStreamEsque, signal: AbortSignal) {
+  return parseSSE(textChunks(body, signal));
 }

@@ -1,6 +1,10 @@
 import type { TRPCRequestInfo } from '@trpc/server/http';
-import { behaviorSubject, observable } from '@trpc/server/observable';
-import type { TRPCErrorShape, TRPCResult } from '@trpc/server/rpc';
+import { observable } from '@trpc/server/observable';
+import type {
+  TRPC_ERROR_CODE_NUMBER,
+  TRPCErrorShape,
+  TRPCResult,
+} from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -18,20 +22,25 @@ import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { raceAbortSignalsWithCleanup } from '../internals/signals';
 import type { WebReadableStreamEsque } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
-import type { TRPCConnectionState } from '../unstable-internals';
 import {
   fetchHTTPResponse,
   getBody,
   getUrl,
   resolveHTTPLinkOptions,
   type HTTPLinkBaseOptions,
+  type ResolvedHTTPLinkOptions,
 } from './internals/httpUtils';
-import { createSSEParser, type SSEMessage } from './internals/sseParser';
+import { sseMessages, type SSEMessage } from './internals/sseParser';
 import {
   resultOf,
   type CallbackOrValue,
 } from './internals/urlWithConnectionParams';
-import type { HTTPHeaders, Operation, TRPCLink } from './types';
+import type {
+  HTTPHeaders,
+  Operation,
+  OperationResultEnvelope,
+  TRPCLink,
+} from './types';
 
 /**
  * The options of `httpSSELink`.
@@ -78,17 +87,31 @@ export type HTTPSSELinkOptions<TRoot extends AnyClientTypes> =
     };
   };
 
-type ConnectionOutcome =
+type ClientError = TRPCClientError<any>;
+type Result = OperationResultEnvelope<unknown, ClientError>['result'];
+
+/** How one connection ended */
+type ConnectionEnd =
   /** The subscription finished on the server */
   | { type: 'return' }
   /** The caller unsubscribed */
   | { type: 'aborted' }
   /** The server ended the stream without finishing the subscription */
   | { type: 'ended' }
-  /** No bytes arrived within `reconnectAfterInactivityMs` */
-  | { type: 'timeout'; ms: number }
-  | { type: 'retry'; error: TRPCClientError<any> }
-  | { type: 'fatal'; error: TRPCClientError<any> };
+  /** Nothing arrived within `reconnectAfterInactivityMs` */
+  | { type: 'timeout'; error: ClientError }
+  | { type: 'retry'; error: ClientError }
+  | { type: 'fatal'; error: ClientError };
+
+/** One SSE event, decoded */
+type SSEEvent =
+  | { type: 'connected'; options: SSEClientOptions }
+  | { type: 'data'; id: string | undefined; data: unknown }
+  | { type: 'error'; shape: TRPCErrorShape }
+  | { type: 'return' }
+  /** `ping` only keeps the connection alive; `restore-id` is for `EventSource` */
+  | { type: 'ignored' }
+  | { type: 'invalid'; error: ClientError };
 
 // `TRPCClientError.from()` reads any thrown value, whatever its type says
 const clientErrorFrom = (cause: unknown) =>
@@ -97,16 +120,37 @@ const clientErrorFrom = (cause: unknown) =>
 const defaultReconnectDelay = (attempt: number) =>
   Math.min(1000 * 2 ** (attempt - 1), 30_000);
 
+const connecting = (error: ClientError | null): Result => ({
+  type: 'state',
+  state: 'connecting',
+  error,
+});
+
+/** Resolves after `ms`, or as soon as `signal` aborts */
 function sleep(ms: number, signal: AbortSignal) {
   return new Promise<void>((resolve) => {
-    const done = () => {
+    const timer = setTimeout(done, ms);
+    signal.addEventListener('abort', done, { once: true });
+    function done() {
       clearTimeout(timer);
       signal.removeEventListener('abort', done);
       resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener('abort', done, { once: true });
+    }
   });
+}
+
+/** Calls `onTimeout` once `reset(ms)` isn't called again within `ms` */
+function inactivityTimer(onTimeout: () => void) {
+  let timer: ReturnType<typeof setTimeout> | undefined = undefined;
+  return makeResource(
+    {
+      reset(ms: number | undefined) {
+        clearTimeout(timer);
+        timer = ms ? setTimeout(onTimeout, ms) : undefined;
+      },
+    },
+    () => clearTimeout(timer),
+  );
 }
 
 function withConnectionParams(
@@ -117,12 +161,257 @@ function withConnectionParams(
     return url;
   }
   const prefix = url.includes('?') ? '&' : '?';
-  return (
-    url +
-    prefix +
-    'connectionParams=' +
-    encodeURIComponent(JSON.stringify(params))
-  );
+  return `${url}${prefix}connectionParams=${encodeURIComponent(JSON.stringify(params))}`;
+}
+
+function decodeEvent(
+  message: SSEMessage,
+  transformer: ResolvedHTTPLinkOptions['transformer'],
+): SSEEvent {
+  try {
+    switch (message.event) {
+      case 'connected':
+        return {
+          type: 'connected',
+          options: message.data ? JSON.parse(message.data) : {},
+        };
+      case 'message':
+        return {
+          type: 'data',
+          // `tracked()` sets an id; the server clears it with `id: ` after
+          id: message.id,
+          // an empty `data:` line is how the server encodes `undefined`
+          data:
+            message.data === ''
+              ? undefined
+              : transformer.output.deserialize(JSON.parse(message.data)),
+        };
+      case 'serialized-error':
+        return {
+          type: 'error',
+          shape: transformer.output.deserialize(JSON.parse(message.data)),
+        };
+      case 'return':
+        return { type: 'return' };
+      default:
+        return { type: 'ignored' };
+    }
+  } catch (cause) {
+    return { type: 'invalid', error: clientErrorFrom(cause) };
+  }
+}
+
+/** A retryable error carries on with `retry`; any other ends with `fatal` */
+const endWith = (
+  code: TRPC_ERROR_CODE_NUMBER,
+  error: ClientError,
+): ConnectionEnd =>
+  retryableRpcCodes.includes(code)
+    ? { type: 'retry', error }
+    : { type: 'fatal', error };
+
+/**
+ * A subscription's results, across every connection it takes: it reconnects
+ * after a connection ends, from the last tracked event id, until the server
+ * finishes the subscription, `signal` aborts, or it fails for good.
+ */
+async function* subscribe(opts: {
+  op: Operation;
+  signal: AbortSignal;
+  link: HTTPSSELinkOptions<AnyClientTypes>;
+  resolved: ResolvedHTTPLinkOptions;
+}): AsyncGenerator<Result, void> {
+  const { op, signal } = opts;
+  const transformer = opts.resolved.transformer;
+  const reconnectAttempts = opts.link.reconnect?.attempts ?? 5;
+  const reconnectDelay = opts.link.reconnect?.delay ?? defaultReconnectDelay;
+
+  let lastEventId: string | undefined = undefined;
+  /** Failed connections in a row */
+  let failures = 0;
+
+  /** Sends the request: the response body, or how the connection ended */
+  async function open(
+    connectionSignal: AbortSignal,
+  ): Promise<{ type: 'open'; body: WebReadableStreamEsque } | ConnectionEnd> {
+    let res: Awaited<ReturnType<typeof fetchHTTPResponse>>;
+    try {
+      const params = await resultOf(opts.link.connectionParams);
+      res = await fetchHTTPResponse({
+        ...opts.resolved,
+        url: withConnectionParams(opts.resolved.url, params ?? null),
+        type: op.type,
+        path: op.path,
+        input: inputWithTrackedEventId(op.input, lastEventId),
+        signal: connectionSignal,
+        contentTypeHeader: 'application/json',
+        getUrl,
+        getBody: (bodyOpts) =>
+          bodyOpts.methodOverride === 'POST' ? getBody(bodyOpts) : undefined,
+        async headers() {
+          const headers = opts.link.headers
+            ? await resultOf(opts.link.headers, { op })
+            : {};
+          return {
+            accept: 'text/event-stream',
+            ...(Symbol.iterator in headers
+              ? Object.fromEntries(headers)
+              : headers),
+          };
+        },
+      });
+    } catch (cause) {
+      return signal.aborted
+        ? { type: 'aborted' }
+        : { type: 'retry', error: clientErrorFrom(cause) };
+    }
+
+    if (!res.ok) {
+      // a tRPC error response, or something else, such as a proxy's page
+      const json = await res.json().catch(() => null);
+      const transformed =
+        isObject(json) && 'error' in json
+          ? transformResult(json as never, transformer.output)
+          : null;
+      if (transformed && !transformed.ok) {
+        return endWith(
+          transformed.error.error.code,
+          TRPCClientError.from(transformed.error, { meta: { response: res } }),
+        );
+      }
+      return {
+        type: 'retry',
+        error: new TRPCClientError(
+          'The subscription request failed with an unexpected response',
+        ),
+      };
+    }
+    if (!res.body || !('getReader' in res.body)) {
+      return {
+        type: 'fatal',
+        error: new TRPCClientError(
+          'httpSSELink needs a `fetch` whose responses have a streaming `body`',
+        ),
+      };
+    }
+    return { type: 'open', body: res.body };
+  }
+
+  /** One connection's results, returning how it ended */
+  async function* connect(): AsyncGenerator<Result, ConnectionEnd> {
+    const connectionAc = new AbortController();
+    const connection = raceAbortSignalsWithCleanup(signal, connectionAc.signal);
+    // however the connection ends, its request closes
+    using _connection = makeResource({}, () => {
+      connectionAc.abort();
+      connection.cleanup();
+    });
+
+    const opened = await open(connection.signal);
+    if (opened.type !== 'open') {
+      return opened;
+    }
+
+    let connected = false;
+    let inactivityMs: number | undefined = undefined;
+    using inactivity = inactivityTimer(() =>
+      connectionAc.abort(
+        new TRPCClientError(
+          `Timeout of ${inactivityMs}ms reached while waiting for a response`,
+        ),
+      ),
+    );
+
+    try {
+      for await (const message of sseMessages(opened.body, connection.signal)) {
+        const event = decodeEvent(message, transformer);
+        switch (event.type) {
+          case 'connected':
+            connected = true;
+            inactivityMs = event.options.reconnectAfterInactivityMs;
+            yield { type: 'started' };
+            yield { type: 'state', state: 'pending', error: null };
+            break;
+          case 'data': {
+            failures = 0;
+            let result: TRPCResult<unknown> = { data: event.data };
+            if (event.id) {
+              // the `tracked()` helper always sets an id
+              lastEventId = event.id;
+              result = {
+                id: event.id,
+                data: { id: event.id, data: event.data },
+              };
+            }
+            yield result;
+            break;
+          }
+          case 'error':
+            return endWith(
+              event.shape.code,
+              TRPCClientError.from({ error: event.shape }),
+            );
+          case 'return':
+            return { type: 'return' };
+          case 'invalid':
+            return { type: 'fatal', error: event.error };
+          case 'ignored':
+            break;
+        }
+        inactivity.reset(inactivityMs);
+      }
+    } catch (cause) {
+      if (signal.aborted) {
+        return { type: 'aborted' };
+      }
+      // only the inactivity timer aborts a connection that's still open
+      if (connectionAc.signal.aborted) {
+        return { type: 'timeout', error: connectionAc.signal.reason };
+      }
+      return { type: 'retry', error: clientErrorFrom(cause) };
+    }
+
+    return connected
+      ? { type: 'ended' }
+      : {
+          type: 'retry',
+          error: new TRPCClientError(
+            'The subscription stream ended before connecting',
+          ),
+        };
+  }
+
+  yield connecting(null);
+  while (true) {
+    const end = yield* connect();
+    switch (end.type) {
+      case 'aborted':
+        return;
+      case 'return':
+        yield { type: 'stopped' };
+        yield { type: 'state', state: 'idle', error: null };
+        return;
+      case 'fatal':
+        throw end.error;
+      case 'ended':
+        failures = 0;
+        yield connecting(null);
+        break;
+      case 'timeout':
+        yield connecting(end.error);
+        break;
+      case 'retry':
+        if (++failures > reconnectAttempts) {
+          throw end.error;
+        }
+        yield connecting(end.error);
+        await sleep(reconnectDelay(failures), signal);
+        if (signal.aborted) {
+          return;
+        }
+        break;
+    }
+  }
 }
 
 /**
@@ -136,333 +425,40 @@ function withConnectionParams(
 export function httpSSELink<TInferrable extends InferrableClientTypes>(
   opts: HTTPSSELinkOptions<inferClientTypes<TInferrable>>,
 ): TRPCLink<TInferrable> {
-  const resolvedOpts = resolveHTTPLinkOptions(opts);
-  const transformer = resolvedOpts.transformer;
-  const reconnectAttempts = opts.reconnect?.attempts ?? 5;
-  const reconnectDelay = opts.reconnect?.delay ?? defaultReconnectDelay;
+  const resolved = resolveHTTPLinkOptions(opts);
 
   return () => {
     return ({ op }) => {
       return observable((observer) => {
-        const { type, path, input } = op;
-
         /* istanbul ignore if -- @preserve */
-        if (type !== 'subscription') {
+        if (op.type !== 'subscription') {
           throw new Error('httpSSELink only supports subscriptions');
         }
 
         const ac = new AbortController();
-        const { signal, cleanup: cleanupSignal } = raceAbortSignalsWithCleanup(
+        const { signal, cleanup } = raceAbortSignalsWithCleanup(
           op.signal,
           ac.signal,
         );
 
-        let lastEventId: string | undefined = undefined;
-        /** Failed connections in a row */
-        let attempt = 0;
-
-        const connectionState = behaviorSubject<
-          TRPCConnectionState<TRPCClientError<any>>
-        >({
-          type: 'state',
-          state: 'connecting',
-          error: null,
-        });
-        const connectionSub = connectionState.subscribe({
-          next(state) {
-            observer.next({ result: state });
-          },
-        });
-
-        const deserializeData = (data: string) =>
-          // An empty `data:` line is how the server encodes `undefined`
-          data === ''
-            ? undefined
-            : transformer.output.deserialize(JSON.parse(data));
-
-        async function readResponse(
-          body: WebReadableStreamEsque,
-          connectionSignal: AbortSignal,
-        ): Promise<ConnectionOutcome> {
-          const reader = body.getReader();
-          const decoder = new TextDecoder();
-
-          let outcome: ConnectionOutcome | null = null;
-          let connected = false;
-          let inactivityMs: number | undefined = undefined;
-          let timedOut = false;
-          let timer: ReturnType<typeof setTimeout> | undefined = undefined;
-
-          const cancel = () => {
-            reader.cancel().catch(() => {
-              // the stream is already errored or closed
-            });
-          };
-          connectionSignal.addEventListener('abort', cancel, { once: true });
-          using _reader = makeResource({}, () => {
-            clearTimeout(timer);
-            connectionSignal.removeEventListener('abort', cancel);
-            cancel();
-          });
-
-          const resetTimer = () => {
-            clearTimeout(timer);
-            if (inactivityMs) {
-              timer = setTimeout(() => {
-                timedOut = true;
-                cancel();
-              }, inactivityMs);
-            }
-          };
-
-          const onMessage = (message: SSEMessage) => {
-            switch (message.event) {
-              case 'connected': {
-                connected = true;
-                const options: SSEClientOptions = message.data
-                  ? JSON.parse(message.data)
-                  : {};
-                inactivityMs = options.reconnectAfterInactivityMs;
-                observer.next({ result: { type: 'started' } });
-                connectionState.next({
-                  type: 'state',
-                  state: 'pending',
-                  error: null,
-                });
-                return;
-              }
-              case 'message': {
-                attempt = 0;
-                const data = deserializeData(message.data);
-                let result: TRPCResult<unknown>;
-                if (message.id) {
-                  // the `tracked()` helper always sets an id
-                  lastEventId = message.id;
-                  result = { id: message.id, data: { id: message.id, data } };
-                } else {
-                  result = { data };
-                }
-                observer.next({ result });
-                return;
-              }
-              case 'serialized-error': {
-                const shape = transformer.output.deserialize(
-                  JSON.parse(message.data),
-                ) as TRPCErrorShape;
-                const error = TRPCClientError.from({ error: shape });
-                outcome = retryableRpcCodes.includes(shape.code)
-                  ? { type: 'retry', error }
-                  : { type: 'fatal', error };
-                return;
-              }
-              case 'return':
-                outcome = { type: 'return' };
-                return;
-              // `ping` only keeps the connection alive, and `restore-id` is
-              // for `EventSource`
-            }
-          };
-          const parser = createSSEParser((message) => {
-            if (outcome) {
-              return;
-            }
-            try {
-              onMessage(message);
-            } catch (cause) {
-              outcome = { type: 'fatal', error: clientErrorFrom(cause) };
-            }
-          });
-
-          let readError: { cause: unknown } | null = null;
-          while (!outcome) {
-            let chunk: ReadableStreamReadResult<Uint8Array>;
-            try {
-              chunk = await reader.read();
-            } catch (cause) {
-              readError = { cause };
-              break;
-            }
-            if (chunk.done) {
-              break;
-            }
-            parser.push(decoder.decode(chunk.value, { stream: true }));
-            // after parsing: the first chunk's `connected` sets the timeout
-            resetTimer();
-          }
-
-          if (outcome) {
-            return outcome;
-          }
-          if (signal.aborted) {
-            return { type: 'aborted' };
-          }
-          if (timedOut && inactivityMs) {
-            return { type: 'timeout', ms: inactivityMs };
-          }
-          if (connected && !readError) {
-            return { type: 'ended' };
-          }
-          return {
-            type: 'retry',
-            error: clientErrorFrom(
-              readError
-                ? readError.cause
-                : new Error('The subscription stream ended before connecting'),
-            ),
-          };
-        }
-
-        async function connect(): Promise<ConnectionOutcome> {
-          const connectionAc = new AbortController();
-          const connection = raceAbortSignalsWithCleanup(
-            signal,
-            connectionAc.signal,
-          );
-          // ending a connection, for any reason, closes its request
-          using _connection = makeResource({}, () => {
-            connectionAc.abort();
-            connection.cleanup();
-          });
-
-          let res: Awaited<ReturnType<typeof fetchHTTPResponse>>;
-          try {
-            const params = await resultOf(opts.connectionParams);
-            res = await fetchHTTPResponse({
-              ...resolvedOpts,
-              url: withConnectionParams(resolvedOpts.url, params ?? null),
-              type,
-              path,
-              input: inputWithTrackedEventId(input, lastEventId),
-              signal: connection.signal,
-              contentTypeHeader: 'application/json',
-              getUrl,
-              getBody: (bodyOpts) =>
-                bodyOpts.methodOverride === 'POST'
-                  ? getBody(bodyOpts)
-                  : undefined,
-              async headers() {
-                const headers = opts.headers
-                  ? await resultOf(opts.headers, { op })
-                  : {};
-                return {
-                  accept: 'text/event-stream',
-                  ...(Symbol.iterator in headers
-                    ? Object.fromEntries(headers)
-                    : headers),
-                };
-              },
-            });
-          } catch (cause) {
-            if (signal.aborted) {
-              return { type: 'aborted' };
-            }
-            return { type: 'retry', error: clientErrorFrom(cause) };
-          }
-
-          if (!res.ok) {
-            const json = await res.json().catch(() => null);
-            if (isObject(json) && 'error' in json) {
-              const transformed = transformResult(
-                json as never,
-                transformer.output,
-              );
-              if (!transformed.ok) {
-                const error = TRPCClientError.from(transformed.error, {
-                  meta: { response: res },
-                });
-                return retryableRpcCodes.includes(transformed.error.error.code)
-                  ? { type: 'retry', error }
-                  : { type: 'fatal', error };
-              }
-            }
-            return {
-              type: 'retry',
-              error: new TRPCClientError(
-                'The subscription request failed with an unexpected response',
-              ),
-            };
-          }
-
-          if (!res.body || !('getReader' in res.body)) {
-            return {
-              type: 'fatal',
-              error: new TRPCClientError(
-                'httpSSELink needs a `fetch` whose responses have a streaming `body`',
-              ),
-            };
-          }
-
-          return await readResponse(res.body, connection.signal);
-        }
-
         run(async () => {
-          let delayMs = 0;
-          while (true) {
-            if (delayMs > 0) {
-              await sleep(delayMs, signal);
-            }
-            if (signal.aborted) {
-              return;
-            }
-            const outcome = await connect();
-            switch (outcome.type) {
-              case 'aborted':
-                return;
-              case 'return': {
-                observer.next({ result: { type: 'stopped' } });
-                connectionState.next({
-                  type: 'state',
-                  state: 'idle',
-                  error: null,
-                });
-                observer.complete();
-                return;
-              }
-              case 'fatal':
-                throw outcome.error;
-              case 'ended':
-                attempt = 0;
-                delayMs = 0;
-                connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: null,
-                });
-                break;
-              case 'timeout':
-                delayMs = 0;
-                connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: new TRPCClientError(
-                    `Timeout of ${outcome.ms}ms reached while waiting for a response`,
-                  ),
-                });
-                break;
-              case 'retry': {
-                attempt++;
-                if (attempt > reconnectAttempts) {
-                  throw outcome.error;
-                }
-                delayMs = reconnectDelay(attempt);
-                connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: outcome.error,
-                });
-                break;
-              }
-            }
+          for await (const result of subscribe({
+            op,
+            signal,
+            link: opts,
+            resolved,
+          })) {
+            observer.next({ result });
           }
-        }).catch((error) => {
-          observer.error(TRPCClientError.from(error));
+          observer.complete();
+        }).catch((cause) => {
+          observer.error(clientErrorFrom(cause));
         });
 
         return () => {
           observer.complete();
           ac.abort();
-          cleanupSignal();
-          connectionSub.unsubscribe();
+          cleanup();
         };
       });
     };
