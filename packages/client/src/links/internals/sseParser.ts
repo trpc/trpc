@@ -52,7 +52,10 @@ async function* textChunks(body: WebReadableStreamEsque, opts: ReadOptions) {
     if (chunk.done) {
       return;
     }
-    opts.onRead();
+    // an empty read isn't a sign of life; a partial UTF-8 sequence is
+    if (chunk.value.byteLength > 0) {
+      opts.onRead();
+    }
     yield decoder.decode(chunk.value, { stream: true });
   }
 }

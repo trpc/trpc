@@ -366,6 +366,10 @@ async function* subscribe(opts: {
         onRead: () => inactivity.reset(inactivityMs),
       });
       for await (const message of messages) {
+        // a chunk can hold more events than the one the caller aborted on
+        if (signal.aborted) {
+          return { type: 'aborted' };
+        }
         const event = decodeEvent(message, transformer);
         switch (event.type) {
           case 'connected':
@@ -493,7 +497,7 @@ export function httpSSELink<TInferrable extends InferrableClientTypes>(
           })) {
             // a parsed chunk can hold more events than the one that aborted
             if (signal.aborted) {
-              return;
+              break;
             }
             observer.next({ result });
           }

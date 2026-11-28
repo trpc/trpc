@@ -364,11 +364,54 @@ test('delivers nothing after the caller aborts, even from the same chunk', async
 
   const ac = new AbortController();
   const onData = vi.fn(() => ac.abort());
-  client.numbers.subscribe(undefined, { signal: ac.signal, onData });
+  const onComplete = vi.fn();
+  client.numbers.subscribe(undefined, {
+    signal: ac.signal,
+    onData,
+    onComplete,
+  });
 
   await vi.waitFor(() => {
     expect(onData).toHaveBeenCalled();
   });
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(onData).toHaveBeenCalledTimes(1);
+  expect(onComplete).toHaveBeenCalledTimes(1);
+});
+
+test('empty reads do not keep the inactivity timeout from firing', async () => {
+  await using ctx = setup({
+    allowMethodOverride: false,
+    maxDurationMs: undefined,
+  });
+  const fetchSpy = vi.fn(
+    async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                'event: connected\ndata: {"reconnectAfterInactivityMs":100}\n\n',
+              ),
+            );
+            const timer = setInterval(
+              () => controller.enqueue(new Uint8Array()),
+              20,
+            );
+            setTimeout(() => clearInterval(timer), 1_000);
+          },
+        }),
+        { headers: { 'content-type': 'text/event-stream' } },
+      ),
+  );
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [httpSSELink({ url: ctx.httpUrl, fetch: fetchSpy })],
+  });
+
+  const sub = client.numbers.subscribe(undefined, { onData: vi.fn() });
+  using _sub = makeResource({}, () => sub.unsubscribe());
+
+  await vi.waitFor(() => {
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
