@@ -169,7 +169,7 @@ export const t = initTRPC.create({
 
 We will likely add a default ping interval and timeout configuration in the future, but this is not yet decided. Feedback is welcome in the [🎏-rfc-streaming](https://trpc.io/discord) channel on Discord.
 
-See the [`httpSubscriptionLink` docs](./client/links/httpSubscriptionLink.md#timeout) for more details on these features.
+See the [`httpSSELink` docs](./client/links/httpSSELink.md#server-options) for more details on these features.
 
 ### Introduction of `retryLink` (non-breaking)
 
@@ -178,7 +178,7 @@ See [retryLink](./client/links/retryLink.md) - allows you to retry failed operat
 ### `useSubscription` improvements (non-breaking)
 
 - When subscribing to procedures using the [useSubscription](./client/react/useSubscription.md) hook it will now return information about the status of the subscription and the connection.
-- Ability to have a ponyfill when using [`httpSubscriptionLink`](./client/links/httpSubscriptionLink.md)
+- Ability to have a ponyfill when using `httpSubscriptionLink`. It's now deprecated: [`httpSSELink`](./client/links/httpSSELink.md) reads SSE with `fetch` and needs no ponyfill.
 
 ### Subscription procedure output type changed to `AsyncGenerator` (non-breaking)
 
@@ -225,7 +225,7 @@ See [subscriptions docs](./server/subscriptions.md#output-validation) for more i
 
 ### Deprecation of subscriptions returning `Observable`s (non-breaking)
 
-We now support returning async generator function for subscriptions and we previously added a [`httpSubscriptionLink`](./client/links/httpSubscriptionLink.md).
+We now support returning async generator function for subscriptions, and SSE subscriptions with [`httpSSELink`](./client/links/httpSSELink.md).
 
 To see how to use async generator functions for subscriptions see the [subscriptions docs](./server/subscriptions.md).
 
@@ -237,7 +237,7 @@ We have removed the `AbortControllerEsque`-ponyfill from tRPC, if you need to su
 
 We now support SSE for subscriptions, this means that you don't need to spin up a WebSocket server to get real-time updates in your application & that the client can automatically reconnect and resume if the connection is lost.
 
-👉 [See more in the `httpSubscriptionLink` docs](./client/links/httpSubscriptionLink.md).
+👉 [See more in the `httpSSELink` docs](./client/links/httpSSELink.md). It replaces `httpSubscriptionLink`, which is deprecated; see [migrating from `httpSubscriptionLink`](./client/links/httpSSELink.md#migrating-from-httpsubscriptionlink).
 
 ### Support for streaming responses over HTTP (non-breaking)
 

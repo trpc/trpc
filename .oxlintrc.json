@@ -123,6 +123,7 @@
               "RPC",
               "HTTP",
               "JSON",
+              "SSE",
               "\\.config\\.js",
               "\\.d\\.ts$",
               "issue-\\d+-.*\\.test\\.tsx?$",

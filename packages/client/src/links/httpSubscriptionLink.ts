@@ -40,6 +40,7 @@ async function urlWithConnectionParams(
 }
 
 /**
+ * @deprecated Use `httpSSELink` and its `HTTPSSELinkOptions` instead.
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink#httpsubscriptionlink-options
  */
 type HTTPSubscriptionLinkOptions<
@@ -67,9 +68,13 @@ type HTTPSubscriptionLinkOptions<
   UrlOptionsWithConnectionParams;
 
 /**
- * A terminating link that runs subscriptions over Server-Sent Events.
+ * A terminating link that runs subscriptions over Server-Sent Events, read
+ * with `EventSource`.
  *
- * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+ * @deprecated Use `httpSSELink` instead. It reads the same server
+ * responses with `fetch`, so it sends headers and POST bodies without an
+ * `EventSource` polyfill, and reconnects with fresh headers.
+ * @see https://trpc.io/docs/client/links/httpSSELink#migrating-from-httpsubscriptionlink
  */
 export function httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
@@ -249,6 +254,6 @@ export function httpSubscriptionLink<
 }
 
 /**
- * @deprecated Use {@link httpSubscriptionLink} instead.
+ * @deprecated Use `httpSSELink` instead.
  */
 export const unstable_httpSubscriptionLink = httpSubscriptionLink;

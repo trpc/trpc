@@ -27,7 +27,7 @@ export interface UrlOptionsWithConnectionParams {
   /**
    * Connection params that are available in `createContext()`
    * - For `wsLink`/`wsClient`, these are sent as the first message
-   * - For `httpSubscriptionLink`, these are serialized as part of the URL under the `connectionParams` query
+   * - For `httpSSELink` and `httpSubscriptionLink`, these are serialized as part of the URL under the `connectionParams` query
    * @see https://trpc.io/docs/server/websockets#connectionParams
    */
   connectionParams?: CallbackOrValue<TRPCRequestInfo['connectionParams']>;

@@ -125,9 +125,11 @@ const FrontmatterFields = Schema.Struct({
   /**
    * `unstable` for a page about `unstable_` exports: listed and indexed like
    * any other, with an "Unstable" badge. Experimental features are hidden
-   * with `experiment` instead.
+   * with `experiment` instead. `deprecated` for a page about an API with a
+   * replacement: out of the sidebar and pagination, but served, indexed and
+   * found by search, with a "Deprecated" badge.
    */
-  stability: Schema.optional(Schema.Literal('unstable')),
+  stability: Schema.optional(Schema.Literals(['unstable', 'deprecated'])),
   title: Schema.String,
   v11: Schema.optional(Schema.String),
   /*
@@ -283,6 +285,7 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
     path: pagePath(dirs, source.slug),
     section: source.frontmatter.section,
     slug: source.slug,
+    stability: source.frontmatter.stability,
     title: source.frontmatter.title,
   }));
 });
@@ -707,7 +710,7 @@ export function docsContent(options: ContentOptions): Plugin {
         return parent === undefined ? 0 : 1 + depth(parent);
       };
       for (const doc of section.docs) {
-        const about = `${doc.experiment === undefined ? '' : 'Experimental. '}${stripInlineCode(doc.description)}`;
+        const about = `${doc.experiment === undefined ? '' : 'Experimental. '}${doc.stability === 'deprecated' ? 'Deprecated. ' : ''}${stripInlineCode(doc.description)}`;
         lines.push(
           `${'  '.repeat(depth(doc.slug))}- [${stripInlineCode(doc.title)}](${pageUrl(doc.slug)})${about === '' ? '' : `: ${about}`}`,
         );

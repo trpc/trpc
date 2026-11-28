@@ -8,6 +8,7 @@ export * from './links/loggerLink';
 export * from './links/splitLink';
 export * from './links/wsLink/wsLink';
 export * from './links/httpSubscriptionLink';
+export * from './links/httpSSELink';
 export * from './links/retryLink';
 export * from './links/localLink';
 

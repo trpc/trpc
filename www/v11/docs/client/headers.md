@@ -8,7 +8,7 @@ parent: "client/links"
 order: 40
 ---
 
-The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSubscriptionLink`](./links/httpSubscriptionLink.md).
+The headers option may be used with any of our HTTP links: [`httpBatchLink`](./links/httpBatchLink.md), [`httpBatchStreamLink`](./links/httpBatchStreamLink.md), [`httpLink`](./links/httpLink.md), or [`httpSSELink`](./links/httpSSELink.md).
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 
@@ -83,3 +83,7 @@ setToken(result.accessToken);
 
 The `token` can be whatever you want it to be. It's entirely up to you whether that's just a client-side
 variable that you update the value of on success or whether you store the token and pull it from local storage.
+
+## Subscriptions over SSE
+
+[`httpSSELink`](./links/httpSSELink.md) sends `headers` with every connection. A `headers` function runs again each time the link reconnects, so it can return a fresh token. See [Headers and authentication](./links/httpSSELink.md#headers).

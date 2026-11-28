@@ -1,5 +1,11 @@
 import { cn } from '@shared/ui/lib/utils';
-import { ChevronRight, FileText, FlaskConical, Hash } from 'lucide-react';
+import {
+  Archive,
+  ChevronRight,
+  FileText,
+  FlaskConical,
+  Hash,
+} from 'lucide-react';
 import { Fragment } from 'react';
 
 import { textParts } from '~/content/inline-code.ts';
@@ -72,6 +78,13 @@ export function SearchHit(props: {
             <FlaskConical
               aria-label="Experimental"
               className="size-3.5 shrink-0 text-brand"
+              role="img"
+            />
+          ) : null}
+          {entry.deprecated ? (
+            <Archive
+              aria-label="Deprecated"
+              className="size-3.5 shrink-0 text-muted-foreground"
               role="img"
             />
           ) : null}

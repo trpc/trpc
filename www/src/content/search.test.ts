@@ -32,6 +32,16 @@ const docs: ReadonlyArray<DocMeta> = [
     title: 'HTTP Batch Link',
   },
   {
+    description: 'Subscriptions over EventSource.',
+    headings: [],
+    label: '`httpSubscriptionLink`',
+    parent: 'client/links',
+    section: 'Client',
+    slug: 'client/links/httpSubscriptionLink',
+    stability: 'deprecated',
+    title: 'HTTP Subscription Link',
+  },
+  {
     description: 'Query and mutation options for TanStack Query.',
     headings: [{ depth: 2, id: 'query-options', text: '`queryOptions()`' }],
     section: 'Integrations',
@@ -118,6 +128,33 @@ describe('searchDocs', () => {
       experimental: true,
       id: 'integrations/tanstack-query/tanstack-db',
     });
+  });
+
+  it('finds deprecated pages, marked, but leaves them out of the default list', () => {
+    const [hit] = searchDocs(docs, 'httpSubscriptionLink', 20);
+    expect(hit?.entry).toMatchObject({
+      deprecated: true,
+      id: 'client/links/httpSubscriptionLink',
+    });
+    expect(searchDocs(docs, '', 20).map((one) => one.entry.id)).not.toContain(
+      'client/links/httpSubscriptionLink',
+    );
+  });
+
+  it('puts a deprecated page after a listed one with the same name', () => {
+    const page = (slug: string, stability?: 'deprecated'): DocMeta => ({
+      description: '',
+      headings: [],
+      label: 'Batch',
+      section: 'Client',
+      slug,
+      stability,
+      title: 'Batch',
+    });
+    const both = [page('client/old', 'deprecated'), page('client/new')];
+    expect(searchDocs(both, 'batching', 20).map((hit) => hit.entry.id)).toEqual(
+      ['client/new', 'client/old'],
+    );
   });
 
   it('places a heading under its pages and its h2', () => {

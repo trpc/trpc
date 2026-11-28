@@ -17,12 +17,13 @@ skill:
     createContext for user extraction, t.middleware with opts.next({ ctx }) for
     context narrowing to non-null user, protectedProcedure base pattern,
     client-side Authorization headers via httpBatchLink headers(), WebSocket
-    connectionParams, and SSE auth via cookies or EventSource polyfill custom
-    headers. UNAUTHORIZED vs FORBIDDEN, role checks stacked on
-    protectedProcedure, and why createContext shouldn't throw for a bad token.
+    connectionParams, and SSE auth via httpSSELink headers(), which re-run on
+    every reconnect, or cookies. UNAUTHORIZED vs FORBIDDEN, role checks
+    stacked on protectedProcedure, and why createContext shouldn't throw for a
+    bad token.
   include:
     - client/headers
-    - client/links/httpSubscriptionLink#headers-and-authorization--authentication
+    - client/links/httpSSELink#headers
     - server/websockets#connectionParams
   references:
     - client/cors
@@ -172,11 +173,11 @@ Throw `UNAUTHORIZED` (401) when the caller isn't signed in, and `FORBIDDEN` (403
 
 - **Cookies** are sent with every request when the client and server are on the same origin. For another origin, see [CORS & Cookies](../client/cors.md).
 - **Headers** like `Authorization` can be set on any HTTP link with the [`headers`](../client/headers.md) option.
-- **Subscriptions** over SSE can't send custom headers with the browser's `EventSource`. See [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md#headers-and-authorization--authentication) for the options.
+- **Subscriptions** over SSE send `headers` too, with [`httpSSELink`](../client/links/httpSSELink.md). A `headers` function runs again on every reconnect, so it can return a fresh token. See [Headers and authentication](../client/links/httpSSELink.md#headers).
 - **WebSockets** send [connection params](./websockets.md#connectionParams) when the connection opens, which `createContext` reads from `opts.info.connectionParams`.
 
 ## Common mistakes
 
 - **Calling `opts.next()` without the narrowed `ctx`.** Procedures after the middleware still see `ctx.user` as nullable. Pass `opts.next({ ctx: { user: opts.ctx.user } })`, as in [Option 2](#option-2-authorize-using-middleware).
 - **Throwing in `createContext` for a missing or invalid token.** That fails every procedure in the request, public ones too. Return `user: null` instead, and let a middleware reject the procedures that need a user.
-- **Putting tokens in `httpSubscriptionLink`'s `connectionParams`.** They are sent in the URL, where servers and proxies may log them. Prefer cookies, or headers through an `EventSource` ponyfill.
+- **Putting tokens in `httpSSELink`'s `connectionParams`.** They are sent in the URL, where servers and proxies may log them. Use `headers` or cookies instead.

@@ -156,9 +156,9 @@ export function useSearchedDocs(): DocsVersion {
 const listedVersions = new WeakMap<DocsVersion, Map<string, DocsVersion>>();
 
 /**
- * `version` as the sidebar, search and pagination list it: without the
- * pages of experiments that aren't `on`. `findDoc` doesn't find those in it;
- * look in `version`.
+ * `version` as the sidebar and pagination list it: without deprecated pages
+ * and the pages of experiments that aren't `on`. `findDoc` doesn't find
+ * those in it; look in `version`.
  */
 export function listedDocs(
   version: DocsVersion,

@@ -23,8 +23,13 @@ export interface DocMeta {
   readonly section: string;
   /** The page's path under `docs/`, without `.md`: `client/links`. */
   readonly slug: string;
-  /** `unstable` when the page is about `unstable_` exports: badged, but listed. */
-  readonly stability?: 'unstable' | undefined;
+  /**
+   * `unstable` when the page is about `unstable_` exports: badged, but
+   * listed. `deprecated` when it's about an API with a replacement: badged,
+   * out of the sidebar and pagination, still served, indexed and found by
+   * search.
+   */
+  readonly stability?: 'unstable' | 'deprecated' | undefined;
   readonly title: string;
   /** The slug of the v11 page on the same topic, if there is one. */
   readonly v11?: string | undefined;

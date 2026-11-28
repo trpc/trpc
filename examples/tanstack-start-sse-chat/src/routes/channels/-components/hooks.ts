@@ -30,7 +30,7 @@ export function useLivePosts() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Once a post has arrived, `httpSubscriptionLink` resumes from its id when it reconnects
+  // Once a post has arrived, `httpSSELink` resumes from its id when it reconnects
   const canResume = React.useRef(false);
 
   return useSubscription(

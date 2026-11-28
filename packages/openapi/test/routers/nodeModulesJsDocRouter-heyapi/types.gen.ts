@@ -26,7 +26,7 @@ export type TrpcRequestInfo = {
    */
   calls: Array<TrpcRequestInfoProcedureCall>;
   /**
-   * The connection params the client sent with `httpSubscriptionLink` or
+   * The connection params the client sent with `httpSSELink` or
    * `createWSClient`.
    */
   connectionParams: {

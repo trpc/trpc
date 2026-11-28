@@ -1,6 +1,6 @@
 # tRPC + Server-sent Events (SSE)
 
-This example showcases the use of `httpSubscriptionLink` to facilitate `useSubscription` via [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
+This example showcases the use of `httpSSELink` to facilitate `useSubscription` via [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
 
 Try demo http://sse.trpc.io/
 

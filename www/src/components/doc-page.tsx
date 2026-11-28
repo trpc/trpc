@@ -3,6 +3,7 @@ import { Link, notFound, Outlet } from '@tanstack/react-router';
 import {
   ArrowLeft,
   ArrowRight,
+  Archive,
   ChevronRight,
   FlaskConical,
   Pencil,
@@ -197,6 +198,16 @@ export function DocPage(props: {
                 >
                   Stability
                 </Link>
+              </span>
+            </p>
+          ) : doc.stability === 'deprecated' ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm text-pretty text-muted-foreground">
+              <Badge variant="outline">
+                <Archive className="text-brand" /> Deprecated
+              </Badge>
+              <span>
+                Still works, but has a replacement and goes away in the next
+                major version.
               </span>
             </p>
           ) : doc.experiment ? (
