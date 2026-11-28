@@ -65,6 +65,10 @@ describe("a component that changes a handle's input with queryOptions", () => {
     function Search(props: {
       results: inferQueryHandle<TRPC['post']['search']>;
     }) {
+      // Only a skipped handle, whose entry had `skipToken`, has no input
+      if (props.results.skipped) {
+        throw new Error('The search needs an input');
+      }
       const t = resource.useTRPC();
       const [term, _setTerm] = React.useState(props.results.input.term);
       React.useEffect(() => {
@@ -105,6 +109,9 @@ describe("a component that changes a handle's input with queryOptions", () => {
     function Comments(props: {
       comments: inferInfiniteQueryHandle<TRPC['post']['comments']>;
     }) {
+      if (props.comments.skipped) {
+        throw new Error('The comments need an input');
+      }
       const t = resource.useTRPC();
       const [limit, _setLimit] = React.useState(props.comments.input.limit);
       React.useEffect(() => {

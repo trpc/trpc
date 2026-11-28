@@ -5,6 +5,7 @@
  * has one, is what the page's markdown gets in the demo's place.
  */
 export const demoNames = [
+  'nested-queries',
   'loader-handles',
   'request-timeline',
   'starting-queries',

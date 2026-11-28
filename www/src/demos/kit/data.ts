@@ -1,4 +1,4 @@
-/** The demo blog's authors, posts and comments. */
+/** The demo blog's authors, their teams and bios, posts and comments. */
 export interface Post {
   readonly authorId: number;
   readonly body: string;
@@ -8,6 +8,19 @@ export interface Post {
 }
 
 export const authors = ['Ada', 'Grace', 'Linus', 'Margaret'] as const;
+
+/**
+ * The team of each author, by id. Ada and Grace are one team, Linus and
+ * Margaret the other.
+ */
+export const teamIds = [1, 1, 2, 2] as const;
+
+export const bios = [
+  'Writes about loaders and round trips.',
+  'Writes about handles and types.',
+  'Writes about URLs and waterfalls.',
+  'Reads every post, and comments on most.',
+] as const;
 
 /** Ada, Grace and Linus write three posts each, three to a page of the list. */
 export const posts: ReadonlyArray<Post> = [

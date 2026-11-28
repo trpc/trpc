@@ -8,8 +8,11 @@ export {
   fetchInfiniteEntry,
   ensureInfiniteEntry,
   fromHandle,
-  isTRPCEntryError,
+  experimental_dataOf,
+  experimental_perItem,
+  experimental_handleOfItem,
   useLoadHandles,
+  isTRPCEntryError,
 } from './handles';
 export { TRPCEntryError } from './entryError';
 export type {
@@ -18,6 +21,8 @@ export type {
   AnyTRPCHandle,
   TRPCQueryEntry,
   TRPCInfiniteQueryEntry,
+  experimental_TRPCQueryHandlePerItem,
+  experimental_TRPCInfiniteQueryHandlePerItem,
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadEntries,
@@ -28,4 +33,7 @@ export type {
   TRPCInfiniteEntryOptions,
   inferQueryHandle,
   inferInfiniteQueryHandle,
+  experimental_inferQueryHandleOfItem,
+  experimental_inferInfiniteQueryHandleOfItem,
+  experimental_inferHandles,
 } from './handles';

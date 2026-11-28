@@ -390,6 +390,7 @@ export type TRPCOptionsProxyOptions<
 
 type UtilsMethods =
   | '~queryClient'
+  | '~transport'
   | keyof DecorateQueryProcedure<any>
   | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
@@ -453,6 +454,14 @@ export function createTRPCOptionsProxy<
       // Untyped on purpose: the `QueryClient` this proxy uses, for code that
       // only gets the proxy, like other entry points of this package
       '~queryClient': () => unwrapLazyArg(opts.queryClient),
+      // Untyped too: what its requests go through, the same for every proxy
+      // of one client or router
+      '~transport': () =>
+        'router' in opts
+          ? opts.router
+          : opts.client instanceof TRPCUntypedClient
+            ? opts.client
+            : getUntypedClient(opts.client),
 
       pathKey: () => {
         return getQueryKeyInternal({

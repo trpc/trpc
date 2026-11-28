@@ -1,21 +1,40 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { hashKey } from '@tanstack/react-query';
 import * as React from 'react';
 import type {
   DecorateQueryProcedure,
   DecorateRouterKeyable,
 } from '../internals/createOptionsProxy';
-import type { FeatureFlags, ResolverDef } from '../internals/types';
+import type { ResolverDef } from '../internals/types';
 import { queryClientOf, readProxy, readRoot } from './entry';
 import { TRPCEntryError } from './entryError';
-import { toHandle } from './handle';
-import { readEntries, startEntries, startEntry } from './load';
+import { beginEntries, handlesOfLoads, startEntries } from './load';
+import { attemptNow } from './outcome';
+import { describeEntries } from './plan';
+import { toTanStackEntries } from './shared';
 import type {
-  TRPCInfiniteEntryOptions,
+  LoadedEntries,
+  TanStackEntriesOnly,
   TRPCLoadEntries,
   TRPCLoadedHandles,
   TRPCSettledHandles,
 } from './types';
+
+/**
+ * The entries of a load, as the load reads them. A proxy that isn't the root
+ * throws, as it always has; entries it can't read are a failed outcome,
+ * whatever was thrown, which makes the load reject
+ */
+function readLoad(opts: {
+  trpc: unknown;
+  fn: string;
+  entries: Record<string, unknown>;
+}) {
+  const root = readRoot(opts.trpc, opts.fn);
+  return {
+    queryClient: queryClientOf(root),
+    entries: attemptNow(() => toTanStackEntries(opts.entries)),
+  };
+}
 
 export {
   prefetchEntry,
@@ -25,13 +44,18 @@ export {
   fetchInfiniteEntry,
   ensureInfiniteEntry,
 } from './entry';
-export { fromHandle } from './handle';
+// The client's: what reads another entry's data, and what loads for every
+// item of a list. Each query in them is a TanStack Query entry
+export { experimental_dataOf, experimental_perItem } from '@trpc/client';
+export { fromHandle, experimental_handleOfItem } from './handle';
 export type {
   TRPCQueryHandle,
   TRPCInfiniteQueryHandle,
   AnyTRPCHandle,
   TRPCQueryEntry,
   TRPCInfiniteQueryEntry,
+  experimental_TRPCQueryHandlePerItem,
+  experimental_TRPCInfiniteQueryHandlePerItem,
   AnyTRPCEntry,
   TRPCEntryKind,
   TRPCLoadEntries,
@@ -42,7 +66,24 @@ export type {
   TRPCInfiniteEntryOptions,
   inferQueryHandle,
   inferInfiniteQueryHandle,
+  experimental_inferQueryHandleOfItem,
+  experimental_inferInfiniteQueryHandleOfItem,
+  experimental_inferHandles,
 } from './types';
+
+/** What `useLoadHandles()` keeps for a component */
+interface UsedLoad {
+  /** What its entries are */
+  key: string;
+  /** Another `QueryClient`'s cache has none of its queries */
+  queryClient: QueryClient;
+  handles: Record<string, unknown>;
+  /**
+   * The number of each symbol its description has, which describes the
+   * entries the same on the next render
+   */
+  symbols: ReadonlyMap<symbol, number>;
+}
 
 /**
  * Whether `error` is a failed entry from `loadHandles()`. Pass a procedure to
@@ -79,9 +120,19 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * Starts every entry before it waits for any, so the order of the entries doesn't
  * matter. Resolves to `[handles, data]` once every fetch and ensure entry has data:
  * a handle for every entry, and the data of the fetch and ensure entries. Rejects as
- * soon as a fetch or ensure entry fails. Prefetch entries never make it reject.
- * It rejects with a `TRPCEntryError`, except for an error with a `digest`, such as
- * Next.js's `headers()` in a static render throws, which it rethrows as is.
+ * soon as a fetch or ensure entry fails. A prefetch entry's failed request makes it
+ * reject only if another entry needs its data for a handle or for data the load
+ * waits for: one that reads it in its input with `experimental_dataOf(entry)`, or
+ * a fetch or ensure entry built from it with `experimental_dataOf(entry, (data) => entry)`.
+ * That is so also when the cache has data for it, such as from `setQueryData()`.
+ * A prefetch entry built from it with a callback, or with
+ * `experimental_perItem()`, doesn't start, and the load still resolves,
+ * with its unfinished handle. A throw while
+ * it starts an entry that reads no other entry, such as from a `staleTime`
+ * function, makes it reject too, whatever the entry's kind.
+ * It rejects with a `TRPCEntryError`, except for an interruption, which it
+ * rethrows as is: a cancelled query's `CancelledError`, or an error with a
+ * `digest`, such as Next.js's `headers()` in a static render throws.
  *
  * Put TanStack Query's `skipToken` in place of an entry to start nothing for that
  * key: its handle is `undefined`, and `data` has no key for it.
@@ -102,18 +153,19 @@ export function isTRPCEntryError(error: unknown, procedure?: unknown) {
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles
  */
-export function loadHandles<
-  TFeatureFlags extends FeatureFlags,
-  TEntries extends TRPCLoadEntries,
->(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
-  entries: TEntries,
-): Promise<TRPCLoadedHandles<TEntries>> {
+export function loadHandles<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  entries: TEntries & TanStackEntriesOnly<TEntries>,
+): Promise<TRPCLoadedHandles<LoadedEntries<TEntries>>> {
+  const load = readLoad({ trpc, fn: 'loadHandles', entries });
+  if (!load.entries.ok) {
+    return Promise.reject(load.entries.error);
+  }
   return startEntries({
-    queryClient: queryClientOf(readRoot(trpc, 'loadHandles')),
-    entries,
+    queryClient: load.queryClient,
+    entries: load.entries.data,
     settle: false,
-  }) as Promise<TRPCLoadedHandles<TEntries>>;
+  }) as Promise<any>;
 }
 
 /**
@@ -122,8 +174,29 @@ export function loadHandles<
  * `results` has `{ status: 'success', data }` or `{ status: 'error', error }`,
  * with a `TRPCEntryError`, for every fetch and ensure entry.
  *
- * A cancelled query, or an error with a `digest` such as Next.js's `headers()`
- * in a static render throws, still rejects, as it does with `loadHandles()`.
+ * When a fetch or ensure entry fails, the entries that read its data with
+ * `experimental_dataOf()` can't start. One that reads the data in its input has no
+ * handle, and its result, if it has one, is the same error. One built from it
+ * with `experimental_dataOf(entry, (data) => entry)` keeps its unfinished handle,
+ * and its result, if it has one, is the same error. An
+ * `experimental_perItem()` over it has no handle, and its result, if it has
+ * one, is an empty list. So check the
+ * results before you return the handles. If the failed entry is a prefetch entry,
+ * which has no result to hold the error, the load rejects with it when another
+ * entry needs its data for a handle or a result: one that reads it in its input,
+ * or a fetch or ensure entry built from it with a callback. A prefetch entry
+ * built from it with `experimental_dataOf(entry, (data) => entry)` doesn't start,
+ * but the load still resolves, with that entry's unfinished handle. A prefetch
+ * entry that nothing reads can fail without making it reject. A throw while it
+ * starts an entry that reads no other entry, such as from
+ * a `staleTime` function, still rejects, whatever the entry's kind. So does
+ * what isn't a load it can start, before any entry starts: such as a bare
+ * `experimental_query()`, or an entry that reads one that isn't in the load.
+ *
+ * An interruption still rejects, as it does with `loadHandles()`: a cancelled
+ * query, such as an ensure entry's uncached fetch that `cancelQueries()` stops,
+ * rejects with TanStack Query's `CancelledError`, and an error with a `digest`,
+ * such as Next.js's `headers()` throws in a static render, is rethrown as is.
  * @example
  * ```ts
  * const [handles, results] = await loadHandlesSettled(trpc, {
@@ -137,44 +210,19 @@ export function loadHandles<
  * ```
  * @see https://trpc.io/docs/client/tanstack-react-query/handles#errors-as-values
  */
-export function loadHandlesSettled<
-  TFeatureFlags extends FeatureFlags,
-  TEntries extends TRPCLoadEntries,
->(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
-  entries: TEntries,
-): Promise<TRPCSettledHandles<TEntries>> {
+export function loadHandlesSettled<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  entries: TEntries & TanStackEntriesOnly<TEntries>,
+): Promise<TRPCSettledHandles<LoadedEntries<TEntries>>> {
+  const load = readLoad({ trpc, fn: 'loadHandlesSettled', entries });
+  if (!load.entries.ok) {
+    return Promise.reject(load.entries.error);
+  }
   return startEntries({
-    queryClient: queryClientOf(readRoot(trpc, 'loadHandlesSettled')),
-    entries,
+    queryClient: load.queryClient,
+    entries: load.entries.data,
     settle: true,
-  }) as Promise<TRPCSettledHandles<TEntries>>;
-}
-
-/** What `QueryClient.defaultQueryOptions()` takes: the options proxy built them */
-type QueryOptionsToDefault = Parameters<QueryClient['defaultQueryOptions']>[0];
-
-/** The options of an entry that say how its query starts */
-const startOptions = [
-  'staleTime',
-  'retry',
-  'retryDelay',
-  'gcTime',
-  'pages',
-  // Whether there is one: without it, an infinite query loads no page after
-  // its first, and a load with `pages` fails
-  'getNextPageParam',
-] as const satisfies readonly (keyof TRPCInfiniteEntryOptions<ResolverDef>)[];
-
-/**
- * A start option as a string. `undefined` and `Infinity` have no JSON, and
- * would read the same as `null`. Which function an option is isn't compared:
- * an inline one is new on every render.
- */
-function describeOption(value: unknown) {
-  return typeof value === 'function'
-    ? 'function'
-    : `${typeof value}:${String(value)}`;
+  }) as Promise<any>;
 }
 
 /**
@@ -184,18 +232,19 @@ function describeOption(value: unknown) {
  * the handles at once, without waiting for any data. The components that get
  * them read the data, and wait for it in their Suspense boundary.
  *
- * Nothing waits for a fetch or ensure entry, so their errors surface where the
- * handle is read, as a prefetch entry's do. Rendering doesn't start a query
- * that failed again: resetting the reader's error boundary with
- * `QueryErrorResetBoundary` retries it. The entry's kind still says how its
- * query starts: `ensureEntry` uses any cached data, `fetchEntry` fetches
- * unless the data is fresh.
+ * It waits for nothing, so no handle can have another entry's data in its
+ * input. Build an entry that needs data with
+ * `experimental_dataOf(entry, (data) => entry)`, and finish its handle where
+ * the data is, with `experimental_handleOfItem(handle, data)`. It throws for an
+ * entry whose handle would need data.
  *
  * It starts the entries again when they change, such as with another id, and
  * when the component comes back to the page. Rendering again starts nothing.
  * A component that renders again before it is on the page, such as after a
  * Suspense boundary above it waited, starts them again, as a loader that runs
- * again does: a query that is loading or has fresh data asks for nothing.
+ * again does: a query that is loading or has fresh data asks for nothing, and
+ * one that failed keeps its error, which resetting the reader's
+ * `QueryErrorResetBoundary` retries.
  * Entries are compared by value, as query keys are: the procedure, the input,
  * and the options that say how a query starts, such as `staleTime`. Build them
  * from values that stay the same from render to render, such as props.
@@ -205,91 +254,64 @@ function describeOption(value: unknown) {
  * ```tsx
  * function PostPage(props: { id: string }) {
  *   const trpc = useTRPC();
+ *   const post = prefetchEntry(trpc.post.byId, { id: props.id });
  *   const handles = useLoadHandles(trpc, {
- *     post: prefetchEntry(trpc.post.byId, { id: props.id }),
- *     comments: prefetchInfiniteEntry(trpc.post.comments, { postId: props.id }),
+ *     post,
+ *     author: experimental_dataOf(post, (it) =>
+ *       prefetchEntry(trpc.author.byId, { id: it.authorId }),
+ *     ),
  *   });
  *   return (
  *     <Suspense fallback={<p>Loading…</p>}>
- *       <Post post={handles.post} />
- *       <Comments comments={handles.comments} />
+ *       <Post post={handles.post} author={handles.author} />
  *     </Suspense>
  *   );
  * }
  * ```
- * @see https://trpc.io/docs/client/tanstack-react-query/handles#without-a-loader
+ * @see https://trpc.io/docs/client/tanstack-react-query/nested-queries#without-a-loader
  */
-export function useLoadHandles<
-  TFeatureFlags extends FeatureFlags,
-  TEntries extends TRPCLoadEntries,
->(
-  trpc: DecorateRouterKeyable<TFeatureFlags>,
-  entries: TEntries,
-): TRPCLoadedHandles<TEntries>[0] {
-  const queryClient = queryClientOf(readRoot(trpc, 'useLoadHandles'));
-  const states = readEntries(queryClient, entries);
-  // By name, as an object: `hashKey` sorts its keys, so the order of the
-  // entries doesn't make another load
-  const key = hashKey([
-    Object.fromEntries(
-      states.map(([name, state]) => [
-        name,
-        [
-          state.kind,
-          state.type,
-          // As the cache hashes it, with the `queryKeyHashFn` it is set up
-          // with: the keys it tells apart are other queries
-          queryClient.defaultQueryOptions(
-            state.options as unknown as QueryOptionsToDefault,
-          ).queryHash,
-          // Not all of the options: `meta` can hold what has no JSON, or what
-          // is new on every render
-          startOptions.map((option) => describeOption(state.options[option])),
-          // Not the first cursor: TanStack Query keys a query without it
-        ],
-      ]),
-    ),
-  ]);
+export function useLoadHandles<TEntries extends TRPCLoadEntries>(
+  trpc: DecorateRouterKeyable<any>,
+  given: TEntries & TanStackEntriesOnly<TEntries>,
+): TRPCLoadedHandles<LoadedEntries<TEntries>>[0] {
+  const root = readRoot(trpc, 'useLoadHandles');
+  const queryClient = queryClientOf(root);
+  const entries = toTanStackEntries(given);
   // Kept while the component is on the page, also through a render React
   // throws away, as when a reader suspends to a boundary above the page. A
   // component that renders again before it is on the page has none, and
-  // starts the entries again, as a loader that runs again does: a query that
-  // is loading or has fresh data asks for nothing
-  const loadRef = React.useRef<{
-    key: string;
-    queryClient: QueryClient;
-    handles: TRPCLoadedHandles<TEntries>[0];
-  }>(null);
+  // starts the entries again, as a loader that runs again does, each by its
+  // kind
+  const loadRef = React.useRef<UsedLoad>(null);
+  const { key, symbols } = describeEntries({
+    queryClient,
+    entries,
+    symbolIds: loadRef.current?.symbols ?? new Map(),
+  });
   if (
     loadRef.current?.key !== key ||
     // Another `QueryClient`'s cache has none of the queries
     loadRef.current.queryClient !== queryClient
   ) {
-    Promise.all(
-      states
-        // Rendering doesn't start a query that failed again: its reader
-        // throws, and resetting its `QueryErrorResetBoundary` retries it. A
-        // page whose Suspense boundary is above it renders again from nothing
-        // once the query fails, and would start it again, forever
-        .filter(([, state]) => {
-          const query = queryClient.getQueryState(state.options.queryKey);
-          return !(query?.status === 'error' && query.fetchStatus === 'idle');
-        })
-        .map(([, state]) => startEntry(queryClient, state)),
-    ).catch(() => {
-      // Surfaces where the handle is read
+    const started = beginEntries({
+      queryClient,
+      entries,
+      now: 'useLoadHandles',
     });
-    const handles: Record<string, unknown> = Object.fromEntries(
-      states.map(([name, state]) => [
-        name,
-        toHandle(state.options, state.type),
-      ]),
-    );
     loadRef.current = {
       key,
       queryClient,
-      handles: handles as TRPCLoadedHandles<TEntries>[0],
+      symbols,
+      handles: handlesOfLoads({
+        tree: started.tree,
+        handleOfLeaf: new Map(
+          started.allLoads.map((entryLoad) => [
+            entryLoad.leaf,
+            entryLoad.handleNow(),
+          ]),
+        ),
+      }),
     };
   }
-  return loadRef.current.handles;
+  return loadRef.current.handles as any;
 }

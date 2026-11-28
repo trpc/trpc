@@ -28,6 +28,12 @@ export const showcases = [
   },
   {
     description:
+      'A blog whose pages load a post, its author and the author’s team’s posts, each needing the one before, in one request. A meter shows each request and when each result arrives.',
+    path: '/kitchen-sink/blog',
+    title: 'Blog in one request',
+  },
+  {
+    description:
       'Queries that fail on purpose in a pipelined load: retryLink retries only the one that failed, with the queries that read it in the same request. A log shows each request and each attempt.',
     path: '/kitchen-sink/retries',
     title: 'Retrying part of a load',

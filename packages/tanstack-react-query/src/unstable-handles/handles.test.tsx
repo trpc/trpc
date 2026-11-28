@@ -17,7 +17,7 @@ import { TRPCClientError } from '@trpc/client';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { getUntypedClient } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { TRPC_ERROR_CODE_KEY } from '@trpc/server';
+import type { inferProcedureOutput, TRPC_ERROR_CODE_KEY } from '@trpc/server';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
@@ -175,7 +175,7 @@ describe('types', () => {
     }
   });
 
-  test('a skipToken entry has an `undefined` handle and no data or result', async () => {
+  test('a skipToken entry has an `undefined` handle, and a maybe-skipped one maybe data or a result', async () => {
     const trpc = {} as TRPC;
     if (Math.random() < 2) return;
     const isAdmin = Math.random() < 0.5;
@@ -190,14 +190,20 @@ describe('types', () => {
       inferQueryHandle<TRPC['post']['draftById']> | undefined
     >();
     expectTypeOf(handles.never).toEqualTypeOf<undefined>();
-    expectTypeOf<keyof typeof data>().toEqualTypeOf<'post'>();
-    // @ts-expect-error a maybe-skipped entry may have no data
-    void data.draft;
+    expectTypeOf<keyof typeof data>().toEqualTypeOf<'post' | 'draft'>();
+    // A maybe-skipped entry may have no data
+    expectTypeOf(data.draft).toEqualTypeOf<
+      inferProcedureOutput<AppRouter['post']['draftById']> | undefined
+    >();
 
     const [, results] = await loadHandlesSettled(trpc, {
       draft: isAdmin ? fetchEntry(trpc.post.draftById, { id: '1' }) : skipToken,
+      never: skipToken,
     });
-    expectTypeOf<keyof typeof results>().toEqualTypeOf<never>();
+    expectTypeOf<keyof typeof results>().toEqualTypeOf<'draft'>();
+    expectTypeOf(results.draft?.status).toEqualTypeOf<
+      'success' | 'error' | undefined
+    >();
 
     const client = {} as TRPC;
     // @ts-expect-error read a maybe-skipped handle only once it's there
@@ -266,11 +272,11 @@ describe('types', () => {
       ensured: { id: string; title: string };
       list: {
         pages: { items: number[]; nextCursor: number }[];
-        pageParams: (number | null)[];
+        pageParams: (number | null | undefined)[];
       };
       fetchedList: {
         pages: { items: number[]; nextCursor: number }[];
-        pageParams: (number | null)[];
+        pageParams: (number | null | undefined)[];
       };
     }>();
     // @ts-expect-error a prefetched query may have no data yet
@@ -362,6 +368,33 @@ describe('types', () => {
     // @ts-expect-error a query handle isn't an infinite handle
     const wrong2: TRPCInfiniteQueryHandle<any> = post;
     void wrong2;
+  });
+
+  test('a skipped handle has no input, and `skipped` tells it apart from one that has', async () => {
+    const trpc = {} as TRPC;
+    if (Math.random() < 2) return;
+    const [{ post, list }] = await loadHandles(trpc, {
+      post: prefetchEntry(trpc.post.byId, skipToken),
+      list: prefetchInfiniteEntry(trpc.post.list, skipToken),
+    });
+
+    // @ts-expect-error a skipped handle has no input
+    void post.input.id;
+    // @ts-expect-error nor does a skipped infinite handle
+    void list.input.limit;
+
+    const inputOf = (handle: typeof post) =>
+      handle.skipped ? handle.input : handle.input.id;
+    expectTypeOf(inputOf).returns.toEqualTypeOf<string | undefined>();
+    const listInputOf = (handle: typeof list) =>
+      handle.skipped ? handle.input : handle.input.limit;
+    expectTypeOf(listInputOf).returns.toEqualTypeOf<number | undefined>();
+    const skippedInputOf = (handle: typeof post) =>
+      handle.skipped ? handle.input : null;
+    expectTypeOf(skippedInputOf).returns.toEqualTypeOf<undefined | null>();
+    const skippedListInputOf = (handle: typeof list) =>
+      handle.skipped ? handle.input : null;
+    expectTypeOf(skippedListInputOf).returns.toEqualTypeOf<undefined | null>();
   });
 
   test('fromHandle takes any router level, loadHandles a router', () => {
@@ -714,6 +747,21 @@ describe('loading', () => {
     expect(resource.calls).not.toHaveBeenCalled();
   });
 
+  test('rejects with what reading an entry throws, also when that is `null`', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const entries = {
+      post: prefetchEntry(trpc.post.byId, { id: '1' }),
+      get author(): never {
+        throw null;
+      },
+    };
+    for (const load of [loadHandles, loadHandlesSettled]) {
+      await expect(load(trpc, entries)).rejects.toBeNull();
+    }
+    expect(resource.calls).not.toHaveBeenCalled();
+  });
+
   test("rejects an entry built with another QueryClient's proxy", async () => {
     await using resource = ctx();
     const a = makeServerProxy(resource);
@@ -721,6 +769,21 @@ describe('loading', () => {
     await expect(
       loadHandles(a.trpc, {
         post: prefetchEntry(b.trpc.post.byId, { id: '1' }),
+      }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(
+      `[Error: The entry for "post" was built with a proxy for another QueryClient than the root proxy that loads it]`,
+    );
+    expect(resource.calls).not.toHaveBeenCalled();
+    expect(a.queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
+
+  test("rejects an entry built with another QueryClient's proxy, also one the load waits for", async () => {
+    await using resource = ctx();
+    const a = makeServerProxy(resource);
+    const b = makeServerProxy(resource);
+    await expect(
+      loadHandles(a.trpc, {
+        post: ensureEntry(b.trpc.post.byId, { id: '1' }),
       }),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[Error: The entry for "post" was built with a proxy for another QueryClient than the root proxy that loads it]`,
@@ -787,6 +850,27 @@ describe('loading', () => {
     });
     expect(fresh.post.title).toBe('Post 1');
     expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test('getNextPageParam gets `undefined` for the first page of an entry without a first cursor', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const lastParams: unknown[] = [];
+    await loadHandles(trpc, {
+      list: fetchInfiniteEntry(
+        trpc.post.list,
+        { limit: 2 },
+        {
+          pages: 2,
+          getNextPageParam: (last, _all, lastParam) => {
+            expectTypeOf(lastParam).toEqualTypeOf<number | null | undefined>();
+            lastParams.push(lastParam);
+            return last.nextCursor;
+          },
+        },
+      ),
+    });
+    expect(lastParams).toEqual([undefined]);
   });
 
   test('infinite entries can load several pages up front', async () => {
@@ -1265,6 +1349,72 @@ describe('runtime', () => {
       expect(t.resource.calls).toHaveBeenCalledTimes(1);
     });
 
+    test('a query that got data while it was pending is not refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const options = fromHandle(
+        browserTrpc,
+        t.handle as inferQueryHandle<TRPC['flaky']>,
+      );
+      // After the read watches the hydrated promise, before it rejects
+      t.browser.setQueryData(options.queryKey, { id: 'written' });
+      await vi.waitFor(() =>
+        expect(
+          t.browser.getQueryState(options.queryKey)?.errorUpdateCount,
+        ).toBe(1),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.browser.getQueryData(options.queryKey)).toEqual({
+        id: 'written',
+      });
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
+    });
+
+    test("a read the QueryClient's defaults disable is not refetched", async () => {
+      await using t = await setup('flaky');
+      // Only for this procedure: the rest of the defaults stay
+      t.browser.setQueryDefaults([['flaky']], { enabled: false });
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const options = fromHandle(
+        browserTrpc,
+        t.handle as inferQueryHandle<TRPC['flaky']>,
+      );
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryState(options.queryKey)?.status).toBe('error'),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
+    });
+
+    test('a read that is disabled after an enabled one is not refetched', async () => {
+      await using t = await setup('flaky');
+      t.hydrateBrowser(t.state);
+      const browserTrpc = createTRPCOptionsProxy<AppRouter>({
+        client: t.resource.client,
+        queryClient: t.browser,
+      });
+      const handle = t.handle as inferQueryHandle<TRPC['flaky']>;
+      // A rerender of the same read with `enabled: false`
+      fromHandle(browserTrpc, handle);
+      const options = fromHandle(browserTrpc, handle, { enabled: false });
+      await vi.waitFor(() =>
+        expect(t.browser.getQueryState(options.queryKey)?.status).toBe('error'),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(t.browser.isFetching()).toBe(0);
+      expect(t.resource.calls).toHaveBeenCalledTimes(1);
+    });
+
     test('an enabled read after a disabled one is refetched', async () => {
       await using t = await setup('flaky');
       t.hydrateBrowser(t.state);
@@ -1309,14 +1459,15 @@ describe('runtime', () => {
         cursor: 4,
       }),
     });
-    expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
+    // Absent from a skipped handle: `skipped` tells them apart
+    expectTypeOf(post.input).toEqualTypeOf<{ id: string } | undefined>();
     expect(post.input).toEqual({ id: '1' });
     // A plain tuple with a typed input: no `unknown` and no tag, so router serializability checks accept it
     expectTypeOf(post.queryKey).toEqualTypeOf<
       [path: string[], opts?: { input?: { id: string }; type?: 'query' }]
     >();
 
-    expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
+    expectTypeOf(list.input).toEqualTypeOf<{ limit: number } | undefined>();
     expectTypeOf(list.queryKey).toEqualTypeOf<
       [path: string[], opts?: { input?: { limit: number }; type?: 'infinite' }]
     >();

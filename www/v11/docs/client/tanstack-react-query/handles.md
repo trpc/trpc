@@ -355,7 +355,7 @@ data.comments;
 
 #### Waiting for some, streaming others {#combining-both}
 
-List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [dependent queries](#dependent-queries).
+List every query in one load, whether the page waits for it or not. They all start together. A second load waits for everything the first one waited for, so use one only for [nested queries](#nested-queries).
 
 Each entry chooses whether the page waits for its query:
 
@@ -423,7 +423,14 @@ export const postRoute = createRoute({
 
 - Its handle is `undefined`, so render the reader only when there's a handle: `{handles.comments && <Comments comments={handles.comments} />}`.
 - It has no key in `handles`, `data` or `loadHandlesSettled`'s results, so the handles still serialize as Next.js props.
-- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Dependent queries](#dependent-queries).
+- `null` in place of an entry does the same: `isAdmin ? prefetchEntry(…) : null`.
+- Take the condition from what the loader knows: the URL, as here, the session, or another load's data. See [Start every query from the URL](#url-as-input) and [Nested queries](#nested-queries).
+
+Or keep the entry, and give it `skipToken` as its input: `prefetchEntry(trpc.post.byId, skipToken)`, or `prefetchInfiniteEntry` the same way. Nothing starts, and the entry still has a handle:
+
+- **The handle has `skipped: true`.** `fromHandle()` gives options with `skipToken`, so the query is disabled: it never fetches, and its `fetchStatus` is `'idle'`. Its `status` is `'pending'` when the cache has nothing for its key. `skipToken` doesn't clear the cache, so a query without an input can show what an earlier fetch got: its data, or its error with `status: 'error'`. It has no `input`: check `handle.skipped` to tell a skipped entry apart, which also types `handle.input` as there. Read it with `useQuery`, as `useSuspenseQuery` doesn't take `skipToken`.
+- **Only a prefetch entry takes it.** A load waits for the data of an ensure or fetch entry, which would never come, so `ensureEntry(procedure, skipToken)` is a type error.
+- **An entry that needs its data fails**, as there is none: the load rejects, also with `loadHandlesSettled()`, and says so. That is an entry that reads it in its input with `experimental_dataOf(entry)`, and a fetch or ensure entry built from it with `experimental_dataOf(entry, (data) => entry)` or `experimental_perItem()`. A prefetch entry built from it either way doesn't start, and the load resolves with that entry's unfinished handle.
 
 #### TanStack Query equivalents {#tanstack-equivalents}
 
@@ -448,7 +455,7 @@ Options:
 
 - The page renders at once, and the data streams in.
 - The reader shows cached data, or suspends. Give it its own `<Suspense>`, or the nearest boundary above shows its fallback, which may be the whole page.
-- It never makes the load reject. The reader gets the error: see [Errors](#errors).
+- A failed request doesn't make the load reject: the reader gets the error, see [Errors](#errors). It does if another entry needs its data for its handle or for data the load waits for (see [Nested queries: Errors](/docs/client/tanstack-react-query/nested-queries#errors)), or if starting it throws, such as from a `staleTime` function.
 - Use it for slow queries, content below the fold and side panels.
 
 ### `ensureEntry`: wait {#ensure}
@@ -792,6 +799,16 @@ post.bySlug     |-------|
 post.comments   |-------|
 ```
 
+#### Or keep the procedures, and let the server fill in the id {#or-one-request}
+
+Reshaping changes the procedures to fit one page. The other way is to leave them as they are:
+
+- **The loader names both queries up front.** The author's entry says "take the id from the post".
+- **The server fills in the id**, and runs both in one request. With `httpBatchStreamLink`, each result streams back when it is ready.
+- **`author.byId` stays `author.byId`.** Any page can use it, and a component can say what it needs by itself.
+
+This is experimental. See [Nested queries in one request](/docs/client/tanstack-react-query/nested-queries).
+
 ## Reading a handle {#reading-a-handle}
 
 `fromHandle(trpc, handle, opts?)` returns `trpc.<path>.queryOptions(handle.input, opts)`, or `infiniteQueryOptions` for an infinite handle. Pass it to any TanStack Query hook:
@@ -820,7 +837,7 @@ const [aQuery, bQuery] = useSuspenseQueries({
 ```
 
 - Only `loadHandles` makes handles. A hand-written object doesn't type-check, and `fromHandle` throws on it.
-- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`.
+- `handle.input` is the typed input. An infinite handle's leaves out `cursor` and `direction`. A [skipped handle](#conditional-queries) has none: check `handle.skipped` before reading it.
 - Reads share cache entries with `trpc.<path>.queryOptions(input)`.
 - `handle.queryKey` carries no data type, so the handle stays serializable. For a typed key, use `fromHandle(trpc, handle).queryKey` or `trpc.post.byId.queryKey(handle.input)`.
 
@@ -838,6 +855,8 @@ With `useQuery`, no `Suspense` boundary is needed:
 To change the input in the component, for a search term the URL can't hold, call the procedure and start from the handle's input:
 
 ```tsx
+// Only a skipped handle, whose entry had `skipToken`, has no input
+if (props.comments.skipped) throw new Error('Comments need a post');
 const [term, setTerm] = useState(props.comments.input.term);
 const commentsQuery = useSuspenseInfiniteQuery(
   trpc.post.comments.infiniteQueryOptions(
@@ -895,9 +914,16 @@ data.comments.pages;
 - Also pass it to entries in loaders that run in the browser. Refetching stale pages needs it from page two on.
 - Type props with `inferInfiniteQueryHandle`.
 
-## Dependent queries {#dependent-queries}
+<a id="dependent-queries"></a>
+<a id="chained-queries"></a>
 
-A query whose input comes from another query's result is a waterfall. Each step costs a round trip. First try to [reshape the procedure](#reshape-procedures). If you can't, there are two ways, and both pay the round trip.
+## Nested queries {#nested-queries}
+
+A query whose input comes from another query's result is a waterfall. Each step costs a round trip. There are three ways to deal with it.
+
+- **[Reshape the procedure](#reshape-procedures)**, so that it takes what the URL has, or returns the joined data. No extra round trip.
+- **Load both in [one request](/docs/client/tanstack-react-query/nested-queries)**, with `experimental_dataOf()`. The procedures stay as they are, and the server fills in the input. No extra round trip. It needs [pipelining turned on](/docs/client/vanilla/nested-queries#turn-on) in the batch link and on the server. [Without the link's option](/docs/client/vanilla/nested-queries#fallback), the second query is a request of its own. A server without its option [refuses the request](/docs/client/vanilla/nested-queries#not-allowed). Experimental.
+- **Pay the round trip**, in a loader or in a component, as below.
 
 #### In a loader {#waterfall-in-a-loader}
 
@@ -1214,7 +1240,7 @@ results.post.data.title;
 
 #### With prefetch entries {#errors-prefetch}
 
-A prefetch entry never makes the load reject. The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
+A prefetch entry's failed request doesn't make the load reject, unless another entry needs its data for its handle or for data the load waits for, see [Nested queries: Errors](/docs/client/tanstack-react-query/nested-queries#errors). The reader gets the query's own error: `useQuery` returns `status: 'error'`, and `useSuspenseQuery` throws to the nearest error boundary, unless the cache has data to keep showing. To report these in one place, use your `QueryCache`'s [`onError`](https://tanstack.com/query/latest/docs/reference/QueryCache).
 
 ## Invalidation {#invalidation-and-staleness}
 

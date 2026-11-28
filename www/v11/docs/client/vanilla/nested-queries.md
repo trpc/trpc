@@ -728,6 +728,8 @@ Sometimes a query that reads another's data can't go in that query's request. It
 
 A request that fails as a whole, such as on a network error, isn't one of these cases. The query it reads was in that request and failed too, so there is no data to fill in. Without a link that sends the request again, the query rejects with that error. With a link that [retries](#retries), it goes in the next attempt's request if that request has every query it reads, and otherwise waits for them.
 
+With TanStack Query, some of these work differently: see [When the list is fetched again](/docs/client/tanstack-react-query/nested-queries#later-fetches).
+
 ## Limits {#limits}
 
 A call that reads another's data makes the server copy that data into its input, and a call for every item runs once per item. `true` turns pipelining on with `experimental_pipelineBudget()`: limits that keep this small. To change some, pass it the ones you want; the rest keep their default:

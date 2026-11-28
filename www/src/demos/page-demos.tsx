@@ -18,6 +18,8 @@ import { isChunkLoadError, reloadOnce, reloadPage } from '~/reload-once.ts';
 type Demo = ComponentType<DemoProps>;
 
 const imports: Record<DemoName, () => Promise<Demo>> = {
+  'nested-queries': async () =>
+    (await import('./nested-queries.tsx')).NestedQueries,
   'loader-handles': async () =>
     (await import('./loader-handles.tsx')).LoaderHandles,
   'request-timeline': async () =>

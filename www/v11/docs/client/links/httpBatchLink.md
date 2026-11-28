@@ -222,7 +222,7 @@ const client = createTRPCClient<AppRouter>({
 
 ## Pipelining (experimental) {#pipelining}
 
-Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. [`experimental_load()`](/docs/client/vanilla/nested-queries) uses it for the queries of a page.
+Some queries need another query's data for their input: an author's id is in the post. With `experimental_pipelining`, the link sends such a query in the same request as the one it needs, and the server fills in its input. It costs no extra round trip. [`experimental_load()`](/docs/client/vanilla/nested-queries) and TanStack Query's `loadHandles()` use it for the queries of a page.
 
 ```ts twoslash title="client/index.ts"
 // @filename: server.ts

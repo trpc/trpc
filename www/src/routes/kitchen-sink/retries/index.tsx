@@ -17,7 +17,7 @@ import {
   type Plan,
 } from './-trpc.ts';
 
-const [, , showcase] = showcases;
+const [, , , showcase] = showcases;
 
 export const Route = createFileRoute('/kitchen-sink/retries/')({
   head: () => pageHead({ ...showcase, noindex: true }),
