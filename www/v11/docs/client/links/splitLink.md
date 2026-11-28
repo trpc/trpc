@@ -123,8 +123,8 @@ const makeTRPCClient = () =>
     router: routerType<AppRouter>(),
     links: [
       splitLink({
-        condition: ({ context }: { context: { skipBatch?: boolean } }) =>
-          context.skipBatch === true,
+        context: { skipBatch: false },
+        condition: (op) => op.context.skipBatch,
         true: httpLink({ url }),
         false: httpBatchLink({ url }),
       }),
